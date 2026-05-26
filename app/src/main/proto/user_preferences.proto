@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option java_package = "ee.cyber.wallet";
+option java_multiple_files = true;
+
+enum DarkThemeConfigProto {
+  DARK_THEME_CONFIG_UNSPECIFIED = 0;
+  DARK_THEME_CONFIG_FOLLOW_SYSTEM = 1;
+  DARK_THEME_CONFIG_LIGHT = 2;
+  DARK_THEME_CONFIG_DARK = 3;
+}
+
+enum IssuerKeyTypeProto {
+  ISSUER_KEY_TYPE_UNSPECIFIED = 0;
+  ISSUER_KEY_TYPE_IACA_TRUSTED = 1;
+  ISSUER_KEY_TYPE_UNTRUSTED = 2;
+}
+
+enum BlePeripheralModeProto {
+  BLE_PERIPHERAL_MODE_UNSPECIFIED = 0;
+  BLE_PERIPHERAL_MODE_PERIPHERAL = 1;
+  BLE_PERIPHERAL_MODE_CENTRAL = 2;
+}
+
+message UserPreferencesProto {
+  DarkThemeConfigProto dark_theme_config = 1;
+  bool ble_peripheral_mode = 2 [deprecated = true];
+  IssuerKeyTypeProto issuer_key_type = 3;
+  bool trust_all_validator = 4;
+  BlePeripheralModeProto ble_mode = 5;
+}
