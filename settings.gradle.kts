@@ -44,6 +44,11 @@ dependencyResolutionManagement {
 rootProject.name = "EE Wallet"
 include(":app")
 
+// JVM-only: multipaz-longfellow ships a desktop libzkp.so, so the ZK round trip runs in a plain
+// unit test. It cannot live in :app — that module resolves the Android variant of multipaz and the
+// two collide on the test classpath.
+include(":zk-conformance")
+
 // include eu-digital-identity-wallet libs sources into project if exist
 val properties = Properties().apply {
     val localProperties = file("local.properties")
