@@ -48,6 +48,13 @@ android {
         }
         resourceConfigurations += arrayOf("en", "et")
         configureEnvironment(Environment.TEST)
+        ndk {
+            // multipaz-longfellow ships libzkp.so for these two ABIs only. Other dependencies pull
+            // in armeabi-v7a and x86, and installing there would give a wallet that cannot generate
+            // a ZK proof at all — so restrict to what the prover supports and keep "installable"
+            // and "able to prove" the same thing.
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     signingConfigs {
