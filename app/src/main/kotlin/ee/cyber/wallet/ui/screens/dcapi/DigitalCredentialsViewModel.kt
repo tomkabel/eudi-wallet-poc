@@ -12,6 +12,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.data.repository.DocumentRepository
+import ee.cyber.wallet.di.Dispatcher
+import ee.cyber.wallet.di.WalletDispatchers
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
@@ -40,15 +42,16 @@ import id.walt.mdoc.dataretrieval.DeviceResponse
 import id.walt.mdoc.doc.MDoc
 import id.walt.mdoc.docrequest.MDocRequestBuilder
 import id.walt.mdoc.mdocauth.DeviceAuthentication
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
 import org.json.JSONObject
 import org.multipaz.cbor.Cbor
 import org.multipaz.crypto.EcPublicKey
 import org.multipaz.crypto.Hpke
-import org.multipaz.mdoc.response.DeviceResponse as MdocDeviceResponse
 import org.multipaz.mdoc.response.MdocDocument
 import org.multipaz.mdoc.response.buildDeviceResponse
 import org.multipaz.mdoc.zkp.ZkDocument
@@ -60,13 +63,15 @@ import javax.inject.Inject
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.Base64.PaddingOption
 import kotlin.io.encoding.ExperimentalEncodingApi
+import org.multipaz.mdoc.response.DeviceResponse as MdocDeviceResponse
 
 @HiltViewModel
 class DigitalCredentialsViewModel @Inject constructor(
     private val allowedAppsJson: String,
     private val documentRepository: DocumentRepository,
     private val cryptoProviderFactory: CryptoProvider.Factory,
-    private val openId4VPManager: OpenId4VPManager
+    private val openId4VPManager: OpenId4VPManager,
+    @Dispatcher(WalletDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher
 ) : MviViewModel<DcEvent, DcUiState, DcEffect>() {
 
     private val logger = LoggerFactory.getLogger(DigitalCredentialsViewModel::class.java)
@@ -308,17 +313,22 @@ class DigitalCredentialsViewModel @Inject constructor(
                     keyID = keyId
                 )
 
-                val zkSystemSpec = matchZkSystemSpec(currentState.zkSystemSpecs, checkedFields.size)
-                if (zkSystemSpec == null) {
-                    responseDocuments.add(documentResponse)
-                } else {
-                    zkDocuments.add(
+                // Proving is seconds of blocking native work, and the first match also forces the
+                // lazy circuit load. Both stay off the main thread or the share screen freezes
+                // instead of showing its spinner.
+                val zkDocument = withContext(defaultDispatcher) {
+                    matchZkSystemSpec(currentState.zkSystemSpecs, checkedFields.size)?.let { spec ->
                         zkSystem.generateProof(
-                            zkSystemSpec = zkSystemSpec,
+                            zkSystemSpec = spec,
                             document = MdocDocument.fromDataItem(Cbor.decode(documentResponse.toMapElement().toCBOR())),
                             sessionTranscript = Cbor.decode(sessionTranscript.toCBOR())
                         )
-                    )
+                    }
+                }
+                if (zkDocument == null) {
+                    responseDocuments.add(documentResponse)
+                } else {
+                    zkDocuments.add(zkDocument)
                 }
             }
 
