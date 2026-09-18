@@ -36,6 +36,9 @@ eudi-prex = "0.4.0"
 eudi-openid4vci = "0.6.1"
 eudi-iso18013-data-transfer = "0.10.0"
 eudi-document-manager = "0.13.0"
+# lowest multipaz that publishes multipaz-longfellow; eudi-iso18013-data-transfer pins 0.94.0, so
+# every multipaz artifact is constrained to this version to keep core and -android in step
+multipaz = "0.99.0"
 androidxSecurityCrypto = "1.1.0-alpha07"
 dependencyCheck = "1.32.0"
 spotless = "7.0.3"
@@ -68,6 +71,10 @@ eudi-prex = { module = "eu.europa.ec.eudi:eudi-lib-jvm-presentation-exchange-kt"
 eudi-openid4vci = { module = "eu.europa.ec.eudi:eudi-lib-jvm-openid4vci-kt", version.ref = "eudi-openid4vci" }
 eudi-iso18013-data-transfer = { module = "eu.europa.ec.eudi:eudi-lib-android-iso18013-data-transfer", version.ref = "eudi-iso18013-data-transfer" }
 eudi-document-manager = { module = "eu.europa.ec.eudi:eudi-lib-android-wallet-document-manager", version.ref = "eudi-document-manager" }
+multipaz-longfellow = { module = "org.multipaz:multipaz-longfellow", version.ref = "multipaz" }
+multipaz-core = { module = "org.multipaz:multipaz", version.ref = "multipaz" }
+multipaz-android = { module = "org.multipaz:multipaz-android", version.ref = "multipaz" }
+multipaz-android-legacy = { module = "org.multipaz:multipaz-android-legacy", version.ref = "multipaz" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 
 bcpkix-jdk18on = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncyCastle" }

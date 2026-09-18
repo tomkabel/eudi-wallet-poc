@@ -28,6 +28,7 @@ import ee.cyber.wallet.ui.screens.presentation.MatchedField
 import ee.cyber.wallet.ui.screens.presentation.MatchedFields
 import ee.cyber.wallet.ui.screens.presentation.fields
 import ee.cyber.wallet.util.DeviceRequestParser
+import ee.cyber.wallet.util.toPresentationDefinition
 import eu.europa.ec.eudi.prex.FieldQueryResult
 import eu.europa.ec.eudi.prex.Match
 import eu.europa.ec.eudi.prex.PresentationDefinition
@@ -45,10 +46,14 @@ import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
 import org.json.JSONObject
 import org.multipaz.cbor.Cbor
-import org.multipaz.crypto.Algorithm
-import org.multipaz.crypto.Crypto
 import org.multipaz.crypto.EcPublicKey
-import org.multipaz.crypto.EcPublicKeyDoubleCoordinate
+import org.multipaz.crypto.Hpke
+import org.multipaz.mdoc.response.DeviceResponse as MdocDeviceResponse
+import org.multipaz.mdoc.response.MdocDocument
+import org.multipaz.mdoc.response.buildDeviceResponse
+import org.multipaz.mdoc.zkp.ZkDocument
+import org.multipaz.mdoc.zkp.ZkSystemSpec
+import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 import org.multipaz.util.fromBase64Url
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
@@ -65,6 +70,10 @@ class DigitalCredentialsViewModel @Inject constructor(
 ) : MviViewModel<DcEvent, DcUiState, DcEffect>() {
 
     private val logger = LoggerFactory.getLogger(DigitalCredentialsViewModel::class.java)
+
+    // ponytail: holds all bundled circuits (~2 MB) once a ZK request arrives; load only the
+    // requested one via addCircuit() if that footprint ever matters.
+    private val zkSystem by lazy { LongfellowZkSystem().apply { addDefaultCircuits() } }
 
     override fun initialState(): DcUiState = DcUiState()
 
@@ -106,15 +115,23 @@ class DigitalCredentialsViewModel @Inject constructor(
                 val sessionTranscript = getSessionTranscript(encryptionInfoBase64, origin)
                 val recipientPublicKey = getRecipientPublicKey(encryptionInfoBase64)
 
-                val presentationDefinition = DeviceRequestParser(
+                val docRequests = DeviceRequestParser(
                     deviceRequestBase64.fromBase64Url(),
                     sessionTranscript.toCBOR()
-                ).parseToPresentationDefinition()
+                ).parse().docRequests
+
+                val presentationDefinition = toPresentationDefinition(docRequests)
 
                 val documents = documentRepository.documents.first()
                 val documentMatches = presentationDefinition.getDocumentMatches(documents)
 
-                handleMatchResult(documentMatches, origin, sessionTranscript, recipientPublicKey)
+                handleMatchResult(
+                    documentMatches,
+                    origin,
+                    sessionTranscript,
+                    recipientPublicKey,
+                    docRequests.flatMap { it.zkSystemSpecs }
+                )
             } catch (e: Exception) {
                 logger.error("Error processing request", e)
                 sendEffect { DcEffect.Error(e.message ?: "Unknown error") }
@@ -128,7 +145,8 @@ class DigitalCredentialsViewModel @Inject constructor(
         documentMatches: Pair<List<CredentialClaim>, Match>,
         origin: String,
         sessionTranscript: ListElement,
-        recipientPublicKey: EcPublicKey
+        recipientPublicKey: EcPublicKey,
+        zkSystemSpecs: List<ZkSystemSpec>
     ) {
         when (val match = documentMatches.second) {
             is Match.NotMatched -> {
@@ -176,7 +194,8 @@ class DigitalCredentialsViewModel @Inject constructor(
                             verifier = origin,
                             credentials = credentials,
                             sessionTranscript = sessionTranscript,
-                            recipientPublicKey = recipientPublicKey
+                            recipientPublicKey = recipientPublicKey,
+                            zkSystemSpecs = zkSystemSpecs
                         )
                     }
                 }
@@ -264,6 +283,7 @@ class DigitalCredentialsViewModel @Inject constructor(
 
         try {
             val responseDocuments = mutableListOf<MDoc>()
+            val zkDocuments = mutableListOf<ZkDocument>()
 
             currentState.credentials.forEach { credential ->
                 val mDoc = credential.mDoc
@@ -287,10 +307,26 @@ class DigitalCredentialsViewModel @Inject constructor(
                     cryptoProvider = cryptoProvider.deviceCryptoProvider(keyId),
                     keyID = keyId
                 )
-                responseDocuments.add(documentResponse)
+
+                val zkSystemSpec = matchZkSystemSpec(currentState.zkSystemSpecs, checkedFields.size)
+                if (zkSystemSpec == null) {
+                    responseDocuments.add(documentResponse)
+                } else {
+                    zkDocuments.add(
+                        zkSystem.generateProof(
+                            zkSystemSpec = zkSystemSpec,
+                            document = MdocDocument.fromDataItem(Cbor.decode(documentResponse.toMapElement().toCBOR())),
+                            sessionTranscript = Cbor.decode(sessionTranscript.toCBOR())
+                        )
+                    )
+                }
             }
 
-            val deviceResponseBytes = DeviceResponse(responseDocuments).toCBOR()
+            val deviceResponseBytes = if (zkDocuments.isEmpty()) {
+                DeviceResponse(responseDocuments).toCBOR()
+            } else {
+                zkDeviceResponse(zkDocuments, responseDocuments, sessionTranscript)
+            }
             val response = getEncryptedResponse(recipientPublicKey, deviceResponseBytes, sessionTranscript)
 
             logger.info("Response generated successfully")
@@ -303,19 +339,59 @@ class DigitalCredentialsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Picks the strongest circuit we hold that the reader also allows, mirroring
+     * [org.multipaz.mdoc.zkp.ZkSystem.getMatchingSystemSpec] without having to build multipaz
+     * `RequestedClaim`s the rest of this screen has no use for.
+     */
+    private fun matchZkSystemSpec(requested: List<ZkSystemSpec>, numAttributes: Int): ZkSystemSpec? {
+        val allowedCircuitHashes = requested.mapNotNull { it.getParam<String>("circuit_hash") }.toSet()
+        return zkSystem.systemSpecs
+            .filter {
+                it.getParam<String>("circuit_hash") in allowedCircuitHashes &&
+                    it.getParam<Long>("num_attributes") == numAttributes.toLong()
+            }
+            .maxByOrNull { it.getParam<Long>("version") ?: Long.MIN_VALUE }
+    }
+
+    /**
+     * ISO/IEC 18013-5 2nd edition `DeviceResponse` carrying proofs in `zkDocuments`. Any document we
+     * could not prove is carried as a plain `documents` entry, so selecting a ZK-capable credential
+     * never silently drops the others.
+     */
+    private suspend fun zkDeviceResponse(
+        zkDocuments: List<ZkDocument>,
+        plainDocuments: List<MDoc>,
+        sessionTranscript: ListElement
+    ): ByteArray {
+        val transcript = Cbor.decode(sessionTranscript.toCBOR())
+        val mdocDocuments = plainDocuments.map {
+            MdocDocument.fromDataItem(Cbor.decode(it.toMapElement().toCBOR()))
+        }
+        return Cbor.encode(
+            buildDeviceResponse(transcript, MdocDeviceResponse.STATUS_OK) {
+                mdocDocuments.forEach { addDocument(it) }
+                zkDocuments.forEach { addZkDocument(it) }
+            }.toDataItem()
+        )
+    }
+
     @OptIn(ExperimentalEncodingApi::class)
-    private fun getEncryptedResponse(
+    private suspend fun getEncryptedResponse(
         recipientPublicKey: EcPublicKey,
         deviceResponseBytes: ByteArray,
         sessionTranscript: ListElement
     ): String {
-        val (cipherText, encapsulatedPublicKey) = Crypto.hpkeEncrypt(
-            cipherSuite = Algorithm.HPKE_BASE_P256_SHA256_AES128GCM,
+        // The session transcript belongs in HPKE `info`, not the AEAD `aad`: the Tink-backed
+        // Crypto.hpkeEncrypt this replaces fed its `aad` argument to Tink as contextInfo, so
+        // sending it as `aad` here would change the bytes on the wire.
+        val encrypter = Hpke.getEncrypter(
+            cipherSuite = Hpke.CipherSuite.DHKEM_P256_HKDF_SHA256_HKDF_SHA256_AES_128_GCM,
             receiverPublicKey = recipientPublicKey,
-            plainText = deviceResponseBytes,
-            aad = sessionTranscript.toCBOR()
+            info = sessionTranscript.toCBOR()
         )
-        val enc = (encapsulatedPublicKey as EcPublicKeyDoubleCoordinate).asUncompressedPointEncoding
+        val cipherText = encrypter.encrypt(plaintext = deviceResponseBytes, aad = byteArrayOf())
+        val enc = encrypter.encapsulatedKey.toByteArray()
         val encryptedResponse = CBORObject.NewArray().apply {
             Add("dcapi")
             Add(CBORObject.NewMap().apply {
@@ -353,7 +429,8 @@ data class DcUiState(
     val credentials: List<DcCredential> = listOf(),
     val shareDisabled: Boolean = false,
     val sessionTranscript: @RawValue ListElement? = null,
-    val recipientPublicKey: @RawValue EcPublicKey? = null
+    val recipientPublicKey: @RawValue EcPublicKey? = null,
+    val zkSystemSpecs: @RawValue List<ZkSystemSpec> = listOf()
 ) : ViewState, Parcelable
 
 sealed class DcEffect : ViewSideEffect {

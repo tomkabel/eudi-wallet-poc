@@ -73,16 +73,12 @@ class DeviceRequestParser(
      * @throws IllegalStateException    if required data hasn't been set using the setter
      * methods on this class.
      */
-    fun parse(): DeviceRequest = DeviceRequest().apply {
+    suspend fun parse(): DeviceRequest = DeviceRequest().apply {
         parse(
             encodedDeviceRequest,
             Cbor.decode(encodedSessionTranscript),
             skipReaderAuthParseAndCheck
         )
-    }
-
-    fun parseToPresentationDefinition(): PresentationDefinition {
-        return toPresentationDefinition(this.parse().docRequests)
     }
 
     /**
@@ -104,7 +100,7 @@ class DeviceRequestParser(
          */
         lateinit var version: String
 
-        internal fun parse(
+        internal suspend fun parse(
             encodedDeviceRequest: ByteArray,
             sessionTranscript: DataItem,
             skipReaderAuthParseAndCheck: Boolean
@@ -380,13 +376,13 @@ class DeviceRequestParser(
     }
 }
 
-fun DeviceRequest.toPresentationDefinition(): PresentationDefinition {
+suspend fun DeviceRequest.toPresentationDefinition(): PresentationDefinition {
     val requestedDocuments = DeviceRequestParser(this.deviceRequestBytes, this.sessionTranscriptBytes)
         .parse()
     return toPresentationDefinition(requestedDocuments.docRequests)
 }
 
-private fun toPresentationDefinition(docRequests: List<DeviceRequestParser.DocRequest>): PresentationDefinition {
+internal fun toPresentationDefinition(docRequests: List<DeviceRequestParser.DocRequest>): PresentationDefinition {
     val inputDescriptors = docRequests
         .map { requestedDocument -> requestedDocument.docType to requestedDocument.requestMap }
         .flatMap { (docType, requestMap) ->

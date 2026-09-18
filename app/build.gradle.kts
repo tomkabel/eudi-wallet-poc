@@ -309,6 +309,17 @@ dependencies {
     implementation(libs.eudi.iso18013.data.transfer)
     implementation(libs.eudi.document.manager)
 
+    // Longfellow ZK prover: bundles libzkp.so (arm64-v8a, x86_64) and the pre-built circuits
+    implementation(libs.multipaz.longfellow)
+
+    // multipaz-longfellow needs a newer multipaz than eudi-iso18013-data-transfer pins. Constrain
+    // the multipaz artifacts it pulls in transitively so core and -android stay on one version.
+    constraints {
+        implementation(libs.multipaz.core)
+        implementation(libs.multipaz.android)
+        implementation(libs.multipaz.android.legacy)
+    }
+
     implementation(libs.zxing.core)
     implementation(libs.jackson.databind)
 
