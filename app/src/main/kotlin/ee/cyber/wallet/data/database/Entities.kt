@@ -9,8 +9,9 @@ import androidx.room.Relation
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
-import kotlin.time.Instant
+import ee.cyber.wallet.domain.presentation.PresentationTier
 import kotlinx.serialization.json.JsonObject
+import kotlin.time.Instant
 
 object ActivityLogFields {
     const val ID = "id"
@@ -19,6 +20,7 @@ object ActivityLogFields {
     const val DOC_TYPE = "doc_type"
     const val ATTRIBUTES = "attributes"
     const val ERROR = "error"
+    const val TIER = "tier"
 }
 
 const val TABLE_ACTIVITY_LOGS = "activity_logs"
@@ -42,7 +44,10 @@ data class LogEntryEntity(
     @ColumnInfo(ActivityLogFields.ATTRIBUTES)
     val attributes: JsonObject? = null,
     @ColumnInfo(ActivityLogFields.ERROR)
-    val error: AppError? = null
+    val error: AppError? = null,
+    // null for rows written before the column existed, and for paths that do not offer a ZK tier
+    @ColumnInfo(ActivityLogFields.TIER)
+    val tier: PresentationTier? = null
 )
 
 object KeyAttestationFields {
