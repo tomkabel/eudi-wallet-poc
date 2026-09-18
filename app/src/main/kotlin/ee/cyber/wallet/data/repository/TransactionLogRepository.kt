@@ -4,6 +4,7 @@ import ee.cyber.wallet.data.database.LogEntryEntity
 import ee.cyber.wallet.data.database.dao.LogRecordDao
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.DocType
+import ee.cyber.wallet.domain.presentation.PresentationTier
 import kotlinx.serialization.json.JsonObject
 
 class TransactionLogRepository(
@@ -14,14 +15,21 @@ class TransactionLogRepository(
 
     fun getTransactionLog(id: String) = logRecordDao.getById(id.toLong())
 
-    suspend fun addTransactionLog(party: String, docType: DocType, attributes: JsonObject? = null, error: AppError? = null) =
+    suspend fun addTransactionLog(
+        party: String,
+        docType: DocType,
+        attributes: JsonObject? = null,
+        error: AppError? = null,
+        tier: PresentationTier? = null
+    ) =
         logRecordDao.insert(
             LogEntryEntity(
                 date = kotlin.time.Clock.System.now(),
                 party = party,
                 docType = docType,
                 attributes = attributes,
-                error = error
+                error = error,
+                tier = tier
             )
         )
 }

@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import ee.cyber.wallet.data.database.MIGRATION_1_2
 import ee.cyber.wallet.data.database.WalletDatabase
 import ee.cyber.wallet.data.database.dao.AttestationDao
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
@@ -25,7 +26,8 @@ class DatabaseModule {
         context = context,
         klass = WalletDatabase::class.java,
         name = "wallet-db"
-    ).build()
+    ).addMigrations(MIGRATION_1_2)
+        .build()
 
     @Provides
     @Singleton

@@ -12,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.data.repository.DocumentRepository
+import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.di.Dispatcher
 import ee.cyber.wallet.di.WalletDispatchers
 import ee.cyber.wallet.domain.credentials.CredentialType
@@ -19,6 +20,7 @@ import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
+import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -71,14 +73,22 @@ class DigitalCredentialsViewModel @Inject constructor(
     private val documentRepository: DocumentRepository,
     private val cryptoProviderFactory: CryptoProvider.Factory,
     private val openId4VPManager: OpenId4VPManager,
+    private val transactionLogRepository: TransactionLogRepository,
     @Dispatcher(WalletDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher
 ) : MviViewModel<DcEvent, DcUiState, DcEffect>() {
 
     private val logger = LoggerFactory.getLogger(DigitalCredentialsViewModel::class.java)
 
+    // Null when this device cannot prove at all. Loading the prover pulls in libzkp.so, which is
+    // only packaged for arm64-v8a and x86_64, so ask once here rather than discovering it as an
+    // UnsatisfiedLinkError in the middle of building a response.
     // ponytail: holds all bundled circuits (~2 MB) once a ZK request arrives; load only the
     // requested one via addCircuit() if that footprint ever matters.
-    private val zkSystem by lazy { LongfellowZkSystem().apply { addDefaultCircuits() } }
+    private val zkSystem: LongfellowZkSystem? by lazy {
+        runCatching { LongfellowZkSystem().apply { addDefaultCircuits() } }
+            .onFailure { logger.warn("Longfellow prover unavailable on this device", it) }
+            .getOrNull()
+    }
 
     override fun initialState(): DcUiState = DcUiState()
 
@@ -317,8 +327,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // lazy circuit load. Both stay off the main thread or the share screen freezes
                 // instead of showing its spinner.
                 val zkDocument = withContext(defaultDispatcher) {
-                    matchZkSystemSpec(currentState.zkSystemSpecs, checkedFields.size)?.let { spec ->
-                        zkSystem.generateProof(
+                    val system = zkSystem
+                    val spec = matchZkSystemSpec(currentState.zkSystemSpecs, checkedFields.size)
+                    if (system == null || spec == null) {
+                        null
+                    } else {
+                        system.generateProof(
                             zkSystemSpec = spec,
                             document = MdocDocument.fromDataItem(Cbor.decode(documentResponse.toMapElement().toCBOR())),
                             sessionTranscript = Cbor.decode(sessionTranscript.toCBOR())
@@ -330,6 +344,21 @@ class DigitalCredentialsViewModel @Inject constructor(
                 } else {
                     zkDocuments.add(zkDocument)
                 }
+
+                // Named rather than inferred from the null above: "the verifier never asked" and
+                // "this device cannot prove" are the same response but very different facts, and
+                // EE-ZKP-053 wants the distinction on the record.
+                val tier = when {
+                    zkDocument != null -> PresentationTier.ZERO_KNOWLEDGE
+                    currentState.zkSystemSpecs.isEmpty() -> PresentationTier.PLAIN_NOT_REQUESTED
+                    zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
+                    else -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
+                }
+                transactionLogRepository.addTransactionLog(
+                    party = currentState.verifier,
+                    docType = credential.credentialType.docType(),
+                    tier = tier
+                )
             }
 
             val deviceResponseBytes = if (zkDocuments.isEmpty()) {
@@ -356,7 +385,7 @@ class DigitalCredentialsViewModel @Inject constructor(
      */
     private fun matchZkSystemSpec(requested: List<ZkSystemSpec>, numAttributes: Int): ZkSystemSpec? {
         val allowedCircuitHashes = requested.mapNotNull { it.getParam<String>("circuit_hash") }.toSet()
-        return zkSystem.systemSpecs
+        return (zkSystem ?: return null).systemSpecs
             .filter {
                 it.getParam<String>("circuit_hash") in allowedCircuitHashes &&
                     it.getParam<Long>("num_attributes") == numAttributes.toLong()
