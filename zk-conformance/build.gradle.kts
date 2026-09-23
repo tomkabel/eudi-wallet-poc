@@ -18,6 +18,11 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
+    // Step 0 (ee-eudiw plan §4): the fork lives as a sibling of ee-eudiw on this machine;
+    // -Dstep0.* overrides stay available for other layouts.
+    systemProperty("step0.eeEudiw", System.getProperty("step0.eeEudiw") ?: "/home/notroot/Documents/ee-eudiw")
+    systemProperty("step0.rustProverDir", System.getProperty("step0.rustProverDir")
+        ?: "/home/notroot/Documents/ee-eudiw/verifier/go/zk/testdata/step0-rust-prover")
     testLogging {
         showStandardStreams = true
         events("passed", "failed", "skipped")
