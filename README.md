@@ -1,3 +1,5 @@
+> **This is an independent fork of [`open-eid/eudi-wallet-poc`](https://github.com/open-eid/eudi-wallet-poc), maintained outside RIA (Estonian Information System Authority). It is not RIA's app, is not affiliated with or endorsed by RIA or the Potential consortium, and reports nowhere: its builds do not send analytics or crash data to any Firebase project.**
+
 <img src="app/src/main/assets/potential_logo.png" alt="Potential. For European Digital Identity. Co-funded by the European Union."  style="width: 400px;"/>
 Funded by the European Union. Views and opinions expressed are however those of the author(s) only and do not 
 necessarily reflect those of the European Union or Potential Consortium. Neither the European Union nor the granting 

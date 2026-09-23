@@ -10,9 +10,6 @@ plugins {
     alias(libs.plugins.android.navigation.safeargs) apply false
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.spotless) apply false
-    alias(libs.plugins.google.services) apply false
-    alias(libs.plugins.firebase.crashlytics) apply false
-    alias(libs.plugins.firebase.distribution) apply false
 }
 
 // Commented out - causing configuration issues with single-module project
