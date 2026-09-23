@@ -1,7 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.android.build.api.dsl.VariantDimension
-import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
 import com.google.protobuf.gradle.GenerateProtoTask
 import java.io.FileInputStream
 import java.util.Properties
@@ -19,9 +18,6 @@ plugins {
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.spotless)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics)
-    alias(libs.plugins.firebase.distribution)
 }
 
 android {
@@ -37,7 +33,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId = "ee.ria.wallet"
+        applicationId = "ee.tomkabel.walletpoc"
         minSdk = 31
         targetSdk = 35
         versionCode = project.properties["BUILD_NUMBER"]?.toString()?.toInt() ?: 9999
@@ -88,11 +84,6 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             configureEnvironment(Environment.TEST)
 
-            firebaseAppDistribution {
-                artifactType = "APK"
-                groups = "android-testers"
-                releaseNotes = "No release notes."
-            }
         }
         create("local") {
             initWith(buildTypes.getByName("debug"))
@@ -223,11 +214,6 @@ dependencies {
     // Bouncy Castle
     implementation(libs.bcprov.jdk18on)
     implementation(libs.bcpkix.jdk18on)
-
-    // Firebase
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
 
     // Compose
     implementation(platform(libs.compose.bom))

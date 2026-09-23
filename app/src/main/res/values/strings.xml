@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">EE Wallet</string>
+    <string name="app_name">EUDI Wallet PoC (independent)</string>
 
     <!-- Buttons -->
     <string name="cancel_btn">Cancel</string>
