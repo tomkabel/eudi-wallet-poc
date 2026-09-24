@@ -99,12 +99,10 @@ object MdocMinter {
     /**
      * The same minting Step0CrossVerifyTest has always done: a self-signed
      * P-256 issuer over a freshly generated device key, one true data element,
-     * MSO signed at [signedAt].
+     * MSO signed at [signedAt]. No default: the caller must pass the same
+     * instant it later hands to generateProof, or validFrom can postdate it.
      */
-    suspend fun mintAgeVerificationMdoc(
-        sessionTranscript: DataItem,
-        signedAt: Instant = ZkConformanceConsts.signedAtNow()
-    ): MintedMdoc {
+    suspend fun mintAgeVerificationMdoc(sessionTranscript: DataItem, signedAt: Instant): MintedMdoc {
         val issuerKey = AsymmetricKey.AnonymousExplicit(Crypto.createEcPrivateKey(EcCurve.P256))
         val deviceKey = AsymmetricKey.AnonymousExplicit(Crypto.createEcPrivateKey(EcCurve.P256))
         val validUntil = signedAt + 30.days

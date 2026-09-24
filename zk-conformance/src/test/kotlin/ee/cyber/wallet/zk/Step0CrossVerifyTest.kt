@@ -207,7 +207,7 @@ class Step0CrossVerifyTest {
 
     private suspend fun mintAgeVerificationMdoc(): Minted {
         val sessionTranscript = SessionTranscripts.forZkConformance()
-        val minted = MdocMinter.mintAgeVerificationMdoc(sessionTranscript)
+        val minted = MdocMinter.mintAgeVerificationMdoc(sessionTranscript, SIGNED_AT)
         return Minted(minted.document, minted.issuerCert)
     }
 
