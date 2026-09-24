@@ -20,6 +20,7 @@ import ee.cyber.wallet.security.MockAttestationChallengeSource
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.SecureAreaSelection
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import javax.inject.Singleton
 
 @Module
@@ -61,15 +62,17 @@ object SecurityModule {
      */
     @Singleton
     @Provides
-    suspend fun providesSecureAreaKeyManager(
+    fun providesSecureAreaKeyManager(
         @ApplicationContext context: Context,
         selection: SecureAreaSelection,
         attestationChallengeSource: AttestationChallengeSource
-    ): SecureAreaKeyManager = SecureAreaKeyManager.create(
-        context = context,
-        selection = selection,
-        attestationChallengeSource = attestationChallengeSource
-    )
+    ): SecureAreaKeyManager = runBlocking {
+        SecureAreaKeyManager.create(
+            context = context,
+            selection = selection,
+            attestationChallengeSource = attestationChallengeSource
+        )
+    }
 
     @Singleton
     @Provides
