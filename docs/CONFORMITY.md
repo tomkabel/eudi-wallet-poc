@@ -91,6 +91,12 @@ What this wallet **cannot claim today**:
   verifier's stdlib `crypto/hpke`, consumption on-device — is PENDING-DEVICE in both
   repositories' step records. Until it is exercised, the Annex C claim above rests on fixtures,
   not on a device session.
+- **No unobservability (`ZKP_07`) claim, per WSCD architecture (`EE-CNF-007`).** Every
+  credential device key, including the one behind the ZK path, is an EC key on the local native
+  WSCD above (`LocalCryptoProvider` → `AndroidKeystoreSecureArea`); only RSA keys route to the
+  wallet provider's remote signing service (`RemoteCryptoProvider`, a mock in `local_mocks`), and
+  no credential this fork issues uses one. There is therefore one WSCD architecture to state the
+  property for, no `ZKP_07` claim is made for it here, and none could be for a remote-HSM WSCD.
 - Every build this fork can produce is debug-derived — see §3 — so nothing here has the
   provenance a certification assessment starts from.
 
@@ -121,6 +127,7 @@ Consequences, stated plainly:
 | `EE-ZKP-003` statement | Recorded above; reading (a) declared; conditional, not asserted |
 | `EE-ZKP-060` inventory | Recorded above; soundness and privacy exposure separated |
 | `ZKP_08` | Shortfall declared (109-bit v7 circuits, conditional reading (a)); pilot-grade |
+| `EE-CNF-007` | Credential keys on the local native WSCD only; no `ZKP_07` claim |
 | Build provenance | Debug-derived only; §8.6 pending |
 | On-device evidence | None; PENDING-DEVICE items in `docs/planning/STEP5-RECORD.md` and `STEP6-RECORD.md` |
 
