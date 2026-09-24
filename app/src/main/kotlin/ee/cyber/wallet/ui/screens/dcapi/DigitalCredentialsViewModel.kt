@@ -330,17 +330,23 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // Proving is seconds of blocking native work, and the first match also forces the
                 // lazy circuit load. Both stay off the main thread or the share screen freezes
                 // instead of showing its spinner.
+                var proofFailed = false
                 val zkDocument = withContext(defaultDispatcher) {
                     val system = zkSystem
                     val spec = matchZkSystemSpec(zkSystemSpecs, checkedFields.size)
                     if (system == null || spec == null) {
                         null
                     } else {
-                        system.generateProof(
-                            zkSystemSpec = spec,
-                            document = MdocDocument.fromDataItem(Cbor.decode(documentResponse.toMapElement().toCBOR())),
-                            sessionTranscript = Cbor.decode(sessionTranscript.toCBOR())
-                        )
+                        runCatching {
+                            system.generateProof(
+                                zkSystemSpec = spec,
+                                document = MdocDocument.fromDataItem(Cbor.decode(documentResponse.toMapElement().toCBOR())),
+                                sessionTranscript = Cbor.decode(sessionTranscript.toCBOR())
+                            )
+                        }.onFailure {
+                            proofFailed = true
+                            logger.warn("ZK proof generation failed, presenting the plain mdoc instead", it)
+                        }.getOrNull()
                     }
                 }
                 if (zkDocument == null) {
@@ -354,6 +360,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // EE-ZKP-053 wants the distinction on the record.
                 val tier = when {
                     zkDocument != null -> PresentationTier.ZERO_KNOWLEDGE
+                    proofFailed -> PresentationTier.PLAIN_PROOF_FAILED
                     zkSystemSpecs.isEmpty() -> PresentationTier.PLAIN_NOT_REQUESTED
                     zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
                     else -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
