@@ -64,9 +64,10 @@ class LongfellowZkPresenter(private val zkSystem: ZkSystem?) : ZkPresenter {
             ?: return ZkPresentation.Unavailable(ZkPresentationReason.UNKNOWN_SCHEME)
         return try {
             ZkPresentation.Proved(system.generateProof(zkSystemSpec = spec, document = document, sessionTranscript = sessionTranscript))
-        } catch (e: Exception) {
-            // Finding F15: the prover can reject input it cannot shape (size ceilings). A JVM
-            // exception is caught here; a native abort remains a recorded device-level risk.
+        } catch (e: Throwable) {
+            // Finding F15: the prover can reject input it cannot shape (size ceilings). Any JVM
+            // throwable (an Error from JNI or memory included) is caught here, as the runCatching
+            // this replaced did; a native abort remains a recorded device-level risk.
             logger.warn("Longfellow proof failed for scheme $schemeId", e)
             ZkPresentation.Unavailable(ZkPresentationReason.PROVER_FAILED)
         }
