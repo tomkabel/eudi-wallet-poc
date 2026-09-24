@@ -67,8 +67,8 @@ Per algorithm, its quantum exposure, its migration path, and which exposure is s
 What this wallet **can claim today**:
 
 - The ZK age proof (`age_over_18` over `ee.riik.poa.1` / `eu.europa.ec.av.1`) works over the
-  Digital Credentials API (`org-iso-mdoc`, ISO/IEC 18013-7 Annex C) path, and the two Longfellow
-  halves cross-verify: this fork's multipaz 0.99.0 prover against the reference verifier's Rust
+  Digital Credentials API (`org-iso-mdoc`, ISO/IEC 18013-7 Annex C) path — fixture-verified, not
+  yet exercised end to end on a device — and the two Longfellow halves cross-verify: this fork's multipaz 0.99.0 prover against the reference verifier's Rust
   runtime and the reverse, both directions PASS with committed fixtures (step 0 of the
   conformance plan, `verifier/go/zk/testdata/step0-multipaz/` and `testdata/step0-rust-prover/`
   in the reference repository, 23 September 2026).
