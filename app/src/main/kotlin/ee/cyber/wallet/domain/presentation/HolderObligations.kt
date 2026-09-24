@@ -58,6 +58,21 @@ object HolderObligations {
         zkCapable && proofRequested && !satisfiable
 
     /**
+     * EE-ZKP-053 linkability is a property of the whole DeviceResponse, not of one document: a
+     * plain mdoc carries the issuer's signature, so the verifier can correlate every presentation
+     * from the same response session once any document in it went out plain — one identifying
+     * document makes every row linkable (conformance plan §4 item 4c, review finding 7). The
+     * per-row tier is still recorded first so the log keeps the per-document fact; this rule
+     * escalates the rows of a response in which any document fell back to a plain tier.
+     */
+    fun escalateToResponseTier(tiers: List<PresentationTier>): List<PresentationTier> =
+        if (tiers.any { it != PresentationTier.ZERO_KNOWLEDGE }) {
+            tiers.map { if (it == PresentationTier.ZERO_KNOWLEDGE) PresentationTier.PLAIN_NO_MATCHING_CIRCUIT else it }
+        } else {
+            tiers
+        }
+
+    /**
      * EE-ZKP-053: how many of the logged presentations the issuer can link. Rows without a tier
      * predate tier recording and are not counted at all.
      */

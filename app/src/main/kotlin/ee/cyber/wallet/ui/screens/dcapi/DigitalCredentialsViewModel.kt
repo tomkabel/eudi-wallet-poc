@@ -485,8 +485,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                 zkDeviceResponse(zkDocuments, responseDocuments, sessionTranscript)
             }
             val response = getEncryptedResponse(recipientPublicKey, deviceResponseBytes, sessionTranscript)
-            // Logged only once there is a response to send, so a failed share leaves no record of a presentation
-            presented.forEach { (docType, attributes, tier) ->
+            // Logged only once there is a response to send, so a failed share leaves no record of a presentation.
+            // EE-ZKP-053 per response (plan §4 item 4c): once any document went out plain, every
+            // document in the response is linkable through that session and the log must say so.
+            val responseTiers = HolderObligations.escalateToResponseTier(presented.map { it.third })
+            presented.zip(responseTiers).forEach { (row, tier) ->
+                val (docType, attributes, _) = row
                 transactionLogRepository.addTransactionLog(
                     party = currentState.verifier,
                     docType = docType,

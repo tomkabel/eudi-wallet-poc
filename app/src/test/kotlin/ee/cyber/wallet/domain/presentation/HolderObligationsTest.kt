@@ -160,4 +160,48 @@ class HolderObligationsTest {
         )
         assertNull(HolderObligations.strongestMatchingSpec(held, setOf("aaa"), numAttributes = 1))
     }
+
+    // ------------------------------------------------------------------
+    // Review finding 7: EE-ZKP-053 linkability is per RESPONSE, not per row.
+    // ------------------------------------------------------------------
+
+    /**
+     * The mixed-response case from review finding 7: an age credential proven in zero knowledge
+     * alongside a plain identifying document makes the whole exchange linkable — the plain mdoc
+     * carries the issuer's signature, so the verifier correlates every presentation of the
+     * response session. Logging the ZK row as ZERO_KNOWLEDGE would understate the disclosure.
+     */
+    @Test
+    fun `one plain document in a response makes every row linkable`() {
+        val tiers = HolderObligations.escalateToResponseTier(
+            listOf(PresentationTier.ZERO_KNOWLEDGE, PresentationTier.PLAIN_NOT_REQUESTED)
+        )
+        assertEquals(
+            listOf(PresentationTier.PLAIN_NO_MATCHING_CIRCUIT, PresentationTier.PLAIN_NOT_REQUESTED),
+            tiers
+        )
+        // Both rows are now counted linkable by EE-ZKP-053's summary.
+        assertEquals(2 to 0, HolderObligations.countLinkable(tiers))
+    }
+
+    @Test
+    fun `all zero-knowledge response keeps its tiers`() {
+        val tiers = listOf(PresentationTier.ZERO_KNOWLEDGE, PresentationTier.ZERO_KNOWLEDGE)
+        assertEquals(tiers, HolderObligations.escalateToResponseTier(tiers))
+        assertEquals(0 to 2, HolderObligations.countLinkable(HolderObligations.escalateToResponseTier(tiers)))
+    }
+
+    @Test
+    fun `all-plain response is unchanged by escalation`() {
+        val tiers = listOf(PresentationTier.PLAIN_DEVICE_INCAPABLE, PresentationTier.PLAIN_NO_MATCHING_CIRCUIT)
+        assertEquals(tiers, HolderObligations.escalateToResponseTier(tiers))
+    }
+
+    @Test
+    fun `single plain document response is linkable`() {
+        assertEquals(
+            listOf(PresentationTier.PLAIN_NOT_REQUESTED),
+            HolderObligations.escalateToResponseTier(listOf(PresentationTier.PLAIN_NOT_REQUESTED))
+        )
+    }
 }
