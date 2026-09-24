@@ -82,8 +82,9 @@ private fun ActivityLogScreenContent(logs: List<LogEntryEntity>, onItemClicked: 
             }
             VSpace(24)
             // EE-ZKP-053: transparency needs a number, not a setting. The count only covers rows
-            // that carry a tier, so log rows written before tiers existed do not skew it.
-            val successful = logs.filter { it.tier != null }
+            // that carry a tier, so log rows written before tiers existed do not skew it, and
+            // skips EE-ZKP-051 refusal rows, which carry a tier but shared nothing.
+            val successful = logs.filter { it.tier != null && it.error == null }
             if (successful.isNotEmpty()) {
                 val linkable = successful.count { it.tier?.isLinkable == true }
                 ContentAlpha(0.8f) {
