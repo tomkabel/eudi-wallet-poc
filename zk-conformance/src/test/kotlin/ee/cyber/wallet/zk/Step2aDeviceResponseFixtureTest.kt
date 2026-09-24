@@ -85,31 +85,3 @@ class Step2aDeviceResponseFixtureTest {
             "${zkDocument.proof.size} bytes) to ${dir.absolutePath}")
     }
 }
-
-/**
- * The eudi-wallet-poc commit the fixture was generated from (plan §5.2 provenance),
- * suffixed `-dirty` when the working tree had uncommitted changes.
- */
-private fun forkCommit(): String {
-    val git = ProcessBuilder("git", "describe", "--always", "--dirty", "--abbrev=40", "--exclude=*").start()
-    val out = git.inputStream.bufferedReader().readText().trim()
-    check(git.waitFor() == 0 && out.isNotEmpty()) { "git describe failed; the fixture needs its fork commit" }
-    return out
-}
-
-/**
- * The minted issuer's public half as the Go test's trust store names it
- * (oid4vp.LoadTrustStore: 0x-prefixed pkx/pky). The Go test copies this into
- * its trust store the way a relying party enrolls a real issuer.
- */
-private fun trustStoreJson(minted: MintedMdoc): String {
-    // X509Cert.ecPublicKey returns the double-coordinate form for P-256 keys,
-    // whose x/y are already unsigned fixed-width field bytes.
-    val pk = minted.issuerCert.ecPublicKey as org.multipaz.crypto.EcPublicKeyDoubleCoordinate
-    val xHex = pk.x.joinToString("") { "%02x".format(it) }
-    val yHex = pk.y.joinToString("") { "%02x".format(it) }
-    return "{\"issuers\":[{\"name\":\"EE-EUDIW demo issuer (multipaz fixture)\"," +
-        "\"doc_type\":\"${ZkConformanceConsts.AV_DOCTYPE}\"," +
-        "\"namespace\":\"${ZkConformanceConsts.AV_NAMESPACE}\"," +
-        "\"pkx\":\"0x$xHex\",\"pky\":\"0x$yHex\"}]}"
-}
