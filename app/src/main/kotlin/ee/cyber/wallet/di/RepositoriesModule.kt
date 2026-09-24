@@ -36,11 +36,13 @@ object RepositoriesModule {
     fun providesDocumentRepository(
         credentialToDocumentMapper: CredentialToDocumentMapper,
         attestationDao: AttestationDao,
-        keyAttestationDao: KeyAttestationDao
+        keyAttestationDao: KeyAttestationDao,
+        userPreferencesDataSource: UserPreferencesDataSource
     ) = DocumentRepository(
         credentialToDocumentMapper = credentialToDocumentMapper,
         attestationDao = attestationDao,
-        keyAttestationDao = keyAttestationDao
+        keyAttestationDao = keyAttestationDao,
+        userPreferencesDataSource = userPreferencesDataSource
     )
 
     @Singleton

@@ -166,6 +166,8 @@
     <string name="settings_bluetooth_central_mode">Keskne klient</string>
     <string name="settings_trust_all_validator_title">Usalda kõiki</string>
     <string name="settings_trust_all_validator_description">Jäta sertifikaadi ahela valideerimine vahele (ainult testimiseks)</string>
+    <string name="settings_dc_api_disclosure_title">Jaga dokumente andmeid küsivate veebilehtedega</string>
+    <string name="settings_dc_api_disclosure_description">Luba seadmel pakkuda sinu dokumente veebilehtedele, mis neid küsivad. Lülita välja, et dokumente enam seadme päringusüsteemi kaudu pakkuda.</string>
     <string name="settings_lotl_status_title">Usaldusloendi olek</string>
     <string name="settings_lotl_status_synced">%1$d sertifikaati laetud</string>
     <string name="settings_lotl_status_not_synced">Pole sünkroniseeritud</string>
