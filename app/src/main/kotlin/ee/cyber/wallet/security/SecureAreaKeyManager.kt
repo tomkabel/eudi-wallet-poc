@@ -186,28 +186,6 @@ data class SecureAreaDeviceKey(
 data class SecureAreaKeyBatch(val keys: List<SecureAreaDeviceKey>)
 
 /**
- * The public half of a SecureArea key as a Nimbus [ECKey], for key material that did not come
- * through [SecureAreaDeviceKey] (a batch-created key's own [org.multipaz.securearea.KeyInfo]).
- * Only public material crosses this boundary; there is no private counterpart to export
- * (EE-SEC-003).
- */
-fun secureAreaJwk(
-    publicKey: org.multipaz.crypto.EcPublicKey,
-    attestationChain: org.multipaz.crypto.X509CertChain,
-    keyId: String = "secure-area-key"
-): com.nimbusds.jose.jwk.ECKey {
-    val coordinate = publicKey as EcPublicKeyDoubleCoordinate
-    val x5c = attestationChain.certificates.map {
-        com.nimbusds.jose.util.Base64.encode(it.encoded.toByteArray())
-    }
-    return com.nimbusds.jose.jwk.ECKey.Builder(
-        com.nimbusds.jose.jwk.Curve.P_256,
-        com.nimbusds.jose.util.Base64URL.encode(coordinate.x),
-        com.nimbusds.jose.util.Base64URL.encode(coordinate.y)
-    ).keyID(keyId).x509CertChain(x5c).build()
-}
-
-/**
  * The public half as a Nimbus ECKey for the wallet provider's attestation flow. Only public
  * material crosses this boundary; there is no private counterpart to export (EE-SEC-003).
  */

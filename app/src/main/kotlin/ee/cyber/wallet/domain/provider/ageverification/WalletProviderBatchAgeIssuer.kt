@@ -4,12 +4,10 @@ import ee.cyber.wallet.data.database.KeyAttestationEntity
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
 import ee.cyber.wallet.domain.credentials.Credential
 import ee.cyber.wallet.domain.provider.Attestation
-import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
 import ee.cyber.wallet.domain.provider.wallet.WalletInstanceCredentials
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
-import ee.cyber.wallet.security.SecureAreaDeviceKey
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.jwk
 import kotlinx.coroutines.CoroutineDispatcher

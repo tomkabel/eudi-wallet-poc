@@ -20,9 +20,9 @@ import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.data.repository.UserDataRepository
 import ee.cyber.wallet.data.repository.WalletCredentialsRepository
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
-import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.security.SecureAreaKeyCleanup
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import kotlinx.coroutines.CoroutineDispatcher
