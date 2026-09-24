@@ -1,4 +1,3 @@
-
 package ee.cyber.wallet.security
 
 import ee.cyber.wallet.crypto.CryptoProvider
@@ -104,7 +103,7 @@ class SecureAreaCOSECryptoProvider(
 
     companion object {
         /** CBOR map {1: -7} - protected header with alg: ES256, exactly what org.cose emits. */
-        private val ES256_PROTECTED_HEADER = byteArrayOf(0xa1.toByte(), 0x01, 0x26)
+        internal val ES256_PROTECTED_HEADER = byteArrayOf(0xa1.toByte(), 0x01, 0x26)
     }
 }
 
@@ -112,10 +111,10 @@ class SecureAreaCOSECryptoProvider(
  * The COSE Sig_structure: `["Signature1", protected(bstr), external(bstr, empty), payload(bstr)]`.
  * org.cose's Sign1Message.sign() signs exactly these bytes for ECDSA_256; see the class comment.
  */
-private fun coseSigStructure(protectedHeader: ByteArray, payload: ByteArray): ByteArray {
+internal fun coseSigStructure(protectedHeader: ByteArray, payload: ByteArray): ByteArray {
     val out = ByteArrayOutputStream()
     out.write(0x84) // CBOR array of 4
-    out.write(0x6b) // CBOR text string of 11 bytes
+    out.write(0x6a) // CBOR text string of 10 bytes
     out.write("Signature1".toByteArray(Charsets.US_ASCII))
     writeBstr(out, protectedHeader)
     writeBstr(out, ByteArray(0))
