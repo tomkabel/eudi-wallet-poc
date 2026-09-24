@@ -28,9 +28,9 @@ Under reading (a), the primitive-to-ACM map for what this wallet runs:
 
 | Element | ACM v2.0 status |
 |---|---|
-| SHA-256 (Merkle hashing, Fiat–Shamir, transcript binding) | Listed |
-| AES-256 (the `AES256CTR` half of the challenge expander) | Listed as a primitive; **the construction is not** — `SHA256-AES256CTR` as a bare Fiat–Shamir challenge PRF is not one of the SP 800-90A DRBG constructions ACM §7 lists. Covered by `EE-ZKP-022b`'s assumption map, not by an ACM entry. |
-| ECDSA over P-256 (issuer signature and device signature, inside the circuit and out) | Listed, at the *admissible* level — a backward-compatibility dependency on already-issued credentials and certified WSCDs, per `EE-ZKP-022c`, not a design choice. |
+| SHA-256 (Merkle hashing, Fiat–Shamir, transcript binding) | Listed. The v3.0 working draft demotes it to *admissible* (spec §10.9). Inside the statement being proven (the MSO digests) that is a backward-compatibility dependency per `EE-ZKP-022c`; as the Merkle and Fiat–Shamir hash it is a component the wallet controls, which `EE-ZKP-022c` requires at the *recommended* level of the applicable ACM — one of the conditions below. |
+| AES-256 (the `AES256CTR` half of the challenge expander) | Listed as a primitive, and still *recommended* in the v3.0 working draft (spec §10.9); **the construction is not** — `SHA256-AES256CTR` as a bare Fiat–Shamir challenge PRF is not one of the SP 800-90A DRBG constructions ACM §7 lists. Covered by `EE-ZKP-022b`'s assumption map, not by an ACM entry. |
+| ECDSA over P-256 (issuer signature and device signature, inside the circuit and out) | Listed. The v3.0 working draft demotes it to *admissible* (spec §10.9); per `EE-ZKP-022c` it is a backward-compatibility dependency on already-issued credentials and certified WSCDs, not a design choice. |
 | GF(2^128) arithmetic and the Reed–Solomon code over it | Carries no computational hardness assumption (an arithmetic setting, not a mechanism), so it falls outside ACM §4.2/§4.3's rules rather than contrary to them — recorded per `EE-ZKP-022b`. |
 | The MAC linking the two circuit fields (the ECDSA circuit over the P-256 base field and the SHA-256/CBOR circuit over GF(2^128)) | No ACM entry. `EE-ZKP-022b` requires its record too: whether it carries a computational hardness assumption and, if not, the information-theoretic soundness bound relied on. Neither the specification nor the reference repository states that bound for the v7 parameters, so this entry is **open**, not recorded. |
 
