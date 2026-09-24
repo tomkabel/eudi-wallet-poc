@@ -29,5 +29,6 @@ message UserPreferencesProto {
   bool trust_all_validator = 4;
   BlePeripheralModeProto ble_mode = 5;
   // ARF OIA_08f: global switch for disclosing stored attestations to the DC API framework.
-  bool dc_api_disclosure_enabled = 6;
+  // Stored as "disabled" so the unset proto3 default (false) is OIA_08e's default-on.
+  bool dc_api_disclosure_disabled = 6;
 }

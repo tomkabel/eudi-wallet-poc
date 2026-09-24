@@ -77,7 +77,7 @@ class UserPreferencesDataSource(
         runCatching {
             dataStore.updateData {
                 it.copy {
-                    this.dcApiDisclosureEnabled = enabled
+                    this.dcApiDisclosureDisabled = !enabled
                 }
             }
         }
@@ -99,8 +99,8 @@ class UserPreferencesDataSource(
                 else -> IssuerKeyType.IACA_TRUSTED
             },
             trustAllValidator = trustAllValidator,
-            // proto3 bool default is false; an unset field must read as OIA_08e's default-on.
-            dcApiDisclosureEnabled = !dcApiDisclosureEnabled
+            // The proto stores "disabled", so an unset field reads as OIA_08e's default-on.
+            dcApiDisclosureEnabled = !dcApiDisclosureDisabled
         )
     }
 
