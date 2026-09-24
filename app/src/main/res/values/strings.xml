@@ -216,6 +216,7 @@
     <string name="tier_plain_not_requested">Plain mdoc (linkable) — this party did not ask for a zero-knowledge proof</string>
     <string name="tier_plain_no_matching_circuit">Plain mdoc (linkable) — this party requires a zero-knowledge proof this Wallet cannot produce</string>
     <string name="tier_plain_device_incapable">Plain mdoc (linkable) — this device cannot produce zero-knowledge proofs</string>
+    <string name="tier_plain_proof_failed">Plain mdoc (linkable) — the zero-knowledge proof could not be produced</string>
     <string name="log_entry_title">Log entry</string>
     <string name="log_entry_request_title">Data exchange description</string>
     <string name="log_entry_relying_party">Recipient of the data</string>
