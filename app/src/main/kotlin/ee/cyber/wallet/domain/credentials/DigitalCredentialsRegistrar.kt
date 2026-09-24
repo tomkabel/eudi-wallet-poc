@@ -61,7 +61,7 @@ class DigitalCredentialsRegistrar @Inject constructor(
             // fully answer; the ARF note accepts that.
             val credentials = matchingDocuments.toRegistryDocTypes().toCBORBytes()
 
-            client.clearRegistry(ClearRegistryRequest(deleteAll = true, clearTypedRegistryOption = null))
+            clearRegistry()
             client.registerCredentials(
                 RegistrationRequest(
                     credentials = credentials,
