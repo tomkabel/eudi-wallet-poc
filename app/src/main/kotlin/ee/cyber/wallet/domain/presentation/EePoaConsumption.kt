@@ -2,7 +2,6 @@ package ee.cyber.wallet.domain.presentation
 
 import ee.cyber.wallet.data.database.dao.AttestationDao
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
-import ee.cyber.wallet.data.database.toModel
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.security.SecureAreaKeyDeleter
