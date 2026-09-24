@@ -75,6 +75,18 @@ class HolderObligationsTest {
         )
     }
 
+    @Test
+    fun `expected tier names the party not asking before the device being incapable`() {
+        assertEquals(
+            PresentationTier.PLAIN_NOT_REQUESTED,
+            HolderObligations.expectedPlainTier(zkCapable = false, proofRequested = false, satisfiable = false)
+        )
+        assertEquals(
+            PresentationTier.PLAIN_DEVICE_INCAPABLE,
+            HolderObligations.expectedPlainTier(zkCapable = false, proofRequested = true, satisfiable = false)
+        )
+    }
+
     // EE-ZKP-053: linkable versus unlinkable counts over logged tiers.
     @Test
     fun `counts linkable against unlinkable rows`() {
