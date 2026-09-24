@@ -22,6 +22,8 @@ import ee.cyber.wallet.data.repository.WalletCredentialsRepository
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
+import ee.cyber.wallet.security.SecureAreaKeyCleanup
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
@@ -54,6 +56,16 @@ object RepositoriesModule {
 
     @Singleton
     @Provides
+    fun providesSecureAreaKeyCleanup(
+        keyAttestationDao: KeyAttestationDao,
+        secureAreaKeyManager: SecureAreaKeyManager
+    ) = SecureAreaKeyCleanup(
+        keyAttestationDao = keyAttestationDao,
+        secureAreaKeyDeleter = secureAreaKeyManager
+    )
+
+    @Singleton
+    @Provides
     fun providesAccountRepository(
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher,
         walletDatabase: WalletDatabase,
@@ -65,7 +77,8 @@ object RepositoriesModule {
         encryptedKeyStoreManager: EncryptedKeyStoreManager,
         androidKeyStoreManager: EncryptedKeyStoreManager,
         remoteKeyManager: RemoteCryptoProvider,
-        localKeyManager: LocalCryptoProvider
+        localKeyManager: LocalCryptoProvider,
+        secureAreaKeyCleanup: SecureAreaKeyCleanup
     ) = AccountRepository(
         dispatcher = dispatcher,
         walletDatabase = walletDatabase,
@@ -76,6 +89,7 @@ object RepositoriesModule {
         androidKeyStoreManager = androidKeyStoreManager,
         attestationDao = attestationDao,
         keyAttestationDao = keyAttestationDao,
+        secureAreaKeyCleanup = secureAreaKeyCleanup,
         remoteKeyManager = remoteKeyManager,
         localKeyManager = localKeyManager
     )

@@ -1,6 +1,8 @@
 package ee.cyber.wallet.security
 
 import android.content.Context
+import ee.cyber.wallet.data.database.dao.KeyAttestationDao
+import ee.cyber.wallet.domain.provider.wallet.KeyType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.multipaz.crypto.Algorithm
@@ -44,7 +46,7 @@ class SecureAreaKeyManager(
     private val selection: SecureAreaSelection,
     private val attestationChallengeSource: AttestationChallengeSource,
     private val dispatcher: CoroutineDispatcher
-) {
+) : SecureAreaKeyDeleter {
 
     private val logger = LoggerFactory.getLogger("SecureAreaKeyManager")
 
@@ -87,18 +89,19 @@ class SecureAreaKeyManager(
         true
     }.getOrDefault(false)
 
-    suspend fun deleteKey(keyId: String) {
+    override suspend fun deleteKey(keyId: String) {
         runCatching { secureArea.deleteKey(keyId) }
             .onFailure { logger.error("failed to delete SecureArea key $keyId", it) }
     }
 
     /**
-     * No bulk clear: AndroidKeystoreSecureArea exposes no alias listing, and the wallet's own
-     * keyAttestation records are the alias registry. [AccountRepository.deleteAllData] deletes
-     * per-alias through [deleteKey]; the metadata table partition dies with the database.
+     * Best-effort sweep of SecureArea aliases the wallet's records no longer name (crash between
+     * key generation and record insert, or a lost secure_area.db). AndroidKeystoreSecureArea
+     * exposes no alias listing in 0.99.0, so this is deliberately empty; the per-alias deletion
+     * driven by the keyAttestation rows is [SecureAreaKeyCleanup]'s job.
      */
-    suspend fun clearAll() {
-        logger.info("clearAll: SecureArea keys are deleted per-alias from wallet records")
+    override suspend fun deleteAllKeys() {
+        logger.info("deleteAllKeys: no alias listing in AndroidKeystoreSecureArea; keys are deleted per-alias from wallet records")
     }
 
     companion object {
@@ -156,4 +159,48 @@ fun SecureAreaDeviceKey.jwk(): com.nimbusds.jose.jwk.ECKey {
         com.nimbusds.jose.util.Base64URL.encode(coordinate.x),
         com.nimbusds.jose.util.Base64URL.encode(coordinate.y)
     ).x509CertChain(x5c).build()
+}
+
+/**
+ * The seam [ee.cyber.wallet.data.repository.AccountRepository] depends on for SecureArea key
+ * cleanup. An interface rather than [SecureAreaKeyManager] directly because Android Keystore
+ * cannot be exercised from the JVM unit tests: the repository test proves deleteAllData runs the
+ * per-alias SecureArea deletion (review finding 5) by injecting a recording fake here, while the
+ * AndroidKeystoreSecureArea interaction itself stays PENDING-DEVICE
+ * (docs/planning/STEP5-RECORD.md).
+ */
+interface SecureAreaKeyDeleter {
+    /** Deletes one SecureArea key alias. Must not throw on an already-deleted/unknown alias. */
+    suspend fun deleteKey(keyId: String)
+
+    /** Best-effort bulk sweep for aliases no longer reachable from wallet records. */
+    suspend fun deleteAllKeys()
+}
+
+/**
+ * Maps the wallet's keyAttestation records onto per-alias SecureArea deletions, then wipes the
+ * records. The EC rows are the alias registry — [ee.cyber.wallet.crypto.LocalCryptoProvider]
+ * inserts one row per generated SecureArea key, under the key's own id — so deleting every EC
+ * row's key deletes every SecureArea device key the wallet holds. RSA rows name BKS aliases
+ * handled by the BKS keystore wipe and are not SecureArea keys.
+ *
+ * Ordering is the load-bearing property and is JVM-tested: per-alias deletions and the best-effort
+ * sweep run BEFORE [KeyAttestationDao.deleteAll] wipes the registry — past the wipe the aliases
+ * would be unreachable from wallet records while the Android Keystore keys lived on (review
+ * finding 5). [ee.cyber.wallet.data.repository.AccountRepository.deleteAllData] must call this
+ * before `walletDatabase.clearAllTables()`, which drops the same table.
+ */
+class SecureAreaKeyCleanup(
+    private val keyAttestationDao: KeyAttestationDao,
+    private val secureAreaKeyDeleter: SecureAreaKeyDeleter
+) {
+
+    suspend fun deleteAll() {
+        val ecRows = keyAttestationDao.getByType(KeyType.EC.name)
+        ecRows.forEach { row ->
+            secureAreaKeyDeleter.deleteKey(row.id)
+        }
+        secureAreaKeyDeleter.deleteAllKeys()
+        keyAttestationDao.deleteAll()
+    }
 }

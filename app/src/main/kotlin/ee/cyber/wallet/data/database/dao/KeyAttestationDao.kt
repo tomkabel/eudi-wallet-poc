@@ -22,4 +22,12 @@ interface KeyAttestationDao {
 
     @Query("DELETE FROM $TABLE_KEY_ATTESTATIONS")
     suspend fun deleteAll()
+
+    /**
+     * Every attestation recorded for a key type. The EC rows double as the SecureArea alias
+     * registry (LocalCryptoProvider.generateSecureAreaKey inserts one per generated key), so
+     * SecureArea key cleanup iterates them before [deleteAll] wipes the table.
+     */
+    @Query("SELECT * FROM $TABLE_KEY_ATTESTATIONS WHERE ${KeyAttestationFields.KEY_TYPE} = :keyType")
+    suspend fun getByType(keyType: String): List<KeyAttestationEntity>
 }
