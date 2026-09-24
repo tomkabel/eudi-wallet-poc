@@ -75,6 +75,25 @@ class HolderObligationsTest {
         )
     }
 
+    // The view model recomputes the expected tier on every optional-field toggle with the same
+    // per-credential inputs the share-time refusal uses, so a refusal is never reached on a state
+    // that was not already shown as linkable.
+    @Test
+    fun `every refusal was already announced as a linkable expected tier`() {
+        listOf(true, false).forEach { capable ->
+            listOf(true, false).forEach { requested ->
+                listOf(true, false).forEach { satisfiable ->
+                    if (HolderObligations.refusePlainFallback(capable, requested, satisfiable)) {
+                        assertEquals(
+                            PresentationTier.PLAIN_NO_MATCHING_CIRCUIT,
+                            HolderObligations.expectedPlainTier(capable, requested, satisfiable)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     @Test
     fun `expected tier names the party not asking before the device being incapable`() {
         assertEquals(

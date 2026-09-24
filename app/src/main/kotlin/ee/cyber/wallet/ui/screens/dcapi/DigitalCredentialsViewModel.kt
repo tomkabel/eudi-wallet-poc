@@ -231,6 +231,11 @@ class DigitalCredentialsViewModel @Inject constructor(
      * The linkable tier this presentation would fall back to, or null when a zero-knowledge proof
      * is expected for every matched document. Drives the EE-ZKP-042 pre-share notice: the user is
      * told before sharing whenever the response would carry issuer-signed, linkable documents.
+     *
+     * Each credential is judged by the same per-docType predicate the EE-ZKP-051 share-time
+     * refusal runs, and this is recomputed on every optional-field toggle, because a toggle
+     * changes the would-be proof's attribute count: the user must not reach the share-time
+     * refusal without the pre-share notice having reflected the same state.
      */
     private fun expectedPlainTier(
         specs: Map<String, List<ZkSystemSpec>>,
@@ -328,25 +333,29 @@ class DigitalCredentialsViewModel @Inject constructor(
 
     private fun onOptionalFieldChange(field: MatchedField, checked: Boolean) {
         updateState {
-            copy(
-                credentials = credentials.map { credential ->
-                    credential.copy(
-                        fields = credential.fields.map {
-                            if (field == it && it.checked != checked) {
-                                it.copy(checked = checked)
-                            } else {
-                                it
-                            }
-                        },
-                        optionalFields = credential.optionalFields.map {
-                            if (field == it && it.checked != checked) {
-                                it.copy(checked = checked)
-                            } else {
-                                it
-                            }
+            val toggled = credentials.map { credential ->
+                credential.copy(
+                    fields = credential.fields.map {
+                        if (field == it && it.checked != checked) {
+                            it.copy(checked = checked)
+                        } else {
+                            it
                         }
-                    )
-                }
+                    },
+                    optionalFields = credential.optionalFields.map {
+                        if (field == it && it.checked != checked) {
+                            it.copy(checked = checked)
+                        } else {
+                            it
+                        }
+                    }
+                )
+            }
+            copy(
+                credentials = toggled,
+                // A toggle changes the would-be proof's attribute count, so the EE-ZKP-042
+                // expected tier must track the current state the share-time refusal will see.
+                expectedPlainTier = expectedPlainTier(zkSystemSpecs, toggled)
             )
         }
     }
