@@ -20,7 +20,9 @@ import ee.cyber.wallet.domain.provider.wallet.jwsAlgorithm
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.jwk
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.security.spec.RSAKeyGenParameterSpec
 import java.util.UUID
@@ -81,20 +83,27 @@ class LocalCryptoProvider(
      */
     private suspend fun generateSecureAreaKey(): KeyAttestation {
         val key = secureAreaKeyManager.generateKey()
-        val attestation = walletProviderService.attestKey(
-            keyId = key.keyId,
-            keyType = KeyType.EC,
-            jwk = key.jwk(),
-            credentials = credentials.first()
-        )
-        keyAttestationDao.insert(
-            KeyAttestationEntity(
-                id = attestation.keyId,
-                attestation = attestation.attestation,
-                keyType = KeyType.EC.name
+        // The keyAttestation row is the only record naming the alias (SecureAreaKeyCleanup), so a
+        // failure before it is written deletes the key instead of orphaning a hardware key slot.
+        return try {
+            val attestation = walletProviderService.attestKey(
+                keyId = key.keyId,
+                keyType = KeyType.EC,
+                jwk = key.jwk(),
+                credentials = credentials.first()
             )
-        )
-        return attestation
+            keyAttestationDao.insert(
+                KeyAttestationEntity(
+                    id = attestation.keyId,
+                    attestation = attestation.attestation,
+                    keyType = KeyType.EC.name
+                )
+            )
+            attestation
+        } catch (e: Exception) {
+            withContext(NonCancellable) { secureAreaKeyManager.deleteKey(key.keyId) }
+            throw e
+        }
     }
 
     override suspend fun getKeyAttestation(keyId: String): KeyAttestation =

@@ -63,6 +63,10 @@ transitively).
   `SecureAreaKeyCleanupTest`; the repository itself needs a database context).
   `deleteKey` is best-effort (it swallows per-key failures), so one broken
   alias cannot abort the wipe.
+- `LocalCryptoProvider.generateSecureAreaKey` deletes the freshly generated
+  SecureArea key when the provider attestation or the `key_attestations`
+  insert fails: the row is the only record naming the alias, so without it
+  the Keystore key would outlive every cleanup path.
 
 ## Deviations and notes
 
