@@ -31,6 +31,7 @@ import ee.cyber.wallet.domain.presentation.ZkPresentation
 import ee.cyber.wallet.domain.presentation.ZkPresentationReason
 import ee.cyber.wallet.domain.presentation.ZkPresenter
 import ee.cyber.wallet.domain.presentation.resolveSchemeId
+import ee.cyber.wallet.domain.presentation.zkSpecsByDocType
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
@@ -196,8 +197,9 @@ class DigitalCredentialsViewModel @Inject constructor(
                     origin,
                     sessionTranscript,
                     recipientPublicKey,
-                    // Keyed by docType: a ZK request for one document must not change how another is presented
-                    docRequests.groupBy({ it.docType }, { it.zkSystemSpecs }).mapValues { it.value.flatten() },
+                    // Keyed by docType: a ZK request for one document must not change how another
+                    // is presented. A repeated docType keeps its first doc request's specs only.
+                    zkSpecsByDocType(docRequests),
                     readerSubject
                 )
             } catch (e: Exception) {
