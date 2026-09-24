@@ -20,6 +20,8 @@ import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
+import ee.cyber.wallet.domain.presentation.DcApiRequestDispatch
+import ee.cyber.wallet.domain.presentation.DcApiProtocol
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
 import ee.cyber.wallet.domain.presentation.HolderObligations
@@ -128,11 +130,33 @@ class DigitalCredentialsViewModel @Inject constructor(
                 }
 
                 val json = JSONObject(option.requestJson)
-                val firstRequest = json.getJSONArray("requests").getJSONObject(0)
-                val data = firstRequest["data"] as JSONObject
-                val requestData = JSONObject(data.toString())
-                val deviceRequestBase64 = requestData.getString("deviceRequest")
-                val encryptionInfoBase64 = requestData.getString("encryptionInfo")
+                val requestsArray = json.getJSONArray("requests")
+
+                // EE-PRO-013 / plan §4 item 4a: read the `protocol` field of every entry BEFORE
+                // touching the payload. Take the first entry this wallet can answer and refuse
+                // the rest with a specific error instead of letting the payload parser throw a
+                // bare JSONException on bytes it was never meant to read.
+                val protocolNames = (0 until requestsArray.length()).map { index ->
+                    val entry = requestsArray.getJSONObject(index)
+                    if (entry.has("protocol")) entry.getString("protocol") else null
+                }
+                val firstSupportedIndex = when (val decision = DcApiRequestDispatch.dispatch(protocolNames)) {
+                    is DcApiRequestDispatch.Decision.Take -> decision.index
+                    is DcApiRequestDispatch.Decision.Empty -> {
+                        logger.error("DC API request carries no protocol entries")
+                        sendEffect { DcEffect.Error("No protocol in request") }
+                        return@launch
+                    }
+                    is DcApiRequestDispatch.Decision.Unsupported -> {
+                        logger.error("Unsupported DC API protocol: ${decision.protocolName}")
+                        sendEffect { DcEffect.Error("Unsupported protocol: ${decision.protocolName}") }
+                        return@launch
+                    }
+                }
+                val firstRequest = requestsArray.getJSONObject(firstSupportedIndex)
+                val data = firstRequest.getJSONObject("data")
+                val deviceRequestBase64 = data.getString("deviceRequest")
+                val encryptionInfoBase64 = data.getString("encryptionInfo")
 
                 val sessionTranscript = getSessionTranscript(encryptionInfoBase64, origin)
                 val recipientPublicKey = getRecipientPublicKey(encryptionInfoBase64)

@@ -86,6 +86,7 @@
     <string name="presentation_zk_notice_not_requested">See osapool ei küsinud nullteadmise tõendit. Jagatavad andmed kannavad väljaandja allkirja, seega saab väljaandja seda esitust sinuga siduda.</string>
     <string name="error_presentation_no_matching_circuit">Jagamine peatati. See osapool nõuab nullteadmise tõendit, mida see digikukkur ei suuda esitada, ja ilma selleta võiks dokumendi väljaandja seda esitust sinuga siduda.</string>
     <string name="error_presentation_proof_failed">Jagamine peatati. Nullteadmise tõendit, mida see osapool küsis, ei õnnestunud koostada, ja ilma selleta võiks dokumendi väljaandja seda esitust sinuga siduda.</string>
+    <string name="error_presentation_unsupported_protocol">Jagamine peatati. See osapool küsis andmeid protokolliga, mida see digikukkur ei toeta.</string>
 
     <!-- Errors -->
     <string name="error_presentation_rp_connection_failed">Andmete päringu esitajaga ei õnnestunud ühendust luua.</string>
