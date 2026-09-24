@@ -97,8 +97,8 @@ pre-share notice today, because a proof was expected when the notice was worked 
   (en + et).
 
 There is no `ActivityLogViewModel` count logic to unit test — the existing view model is a
-pass-through (`transactionLogs` flow); the count is a pure function tested as
-`HolderObligations.countLinkable`.
+pass-through (`transactionLogs` flow). The screen drops refusal rows (`error` set) and hands the
+remaining tiers to `HolderObligations.countLinkable`, the pure function the tests cover.
 
 ## 3d — copy audit (EE-ZKP-002, EE-POA-020, EE-POA-023)
 
