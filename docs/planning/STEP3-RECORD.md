@@ -172,7 +172,7 @@ tests over the pure decision core:
 - Review finding 6 (notice and refusal in lockstep): every input the EE-ZKP-051 refusal fires on
   already yields the linkable `PLAIN_NO_MATCHING_CIRCUIT` expected tier.
 - Review finding 7 (per-response tier): one plain document in a response makes every row
-  linkable; an all-ZK response keeps its tiers; an all-plain response is unchanged; a single
+  linkable, the proven rows taking that document's plain tier so the recorded reason is true; an all-ZK response keeps its tiers; an all-plain response is unchanged; a single
   plain document is linkable.
 
 Run: `./gradlew :app:testDebugUnitTest --tests 'ee.cyber.wallet.domain.presentation.HolderObligationsTest'`
