@@ -146,6 +146,17 @@ private fun DcPresentationContent(
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold
         )
+        // EE-RP-003 (4d, F7): when the reader authenticated the request, the consent screen shows
+        // the readerAuth certificate subject — a relying-party name from the request itself, not
+        // just the platform-asserted origin. Absent when the reader did not authenticate.
+        state.readerSubject?.let { subject ->
+            Text(
+                text = subject,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
+        }
         VerifiedParty()
         VSpace(24.dp)
         Text(
