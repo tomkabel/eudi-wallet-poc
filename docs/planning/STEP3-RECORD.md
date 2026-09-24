@@ -79,12 +79,16 @@ pre-share notice today, because a proof was expected when the notice was worked 
 ## 3c — EE-ZKP-053 tier on every path, and the count
 
 - Redirect path: `app/src/main/kotlin/ee/cyber/wallet/ui/screens/presentation/PresentationRequestViewModel.kt`
-  — `logTransaction` now passes `tier = PresentationTier.PLAIN_NOT_REQUESTED` on every row it
-  writes. That is literally true: the redirect path cannot receive a ZK request.
+  — `logTransaction` passes `tier = PresentationTier.PLAIN_NOT_REQUESTED` on rows of COMPLETED
+  presentations. That is literally true of those rows: the redirect path cannot receive a ZK
+  request. Error rows (failed send, negative consensus, match failure, cancel) carry
+  `tier = null`: nothing was disclosed, so stamping them linkable would count never-shared
+  presentations in the ActivityLog summary (review finding 8) — the `error` column carries the
+  fact instead.
 - Proximity path: `app/src/main/kotlin/ee/cyber/wallet/ui/screens/proximity/ProximityViewModel.kt`
   — after `transferManager.sendResponse`, each presented credential is logged with the disclosed
   attributes and `tier = PLAIN_NOT_REQUESTED` (a proximity reader cannot carry a ZK request
-  either), party `log_entry_proximity_party` ("Proximity reader" / "Lähivoo lugeja"). Proximity
+  either), party `log_entry_proximity_party` ("Proximity reader" / "Lähivõrgu lugeja"). Proximity
   rows did not exist in the log at all before this.
 - `app/src/main/kotlin/ee/cyber/wallet/ui/screens/activity/ActivityLogScreen.kt` — the screen
   shows `activity_log_tier_summary` ("Plain mdoc presentations, which the issuer can link to you:
@@ -165,6 +169,13 @@ tests over the pure decision core:
   0/0.
 - Strongest-circuit rule: highest version among allowed circuits for the attribute count; no
   match when the wallet holds none of the advertised circuits; attribute count must match.
+- Review finding 6 (shared satisfiable predicate): satisfiable when any refusable credential can
+  prove; unsatisfiable when none can; non-refusable credentials cannot flip it; empty refusable
+  set is unsatisfiable; the toggle-then-share sequence keeps expected tier and refusal in
+  lockstep; mixed doctypes satisfy on the refusable credential alone.
+- Review finding 7 (per-response tier): one plain document in a response makes every row
+  linkable; an all-ZK response keeps its tiers; an all-plain response is unchanged; a single
+  plain document is linkable.
 
 Run: `./gradlew :app:testDebugUnitTest --tests 'ee.cyber.wallet.domain.presentation.HolderObligationsTest'`
 
@@ -199,11 +210,21 @@ On this host (CachyOS, `ANDROID_HOME=/opt/android-sdk`):
   other doctypes and the age document's own specs are unsatisfiable or its proof fails, the whole presentation is refused
   (nothing is shared) rather than partially proving the non-age documents. Refusing everything is
   the conservative reading; mixed requests are not produced by the PoC verifier.
+- **The satisfiable predicate is one and refusable-scoped.** The EE-ZKP-042 expected tier and the
+  EE-ZKP-051 share-time refusal both run `HolderObligations.satisfiableOverRefusable` over the
+  age-doctype credentials only, and the expected tier is recomputed on every optional-field
+  toggle — a toggle changes the would-be proof's attribute count, so the pre-share notice tracks
+  the state the user is actually about to share (review finding 6). Before the fix the notice ran
+  `all {}` over every credential while the refusal ran `any {}` over refusable ones, so a toggle
+  after render could reach the share-time refusal without the notice having shown it.
 - **multipaz 0.99.0 API gaps.** `ZkSystemSpec` exposes params generically (`getParam`), so spec
   fingerprints are read via the same string keys (`circuit_hash`, `num_attributes`, `version`) the
-  pre-existing `matchZkSystemSpec` used; no typed accessor exists in 0.99.0. The tier computation
-  happens per response (per `onShareClicked`/per document), matching plan item 4c's "tier is
-  computed per response, not per credential".
+  pre-existing `matchZkSystemSpec` used; no typed accessor exists in 0.99.0. The recorded tier is
+  computed per response (after the share loop, one row per document but the tier escalated across
+  the whole response), matching plan item 4c's "tier is computed per response, not per credential":
+  one plain document in a `DeviceResponse` makes every row of it linkable
+  (`HolderObligations.escalateToResponseTier`, review finding 7), so a `ZERO_KNOWLEDGE` row never
+  sits next to a plain row for the same exchange.
 - **Gradle offline mode.** First resolution on this host needed the network (daemon warm-up and
   missing cache entries); after the first successful `:app:compileDebugKotlin` the cache is warm.
   If a later run fails offline, run it online — no cache-repair rabbit hole was entered beyond
