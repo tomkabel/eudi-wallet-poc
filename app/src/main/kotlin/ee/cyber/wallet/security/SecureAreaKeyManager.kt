@@ -258,6 +258,8 @@ class SecureAreaKeyCleanup(
     private val secureAreaKeyDeleter: SecureAreaKeyDeleter
 ) {
 
+    private val logger = LoggerFactory.getLogger("SecureAreaKeyCleanup")
+
     suspend fun deleteAll() {
         val ecRows = keyAttestationDao.getByType(KeyType.EC.name)
         ecRows.forEach { row ->
@@ -265,5 +267,20 @@ class SecureAreaKeyCleanup(
         }
         secureAreaKeyDeleter.deleteAllKeys()
         keyAttestationDao.deleteAll()
+    }
+
+    /**
+     * Rolls back [keyIds]: each key first, then its keyAttestation row (if one was written), and
+     * the row only once the key is verifiably gone — a surviving key keeps the row that names it,
+     * so [deleteAll] can still reach it. Never throws; for a failed batch mint.
+     */
+    suspend fun deleteKeys(keyIds: List<String>) {
+        keyIds.forEach { keyId ->
+            runCatching {
+                secureAreaKeyDeleter.deleteKey(keyId)
+                if (secureAreaKeyDeleter.keyExists(keyId)) error("SecureArea key $keyId still exists after delete")
+                keyAttestationDao.deleteById(keyId)
+            }.onFailure { logger.error("could not roll back key {}", keyId, it) }
+        }
     }
 }
