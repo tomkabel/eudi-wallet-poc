@@ -67,12 +67,12 @@ import kotlin.time.Instant
 @OptIn(ExperimentalEncodingApi::class)
 class Step0CrossVerifyTest {
 
+    // Defaults live in build.gradle.kts, the one place that knows the repository root.
     private val eeEudiw: File =
-        File(System.getProperty("step0.eeEudiw") ?: "../ee-eudiw")
+        File(checkNotNull(System.getProperty("step0.eeEudiw")) { "step0.eeEudiw is unset; run through Gradle" })
 
     private val rustProverDir: File =
-        File(System.getProperty("step0.rustProverDir")
-            ?: "../ee-eudiw/verifier/go/zk/testdata/step0-rust-prover")
+        File(checkNotNull(System.getProperty("step0.rustProverDir")) { "step0.rustProverDir is unset; run through Gradle" })
 
     private fun fixtureDir(): File =
         File(eeEudiw, "verifier/go/zk/testdata/step0-multipaz")
