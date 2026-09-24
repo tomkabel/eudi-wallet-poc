@@ -39,13 +39,13 @@ import org.multipaz.mdoc.zkp.ZkSystemSpec
 import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Instant
 
 /**
  * Step 0 of ee-eudiw's docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md §4:
@@ -65,6 +65,11 @@ import kotlin.time.Instant
  *    `ee_poa_demo` prover with multipaz's own `verifyProof`, and checks that
  *    the same proof with one bit flipped is rejected.
  *
+ * Step 2a (docs/planning/STEP2A-RECORD.md, PENDING-DEVICE item 4) adds
+ * `Step2aDeviceResponseFixtureTest` in this package: a complete `DeviceResponse`
+ * fixture built through the wallet's real serialization path. The minting and
+ * transcript helpers both tests share live in `ZkConformanceSupport.kt`.
+ *
  * Fixture locations default to a sibling ee-eudiw checkout and can be
  * overridden with `-Dstep0.eeEudiw=...` and `-Dstep0.rustProverDir=...`.
  */
@@ -72,22 +77,15 @@ import kotlin.time.Instant
 class Step0CrossVerifyTest {
 
     // Defaults live in build.gradle.kts, the one place that knows the repository root.
-    private val eeEudiw: File =
-        File(checkNotNull(System.getProperty("step0.eeEudiw")) { "step0.eeEudiw is unset; run through Gradle" })
-
     private val rustProverDir: File =
         File(checkNotNull(System.getProperty("step0.rustProverDir")) { "step0.rustProverDir is unset; run through Gradle" })
-
-    private fun fixtureDir(): File =
-        File(eeEudiw, "verifier/go/zk/testdata/step0-multipaz")
 
     /** The mdoc the fixture proof is made over, plus the issuer cert that signed it. */
     private class Minted(val document: MdocDocument, val issuerCert: X509Cert)
 
     @Test
     fun writeMultipazFixtureForGoVerifierAndPairCircuitHashes() = runTest {
-        // Without this, mkdirs below would invent an ee-eudiw tree nobody reads.
-        assumeTrue("step0: no ee-eudiw checkout at ${eeEudiw.absolutePath}", File(eeEudiw, "verifier/go/zk").isDirectory)
+        val eeEudiw = EeEudiw.assumePresent()
         val zkSystem = LongfellowZkSystem().apply { addDefaultCircuits() }
 
         // Every bundled circuit, so the seven hashes the 18 September log did
@@ -99,7 +97,7 @@ class Step0CrossVerifyTest {
                 "  num_attributes=${spec.getParam<Long>("num_attributes")}" +
                 "  circuit_hash=${spec.getParam<String>("circuit_hash")}"
         }
-        val dir = fixtureDir()
+        val dir = File(eeEudiw, "verifier/go/zk/testdata/step0-multipaz")
         dir.mkdirs()
         File(dir, "multipaz-circuits.txt").writeText(
             "# Bundled systemSpecs of multipaz-longfellow-jvm-0.99.0, printed by\n" +
@@ -110,7 +108,7 @@ class Step0CrossVerifyTest {
         assertEquals(8, specs.size, "expected eight bundled circuit specs")
 
         // The proof the Go side must verify.
-        val sessionTranscript = sessionTranscript()
+        val sessionTranscript = SessionTranscripts.forZkConformance()
         val minted = mintAgeVerificationMdoc()
         val spec = zkSystem.oneAttributeSpec()
         val zkDocument = zkSystem.generateProof(spec, minted.document, sessionTranscript, SIGNED_AT)
@@ -205,90 +203,22 @@ class Step0CrossVerifyTest {
 
     /** The circuit for a single requested attribute, which is what `age_over_18` alone needs. */
     private fun LongfellowZkSystem.oneAttributeSpec(): ZkSystemSpec =
-        systemSpecs
-            .filter { it.getParam<Long>("num_attributes") == 1L }
-            .maxByOrNull { it.getParam<Long>("version") ?: Long.MIN_VALUE }
-            ?: error("no single-attribute circuit bundled with multipaz-longfellow")
+        ZkConformanceSpecs.oneAttributeSpec(this)
 
     private suspend fun mintAgeVerificationMdoc(): Minted {
-        val issuerKey = AsymmetricKey.AnonymousExplicit(Crypto.createEcPrivateKey(EcCurve.P256))
-        val deviceKey = AsymmetricKey.AnonymousExplicit(Crypto.createEcPrivateKey(EcCurve.P256))
-        val validUntil = SIGNED_AT + 30.days
-
-        val issuerCert = X509Cert.Builder(
-            publicKey = issuerKey.publicKey,
-            signingKey = issuerKey,
-            serialNumber = ASN1Integer(1L),
-            subject = X500Name.fromName("CN=EE Wallet Test Issuer"),
-            issuer = X500Name.fromName("CN=EE Wallet Test Issuer"),
-            validFrom = SIGNED_AT,
-            validUntil = validUntil
-        ).includeSubjectKeyIdentifier().build()
-
-        val issuerNamespaces = buildIssuerNamespaces {
-            addNamespace(AV_NAMESPACE) {
-                addDataElement(AGE_OVER_18, true.toDataItem())
-            }
-        }
-
-        val mso = MobileSecurityObject(
-            version = "1.0",
-            docType = AV_DOCTYPE,
-            signedAt = SIGNED_AT,
-            validFrom = SIGNED_AT,
-            validUntil = validUntil,
-            expectedUpdate = null,
-            digestAlgorithm = Algorithm.SHA256,
-            valueDigests = issuerNamespaces.getValueDigests(Algorithm.SHA256),
-            deviceKey = deviceKey.publicKey
-        )
-        val issuerAuth = Cose.coseSign1Sign(
-            signingKey = issuerKey,
-            message = Cbor.encode(Tagged(Tagged.ENCODED_CBOR, Bstr(Cbor.encode(mso.toDataItem())))),
-            includeMessageInPayload = true,
-            protectedHeaders = mapOf<CoseLabel, DataItem>(
-                CoseNumberLabel(Cose.COSE_LABEL_ALG) to Algorithm.ES256.coseAlgorithmIdentifier!!.toDataItem()
-            ),
-            unprotectedHeaders = mapOf<CoseLabel, DataItem>(
-                CoseNumberLabel(Cose.COSE_LABEL_X5CHAIN) to X509CertChain(listOf(issuerCert)).toDataItem()
-            )
-        )
-
-        return Minted(
-            document = MdocDocument.fromNamespaces(
-                sessionTranscript = sessionTranscript(),
-                docType = AV_DOCTYPE,
-                issuerAuth = issuerAuth,
-                issuerNamespaces = issuerNamespaces,
-                deviceNamespaces = buildDeviceNamespaces {},
-                deviceKey = deviceKey
-            ),
-            issuerCert = issuerCert
-        )
+        val sessionTranscript = SessionTranscripts.forZkConformance()
+        val minted = MdocMinter.mintAgeVerificationMdoc(sessionTranscript)
+        return Minted(minted.document, minted.issuerCert)
     }
 
-    private fun sessionTranscript(): DataItem = buildCborArray {
-        add(Bstr(byteArrayOf(1, 2, 3)))
-        add(Bstr(byteArrayOf(4, 5, 6)))
-        add("zk-conformance-handover")
-    }
+    private fun formatDate(i: Instant): String = ZkConformanceFormat.formatDate(i)
 
     private companion object {
-        const val AV_DOCTYPE = "eu.europa.ec.av.1"
-        const val AV_NAMESPACE = "eu.europa.ec.av.1"
-        const val AGE_OVER_18 = "age_over_18"
+        const val AV_DOCTYPE = ZkConformanceConsts.AV_DOCTYPE
+        const val AV_NAMESPACE = ZkConformanceConsts.AV_NAMESPACE
+        const val AGE_OVER_18 = ZkConformanceConsts.AGE_OVER_18
 
         // 18013-5 clauses 7.1 and 9.1.2.4 forbid fractional seconds in these timestamps.
-        val SIGNED_AT: Instant = Instant.fromEpochSeconds(Clock.System.now().epochSeconds, 0)
-
-        /**
-         * The timestamp format Longfellow proofs bind: whole seconds, 'Z' suffix.
-         * Uses LongfellowZkSystem's own private formatDate via reflection, so the
-         * fixture cannot drift from what generateProof actually bound.
-         */
-        fun formatDate(i: Instant): String =
-            LongfellowZkSystem::class.java.getDeclaredMethod("formatDate", Instant::class.java)
-                .apply { isAccessible = true }
-                .invoke(LongfellowZkSystem(), i) as String
+        val SIGNED_AT: Instant = ZkConformanceConsts.signedAtNow()
     }
 }
