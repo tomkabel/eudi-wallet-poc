@@ -61,16 +61,27 @@ build fingerprint and date with the output (the last table row asks for exactly 
 
 The instrumented run is an `androidTest` that wires the real prover into the harness:
 
-1. Construct the prover exactly as the wallet does (`DigitalCredentialsViewModel.kt`):
+The clock `measure()` starts around each `Prover` call is the approval point, so the split
+between steps 2 and 3 follows `DigitalCredentialsViewModel.kt`: what the wallet does before the
+consent screen stays outside the `Prover`, what the share tap releases (`onShareClicked`) goes
+inside it.
+
+1. Construct the prover exactly as the wallet does:
    `LongfellowZkSystem().apply { addDefaultCircuits() }` — the version that loads all bundled
-   circuits, because that is what a cold run must pay for.
-2. Mint or load the age-verification mdoc and build the session transcript the way
-   `zk-conformance/src/test/.../AgeProofRoundTripTest.kt` does; the resolved spec is the
+   circuits. The wallet builds it when the request arrives, before the consent screen, so it
+   stays outside the `Prover`.
+2. Before `measure()`: mint or load the age-verification mdoc's issuer-signed part (issuer
+   namespaces, `issuerAuth`, device key) and build the session transcript the way
+   `zk-conformance/src/test/.../AgeProofRoundTripTest.kt` does. The transcript also exists
+   before approval — the wallet derives it from the request. The resolved spec is the
    highest-version single-attribute circuit, as in that test.
-3. Implement `Prover { generateProof() }` as one
-   `zkSystem.generateProof(spec, document, sessionTranscript, SIGNED_AT)` call. The clock the
-   harness starts is the approval point: in the real flow the tap lands before the transcript
-   is bound, so start the timer before any proof-side work the approval releases.
+3. Implement `Prover { generateProof() }` as everything the tap releases, in order: bind the
+   document to the session transcript — the `DeviceSigned` signature, which the test makes in
+   `MdocDocument.fromNamespaces(sessionTranscript, …, deviceKey)` and the wallet in
+   `presentWithDeviceSignature` — then one
+   `zkSystem.generateProof(spec, document, sessionTranscript, SIGNED_AT)` call. The wallet signs
+   with a SecureArea key; if the test signs with a software key, the figure leaves out the
+   hardware signing time, and the `Result` cell says which key was used.
 4. Call `ZkProofBenchmark.measure(prover)` with the default `VmHwmSource` (it reads
    `/proc/self/status` of the app process, which is what covers the native allocations).
 5. Log the `Report` and paste the percentiles and the memory figures into this table's

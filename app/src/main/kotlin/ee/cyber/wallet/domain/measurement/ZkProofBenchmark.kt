@@ -23,8 +23,9 @@ object ZkProofBenchmark {
     data class Sample(val proofReadyMillis: Long, val peakRssKb: Long?)
 
     /**
-     * The proving step, isolated so tests substitute synthetic latencies and memory readings.
-     * On the device this is one `ZkSystem.generateProof(...)` call over the resolved spec —
+     * The timed step, isolated so tests substitute synthetic latencies and memory readings. On
+     * the device this is everything the holder's approval releases: binding the document to the
+     * session transcript, then one `ZkSystem.generateProof(...)` call over the resolved spec —
      * see `docs/MEASUREMENTS.md` for the wiring.
      */
     fun interface Prover {
