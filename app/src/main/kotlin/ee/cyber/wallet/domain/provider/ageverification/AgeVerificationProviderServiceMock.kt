@@ -64,8 +64,9 @@ class AgeVerificationProviderServiceMock(
      * exercise consumption and never-the-last; the measured >=30 batch and OpenID4VCI batch
      * issuance stay in plan §8.4 and are deliberately not implemented here.
      *
-     * @return the freshly minted attestations, the EE-PoA batch first and the AV attestation
-     * last, in storage order.
+     * @return the freshly minted attestations, the AV attestation first and then the EE-PoA
+     * batch, in storage order. The issuance screen previews the first document only, so it shows
+     * the AV attestation rather than one arbitrary copy of the batch.
      */
     suspend fun issueEePoaBatch(issuer: BatchAgeIssuer): List<Attestation> {
         val ageOver18 = holderIsAdult()
@@ -73,7 +74,7 @@ class AgeVerificationProviderServiceMock(
             avCredential(ageOver18),
             issuer.generateAvKey()
         )
-        return issuer.issuePoaBatch(poaCredential(ageOver18), AgeIssuanceConstants.BATCH_SIZE) + avAttestation
+        return listOf(avAttestation) + issuer.issuePoaBatch(poaCredential(ageOver18), AgeIssuanceConstants.BATCH_SIZE)
     }
 
     /**
