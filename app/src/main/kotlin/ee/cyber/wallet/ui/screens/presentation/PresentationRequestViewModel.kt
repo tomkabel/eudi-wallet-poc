@@ -273,6 +273,12 @@ class PresentationRequestViewModel @Inject constructor(
                                         log.error("Rejected: $it")
                                         // we treat it as successful transaction!!!
                                         logTransaction()
+                                        // The response — with its plain, issuer-signed documents —
+                                        // already reached the verifier, so a disclosed one-time
+                                        // EE-PoA must consume exactly as on the accepted paths
+                                        // (EE-POA-013/WIAM_21). Leaving it presentable is a replay
+                                        // window (second review, finding 3).
+                                        consumePresentedEePoa()
                                         showError(Error.VerifierError)
                                     }
                                 }

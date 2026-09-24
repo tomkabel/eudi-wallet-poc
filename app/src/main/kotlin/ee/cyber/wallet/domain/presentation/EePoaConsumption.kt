@@ -57,9 +57,18 @@ class EePoaConsumption(
 
         // WIAM_21: the key material goes first — SecureAreaKeyCleanup's ordering, for the same
         // reason: past the row deletion the alias is unreachable from wallet records.
-        secureAreaKeyDeleter.deleteKey(attestation.keyAttestation.keyId)
+        val keyId = attestation.keyAttestation.keyId
+        secureAreaKeyDeleter.deleteKey(keyId)
+        // Second review, finding 4: deleteKey is best-effort and swallows real failures. Deleting
+        // the rows over a key the platform still holds would orphan a live, usable signing key no
+        // record names and no sweep can reach — so the row deletion waits for a verified removal.
+        // A key that was never there (already consumed by another path) counts as removed.
+        if (secureAreaKeyDeleter.keyExists(keyId)) {
+            logger.error("EE-PoA {} not consumed: SecureArea key {} still exists after delete", attestation.id, keyId)
+            return false
+        }
         attestationDao.deleteById(attestation.id)
-        keyAttestationDao.deleteById(attestation.keyAttestation.keyId)
+        keyAttestationDao.deleteById(keyId)
         logger.info("EE-PoA {} consumed after a plain presentation ({} left)", attestation.id, siblings.size - 1)
         return true
     }
