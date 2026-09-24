@@ -32,6 +32,7 @@ import org.multipaz.mdoc.devicesigned.buildDeviceNamespaces
 import org.multipaz.mdoc.issuersigned.buildIssuerNamespaces
 import org.multipaz.mdoc.mso.MobileSecurityObject
 import org.multipaz.mdoc.response.MdocDocument
+import org.multipaz.mdoc.zkp.ProofVerificationFailureException
 import org.multipaz.mdoc.zkp.ZkDocument
 import org.multipaz.mdoc.zkp.ZkDocumentData
 import org.multipaz.mdoc.zkp.ZkSystemSpec
@@ -40,6 +41,7 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -60,7 +62,8 @@ import kotlin.time.Instant
  *    together with a provenance file and a file pairing all eight bundled
  *    circuit labels with their hashes.
  * 2. Runs the reverse direction: verifies a proof produced by ee-eudiw's Rust
- *    `ee_poa_demo` prover with multipaz's own `verifyProof`.
+ *    `ee_poa_demo` prover with multipaz's own `verifyProof`, and checks that
+ *    the same proof with one bit flipped is rejected.
  *
  * Fixture locations default to a sibling ee-eudiw checkout and can be
  * overridden with `-Dstep0.eeEudiw=...` and `-Dstep0.rustProverDir=...`.
@@ -183,6 +186,13 @@ class Step0CrossVerifyTest {
         )
         zkSystem.verifyProof(zkDoc, spec, transcriptItem)
         println("step0: ee_poa_demo proof verified with multipaz under ${spec.id}")
+
+        // Plan §4 step 0 acceptance: a one-bit flip fails in both directions.
+        val flipped = zkDoc.proof.toByteArray().copyOf()
+        flipped[flipped.size / 2] = (flipped[flipped.size / 2].toInt() xor 0x01).toByte()
+        assertFailsWith<ProofVerificationFailureException> {
+            zkSystem.verifyProof(zkDoc.copy(proof = ByteString(flipped)), spec, transcriptItem)
+        }
     }
 
     /** PEM with 64-character base64 lines, as OpenSSL writes them. */
