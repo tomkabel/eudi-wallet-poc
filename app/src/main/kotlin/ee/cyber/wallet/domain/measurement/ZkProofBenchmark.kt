@@ -119,10 +119,11 @@ object ZkProofBenchmark {
 
 /**
  * The `VmHWM` line of the file `/proc/self/status`: `VmHWM:\t  1234 kB`. Returns null when the
- * line is absent; the caller then records memory as "not read" rather than guessing.
+ * line is absent or the file cannot be read; the caller then records memory as "not read"
+ * rather than guessing.
  */
 fun readVmHwmKb(statusFile: String = "/proc/self/status"): Long? =
-    readVmHwmKbFromText(File(statusFile).readText())
+    runCatching { File(statusFile).readText() }.getOrNull()?.let(::readVmHwmKbFromText)
 
 internal fun readVmHwmKbFromText(statusText: String): Long? {
     val line = statusText.lineSequence().firstOrNull { it.startsWith("VmHWM:") } ?: return null
