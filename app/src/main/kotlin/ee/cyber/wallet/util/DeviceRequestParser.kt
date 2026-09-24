@@ -376,6 +376,26 @@ class DeviceRequestParser(
     }
 }
 
+/**
+ * EE-RP-003 / plan §4 item 4d (review finding 1): the reader-auth subject shown on the consent
+ * screen, from the first doc request whose `readerAuth` signature check PASSED. The parser
+ * populates `readerCertificateChain` even when the signature check failed, so a chain alone is
+ * attacker-controlled input — a crafted request must not put a chosen CN on the consent screen.
+ * Trust validation of a passing chain stays §8.3 scope.
+ *
+ * `X500Name.components` is keyed by OID (multipaz parses unknown attribute types too), so the CN
+ * is `2.5.4.3`; the literal `"CN"` key would silently miss every real certificate.
+ */
+fun readerAuthSubject(docRequests: List<DeviceRequestParser.DocRequest>): String? = docRequests
+    .firstOrNull { it.readerAuthenticated }
+    ?.readerCertificateChain
+    ?.certificates
+    ?.firstOrNull()
+    ?.subject
+    ?.components
+    ?.let { it["2.5.4.3"] ?: it["CN"] }
+    ?.value
+
 suspend fun DeviceRequest.toPresentationDefinition(): PresentationDefinition {
     val requestedDocuments = DeviceRequestParser(this.deviceRequestBytes, this.sessionTranscriptBytes)
         .parse()
