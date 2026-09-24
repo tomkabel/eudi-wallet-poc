@@ -44,7 +44,7 @@ class EePoaConsumption(
      *   response makes every row linkable, so the escalation is the caller's duty — pass the
      *   escalated tier, and this helper consumes on any non-ZK tier)
      */
-    suspend fun consumeAfterPresentation(attestation: Attestation, tier: PresentationTier?): Boolean {
+    suspend fun consumeAfterPresentation(attestation: Attestation, tier: PresentationTier): Boolean {
         if (attestation.type != CredentialType.EE_POA) return false
         // EE-ZKP-025: a ZK presentation consumes nothing.
         if (tier == PresentationTier.ZERO_KNOWLEDGE) return false
