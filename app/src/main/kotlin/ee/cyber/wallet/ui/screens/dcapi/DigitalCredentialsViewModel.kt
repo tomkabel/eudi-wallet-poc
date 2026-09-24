@@ -176,6 +176,20 @@ class DigitalCredentialsViewModel @Inject constructor(
                     sessionTranscript.toCBOR()
                 ).parse().docRequests
 
+                // EE-RP-003 / plan §4 item 4d (finding F7): the consent screen names an origin,
+                // not a relying party. The readerAuth certificate subject is the first step
+                // toward a relying-party name; take it from the first doc request that carries
+                // reader authentication, before any trust judgement (that is §8.3 scope).
+                val readerSubject = docRequests
+                    .firstOrNull { it.readerCertificateChain != null }
+                    ?.readerCertificateChain
+                    ?.certificates
+                    ?.firstOrNull()
+                    ?.subject
+                    ?.components
+                    ?.get("CN")
+                    ?.value
+
                 val presentationDefinition = toPresentationDefinition(docRequests)
 
                 val documents = documentRepository.documents.first()
@@ -187,7 +201,8 @@ class DigitalCredentialsViewModel @Inject constructor(
                     sessionTranscript,
                     recipientPublicKey,
                     // Keyed by docType: a ZK request for one document must not change how another is presented
-                    docRequests.groupBy({ it.docType }, { it.zkSystemSpecs }).mapValues { it.value.flatten() }
+                    docRequests.groupBy({ it.docType }, { it.zkSystemSpecs }).mapValues { it.value.flatten() },
+                    readerSubject
                 )
             } catch (e: Exception) {
                 logger.error("Error processing request", e)
@@ -203,7 +218,8 @@ class DigitalCredentialsViewModel @Inject constructor(
         origin: String,
         sessionTranscript: ListElement,
         recipientPublicKey: EcPublicKey,
-        zkSystemSpecs: Map<String, List<ZkSystemSpec>>
+        zkSystemSpecs: Map<String, List<ZkSystemSpec>>,
+        readerSubject: String?
     ) {
         when (val match = documentMatches.second) {
             is Match.NotMatched -> {
@@ -249,6 +265,9 @@ class DigitalCredentialsViewModel @Inject constructor(
                     setState {
                         copy(
                             verifier = origin,
+                            // EE-RP-003 (4d): show the readerAuth certificate subject when the
+                            // reader authenticated the request; the origin alone stays otherwise.
+                            readerSubject = readerSubject,
                             credentials = credentials,
                             sessionTranscript = sessionTranscript,
                             recipientPublicKey = recipientPublicKey,
@@ -626,6 +645,9 @@ data class DcCredential(
 data class DcUiState(
     val isLoading: Boolean = false,
     val verifier: String = "",
+    // EE-RP-003 (4d, F7): the readerAuth certificate subject, when the reader authenticated the
+    // request. Rendered on the consent screen next to the origin; null when absent.
+    val readerSubject: String? = null,
     val credentials: List<DcCredential> = listOf(),
     val shareDisabled: Boolean = false,
     val sessionTranscript: @RawValue ListElement? = null,
