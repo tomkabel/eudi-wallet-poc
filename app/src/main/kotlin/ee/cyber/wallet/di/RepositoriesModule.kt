@@ -22,6 +22,7 @@ import ee.cyber.wallet.data.repository.WalletCredentialsRepository
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.security.SecureAreaKeyCleanup
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -62,6 +63,18 @@ object RepositoriesModule {
         keyAttestationDao: KeyAttestationDao,
         secureAreaKeyManager: SecureAreaKeyManager
     ) = SecureAreaKeyCleanup(
+        keyAttestationDao = keyAttestationDao,
+        secureAreaKeyDeleter = secureAreaKeyManager
+    )
+
+    @Singleton
+    @Provides
+    fun providesEePoaConsumption(
+        attestationDao: AttestationDao,
+        keyAttestationDao: KeyAttestationDao,
+        secureAreaKeyManager: SecureAreaKeyManager
+    ) = EePoaConsumption(
+        attestationDao = attestationDao,
         keyAttestationDao = keyAttestationDao,
         secureAreaKeyDeleter = secureAreaKeyManager
     )

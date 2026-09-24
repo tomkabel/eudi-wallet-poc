@@ -21,6 +21,7 @@ import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.presentation.DcApiRequestDispatch
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.DcApiProtocol
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
@@ -88,6 +89,7 @@ class DigitalCredentialsViewModel @Inject constructor(
     private val secureAreaKeyManager: SecureAreaKeyManager,
     private val openId4VPManager: OpenId4VPManager,
     private val transactionLogRepository: TransactionLogRepository,
+    private val eePoaConsumption: EePoaConsumption,
     @Dispatcher(WalletDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher
 ) : MviViewModel<DcEvent, DcUiState, DcEffect>() {
 
@@ -564,6 +566,18 @@ class DigitalCredentialsViewModel @Inject constructor(
             }
 
             logger.info("Response generated successfully")
+
+            // EE-POA-013 / WIAM_21 (plan §4 item 6): plain presentations consume the EE-PoA
+            // attestation and its SecureArea key, never the last of the batch; a ZK presentation
+            // consumes nothing (EE-ZKP-025). The tiers here are the escalated per-response ones
+            // already computed for the log.
+            loggedRows.zip(responseTiers).forEach { (row, tier) ->
+                val credential = currentState.credentials.firstOrNull { it.credentialType.docType() == row.first }
+                credential?.let {
+                    eePoaConsumption.consumeAfterPresentation(attestation = it.attestation, tier = tier)
+                }
+            }
+
             sendEffect { DcEffect.SendResponse(response) }
         } catch (e: Exception) {
             logger.error("Error generating response", e)
