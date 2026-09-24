@@ -379,9 +379,13 @@ class PresentationRequestViewModel @Inject constructor(
                 docType = credential.credentialType.docType(),
                 attributes = attributes,
                 error = error,
-                // EE-ZKP-053: the redirect path cannot receive a ZK request, so every row it
-                // writes is literally a presentation the relying party did not ask to prove.
-                tier = PresentationTier.PLAIN_NOT_REQUESTED
+                // EE-ZKP-053: the redirect path cannot receive a ZK request, so every row of a
+                // COMPLETED presentation here is literally a presentation the relying party did
+                // not ask to prove. An error row records a presentation that never happened —
+                // nothing was disclosed, so stamping it linkable (PLAIN_NOT_REQUESTED) would
+                // miscount never-shared presentations in the ActivityLog summary (review
+                // finding 8); the error column carries the fact instead.
+                tier = if (error == null) PresentationTier.PLAIN_NOT_REQUESTED else null
             )
         }
     }
