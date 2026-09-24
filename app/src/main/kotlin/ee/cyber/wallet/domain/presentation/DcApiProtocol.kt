@@ -35,7 +35,7 @@ object DcApiRequestDispatch {
         /** The index of the first supported entry and the protocol it speaks. */
         data class Take(val index: Int, val protocol: DcApiProtocol) : Decision()
 
-        /** Every entry named a protocol this wallet does not answer; the last name is reported. */
+        /** Every entry named a protocol this wallet does not answer; the first name is reported. */
         data class Unsupported(val protocolName: String?) : Decision()
 
         /** No entries at all — also not a parser crash. */
