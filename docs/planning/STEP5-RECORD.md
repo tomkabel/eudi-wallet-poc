@@ -2,7 +2,9 @@
 
 Branch: `step5-hardware-keys`. multipaz pinned at `0.99.0`
 (`gradle/libs.versions.toml:41`, `multipaz-android` as a direct
-`implementation` dependency in `app/build.gradle.kts` ~line 312).
+`implementation` dependency in `app/build.gradle.kts` line 309; before the
+step 5 review it sat only in the `constraints` block and reached the app
+transitively).
 
 ## What was done
 
