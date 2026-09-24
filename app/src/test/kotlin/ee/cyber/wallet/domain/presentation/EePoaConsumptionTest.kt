@@ -90,6 +90,7 @@ class EePoaConsumptionTest {
         override suspend fun deleteKey(keyId: String) {
             deletedKeys.add(keyId)
         }
+        override suspend fun keyExists(keyId: String): Boolean = keyId !in deletedKeys
 
         override suspend fun deleteAllKeys() {
             deleteAllCalled = true

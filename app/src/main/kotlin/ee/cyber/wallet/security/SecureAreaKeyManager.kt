@@ -129,6 +129,8 @@ class SecureAreaKeyManager(
             .onFailure { logger.error("failed to delete SecureArea key $keyId", it) }
     }
 
+    override suspend fun keyExists(keyId: String): Boolean = containsKey(keyId)
+
     /**
      * Best-effort sweep of SecureArea aliases the wallet's records no longer name (crash between
      * key generation and record insert, or a lost secure_area.db). AndroidKeystoreSecureArea
@@ -212,6 +214,13 @@ fun SecureAreaDeviceKey.jwk(): com.nimbusds.jose.jwk.ECKey {
 interface SecureAreaKeyDeleter {
     /** Deletes one SecureArea key alias. Must not throw on an already-deleted/unknown alias. */
     suspend fun deleteKey(keyId: String)
+
+    /**
+     * Whether the SecureArea still holds the alias. Consumption (EE-POA-013) checks this after
+     * [deleteKey]: deleting the wallet rows for a key the platform still holds would orphan a
+     * live, usable signing key no record names (second review, finding 4).
+     */
+    suspend fun keyExists(keyId: String): Boolean
 
     /** Best-effort bulk sweep for aliases no longer reachable from wallet records. */
     suspend fun deleteAllKeys()

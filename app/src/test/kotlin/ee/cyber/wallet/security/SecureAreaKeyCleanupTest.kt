@@ -54,6 +54,7 @@ class SecureAreaKeyCleanupTest {
         override suspend fun deleteKey(keyId: String) {
             deletedAliases.add(keyId)
         }
+        override suspend fun keyExists(keyId: String): Boolean = false
 
         override suspend fun deleteAllKeys() {
             bulkDeleteCalled = true
@@ -99,6 +100,8 @@ class SecureAreaKeyCleanupTest {
             override suspend fun deleteKey(keyId: String) {
                 events.add("delete:$keyId")
             }
+
+            override suspend fun keyExists(keyId: String): Boolean = false
 
             override suspend fun deleteAllKeys() {
                 events.add("sweep")
