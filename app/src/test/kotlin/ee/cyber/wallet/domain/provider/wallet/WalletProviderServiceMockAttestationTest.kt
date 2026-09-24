@@ -179,5 +179,15 @@ class WalletProviderServiceMockAttestationTest {
         assertTrue(second.jwt.verify(RSASSAVerifier(providerKey)))
     }
 
+    @Test
+    fun `signs with the new provider key after the keystore is cleared`() = runTest {
+        service.attestKey("holder-6", KeyType.EC, publicHolderEcJwk("holder-6"), credentials())
+        keyStore.clearAll() // what AccountRepository.deleteAllData does to the BKS keystore
+
+        val after = service.attestKey("holder-7", KeyType.EC, publicHolderEcJwk("holder-7"), credentials())
+
+        assertTrue(after.jwt.verify(RSASSAVerifier(providerPublicKey() as RSAPublicKey)))
+    }
+
     private fun Base64URLBytes() = com.nimbusds.jose.util.Base64URL.encode("0123456789abcdef".toByteArray())
 }

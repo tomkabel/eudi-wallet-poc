@@ -39,9 +39,6 @@ class WalletProviderServiceMock(
 
     private val logger = LoggerFactory.getLogger("WalletProviderServiceMock")
 
-    private val providerJwk: JWK by lazy { loadJwkFromKeyStore(PROVIDER_KEY_ALIAS) }
-    private val providerSigner: JWSSigner by lazy { jwsSigner(providerJwk) }
-
     /** Ensures the provider signing key exists; safe to call repeatedly. */
     private fun ensureProviderKey() {
         if (!keyStore.containsKey(PROVIDER_KEY_ALIAS)) {
@@ -130,6 +127,9 @@ class WalletProviderServiceMock(
             "attestKey must receive the holder key's PUBLIC JWK; got a ${jwkDescription(jwk)}"
         }
         ensureProviderKey()
+        // Loaded per call, not cached: deleteAllData clears the keystore, and ensureProviderKey
+        // then mints a new provider key the next attestation must be signed with.
+        val providerJwk = loadJwkFromKeyStore(PROVIDER_KEY_ALIAS)
         val issuedAt = Instant.now()
         val expiresAt = issuedAt.plus(60 * 30, ChronoUnit.DAYS)
         val keyAttestation = JWSObject(
@@ -149,7 +149,7 @@ class WalletProviderServiceMock(
         ).also {
             // Signed by the PROVIDER key, not the attested (holder) key: the provider vouches for
             // the holder public key, which is exactly what a key attestation is.
-            it.sign(providerSigner)
+            it.sign(jwsSigner(providerJwk))
         }.serialize()
         return KeyAttestation(
             keyId = keyId,
