@@ -23,6 +23,7 @@ import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.presentation.DcApiRequestDispatch
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.DcApiProtocol
+import ee.cyber.wallet.domain.presentation.ProtocolRefusal
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
 import ee.cyber.wallet.domain.presentation.HolderObligations
@@ -158,12 +159,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                     is DcApiRequestDispatch.Decision.Take -> decision.index
                     is DcApiRequestDispatch.Decision.Empty -> {
                         logger.error("DC API request carries no protocol entries")
-                        sendEffect { DcEffect.Error("No protocol in request") }
+                        sendEffect { DcEffect.Refused(ProtocolRefusal.UNSUPPORTED_PROTOCOL) }
                         return@launch
                     }
                     is DcApiRequestDispatch.Decision.Unsupported -> {
                         logger.error("Unsupported DC API protocol: ${decision.protocolName}")
-                        sendEffect { DcEffect.Error("Unsupported protocol: ${decision.protocolName}") }
+                        sendEffect { DcEffect.Refused(ProtocolRefusal.UNSUPPORTED_PROTOCOL) }
                         return@launch
                     }
                 }
@@ -677,6 +678,13 @@ sealed class DcEffect : ViewSideEffect {
     data object Cancel : DcEffect()
     data object NoMatch : DcEffect()
     data class Error(val message: String) : DcEffect()
+
+    /**
+     * A refusal with a user-facing, localized reason (F8): distinct from a generic error so the
+     * activity can surface the localized text instead of folding the case into cancellation.
+     * The wire-level exception mapping stays the record's open item.
+     */
+    data class Refused(val refusal: ProtocolRefusal) : DcEffect()
 
     // EE-ZKP-051: the plain fallback was refused because the advertised ZK specs cannot be met.
     data object RefusedPlainFallback : DcEffect()

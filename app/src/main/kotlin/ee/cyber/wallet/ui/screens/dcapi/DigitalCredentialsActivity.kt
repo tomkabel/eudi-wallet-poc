@@ -71,6 +71,15 @@ class DigitalCredentialsActivity : AppCompatActivity() {
                                     // UI will show the refusal state
                                 }
 
+                                is DcEffect.Refused -> {
+                                    // The localized refusal reason is for the user; on the wire
+                                    // this stays RESULT_CANCELED until the record's F8 exception
+                                    // work lands.
+                                    log.info("Refused: {}", effect.refusal)
+                                    setResult(RESULT_CANCELED)
+                                    finish()
+                                }
+
                                 is DcEffect.Error -> {
                                     log.error("Error: ${effect.message}")
                                     setResult(RESULT_CANCELED)
