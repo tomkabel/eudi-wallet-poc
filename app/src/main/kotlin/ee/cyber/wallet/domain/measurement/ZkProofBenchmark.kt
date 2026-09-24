@@ -42,8 +42,9 @@ object ZkProofBenchmark {
 
     /**
      * The result of one measurement session: cold percentiles (first proofs after circuit load),
-     * warm percentiles (the steady state the §6 budget is written against), and the peak prover
-     * memory. `vmHwmBeforeKb` is the baseline the peak is read against: `peakProverKb −
+     * warm percentiles (the steady state), and the peak prover memory. With the default 5 cold
+     * runs, cold p95 and p99 are both the slowest cold run; with 45 warm runs, warm p99 is the
+     * slowest warm run (see [percentilesOf]). `vmHwmBeforeKb` is the baseline the peak is read against: `peakProverKb −
      * vmHwmBeforeKb` is what the proof phase added and is the `EE-ZKP-041` figure, since the
      * absolute high-water mark also carries the runtime and the test runner. `VmHWM` never
      * decreases, so the delta holds only in a fresh process (see `docs/MEASUREMENTS.md`).
@@ -106,7 +107,7 @@ object ZkProofBenchmark {
     /**
      * Nearest-rank percentiles: the ceil(q/100 · n)-th smallest sample, so p95 of 20 runs is the
      * 19th and p50 of 4 runs is the 2nd — never interpolated, every reported figure is a run
-     * that actually happened.
+     * that actually happened. Below 100 samples p99 is the maximum, and below 20 so is p95.
      */
     fun percentilesOf(samples: List<Long>): Percentiles {
         require(samples.isNotEmpty()) { "no samples" }
