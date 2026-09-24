@@ -38,7 +38,11 @@ specification itself defines: the soundness floor of `EE-ZKP-022a`, the assumpti
 `EE-ZKP-022b` covering exactly the PRF gap above, and the recommended-tier ciphersuite
 selection of `EE-ZKP-022c`. The circuits this wallet bundles (v7, one attribute) carry a
 **109-bit soundness error** against the ACM v2.0 §1.1 recommended level of "at least 125 bits"
-(above the 100 bits §1.3 accepts for legacy mechanisms). Until an audited ≥125-bit parameter
+(above the 100 bits §1.3 accepts for legacy mechanisms). The figure is the specification's
+(§10.5, `EE-ZKP-022`): Longfellow's `mdoc_zk.h` annotates the v7 parameters
+`~109 bits statistical security`, while `draft-google-cfrg-libzk-02` states the same profiles
+"have been analyzed to provide at least 115 bits of security"; the specification uses the lower
+figure throughout, and so does this note. Either is below 125. Until an audited ≥125-bit parameter
 set exists upstream and is adopted into the verifier's registry, this wallet's ZK path is a
 pilot-grade mechanism: the shortfall is declared here, and the wallet SHALL NOT be advertised
 as meeting the ACM's recommended level. The migration trigger is the upstream release: when
