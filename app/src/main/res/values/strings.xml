@@ -45,7 +45,7 @@
     <string name="doc_type_digital_driving_licence">Digital Driving Licence</string>
     <string name="doc_type_right_to_drive_description">Right to drive</string>
     <string name="doc_type_age_verification_card">Age Verification Card</string>
-    <string name="doc_type_age_verification_description">Age verification document</string>
+    <string name="doc_type_age_verification_description">Electronic age attestation</string>
 
     <!-- My documents -->
     <string name="my_documents_add_new_document">Add new document</string>
@@ -211,14 +211,15 @@
     <!-- Activity log -->
     <string name="activity_log_title">Activity log</string>
     <string name="activity_log_description">Track all the data exchanges from your digital documents.</string>
-    <string name="activity_log_tier_summary">Presentations that can be linked to you by the issuer: %1$d. Presentations that cannot be linked: %2$d.</string>
-    <string name="tier_zero_knowledge">Zero-knowledge proof (not linkable)</string>
+    <string name="activity_log_tier_summary">Presentations that can be linked to you by the issuer: %1$d. Presentations the issuer cannot link: %2$d.</string>
+    <string name="tier_zero_knowledge">Zero-knowledge proof (not linkable by the issuer)</string>
     <string name="tier_plain_not_requested">Plain mdoc (linkable) — this party did not ask for a zero-knowledge proof</string>
     <string name="tier_plain_no_matching_circuit">Plain mdoc (linkable) — this party requires a zero-knowledge proof this Wallet cannot produce</string>
-    <string name="tier_plain_device_incable">Plain mdoc (linkable) — this device cannot produce zero-knowledge proofs</string>
+    <string name="tier_plain_device_incapable">Plain mdoc (linkable) — this device cannot produce zero-knowledge proofs</string>
     <string name="log_entry_title">Log entry</string>
     <string name="log_entry_request_title">Data exchange description</string>
     <string name="log_entry_relying_party">Recipient of the data</string>
+    <string name="log_entry_proximity_party">Proximity reader</string>
     <string name="log_entry_presentation_time">Presentation time</string>
     <string name="log_entry_presented_data">Presented data</string>
     <string name="log_entry_requested_data">Requested data</string>
