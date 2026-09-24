@@ -19,6 +19,11 @@ import org.multipaz.cose.CoseNumberLabel
 import org.multipaz.crypto.Algorithm
 import org.multipaz.crypto.X509CertChain
 import org.multipaz.mdoc.zkp.ZkSystemSpec
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.longOrNull
 import java.util.UUID
 
 /**
@@ -401,6 +406,77 @@ suspend fun DeviceRequest.toPresentationDefinition(): PresentationDefinition {
         .parse()
     return toPresentationDefinition(requestedDocuments.docRequests)
 }
+
+/**
+ * Plan §8.7: the `mso_mdoc_zk` DCQL credential format — the de-facto OpenID4VP ZK carrier — read
+ * into the SAME [ZkSystemSpec] model the ISO `zkRequest` path uses, keyed by the query's own
+ * `meta.doctype_value` exactly as [ee.cyber.wallet.domain.presentation.zkSpecsByDocType] keys the
+ * ISO path's specs. The DCQL query's `meta.zk_system_type` entries (system, id, circuit_hash,
+ * num_attributes, version, block_enc_hash, block_enc_sig) become `ZkSystemSpec.params`, so
+ * EE-ZKP-051's strict refusal and the per-doc-request spec scoping (second review, finding 2)
+ * apply unchanged: the view model never learns which transport a spec arrived over.
+ *
+ * The wire shape is the sibling repo's `oid4vp.ZkAgeQuery` (`verifier/go/oid4vp/dcql.go`) and the
+ * analysis in `OPENID4VP-MSO-MDOC-ZK-CARRIER.md`: DCQL `credentials[]` entries with
+ * `format: "mso_mdoc_zk"`, `meta.doctype_value` and `meta.zk_system_type` — a list whose entries
+ * carry the fields the ISO request carries in `params`. Nothing here is in a specification yet
+ * (DCHP #17 is still scoping), so an entry missing a field is skipped rather than widened: an
+ * under-specified advertisement can only fail the circuit match, never pass it.
+ *
+ * Parsing lives at this level, not in the OpenID4VP library: eudi-lib-jvm-siop-openid4vp-kt has
+ * no `mso_mdoc_zk` notion, and multipaz's own `DcqlQuery` is not on the fork's classpath. The
+ * shape is small enough that direct JSON parsing keeps the dependency question closed.
+ *
+ * First entry per doctype wins, mirroring the ISO path's duplicate-docType rule: the response
+ * carries one document per docType, and a duplicate with a second spec set is an attacker-shaped
+ * edge the first query governs.
+ *
+ * @return the specs keyed by `meta.doctype_value`; empty when no credential query is
+ *     `mso_mdoc_zk` (an `mso_mdoc` query answers through the plain path) or none carries
+ *     `zk_system_type` — which EE-ZKP-042 then reports as "not requested" and no proof is
+ *     resolved for (EE-ZKP-023's mirror on this side).
+ */
+fun zkSpecsByDocTypeFromDcql(query: JsonObject): Map<String, List<ZkSystemSpec>> {
+    val credentials = query["credentials"] as? JsonArray ?: return emptyMap()
+    return credentials.fold(emptyMap()) { acc, element ->
+        val credential = element as? JsonObject ?: return@fold acc
+        if (credential["format"]?.jsonPrimitive?.contentOrNull != FORMAT_MSO_MDOC_ZK) return@fold acc
+        val meta = credential["meta"] as? JsonObject ?: return@fold acc
+        val docType = meta["doctype_value"]?.jsonPrimitive?.contentOrNull ?: return@fold acc
+        if (docType in acc) return@fold acc
+        val zkSystemTypes = meta["zk_system_type"] as? JsonArray ?: return@fold acc
+        acc + (docType to zkSystemTypes.mapNotNull { entry ->
+            val zkSystemType = entry as? JsonObject ?: return@mapNotNull null
+            val system = zkSystemType["system"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            val id = zkSystemType["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            ZkSystemSpec(id, system).apply {
+                // circuit_hash, num_attributes, version, block_enc_hash, block_enc_sig — the
+                // same param names the ISO zkRequest's `params` map carries. Numbers go in as
+                // longs (the type getParam<Long> reads back); strings as strings. A
+                // non-numeric num_attributes/version/block_* is left unset: getParam<Long>
+                // then returns null and the match fails closed.
+                zkSystemType["circuit_hash"]?.jsonPrimitive?.contentOrNull?.let {
+                    addParam("circuit_hash", it)
+                }
+                zkSystemType["num_attributes"]?.jsonPrimitive?.longOrNull?.let {
+                    addParam("num_attributes", it)
+                }
+                zkSystemType["version"]?.jsonPrimitive?.longOrNull?.let {
+                    addParam("version", it)
+                }
+                zkSystemType["block_enc_hash"]?.jsonPrimitive?.longOrNull?.let {
+                    addParam("block_enc_hash", it)
+                }
+                zkSystemType["block_enc_sig"]?.jsonPrimitive?.longOrNull?.let {
+                    addParam("block_enc_sig", it)
+                }
+            }
+        })
+    }
+}
+
+/** The de-facto DCQL format identifier for the Longfellow ZK carrier (plan §8.7). */
+const val FORMAT_MSO_MDOC_ZK = "mso_mdoc_zk"
 
 internal fun toPresentationDefinition(docRequests: List<DeviceRequestParser.DocRequest>): PresentationDefinition {
     val inputDescriptors = docRequests
