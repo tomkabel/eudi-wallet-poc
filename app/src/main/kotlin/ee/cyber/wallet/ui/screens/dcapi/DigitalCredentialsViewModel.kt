@@ -33,9 +33,11 @@ import ee.cyber.wallet.domain.presentation.ZkPresentationReason
 import ee.cyber.wallet.domain.presentation.ZkPresenter
 import ee.cyber.wallet.domain.presentation.resolveSchemeId
 import ee.cyber.wallet.domain.presentation.zkSpecsByDocType
+import ee.cyber.wallet.util.zkSpecsByDocTypeFromDcql
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
+import ee.cyber.wallet.domain.provider.wallet.KeyType
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
 import ee.cyber.wallet.ui.mvi.ViewSideEffect
@@ -68,6 +70,7 @@ import kotlinx.parcelize.RawValue
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.json.JSONObject
+import kotlinx.serialization.json.Json
 import org.multipaz.cbor.Cbor
 import org.multipaz.crypto.EcPublicKey
 import org.multipaz.crypto.Hpke
@@ -181,6 +184,24 @@ class DigitalCredentialsViewModel @Inject constructor(
                     sessionTranscript.toCBOR()
                 ).parse().docRequests
 
+                // Plan §8.7: the accepted `org-iso-mdoc` entry's `data` may carry a DCQL query in
+                // `dcqlQuery` (provisional wire location; the protocol allow-list above is
+                // unchanged, `openid4vp` stays refused). Its mso_mdoc_zk zk_system_type entries
+                // parse into the same ZkSystemSpec model the ISO path uses and join the
+                // per-docType map — first entry wins per docType, in both sources and across
+                // them, so ISO wins on a shared docType — and the EE-ZKP-051 refusal, the
+                // per-credential resolveSchemeId and the EE-ZKP-042 notice run unchanged over it.
+                val dcqlSpecsByDocType = if (data.has("dcqlQuery")) {
+                    zkSpecsByDocTypeFromDcql(Json.parseToJsonElement(data.getString("dcqlQuery")) as JsonObject)
+                } else {
+                    emptyMap()
+                }
+                val effectiveSpecsByDocType = zkSpecsByDocType(docRequests).let { isoSpecs ->
+                    dcqlSpecsByDocType.entries.fold(isoSpecs) { acc, (docType, specs) ->
+                        if (docType in acc) acc else acc + (docType to specs)
+                    }
+                }
+
                 // EE-RP-003 / plan §4 item 4d (finding F7, review finding 1): the consent screen
                 // names an origin, not a relying party. The readerAuth certificate subject is
                 // shown only when the readerAuth signature check PASSED — the parser populates
@@ -193,15 +214,23 @@ class DigitalCredentialsViewModel @Inject constructor(
                 val documents = documentRepository.documents.first()
                 val documentMatches = presentationDefinition.getDocumentMatches(documents)
 
+                // Plan §8.7: whether ANY source advertised a proof — the ISO zkRequest or the
+                // mso_mdoc_zk DCQL format — decides EE-ZKP-042's "proof requested" reading and
+                // the issuer-disclosure consent string.
+                val proofRequested = effectiveSpecsByDocType.values.any { it.isNotEmpty() }
+                val issuerDisclosureExpected = proofRequested || dcqlSpecsByDocType.isNotEmpty()
+
                 handleMatchResult(
                     documentMatches,
                     origin,
                     sessionTranscript,
                     recipientPublicKey,
                     // Keyed by docType: a ZK request for one document must not change how another
-                    // is presented. A repeated docType keeps its first doc request's specs only.
-                    zkSpecsByDocType(docRequests),
-                    readerSubject
+                    // is presented. A repeated docType keeps its first doc request's specs only;
+                    // the DCQL carrier's specs join the same map (ISO wins on a shared docType).
+                    effectiveSpecsByDocType,
+                    readerSubject,
+                    issuerDisclosureExpected
                 )
             } catch (e: Exception) {
                 logger.error("Error processing request", e)
@@ -218,7 +247,8 @@ class DigitalCredentialsViewModel @Inject constructor(
         sessionTranscript: ListElement,
         recipientPublicKey: EcPublicKey,
         zkSystemSpecs: Map<String, List<ZkSystemSpec>>,
-        readerSubject: String?
+        readerSubject: String?,
+        issuerDisclosureExpected: Boolean
     ) {
         when (val match = documentMatches.second) {
             is Match.NotMatched -> {
@@ -271,7 +301,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                             sessionTranscript = sessionTranscript,
                             recipientPublicKey = recipientPublicKey,
                             zkSystemSpecs = zkSystemSpecs,
-                            expectedPlainTier = expectedPlainTier(zkSystemSpecs, credentials)
+                            expectedPlainTier = expectedPlainTier(zkSystemSpecs, credentials),
+                            // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's
+                            // certificate chain (msoX5chain) into every ZkDocument, so the
+                            // verifier sees which issuer stands behind the attestation. The
+                            // consent screen says so before the user shares.
+                            issuerDisclosesToVerifier = issuerDisclosureExpected
                         )
                     }
                 }
@@ -452,6 +487,21 @@ class DigitalCredentialsViewModel @Inject constructor(
             val responseDocuments = mutableListOf<MDoc>()
             val zkDocuments = mutableListOf<ZkDocument>()
             val presented = mutableListOf<Triple<DocType, JsonObject, PresentationTier>>()
+
+            // Plan §8.7: the mso_mdoc_zk path signs DeviceAuthentication with ECDSA only —
+            // Longfellow binds the proof to the session transcript and does not work with
+            // MAC-based device auth. The SecureArea device signing is EC by construction
+            // (deviceCryptoProvider requires KeyType.EC and SecureAreaCOSECryptoProvider emits
+            // ES256 COSE_Sign1); a non-EC attestation is refused for every credential before the
+            // first one is signed, rather than answered with a MAC the verifier's ZK check cannot
+            // consume.
+            currentState.credentials.firstOrNull { it.attestation.keyAttestation.keyType != KeyType.EC }?.let {
+                logger.error(
+                    "mso_mdoc_zk requires ECDSA device auth; key {} is {}",
+                    it.attestation.keyAttestation.keyId, it.attestation.keyAttestation.keyType
+                )
+                throw IllegalStateException("Zero-knowledge presentation requires an EC device key")
+            }
 
             currentState.credentials.forEach { credential ->
                 val mDoc = credential.mDoc
@@ -678,7 +728,11 @@ data class DcUiState(
     // EE-ZKP-051 refusal already happened for this request; the screen shows this reason.
     val plainRefusal: AppError? = null,
     // EE-PRO-013 (4a, F8): the request's protocol list was refused; the screen shows this reason.
-    val protocolRefusal: ProtocolRefusal? = null
+    val protocolRefusal: ProtocolRefusal? = null,
+    // EE-ZKP-042 (plan §8.7): true when the response would carry the issuer's certificate chain
+    // (msoX5chain) — the mso_mdoc_zk carrier puts it into every ZkDocument — so the consent
+    // screen surfaces the issuer-disclosure consequence in plain terms before the user shares.
+    val issuerDisclosesToVerifier: Boolean = false
 ) : ViewState, Parcelable
 
 sealed class DcEffect : ViewSideEffect {
