@@ -49,7 +49,7 @@ arrow = "2.0.1"
 dss-android = "1.02.08"
 registry-digital-credentials = "1.0.0-alpha03"
 play-services-identity-credentials = "16.0.0-alpha08"
-androidx-credentials = "1.6.0-SNAPSHOT"
+androidx-credentials = "1.6.0"
 
 [libraries]
 androidx-credentials-play = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "androidx-credentials" }
