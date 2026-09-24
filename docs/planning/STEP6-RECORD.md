@@ -42,8 +42,7 @@ Wired after a successful presentation in both flows:
 
 - `PresentationRequestViewModel.sendResponse` (redirect path): after the verifier answered
   `Accepted` or with a redirect URI, i.e. after the response was actually delivered. Consumption is
-  unconditional for EE-PoA rows, tier `PLAIN_NOT_REQUESTED`; a `Rejected` or failed send consumes
-  nothing.
+  unconditional for EE-PoA rows, tier `PLAIN_NOT_REQUESTED`; a failed send consumes nothing.
 - `DigitalCredentialsViewModel.onShareClicked` (DC API path): after the response is built and
   encrypted and the per-response rows are logged (`HolderObligations.escalateToResponseTier`), and
   before the `SendResponse` effect hands it to the platform. Consumption follows the escalated tier:
@@ -55,6 +54,18 @@ Wired after a successful presentation in both flows:
 
 In both flows a consumption failure is logged and never withholds or fails the response. Hilt
 binding in `RepositoriesModule`.
+
+Second review round hardened the wiring:
+
+- consumption also runs on the redirect path's `Rejected` branch (finding 3): the response — with
+  its plain, issuer-signed documents — was already transmitted, so a disclosed one-time EE-PoA
+  must consume exactly as on the accepted paths; leaving it presentable was a replay window;
+- row deletion is gated on a verified key removal (finding 4): `SecureAreaKeyDeleter.keyExists`
+  distinguishes a swallowed deletion failure from success, and consumption aborts (attestation
+  stays presentable and named) rather than orphaning a live signing key no record names;
+- a batch whose attest, mint or insert fails after `batchCreateKey` deletes the aliases it created
+  (finding 5), best-effort, before rethrowing: key creation is not transactional, and an alias no
+  record names would otherwise stay a live signing key until the next orphan sweep.
 
 ### Deviations
 
