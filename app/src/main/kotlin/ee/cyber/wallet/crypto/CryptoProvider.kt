@@ -10,18 +10,17 @@ import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.util.Base64URL
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
+import ee.cyber.wallet.security.SecureAreaCOSECryptoProvider
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import eu.europa.ec.eudi.openid4vci.JwtBindingKey
 import eu.europa.ec.eudi.openid4vci.PopSigner
 import eu.europa.ec.eudi.sdjwt.KeyBindingSigner
-import id.walt.mdoc.COSECryptoProviderKeyInfo
-import id.walt.mdoc.SimpleCOSECryptoProvider
+import id.walt.mdoc.cose.COSECryptoProvider
 import org.cose.java.AlgorithmID
-import java.security.KeyPair
 
 interface CryptoProvider {
     suspend fun generateKey(keyType: KeyType): KeyAttestation
     suspend fun getKeyAttestation(keyId: String): KeyAttestation
-    suspend fun getKeyPair(keyId: String): KeyPair
     suspend fun sign(keyId: String, dataToSign: ByteArray): ByteArray
     fun supports(keyType: KeyType): Boolean
     suspend fun clearAll()
@@ -59,21 +58,21 @@ suspend fun CryptoProvider.popSigner(keyId: String): PopSigner.Jwt {
 //    }
 // }
 
-suspend fun CryptoProvider.deviceCryptoProvider(keyId: String): SimpleCOSECryptoProvider {
+/**
+ * The mdoc DeviceAuthentication signer for a presentation: since step 5 it signs through the
+ * SecureArea key (finding F2), so the private key never reaches this code path. Only the
+ * SecureArea-backed provider can hand one out; a remote RSA provider has no device-signing key
+ * by construction (the private half lives with the wallet provider).
+ */
+suspend fun CryptoProvider.deviceCryptoProvider(
+    secureAreaKeyManager: SecureAreaKeyManager,
+    keyId: String
+): COSECryptoProvider {
     val keyAttestation = getKeyAttestation(keyId)
-    val keyPair = getKeyPair(keyId)
-    return SimpleCOSECryptoProvider(
-        listOf(
-            COSECryptoProviderKeyInfo(
-                keyID = keyId,
-                algorithmID = keyAttestation.jwsAlgorithm.toAlgorithmID(),
-                publicKey = keyPair.public,
-                privateKey = keyPair.private,
-                x5Chain = keyAttestation.jwk.parsedX509CertChain,
-                trustedRootCAs = emptyList()
-            )
-        )
-    )
+    require(keyAttestation.keyType == KeyType.EC) {
+        "SecureArea device signing is EC-only, key ${keyAttestation.keyId} is ${keyAttestation.keyType}"
+    }
+    return SecureAreaCOSECryptoProvider(secureAreaKeyManager)
 }
 
 fun JWK.jwsSigner(): JWSSigner = DefaultJWSSignerFactory().createJWSSigner(this)

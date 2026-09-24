@@ -4,6 +4,7 @@ import android.util.Base64
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.util.Base64URL
 import ee.cyber.wallet.crypto.CryptoProvider
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.crypto.keyBindingSigner
 import ee.cyber.wallet.domain.credentials.CredentialAttribute
@@ -70,6 +71,7 @@ class OpenId4VPManager(
     private val dispatcher: CoroutineDispatcher,
     private val openId4VPConfig: SiopOpenId4VPConfig,
     private val cryptoProviderFactory: CryptoProvider.Factory,
+    private val secureAreaKeyManager: SecureAreaKeyManager,
     private val httpClient: HttpClient
 ) {
 
@@ -252,7 +254,9 @@ class OpenId4VPManager(
         val mdoc = document.mDoc.presentWithDeviceSignature(
             mDocRequest = mDocRequest,
             deviceAuthentication = deviceAuthentication,
-            cryptoProvider = cryptoProvider.deviceCryptoProvider(keyId),
+            // Step 5: the DeviceAuthentication signature is made inside the SecureArea key;
+            // no private key material reaches this code path.
+            cryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId),
             keyID = keyId
         )
 

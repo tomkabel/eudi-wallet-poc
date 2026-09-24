@@ -3,7 +3,6 @@ package ee.cyber.wallet.crypto
 import com.nimbusds.jose.JWSHeader
 import com.nimbusds.jose.JWSSigner
 import com.nimbusds.jose.jca.JCAContext
-import com.nimbusds.jose.jwk.AsymmetricJWK
 import com.nimbusds.jose.util.Base64URL
 import ee.cyber.wallet.data.database.KeyAttestationEntity
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
@@ -17,7 +16,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
-import java.security.KeyPair
 
 class RemoteCryptoProvider(
     private val dispatcher: CoroutineDispatcher,
@@ -43,11 +41,6 @@ class RemoteCryptoProvider(
                     )
                 )
             }
-    }
-
-    override suspend fun getKeyPair(keyId: String): KeyPair {
-        val jwk = getKeyAttestation(keyId).jwk as AsymmetricJWK
-        return KeyPair(jwk.toPublicKey(), null)
     }
 
     override suspend fun getKeyAttestation(keyId: String): KeyAttestation =

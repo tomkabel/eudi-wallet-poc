@@ -13,7 +13,12 @@ import ee.cyber.wallet.data.database.dao.KeyAttestationDao
 import ee.cyber.wallet.data.datastore.WalletInstanceCredentialsDataSource
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.AndroidEncryptionManager
+import ee.cyber.wallet.security.AttestationChallengeSource
+import ee.cyber.wallet.security.DeviceSecureAreaSelection
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
+import ee.cyber.wallet.security.MockAttestationChallengeSource
+import ee.cyber.wallet.security.SecureAreaKeyManager
+import ee.cyber.wallet.security.SecureAreaSelection
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
@@ -32,6 +37,39 @@ object SecurityModule {
     fun providesAndroidEncryptionManager(
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher
     ) = AndroidEncryptionManager(dispatcher)
+
+    /**
+     * The StrongBox/TEE selection for device keys. Step 5 of the conformance plan: StrongBox
+     * where the device has FEATURE_STRONGBOX_KEYSTORE, TEE otherwise.
+     */
+    @Singleton
+    @Provides
+    fun providesSecureAreaSelection(
+        @ApplicationContext context: Context
+    ): SecureAreaSelection = DeviceSecureAreaSelection(
+        hasStrongBoxFeature = context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+    )
+
+    /** The attestation challenge the (mock) wallet provider hands out per generated key. */
+    @Singleton
+    @Provides
+    fun providesAttestationChallengeSource(): AttestationChallengeSource = MockAttestationChallengeSource()
+
+    /**
+     * Initialises the multipaz AndroidKeystoreSecureArea and the key manager over it. The
+     * SecureArea's SQLite metadata store is opened lazily on first use (suspend provider).
+     */
+    @Singleton
+    @Provides
+    suspend fun providesSecureAreaKeyManager(
+        @ApplicationContext context: Context,
+        selection: SecureAreaSelection,
+        attestationChallengeSource: AttestationChallengeSource
+    ): SecureAreaKeyManager = SecureAreaKeyManager.create(
+        context = context,
+        selection = selection,
+        attestationChallengeSource = attestationChallengeSource
+    )
 
     @Singleton
     @Provides
@@ -53,11 +91,13 @@ object SecurityModule {
         encryptedKeyStoreManager: EncryptedKeyStoreManager,
         keyAttestationDao: KeyAttestationDao,
         walletProviderService: WalletProviderService,
+        secureAreaKeyManager: SecureAreaKeyManager,
         walletInstanceCredentialsDataSource: WalletInstanceCredentialsDataSource
     ): LocalCryptoProvider = LocalCryptoProvider(
         keyAttestationDao = keyAttestationDao,
         keyStoreManager = encryptedKeyStoreManager,
         walletProviderService = walletProviderService,
+        secureAreaKeyManager = secureAreaKeyManager,
         walletInstanceCredentialsDataSource = walletInstanceCredentialsDataSource
     )
 

@@ -10,6 +10,7 @@ import com.upokecenter.cbor.CBORObject
 import com.upokecenter.cbor.CBORType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.crypto.CryptoProvider
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.data.repository.TransactionLogRepository
@@ -77,6 +78,7 @@ class DigitalCredentialsViewModel @Inject constructor(
     private val allowedAppsJson: String,
     private val documentRepository: DocumentRepository,
     private val cryptoProviderFactory: CryptoProvider.Factory,
+    private val secureAreaKeyManager: SecureAreaKeyManager,
     private val openId4VPManager: OpenId4VPManager,
     private val transactionLogRepository: TransactionLogRepository,
     @Dispatcher(WalletDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher
@@ -401,7 +403,8 @@ class DigitalCredentialsViewModel @Inject constructor(
                 val documentResponse = mDoc.presentWithDeviceSignature(
                     mDocRequest = mDocRequest,
                     deviceAuthentication = deviceAuthentication,
-                    cryptoProvider = cryptoProvider.deviceCryptoProvider(keyId),
+                    // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
+                    cryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId),
                     keyID = keyId
                 )
 

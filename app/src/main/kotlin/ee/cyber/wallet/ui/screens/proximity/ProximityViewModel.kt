@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ee.cyber.wallet.R
 import ee.cyber.wallet.crypto.CryptoProvider
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.data.repository.DocumentRepository
@@ -58,6 +59,7 @@ class ProximityViewModel @Inject constructor(
     val openId4VPManager: OpenId4VPManager,
     var transferManager: TransferManager,
     val cryptoProviderFactory: CryptoProvider.Factory,
+    val secureAreaKeyManager: SecureAreaKeyManager,
     private val transactionLogRepository: TransactionLogRepository,
     private val userPreferencesDataSource: UserPreferencesDataSource
 ) : MviViewModel<Event, UiState, Effect>() {
@@ -248,7 +250,8 @@ class ProximityViewModel @Inject constructor(
                     val documentResponse = mDoc.presentWithDeviceSignature(
                         mDocRequest = mDocRequest,
                         deviceAuthentication = deviceAuthentication,
-                        cryptoProvider = cryptoProvider.deviceCryptoProvider(keyId),
+                        // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
+                        cryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId),
                         keyID = keyId
                     )
                     responseDocuments.add(documentResponse)

@@ -1,10 +1,10 @@
 package ee.cyber.wallet.security
 
 import android.content.Context
-import ee.cyber.wallet.di.WalletDispatchers
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.multipaz.crypto.Algorithm
+import org.multipaz.crypto.EcPublicKeyDoubleCoordinate
 import org.multipaz.crypto.EcSignature
 import org.multipaz.prompt.Reason
 import org.multipaz.securearea.AndroidKeystoreCreateKeySettings
@@ -92,12 +92,13 @@ class SecureAreaKeyManager(
             .onFailure { logger.error("failed to delete SecureArea key $keyId", it) }
     }
 
+    /**
+     * No bulk clear: AndroidKeystoreSecureArea exposes no alias listing, and the wallet's own
+     * keyAttestation records are the alias registry. [AccountRepository.deleteAllData] deletes
+     * per-alias through [deleteKey]; the metadata table partition dies with the database.
+     */
     suspend fun clearAll() {
-        // Only SecureArea aliases live in this table's partition; BKS aliases are unaffected.
-        // enumerate() is the multipaz StorageTable API for listing keys.
-        logger.info("clearing all SecureArea device keys")
-        // AndroidKeystoreSecureArea does not expose an alias listing; keys are tracked by the
-        // caller's DAO records. Deletion therefore happens per-alias from the wallet's own records.
+        logger.info("clearAll: SecureArea keys are deleted per-alias from wallet records")
     }
 
     companion object {
@@ -111,8 +112,7 @@ class SecureAreaKeyManager(
         suspend fun create(
             context: Context,
             selection: SecureAreaSelection,
-            attestationChallengeSource: AttestationChallengeSource,
-            @Suppress("UNUSED_PARAMETER") dispatcher: CoroutineDispatcher
+            attestationChallengeSource: AttestationChallengeSource
         ): SecureAreaKeyManager {
             val storage = AndroidStorage(
                 databasePath = "secure_area.db",
@@ -141,3 +141,19 @@ data class SecureAreaDeviceKey(
     val attestationChain: org.multipaz.crypto.X509CertChain,
     val hardwareBacking: HardwareBacking
 )
+
+/**
+ * The public half as a Nimbus ECKey for the wallet provider's attestation flow. Only public
+ * material crosses this boundary; there is no private counterpart to export (EE-SEC-003).
+ */
+fun SecureAreaDeviceKey.jwk(): com.nimbusds.jose.jwk.ECKey {
+    val coordinate = publicKey as EcPublicKeyDoubleCoordinate
+    val x5c = attestationChain.certificates.map {
+        com.nimbusds.jose.util.Base64.encode(it.encoded.toByteArray())
+    }
+    return com.nimbusds.jose.jwk.ECKey.Builder(
+        com.nimbusds.jose.jwk.Curve.P_256,
+        com.nimbusds.jose.util.Base64URL.encode(coordinate.x),
+        com.nimbusds.jose.util.Base64URL.encode(coordinate.y)
+    ).x509CertChain(x5c).build()
+}
