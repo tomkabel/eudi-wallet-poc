@@ -14,7 +14,7 @@ fork repo unless a path says otherwise. One commit per sub-item, in plan order:
 | `38cc01f` | 4d — readerAuth certificate subject on the consent screen |
 | `99692be` | 4e — `androidx.credentials` SNAPSHOT → 1.6.0 stable (the only version change) |
 
-Unit tests: 51 (37 on the rebased base, +14 here), 0 failures, 2 skipped as on the base
+Unit tests: 53 after the review fixes (37 on the rebased base, +16 here), 0 failures, 2 skipped as on the base
 (`SampleTest`, `IssuanceTest`); `:app:compileDebugKotlin` +
 `:app:testDebugUnitTest` green before each commit; full `:app:testDebug` and `:zk-conformance:test`
 green at the end (§6 below).
@@ -203,6 +203,8 @@ under 1.6.0 stable is the same code path this step already exercises on device.
   `f281010`: 51 tests, 0 failures, 2 skipped.
 - Full `:app:testDebug` and `:zk-conformance:test`: green at the end of the step (final run
   after the rebase: 51 unit tests, 0 failures; `:zk-conformance:test` 4 tests, 0 failures).
+- After the PR #7 review fixes: 53 unit tests (+2 `UserPreferencesDataSourceTest`), 0 failures,
+  2 skipped; `:zk-conformance:test` green.
 - New JVM tests: `DcApiRequestDispatchTest` (7), `RegistryDocTypeTest` (2),
   `HolderObligationsTest` +5 (EE-ZKP-004 acceptance block).
 - Pushed as `step4-protocol-hygiene` (PR #7); `fixture-device-response`, `master`, `step0..5`
