@@ -1,7 +1,5 @@
 package ee.cyber.wallet.domain.presentation
 
-import ee.cyber.wallet.R
-
 /**
  * Which tier a presentation was made over, recorded per presentation in the transaction log.
  *
@@ -22,17 +20,4 @@ enum class PresentationTier {
     PLAIN_PROOF_FAILED;
 
     val isLinkable: Boolean get() = this != ZERO_KNOWLEDGE
-
-    companion object {
-        /**
-         * EE-ZKP-042 notice wording. Both variants state the same fact — this presentation can be
-         * linked by the issuer — but the reader deserves to know whether the linkability comes
-         * from a request the wallet could not satisfy or from the relying party never asking.
-         */
-        fun zkNoticeRes(isProofRequested: Boolean): Int = if (isProofRequested) {
-            R.string.presentation_zk_notice_proof_requested
-        } else {
-            R.string.presentation_zk_notice_not_requested
-        }
-    }
 }

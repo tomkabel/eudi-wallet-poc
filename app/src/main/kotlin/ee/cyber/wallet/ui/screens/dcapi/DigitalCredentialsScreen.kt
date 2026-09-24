@@ -27,6 +27,7 @@ import ee.cyber.wallet.R
 import ee.cyber.wallet.domain.credentials.CredentialAttribute
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.presentation.PresentationTier
+import ee.cyber.wallet.domain.presentation.zkNoticeRes
 import ee.cyber.wallet.ui.components.AppContent
 import ee.cyber.wallet.ui.components.DocumentCardHeader
 import ee.cyber.wallet.ui.components.FadedProgressIndicator
@@ -175,9 +176,7 @@ private fun DcPresentationContent(
                 // EE-ZKP-042: the user is told, before sharing, that this presentation can be
                 // linked by the issuer. The wording depends on whether the party asked for a
                 // proof the wallet cannot give, or never asked for one at all.
-                text = stringResource(
-                    PresentationTier.zkNoticeRes(tier != PresentationTier.PLAIN_NOT_REQUESTED)
-                ),
+                text = stringResource(tier.zkNoticeRes()),
                 textAlign = TextAlign.Center
             )
         }
