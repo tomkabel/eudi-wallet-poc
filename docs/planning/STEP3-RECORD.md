@@ -169,10 +169,8 @@ tests over the pure decision core:
   0/0.
 - Strongest-circuit rule: highest version among allowed circuits for the attribute count; no
   match when the wallet holds none of the advertised circuits; attribute count must match.
-- Review finding 6 (shared satisfiable predicate): satisfiable when any refusable credential can
-  prove; unsatisfiable when none can; non-refusable credentials cannot flip it; empty refusable
-  set is unsatisfiable; the toggle-then-share sequence keeps expected tier and refusal in
-  lockstep; mixed doctypes satisfy on the refusable credential alone.
+- Review finding 6 (notice and refusal in lockstep): every input the EE-ZKP-051 refusal fires on
+  already yields the linkable `PLAIN_NO_MATCHING_CIRCUIT` expected tier.
 - Review finding 7 (per-response tier): one plain document in a response makes every row
   linkable; an all-ZK response keeps its tiers; an all-plain response is unchanged; a single
   plain document is linkable.
@@ -210,13 +208,13 @@ On this host (CachyOS, `ANDROID_HOME=/opt/android-sdk`):
   other doctypes and the age document's own specs are unsatisfiable or its proof fails, the whole presentation is refused
   (nothing is shared) rather than partially proving the non-age documents. Refusing everything is
   the conservative reading; mixed requests are not produced by the PoC verifier.
-- **The satisfiable predicate is one and refusable-scoped.** The EE-ZKP-042 expected tier and the
-  EE-ZKP-051 share-time refusal both run `HolderObligations.satisfiableOverRefusable` over the
-  age-doctype credentials only, and the expected tier is recomputed on every optional-field
-  toggle — a toggle changes the would-be proof's attribute count, so the pre-share notice tracks
-  the state the user is actually about to share (review finding 6). Before the fix the notice ran
-  `all {}` over every credential while the refusal ran `any {}` over refusable ones, so a toggle
-  after render could reach the share-time refusal without the notice having shown it.
+- **The expected tier tracks optional-field toggles.** The EE-ZKP-042 expected tier and the
+  EE-ZKP-051 share-time refusal judge each credential against its own docType's specs with the
+  same `matchZkSystemSpec(specs, allCheckedFields.size)` predicate, and the expected tier is
+  recomputed on every optional-field toggle — a toggle changes the would-be proof's attribute
+  count, so the pre-share notice tracks the state the user is actually about to share (review
+  finding 6). Before the fix the tier was computed once at match time, so a toggle after render
+  could reach the share-time refusal without the notice having shown it.
 - **multipaz 0.99.0 API gaps.** `ZkSystemSpec` exposes params generically (`getParam`), so spec
   fingerprints are read via the same string keys (`circuit_hash`, `num_attributes`, `version`) the
   pre-existing `matchZkSystemSpec` used; no typed accessor exists in 0.99.0. The recorded tier is
