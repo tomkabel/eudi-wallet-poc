@@ -83,14 +83,15 @@ class EePoaConsumptionTest {
             rows.value.values.filter { it.keyType == keyType }
     }
 
-    private class RecordingDeleter : SecureAreaKeyDeleter {
+    /** [deleteFails] mimics SecureAreaKeyManager.deleteKey swallowing a platform failure. */
+    private class RecordingDeleter(private val deleteFails: Boolean = false) : SecureAreaKeyDeleter {
         val deletedKeys = mutableListOf<String>()
         var deleteAllCalled = false
 
         override suspend fun deleteKey(keyId: String) {
             deletedKeys.add(keyId)
         }
-        override suspend fun keyExists(keyId: String): Boolean = keyId !in deletedKeys
+        override suspend fun keyExists(keyId: String): Boolean = deleteFails || keyId !in deletedKeys
 
         override suspend fun deleteAllKeys() {
             deleteAllCalled = true
@@ -112,14 +113,28 @@ class EePoaConsumptionTest {
     )
 
     private class Harness(val attestationDao: FakeAttestationDao, val deleter: RecordingDeleter) {
-        val consumption = EePoaConsumption(attestationDao, FakeKeyAttestationDao(), deleter)
+        val keyAttestationDao = FakeKeyAttestationDao()
+        val consumption = EePoaConsumption(attestationDao, keyAttestationDao, deleter)
 
         fun seedBatch(size: Int) {
             repeat(size) { attestationDao.add("poa-$it", "key-poa-$it", CredentialType.EE_POA) }
         }
     }
 
-    private fun harness(size: Int) = Harness(FakeAttestationDao(), RecordingDeleter()).also { it.seedBatch(size) }
+    private fun harness(size: Int, deleteFails: Boolean = false) =
+        Harness(FakeAttestationDao(), RecordingDeleter(deleteFails)).also { it.seedBatch(size) }
+
+    @Test
+    fun `a key that survives deletion keeps its rows`() = runTest {
+        val h = harness(size = 3, deleteFails = true)
+        val presented = attestation("poa-0")
+
+        val consumed = h.consumption.consumeAfterPresentation(presented, PresentationTier.PLAIN_NOT_REQUESTED)
+
+        assertFalse(consumed, "rows must not be dropped over a key the SecureArea still holds")
+        assertEquals(3, h.attestationDao.rows.value.size)
+        assertTrue(h.keyAttestationDao.deleted.isEmpty())
+    }
 
     @Test
     fun `a plain presentation consumes the attestation and its key`() = runTest {

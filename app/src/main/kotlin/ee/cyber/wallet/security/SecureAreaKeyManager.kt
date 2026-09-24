@@ -3,6 +3,7 @@ package ee.cyber.wallet.security
 import android.content.Context
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
 import ee.cyber.wallet.domain.provider.wallet.KeyType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.multipaz.crypto.Algorithm
@@ -119,10 +120,22 @@ class SecureAreaKeyManager(
     suspend fun keyInfo(keyId: String): AndroidKeystoreKeyInfo =
         secureArea.getKeyInfo(keyId) as AndroidKeystoreKeyInfo
 
-    suspend fun containsKey(keyId: String): Boolean = runCatching {
+    /**
+     * Fails closed: only multipaz's "No key with given alias" ([IllegalArgumentException]) reads
+     * as absent. Any other read error reports the key as present, so a caller that deletes rows
+     * only once the key is gone keeps them.
+     */
+    suspend fun containsKey(keyId: String): Boolean = try {
         secureArea.getKeyInfo(keyId)
         true
-    }.getOrDefault(false)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: IllegalArgumentException) {
+        false
+    } catch (e: Exception) {
+        logger.error("could not read SecureArea key {}; treating it as still present", keyId, e)
+        true
+    }
 
     override suspend fun deleteKey(keyId: String) {
         runCatching { secureArea.deleteKey(keyId) }
@@ -218,7 +231,8 @@ interface SecureAreaKeyDeleter {
     /**
      * Whether the SecureArea still holds the alias. Consumption (EE-POA-013) checks this after
      * [deleteKey]: deleting the wallet rows for a key the platform still holds would orphan a
-     * live, usable signing key no record names (second review, finding 4).
+     * live, usable signing key no record names (second review, finding 4). Fails closed: a key
+     * whose state cannot be read counts as present.
      */
     suspend fun keyExists(keyId: String): Boolean
 
