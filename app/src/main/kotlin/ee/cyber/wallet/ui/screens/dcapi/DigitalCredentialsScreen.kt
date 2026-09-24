@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ee.cyber.wallet.R
+import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialAttribute
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.presentation.PresentationTier
@@ -53,8 +54,8 @@ fun DigitalCredentialsScreen(
             credential.fields.isEmpty()
         }
         AppContent {
-            if (state.plainRefused) {
-                RefusedPlainContent(onCancel = { onEvent(DcEvent.OnCancelClicked) })
+            if (state.plainRefusal != null) {
+                RefusedPlainContent(state.plainRefusal, onCancel = { onEvent(DcEvent.OnCancelClicked) })
             } else if (state.isLoading && emptyFields) {
                 LoadingContent()
             } else if (state.credentials.isEmpty() && !state.isLoading) {
@@ -69,18 +70,18 @@ fun DigitalCredentialsScreen(
 
 /**
  * EE-ZKP-051, strict reading: the device can prove, but the relying party advertised only circuits
- * this wallet does not hold. The plain fallback would be linkable, so it is refused and the user
- * is told why instead of being silently downgraded.
+ * this wallet does not hold, or the proof failed. The plain fallback would be linkable, so it is
+ * refused and the user is told why instead of being silently downgraded.
  */
 @Composable
-private fun RefusedPlainContent(onCancel: () -> Unit) {
+private fun RefusedPlainContent(reason: AppError, onCancel: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(R.string.error_presentation_no_matching_circuit),
+            text = stringResource(reason.resId),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.SemiBold

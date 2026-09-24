@@ -1,7 +1,8 @@
 # Step 3 record — holder UI obligations
 
 Fork: `/home/notroot/Documents/eudi-wallet-poc`, branch `step3-holder-obligations`
-(base `ba5ba2d` = step1-fork-identity). Plan: §4 step 3 of
+(cut from `ba5ba2d` = step1-fork-identity, rebased onto `fork/master` after the PR #1 review
+fixes: per-docType ZK specs, logging only once the response is built, `PLAIN_PROOF_FAILED`). Plan: §4 step 3 of
 `docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md` in `ee-eudiw`. Everything below is in the
 fork repo unless a path says otherwise.
 
@@ -18,8 +19,9 @@ issuer. The wording differs by cause: the relying party asked for a proof the wa
 - `app/src/main/kotlin/ee/cyber/wallet/domain/presentation/HolderObligations.kt` —
   `PresentationTier.zkNoticeRes()` picks the wording from the tier.
 - `app/src/main/kotlin/ee/cyber/wallet/ui/screens/dcapi/DigitalCredentialsViewModel.kt` —
-  `expectedPlainTier(specs, credentials)` maps multipaz `ZkSystemSpec`s onto the decision core and
-  stores the result in `DcUiState.expectedPlainTier` as soon as a match exists, before any share.
+  `expectedPlainTier(specs, credentials)` maps multipaz `ZkSystemSpec`s onto the decision core
+  once per credential, each against the specs its own doc request advertised
+  (`DcUiState.zkSystemSpecs` is keyed by docType), and stores the result in `DcUiState.expectedPlainTier` as soon as a match exists, before any share.
 - `app/src/main/kotlin/ee/cyber/wallet/ui/screens/dcapi/DigitalCredentialsScreen.kt` —
   `DcPresentationContent` renders the notice under the footer note whenever
   `expectedPlainTier != null`, i.e. strictly before the Share button can act.
@@ -27,7 +29,9 @@ issuer. The wording differs by cause: the relying party asked for a proof the wa
   et).
 
 The notice fires on `PLAIN_NOT_REQUESTED`, `PLAIN_NO_MATCHING_CIRCUIT` and
-`PLAIN_DEVICE_INCAPABLE` — every linkable case. When a ZK proof will be produced, no notice is
+`PLAIN_DEVICE_INCAPABLE` — every linkable case. The response is linkable if any one document in
+it is, so the notice fires when any credential falls back; a "proof requested" tier outranks
+`PLAIN_NOT_REQUESTED` in the wording. When a ZK proof will be produced, no notice is
 shown and nothing linkable is shared.
 
 ## 3b — the EE-ZKP-051 refusal, strict reading
@@ -41,18 +45,36 @@ holds must not work as a downgrade lever.
   age doctypes (this fork has exactly one: `AGE_VERIFICATION`, `eu.europa.ec.av.1`).
 - `DigitalCredentialsViewModel.kt` — `refusePlainWhenSpecsUnsatisfiable(...)`, called first thing
   in `onShareClicked` before anything is signed: delegates the decision to
-  `HolderObligations.refusePlainFallback`, then logs a transaction row with
+  `HolderObligations.refusePlainFallback` per age credential with that credential's own docType
+  specs (another doc request's circuits can neither satisfy nor trigger it), then logs a transaction row with
   `tier = PLAIN_NO_MATCHING_CIRCUIT` **and** `error = AppError.PRESENTATION_NO_MATCHING_CIRCUIT`,
-  sets `DcUiState.plainRefused`, and sends `DcEffect.RefusedPlainFallback`.
+  sets `DcUiState.plainRefusal` to the error, and sends `DcEffect.RefusedPlainFallback`.
 - `app/src/main/kotlin/ee/cyber/wallet/domain/AppError.kt` — new distinct refusal error
   `PRESENTATION_NO_MATCHING_CIRCUIT` (F8-style distinguishable).
-- `DigitalCredentialsScreen.kt` — `RefusedPlainContent`: distinct refusal state showing
-  `error_presentation_no_matching_circuit` with a Close button; no share path is offered.
+- `DigitalCredentialsScreen.kt` — `RefusedPlainContent`: distinct refusal state showing the
+  refusal's `AppError` text with a Close button; no share path is offered.
 - `DigitalCredentialsActivity.kt` — the new effect is handled (logged; UI shows the refusal state).
 - Device genuinely not ZK-capable (`zkSystem == null`) or party did not ask (`zkSystemSpecs`
   empty): plain with the 3a notice stays allowed — `refusePlainFallback` returns false for both.
 
-Strings: `error_presentation_no_matching_circuit` (en + et).
+Strings: `error_presentation_no_matching_circuit`, `error_presentation_proof_failed` (en + et).
+
+### 3b and the proof-failure fallback from `fork/master`
+
+`fork/master` gained "Fall back to the plain mdoc when ZK proof generation fails": a throwing
+`generateProof` sends the plain mdoc as `PLAIN_PROOF_FAILED`. For the age doctypes that is the
+same downgrade the strict reading refuses, reached by a different route: the device is capable,
+the party advertised a circuit, a held circuit matched — so no EE-ZKP-042 notice was shown — and
+the response would still go out linkable, silently. A party able to make proving fail would hold
+the lever the strict reading exists to remove.
+
+So in `onShareClicked`, a failed proof for a `requiresZkProof()` credential refuses the whole
+response before it is built: the row is logged with `tier = PLAIN_PROOF_FAILED` **and**
+`error = AppError.PRESENTATION_PROOF_FAILED`, and the screen shows
+`error_presentation_proof_failed`. Nothing is sent. `PLAIN_PROOF_FAILED` as a shared tier stays for
+the documents the strict reading does not cover, which keep master's fallback. Those get no
+pre-share notice today, because a proof was expected when the notice was worked out; step 4c
+("prove only the age doctypes") removes the case, since after it no non-age document is proved.
 
 ## 3c — EE-ZKP-053 tier on every path, and the count
 
@@ -67,11 +89,12 @@ Strings: `error_presentation_no_matching_circuit` (en + et).
 - `app/src/main/kotlin/ee/cyber/wallet/ui/screens/activity/ActivityLogScreen.kt` — the screen
   shows `activity_log_tier_summary` ("Presentations that can be linked to you by the issuer: N.
   Presentations the issuer cannot link: M."), computed only over rows that carry a tier so
-  pre-tier rows do not skew it. Each row also shows a `tierLabel()` line.
+  pre-tier rows do not skew it, and without refusal rows (tier plus `error`), which shared nothing. Each row also shows a `tierLabel()` line.
 - `app/src/main/kotlin/ee/cyber/wallet/ui/screens/documents/Extensions.kt` —
   `PresentationTier.tierLabel()` maps the tier to its string.
 - Strings: `activity_log_tier_summary`, `tier_zero_knowledge`, `tier_plain_not_requested`,
-  `tier_plain_no_matching_circuit`, `tier_plain_device_incapable` (en + et).
+  `tier_plain_no_matching_circuit`, `tier_plain_device_incapable`, `tier_plain_proof_failed`
+  (en + et).
 
 There is no `ActivityLogViewModel` count logic to unit test — the existing view model is a
 pass-through (`transactionLogs` flow); the count is a pure function tested as
@@ -169,7 +192,7 @@ On this host (CachyOS, `ANDROID_HOME=/opt/android-sdk`):
   has exactly one (`AGE_VERIFICATION`, `eu.europa.ec.av.1`). `requiresZkProof()` is the single
   place to extend when a second one lands.
 - **Strict refusal is per-request, not per-document.** If a request mixes the age doctype with
-  other doctypes and the advertised specs are unsatisfiable, the whole presentation is refused
+  other doctypes and the age document's own specs are unsatisfiable or its proof fails, the whole presentation is refused
   (nothing is shared) rather than partially proving the non-age documents. Refusing everything is
   the conservative reading; mixed requests are not produced by the PoC verifier.
 - **multipaz 0.99.0 API gaps.** `ZkSystemSpec` exposes params generically (`getParam`), so spec

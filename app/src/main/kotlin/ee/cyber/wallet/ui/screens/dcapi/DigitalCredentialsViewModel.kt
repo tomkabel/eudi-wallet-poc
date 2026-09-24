@@ -278,15 +278,20 @@ class DigitalCredentialsViewModel @Inject constructor(
         } ?: return false
 
         logger.warn("EE-ZKP-051: refusing plain fallback — device is ZK-capable but the advertised specs cannot be satisfied")
-        transactionLogRepository.addTransactionLog(
-            party = currentState.verifier,
-            docType = refused.credentialType.docType(),
-            tier = PresentationTier.PLAIN_NO_MATCHING_CIRCUIT,
-            error = AppError.PRESENTATION_NO_MATCHING_CIRCUIT
+        refusePlain(
+            currentState.verifier,
+            refused.credentialType.docType(),
+            PresentationTier.PLAIN_NO_MATCHING_CIRCUIT,
+            AppError.PRESENTATION_NO_MATCHING_CIRCUIT
         )
-        setState { copy(isLoading = false, plainRefused = true) }
-        sendEffect { DcEffect.RefusedPlainFallback }
         return true
+    }
+
+    /** Logs the EE-ZKP-051 refusal and shows it; nothing is shared. */
+    private suspend fun refusePlain(verifier: String, docType: DocType, tier: PresentationTier, error: AppError) {
+        transactionLogRepository.addTransactionLog(party = verifier, docType = docType, tier = tier, error = error)
+        setState { copy(isLoading = false, plainRefusal = error) }
+        sendEffect { DcEffect.RefusedPlainFallback }
     }
 
     private fun PresentationDefinition.getDocumentMatches(
@@ -418,9 +423,23 @@ class DigitalCredentialsViewModel @Inject constructor(
                             )
                         }.onFailure {
                             proofFailed = true
-                            logger.warn("ZK proof generation failed, presenting the plain mdoc instead", it)
+                            logger.warn("ZK proof generation failed", it)
                         }.getOrNull()
                     }
+                }
+                // EE-ZKP-051, strict reading: the device is capable and the party asked for a proof
+                // of an age document, so a failed prover must not become a silent linkable
+                // presentation (no EE-ZKP-042 notice was shown — a proof was expected). A party able
+                // to make proving fail would otherwise hold the same downgrade lever as one that
+                // advertises an unknown circuit. Nothing has been sent yet; refuse the whole response.
+                if (proofFailed && credential.credentialType.requiresZkProof()) {
+                    refusePlain(
+                        currentState.verifier,
+                        credential.credentialType.docType(),
+                        PresentationTier.PLAIN_PROOF_FAILED,
+                        AppError.PRESENTATION_PROOF_FAILED
+                    )
+                    return
                 }
                 if (zkDocument == null) {
                     responseDocuments.add(documentResponse)
@@ -575,8 +594,8 @@ data class DcUiState(
     // EE-ZKP-042: set once a match exists, before the user shares. Non-null when the response
     // would be linkable, carrying which linkable tier it would fall back to.
     val expectedPlainTier: PresentationTier? = null,
-    // EE-ZKP-051 refusal already happened for this request; the screen shows the refusal notice.
-    val plainRefused: Boolean = false
+    // EE-ZKP-051 refusal already happened for this request; the screen shows this reason.
+    val plainRefusal: AppError? = null
 ) : ViewState, Parcelable
 
 sealed class DcEffect : ViewSideEffect {
