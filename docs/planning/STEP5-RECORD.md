@@ -36,6 +36,12 @@ transitively).
   (deviceSignature) through the SecureArea key instead of walt.id's
   `SimpleCOSECryptoProvider`. The prover path needed no change (F2: it never
   touched the key).
+  Its Sig_structure encoder is pinned by `CoseSigStructureTest` (a literal
+  `Signature1` vector plus walt.id's CBOR encoder at every bstr length
+  boundary). The test caught the context string written as an 11-byte text
+  header for the 10-byte `"Signature1"`; `verify1` shared the encoder, so
+  local verification could not see it, while a conformant verifier would
+  have rejected every device signature.
 - `LocalCryptoProvider` / `RemoteCryptoProvider` / `CryptoProvider` routed to
   the SecureArea key manager; the private-key accessor was dropped.
 - Credentials held under BKS keys are re-issued, not migrated: importing a
