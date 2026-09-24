@@ -35,10 +35,23 @@ consumption and never-the-last; ≥ 30 and OpenID4VCI batch issuance stay in §8
 - a zero-knowledge presentation consumes nothing;
 - non-EE-PoA doctypes are out of scope.
 
-Wired after a successful presentation in both flows: `PresentationRequestViewModel.sendResponse`
-(redirect path — consumption unconditional for EE-PoA rows, tier `PLAIN_NOT_REQUESTED`) and
-`DigitalCredentialsViewModel.onShareClicked` (DC API path — consumption follows the escalated
-per-response tier). Hilt binding in `RepositoriesModule`.
+Wired after a successful presentation in both flows:
+
+- `PresentationRequestViewModel.sendResponse` (redirect path): after the verifier answered
+  `Accepted` or with a redirect URI, i.e. after the response was actually delivered. Consumption is
+  unconditional for EE-PoA rows, tier `PLAIN_NOT_REQUESTED`; a `Rejected` or failed send consumes
+  nothing.
+- `DigitalCredentialsViewModel.onShareClicked` (DC API path): after the response is built and
+  encrypted and the per-response rows are logged (`HolderObligations.escalateToResponseTier`), and
+  before the `SendResponse` effect hands it to the platform. Consumption follows the escalated tier:
+  a ZK-proved EE-PoA is kept, unless another document in the same response went out plain — the
+  response is then linkable, the row is logged plain, and the EE-PoA is consumed. A refused share
+  (EE-ZKP-051, prover failure on an age doctype) returns before this point and consumes nothing.
+  The DC API gives the wallet no delivery signal: the key is deleted before the platform returns
+  the response, because the activity finishes on `SendResponse` and would cancel a later deletion.
+
+In both flows a consumption failure is logged and never withholds or fails the response. Hilt
+binding in `RepositoriesModule`.
 
 ### Deviations
 
@@ -55,7 +68,7 @@ per-response tier). Hilt binding in `RepositoriesModule`.
 `EePoaIssuanceTest` (3): batch of three with one key per attestation in one transaction; batch-size
 constant; §9.2 metadata constants. `EePoaConsumptionTest` (4): plain presentation consumes
 attestation + key; never-the-last refusal; ZK leaves the count unchanged; non-EE-PoA out of scope.
-Full suite at the step's HEAD: 58 unit tests, 0 failures (`:app:testDebugUnitTest`),
+Full suite at the step's HEAD, rebased onto the review fixes: 60 unit tests, 0 failures (`:app:testDebugUnitTest`),
 `:zk-conformance:test` green.
 
 ### PENDING-DEVICE

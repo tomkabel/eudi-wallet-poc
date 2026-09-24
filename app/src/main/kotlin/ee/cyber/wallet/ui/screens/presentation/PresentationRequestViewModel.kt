@@ -361,17 +361,19 @@ class PresentationRequestViewModel @Inject constructor(
      * EE-POA-013 / WIAM_21 (plan §4 item 6): a completed plain presentation of `ee.riik.poa.1`
      * consumes the attestation and its SecureArea key — never the last in the batch. The tier
      * on this path is PLAIN_NOT_REQUESTED (the redirect path cannot carry a ZK request), so
-     * consumption is unconditional for EE-PoA rows that were actually disclosed.
+     * consumption is unconditional for EE-PoA rows that were actually disclosed. Runs inside the
+     * send coroutine, before the success state navigates away; a failure is logged and never
+     * turns a delivered response into an error.
      */
-    private fun consumePresentedEePoa() {
-        viewModelScope.launch {
-            state.value.credentials.forEach { credential ->
-                if (credential.credentialType == CredentialType.EE_POA) {
+    private suspend fun consumePresentedEePoa() {
+        state.value.credentials.forEach { credential ->
+            if (credential.credentialType == CredentialType.EE_POA) {
+                runCatching {
                     eePoaConsumption.consumeAfterPresentation(
                         attestation = credential.attestation,
                         tier = PresentationTier.PLAIN_NOT_REQUESTED
                     )
-                }
+                }.onFailure { log.error("EE-PoA consumption failed", it) }
             }
         }
     }

@@ -569,13 +569,15 @@ class DigitalCredentialsViewModel @Inject constructor(
 
             // EE-POA-013 / WIAM_21 (plan §4 item 6): plain presentations consume the EE-PoA
             // attestation and its SecureArea key, never the last of the batch; a ZK presentation
-            // consumes nothing (EE-ZKP-025). The tiers here are the escalated per-response ones
-            // already computed for the log.
-            loggedRows.zip(responseTiers).forEach { (row, tier) ->
-                val credential = currentState.credentials.firstOrNull { it.credentialType.docType() == row.first }
-                credential?.let {
-                    eePoaConsumption.consumeAfterPresentation(attestation = it.attestation, tier = tier)
-                }
+            // consumes nothing (EE-ZKP-025). The tiers are the escalated per-response ones just
+            // logged; `presented` holds one row per credential, in order. The response is already
+            // signed and encrypted, so deleting the key cannot change it. Consumption runs before
+            // the effect because the activity finishes on SendResponse and would cancel it half
+            // way; a failed consumption is logged and never withholds the response.
+            currentState.credentials.zip(responseTiers).forEach { (credential, tier) ->
+                runCatching {
+                    eePoaConsumption.consumeAfterPresentation(attestation = credential.attestation, tier = tier)
+                }.onFailure { logger.error("EE-PoA consumption failed", it) }
             }
 
             sendEffect { DcEffect.SendResponse(response) }
