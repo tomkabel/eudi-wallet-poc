@@ -3,6 +3,7 @@ package ee.cyber.wallet.domain.presentation
 import org.multipaz.cbor.DataItem
 import org.multipaz.mdoc.response.MdocDocument
 import org.multipaz.mdoc.zkp.ZkDocument
+import ee.cyber.wallet.util.DeviceRequestParser
 import org.multipaz.mdoc.zkp.ZkSystem
 import org.multipaz.mdoc.zkp.ZkSystemSpec
 import org.slf4j.LoggerFactory
@@ -97,3 +98,12 @@ fun resolveSchemeId(
         ?: return null
     return system.systemSpecs[held.indexOf(best)].id
 }
+
+/**
+ * The ZK specs each doc request advertised, keyed by its `docType`, so a credential resolves only
+ * against its own doc request's circuits (EE-ZKP-051). A repeated docType keeps the FIRST doc
+ * request's specs: the response carries one document per docType, and pooling a second spec set
+ * would let a crafted request pair unknown hashes with a held one and defeat the refusal.
+ */
+fun zkSpecsByDocType(docRequests: List<DeviceRequestParser.DocRequest>): Map<String, List<ZkSystemSpec>> =
+    docRequests.groupBy { it.docType }.mapValues { it.value.first().zkSystemSpecs }
