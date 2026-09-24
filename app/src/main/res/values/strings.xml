@@ -17,7 +17,7 @@
 
     <!-- Scanner -->
     <string name="scanner_no_permissions_title">Allow camera access in device settings</string>
-    <string name="scanner_no_permissions_description">EE Wallet uses camera to read QR codes.</string>
+    <string name="scanner_no_permissions_description">EUDI Wallet PoC uses camera to read QR codes.</string>
     <string name="scanner_go_to_settings">Open settings</string>
     <string name="scanner_scan_qr_code">Scan QR code</string>
     <string name="scanner_focus_note">Focus the camera on the QR code to start presentation of data online.</string>

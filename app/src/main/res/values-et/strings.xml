@@ -17,7 +17,7 @@
 
     <!-- Scanner -->
     <string name="scanner_no_permissions_title">Luba kaamera kasutamine seadetest</string>
-    <string name="scanner_no_permissions_description">Eesti digikukkur kasutab kaamerat, et skanneerida QR-koode.</string>
+    <string name="scanner_no_permissions_description">EUDI Wallet PoC kasutab kaamerat, et skanneerida QR-koode.</string>
     <string name="scanner_go_to_settings">Ava seaded</string>
     <string name="scanner_scan_qr_code">Skanneeri QR-kood</string>
     <string name="scanner_focus_note">Suuna kaamera QR koodile, et algatada andmete esitamine internetis.</string>
