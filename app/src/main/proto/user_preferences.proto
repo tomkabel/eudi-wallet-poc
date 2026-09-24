@@ -28,4 +28,6 @@ message UserPreferencesProto {
   IssuerKeyTypeProto issuer_key_type = 3;
   bool trust_all_validator = 4;
   BlePeripheralModeProto ble_mode = 5;
+  // ARF OIA_08f: global switch for disclosing stored attestations to the DC API framework.
+  bool dc_api_disclosure_enabled = 6;
 }

@@ -66,6 +66,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, navigationHandler: SettingsNavi
         onDeleteAllClicked = { showDeleteConfirmation = true },
         onBleModeToggle = { viewModel.toggleBleMode() },
         onTrustAllValidatorToggle = { viewModel.toggleTrustAllValidator() },
+        onDcApiDisclosureToggle = { viewModel.toggleDcApiDisclosure() },
         navigationHandler = navigationHandler
     )
 
@@ -97,6 +98,7 @@ private fun SettingsContent(
     onDeleteAllClicked: () -> Unit = {},
     onBleModeToggle: () -> Unit = {},
     onTrustAllValidatorToggle: () -> Unit = {},
+    onDcApiDisclosureToggle: () -> Unit = {},
     navigationHandler: SettingsNavigationHandler = SettingsNavigationHandler()
 ) {
     AppContent(
@@ -108,6 +110,7 @@ private fun SettingsContent(
             SettingItem(title = stringResource(R.string.settings_language), subtitle = stringResource(state.language.resId), onClick = navigationHandler.navigateToLanguage)
             BleModeSettingItem(isPeripheralMode = state.blePeripheralMode, onToggle = onBleModeToggle)
             TrustAllValidatorSettingItem(isTrustAll = state.trustAllValidator, onToggle = onTrustAllValidatorToggle)
+            DcApiDisclosureSettingItem(isEnabled = state.dcApiDisclosureEnabled, onToggle = onDcApiDisclosureToggle)
             if (state.lotlEnabled) {
                 LotlStatusItem(isSynced = state.lotlSynced, certificateCount = state.lotlCertificateCount)
             }
@@ -225,6 +228,39 @@ private fun TrustAllValidatorSettingItem(isTrustAll: Boolean, onToggle: () -> Un
             }
             Switch(
                 checked = isTrustAll,
+                onCheckedChange = { onToggle() }
+            )
+        }
+    }
+}
+
+/**
+ * ARF OIA_08f: the global switch to disable disclosing stored attestations to the Digital
+ * Credentials API framework. Off, nothing about the wallet's documents reaches the platform.
+ */
+@Composable
+private fun DcApiDisclosureSettingItem(isEnabled: Boolean, onToggle: () -> Unit = {}) {
+    Card {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(48.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.settings_dc_api_disclosure_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(R.string.settings_dc_api_disclosure_description),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Switch(
+                checked = isEnabled,
                 onCheckedChange = { onToggle() }
             )
         }

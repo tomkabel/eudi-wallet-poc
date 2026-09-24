@@ -12,5 +12,7 @@ data class UserPreferences(
     val darkThemeConfig: DarkThemeConfig = DarkThemeConfig.FOLLOW_SYSTEM,
     val blePeripheralMode: Boolean = true,
     val issuerKeyType: IssuerKeyType = IssuerKeyType.IACA_TRUSTED,
-    val trustAllValidator: Boolean = false
+    val trustAllValidator: Boolean = false,
+    // ARF OIA_08e: disclosure of stored attestations to the DC API framework is on by default.
+    val dcApiDisclosureEnabled: Boolean = true
 )

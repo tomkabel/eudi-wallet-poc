@@ -38,14 +38,28 @@ class DigitalCredentialsRegistrar @Inject constructor(
 
     @OptIn(ExperimentalDigitalCredentialApi::class)
     public suspend fun registerCredentials() {
+        // ARF OIA_08f: the global user setting gates disclosure to the DC API framework. With the
+        // switch off nothing is registered (and any earlier registration is cleared), so the
+        // platform never learns which attestations this wallet holds. Per-attestation selection
+        // after a disable is OIA_08f's SHOULD and is not built in this PoC.
+        if (!documentRepository.isDcApiDisclosureEnabled.first()) {
+            log.info("DC API disclosure disabled by user setting (OIA_08f); clearing the registry")
+            clearRegistry()
+            return
+        }
+
         log.info("Registering credentials to Credentials Manager")
         val documents = documentRepository.documents.first()
         if (!documents.isEmpty()) {
             val matchingDocuments = documents.filterIsInstance<CredentialDocument.MDocDocument>()
             val client = IdentityCredentialManager.getClient(context)
             val matcher = context.getMatcher()
-            val credentials = matchingDocuments.toCBORBytes()
 
+            // ARF OIA_08e: the platform learns the presence of stored attestations — their
+            // docType — but never attribute names or values. Claim-level matching happens in the
+            // wallet after launch, so the wallet may surface in the picker for requests it cannot
+            // fully answer; the ARF note accepts that.
+            val credentials = matchingDocuments.toRegistryDocTypes().toCBORBytes()
 
             client.clearRegistry(ClearRegistryRequest(deleteAll = true, clearTypedRegistryOption = null))
             client.registerCredentials(
@@ -78,41 +92,38 @@ class DigitalCredentialsRegistrar @Inject constructor(
         }
     }
 
-    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+    private suspend fun clearRegistry() {
+        IdentityCredentialManager.getClient(context).clearRegistry(
+            ClearRegistryRequest(deleteAll = true, clearTypedRegistryOption = null)
+        )
+    }
 
     /**
-     * Converts a list of [CredentialDocument.MDocDocument] to a CBOR byte array in structure, that
-     * identitycredentialmatcher.wasm requires.
+     * ARF OIA_08e: the registry payload carries each document's id and docType — nothing else.
+     * Namespace maps, element names and values stay inside the wallet.
      */
-    private fun List<CredentialDocument.MDocDocument>.toCBORBytes(): ByteArray {
+    fun List<CredentialDocument.MDocDocument>.toRegistryDocTypes(): List<RegistryDocType> =
+        map { RegistryDocType(id = it.id, docType = it.type.uri) }
+
+    /**
+     * Converts the [RegistryDocType] list to a CBOR byte array in the structure
+     * identitycredentialmatcher.wasm requires: an array of `{title, subtitle, bitmap, mdoc:
+     * {id, docType}}` maps, with the mdoc entry holding NO `namespaces` member.
+     */
+    private fun List<RegistryDocType>.toCBORBytes(): ByteArray {
         val docsBuilder = CBORObject.NewArray()
-        forEach { document ->
+        forEach { registryEntry ->
             docsBuilder.Add(CBORObject.NewMap().apply {
                 Add("title", "Title")
                 Add("subtitle", "Subtitle")
                 Add("bitmap", byteArrayOf(0))
                 Add("mdoc", CBORObject.NewMap().apply {
-                    Add("id", document.id)
-                    Add("docType", document.type.uri)
-                    Add("namespaces", CBORObject.NewMap().apply {
-                        document.fields.groupBy { it.namespace }
-                            .forEach { (nameSpace, elements) ->
-                                val namespaceBuilder = CBORObject.NewMap()
-                                elements.forEach { element ->
-                                    val elementBuilder = CBORObject.NewArray().apply {
-                                        Add(element.name)
-                                        Add(element.value)
-                                    }
-                                    namespaceBuilder.Add(element.name, elementBuilder)
-                                }
-                                Add(nameSpace.uri, namespaceBuilder)
-                            }
-                    })
+                    Add("id", registryEntry.id)
+                    Add("docType", registryEntry.docType)
                 })
             })
         }
-        val credentialBytes = docsBuilder.EncodeToBytes()
-        return credentialBytes
+        return docsBuilder.EncodeToBytes()
     }
 
     private fun Context.getMatcher(): ByteArray {
