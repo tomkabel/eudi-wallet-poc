@@ -25,6 +25,7 @@ import ee.cyber.wallet.R
 import ee.cyber.wallet.data.database.LogEntryEntity
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.DocType
+import ee.cyber.wallet.domain.presentation.HolderObligations
 import ee.cyber.wallet.ui.components.AppContent
 import ee.cyber.wallet.ui.components.HSpace
 import ee.cyber.wallet.ui.components.SimpleNavigationHeader
@@ -84,11 +85,10 @@ private fun ActivityLogScreenContent(logs: List<LogEntryEntity>, onItemClicked: 
             // EE-ZKP-053: transparency needs a number, not a setting. The count only covers rows
             // that carry a tier, so log rows written before tiers existed do not skew it, and
             // skips EE-ZKP-051 refusal rows, which carry a tier but shared nothing.
-            val successful = logs.filter { it.tier != null && it.error == null }
-            if (successful.isNotEmpty()) {
-                val linkable = successful.count { it.tier?.isLinkable == true }
+            val (linkable, unlinkable) = HolderObligations.countLinkable(logs.filter { it.error == null }.map { it.tier })
+            if (linkable + unlinkable > 0) {
                 ContentAlpha(0.8f) {
-                    Text(text = stringResource(R.string.activity_log_tier_summary, linkable, successful.size - linkable))
+                    Text(text = stringResource(R.string.activity_log_tier_summary, linkable, unlinkable))
                 }
                 VSpace(24)
             }
