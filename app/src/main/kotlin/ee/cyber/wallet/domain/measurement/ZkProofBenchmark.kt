@@ -43,9 +43,10 @@ object ZkProofBenchmark {
     /**
      * The result of one measurement session: cold percentiles (first proofs after circuit load),
      * warm percentiles (the steady state the §6 budget is written against), and the peak prover
-     * memory. `vmHwmBeforeKb` is the baseline the peak is read against — `VmHWM` never decreases,
-     * so in a fresh instrumented process the absolute high-water mark is the prover's peak, while
-     * in the running wallet the delta is what the proof phase added.
+     * memory. `vmHwmBeforeKb` is the baseline the peak is read against: `peakProverKb −
+     * vmHwmBeforeKb` is what the proof phase added and is the `EE-ZKP-041` figure, since the
+     * absolute high-water mark also carries the runtime and the test runner. `VmHWM` never
+     * decreases, so the delta holds only in a fresh process (see `docs/MEASUREMENTS.md`).
      */
     data class Report(
         val cold: List<Sample>,

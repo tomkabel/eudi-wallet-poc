@@ -44,9 +44,11 @@ What one measured run produces:
   for the `EE-ZKP-040` row, cold (first proofs after circuit load) and warm (the steady state
   the budget is written against);
 - `Report.vmHwmBeforeKb` and `Report.peakProverKb` — the `VmHWM` baseline and the peak, for
-  the `EE-ZKP-041` row. `VmHWM` never decreases; in a fresh instrumented process the peak is
-  the prover's absolute high-water mark, and in a long-lived process the delta is what the
-  proof phase added.
+  the `EE-ZKP-041` row. The figure read against the 250 MB budget is the delta
+  `peakProverKb − vmHwmBeforeKb`: `EE-ZKP-041` bounds prover memory and plan §6 reads `VmHWM`
+  around `generateProof`, while the absolute peak also carries ART, the app and the
+  instrumentation runner. `VmHWM` never decreases, so the delta is only the prover's share when
+  nothing before `measure()` pushed the high-water mark up — hence the fresh process in step 4.
 
 ## Running it on a device
 
@@ -84,7 +86,11 @@ inside it.
    hardware signing time, and the `Result` cell says which key was used.
 4. Call `ZkProofBenchmark.measure(prover)` with the default `VmHwmSource` (it reads
    `/proc/self/status` of the app process, which is what covers the native allocations).
-5. Log the `Report` and paste the percentiles and the memory figures into this table's
+   Run this test method on its own — `adb shell am instrument -w -e class <TestClass>#<method>
+   <test package>/androidx.test.runner.AndroidJUnitRunner`, which starts a fresh app process —
+   not after other tests in the same process.
+5. Log the `Report` and paste the percentiles and the memory figures — the delta against the
+   budget, the absolute peak beside it — into this table's
    `Result` cells, then carry the measured rows into spec §10.7 of the ee-eudiw repository,
    as the plan's table says.
 
