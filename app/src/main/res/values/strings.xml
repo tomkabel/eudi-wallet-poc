@@ -86,6 +86,7 @@
     <string name="presentation_image_stub">[Image]</string>
     <string name="presentation_zk_notice_proof_requested">This party asked for a zero-knowledge proof, but this presentation cannot use one. The issuer of your document can therefore link this presentation to you.</string>
     <string name="presentation_zk_notice_not_requested">This party did not ask for a zero-knowledge proof. The data you share carries the signature of the issuer, who can therefore link this presentation to you.</string>
+    <string name="presentation_issuer_disclosure_notice">The issuer of this attestation will be visible to the requesting party.</string>
     <string name="error_presentation_no_matching_circuit">Sharing stopped. This party requires a zero-knowledge proof this Wallet cannot produce, and without it the issuer of your document could link this presentation to you.</string>
     <string name="error_presentation_proof_failed">Sharing stopped. The zero-knowledge proof this party asked for could not be produced, and without it the issuer of your document could link this presentation to you.</string>
     <string name="error_presentation_unsupported_protocol">Sharing stopped. This party requested the data over a protocol this Wallet does not support.</string>

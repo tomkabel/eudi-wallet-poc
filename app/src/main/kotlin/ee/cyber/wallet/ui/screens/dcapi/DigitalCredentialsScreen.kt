@@ -197,6 +197,20 @@ private fun DcPresentationContent(
                 textAlign = TextAlign.Center
             )
         }
+        // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's certificate chain
+        // (msoX5chain) into the response, so the requesting party learns which issuer stands
+        // behind the attestation even when the claims themselves are proved zero-knowledge.
+        // The user is told this in plain terms before sharing.
+        if (state.issuerDisclosesToVerifier) {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(R.string.presentation_issuer_disclosure_notice),
+                textAlign = TextAlign.Center
+            )
+        }
         VSpace(24.dp)
         WSpace()
         Row(
