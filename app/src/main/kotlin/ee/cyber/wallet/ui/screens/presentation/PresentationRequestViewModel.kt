@@ -16,6 +16,7 @@ import ee.cyber.wallet.domain.documents.DocumentField
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
+import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -377,7 +378,10 @@ class PresentationRequestViewModel @Inject constructor(
                 party = currentState.verifier,
                 docType = credential.credentialType.docType(),
                 attributes = attributes,
-                error = error
+                error = error,
+                // EE-ZKP-053: the redirect path cannot receive a ZK request, so every row it
+                // writes is literally a presentation the relying party did not ask to prove.
+                tier = PresentationTier.PLAIN_NOT_REQUESTED
             )
         }
     }

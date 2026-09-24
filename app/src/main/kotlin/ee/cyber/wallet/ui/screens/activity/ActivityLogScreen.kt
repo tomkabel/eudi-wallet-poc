@@ -30,6 +30,7 @@ import ee.cyber.wallet.ui.components.HSpace
 import ee.cyber.wallet.ui.components.SimpleNavigationHeader
 import ee.cyber.wallet.ui.components.VSpace
 import ee.cyber.wallet.ui.screens.documents.docTypeName
+import ee.cyber.wallet.ui.screens.documents.tierLabel
 import ee.cyber.wallet.ui.theme.PreviewThemes
 import ee.cyber.wallet.ui.theme.WalletThemePreviewSurface
 import ee.cyber.wallet.ui.theme.green_600
@@ -80,6 +81,16 @@ private fun ActivityLogScreenContent(logs: List<LogEntryEntity>, onItemClicked: 
                 Text(text = stringResource(R.string.activity_log_description))
             }
             VSpace(24)
+            // EE-ZKP-053: transparency needs a number, not a setting. The count only covers rows
+            // that carry a tier, so log rows written before tiers existed do not skew it.
+            val successful = logs.filter { it.tier != null }
+            if (successful.isNotEmpty()) {
+                val linkable = successful.count { it.tier?.isLinkable == true }
+                ContentAlpha(0.8f) {
+                    Text(text = stringResource(R.string.activity_log_tier_summary, linkable, successful.size - linkable))
+                }
+                VSpace(24)
+            }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 logs.forEach {
                     ActivityItem(it) { onItemClicked(it.id) }
@@ -104,6 +115,7 @@ private fun ActivityItem(it: LogEntryEntity, onClick: () -> Unit = {}) {
                 Text(text = it.party, fontWeight = FontWeight.Bold)
                 ContentAlpha(0.6f) {
                     Text(text = it.docType.docTypeName())
+                    it.tier?.let { tier -> Text(text = tier.tierLabel()) }
                     Text(text = it.date.format())
                 }
             }
