@@ -212,8 +212,8 @@
     <!-- Activity log -->
     <string name="activity_log_title">Andmete esitamiste ajalugu</string>
     <string name="activity_log_description">Vaata, mis andmeid oled jaganud enda digikukrust.</string>
-    <string name="activity_log_tier_summary">Esitused, mille väljaandja saab sinuga siduda: %1$d. Esitused, mida väljaandja siduda ei saa: %2$d.</string>
-    <string name="tier_zero_knowledge">Nullteadmise tõend (väljaandja ei saa siduda)</string>
+    <string name="activity_log_tier_summary">Tavalised mdoc-esitused, mida väljaandja saab sinuga siduda: %1$d. Nullteadmise tõendiga esitused: %2$d.</string>
+    <string name="tier_zero_knowledge">Nullteadmise tõend (väljaandja allkirja ei jagatud)</string>
     <string name="tier_plain_not_requested">Tavaline mdoc (sidustatav) — see osapool ei küsinud nullteadmise tõendit</string>
     <string name="tier_plain_no_matching_circuit">Tavaline mdoc (sidustatav) — see osapool nõuab nullteadmise tõendit, mida see digikukkur ei suuda esitada</string>
     <string name="tier_plain_device_incapable">Tavaline mdoc (sidustatav) — see seade ei suuda nullteadmise tõendeid esitada</string>
