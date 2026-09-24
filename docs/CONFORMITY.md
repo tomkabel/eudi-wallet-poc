@@ -1,11 +1,13 @@
 # Conformity note
 
 This file states where the wallet stands against
-[`EE-EUDIW-TS-1.0`](https://github.com/tomkabel/ee-eudiw) (content revision 1.4) as of
+[`EE-EUDIW-TS-1.0`](https://github.com/tomkabel/ee-eudiw/blob/551fb656481f3fcf0c5b9a1c54be0b188571bf6f/spec/EE-EUDIW-TS-1.0.md)
+(content revision 1.4, ee-eudiw 551fb65) as of
 `step6-issuance-consumption` (910ddc4) plus the branch this file lands on. It is the
 `EE-ZKP-003` conformity statement the specification requires a wallet's documentation to carry,
 plus the inventory `EE-ZKP-060` asks for and the build-provenance statement an assessor will ask
-for first. Nothing here is a certification claim.
+for first. Nothing here is a certification claim. "The conformance plan" and "plan §x" below
+mean `docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md` in the same repository.
 
 ## 1. The ZKP_08 position, stated conditionally (EE-ZKP-003)
 
