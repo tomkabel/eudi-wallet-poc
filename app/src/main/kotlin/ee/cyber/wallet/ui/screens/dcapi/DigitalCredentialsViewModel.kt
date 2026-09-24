@@ -44,6 +44,7 @@ import ee.cyber.wallet.ui.screens.presentation.MatchedField
 import ee.cyber.wallet.ui.screens.presentation.MatchedFields
 import ee.cyber.wallet.ui.screens.presentation.fields
 import ee.cyber.wallet.util.DeviceRequestParser
+import ee.cyber.wallet.util.readerAuthSubject
 import ee.cyber.wallet.util.toPresentationDefinition
 import eu.europa.ec.eudi.prex.FieldQueryResult
 import eu.europa.ec.eudi.prex.Match
@@ -178,19 +179,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                     sessionTranscript.toCBOR()
                 ).parse().docRequests
 
-                // EE-RP-003 / plan §4 item 4d (finding F7): the consent screen names an origin,
-                // not a relying party. The readerAuth certificate subject is the first step
-                // toward a relying-party name; take it from the first doc request that carries
-                // reader authentication, before any trust judgement (that is §8.3 scope).
-                val readerSubject = docRequests
-                    .firstOrNull { it.readerCertificateChain != null }
-                    ?.readerCertificateChain
-                    ?.certificates
-                    ?.firstOrNull()
-                    ?.subject
-                    ?.components
-                    ?.get("CN")
-                    ?.value
+                // EE-RP-003 / plan §4 item 4d (finding F7, review finding 1): the consent screen
+                // names an origin, not a relying party. The readerAuth certificate subject is
+                // shown only when the readerAuth signature check PASSED — the parser populates
+                // the chain even on a failed check, so an ungated CN is attacker-chosen. Trust
+                // validation of a passing chain stays §8.3 scope.
+                val readerSubject = readerAuthSubject(docRequests)
 
                 val presentationDefinition = toPresentationDefinition(docRequests)
 
