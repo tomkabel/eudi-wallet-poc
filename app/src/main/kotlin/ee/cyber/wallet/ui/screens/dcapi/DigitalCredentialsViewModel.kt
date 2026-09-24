@@ -16,6 +16,7 @@ import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.di.Dispatcher
 import ee.cyber.wallet.di.WalletDispatchers
 import ee.cyber.wallet.domain.credentials.CredentialType
+import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
@@ -300,6 +301,7 @@ class DigitalCredentialsViewModel @Inject constructor(
         try {
             val responseDocuments = mutableListOf<MDoc>()
             val zkDocuments = mutableListOf<ZkDocument>()
+            val presented = mutableListOf<Pair<DocType, PresentationTier>>()
 
             currentState.credentials.forEach { credential ->
                 val mDoc = credential.mDoc
@@ -356,11 +358,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                     zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
                     else -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
                 }
-                transactionLogRepository.addTransactionLog(
-                    party = currentState.verifier,
-                    docType = credential.credentialType.docType(),
-                    tier = tier
-                )
+                presented.add(credential.credentialType.docType() to tier)
             }
 
             val deviceResponseBytes = if (zkDocuments.isEmpty()) {
@@ -369,6 +367,10 @@ class DigitalCredentialsViewModel @Inject constructor(
                 zkDeviceResponse(zkDocuments, responseDocuments, sessionTranscript)
             }
             val response = getEncryptedResponse(recipientPublicKey, deviceResponseBytes, sessionTranscript)
+            // Logged only once there is a response to send, so a failed share leaves no record of a presentation
+            presented.forEach { (docType, tier) ->
+                transactionLogRepository.addTransactionLog(party = currentState.verifier, docType = docType, tier = tier)
+            }
 
             logger.info("Response generated successfully")
             sendEffect { DcEffect.SendResponse(response) }
