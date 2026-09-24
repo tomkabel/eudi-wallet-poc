@@ -16,7 +16,6 @@ import org.multipaz.cbor.toDataItem
 import org.multipaz.crypto.EcPublicKeyDoubleCoordinate
 import org.multipaz.crypto.X509Cert
 import org.multipaz.crypto.X509CertChain
-import org.multipaz.mdoc.response.MdocDocument
 import org.multipaz.mdoc.zkp.ProofVerificationFailureException
 import org.multipaz.mdoc.zkp.ZkDocument
 import org.multipaz.mdoc.zkp.ZkDocumentData
@@ -63,9 +62,6 @@ class Step0CrossVerifyTest {
     private val rustProverDir: File =
         File(checkNotNull(System.getProperty("step0.rustProverDir")) { "step0.rustProverDir is unset; run through Gradle" })
 
-    /** The mdoc the fixture proof is made over, plus the issuer cert that signed it. */
-    private class Minted(val document: MdocDocument, val issuerCert: X509Cert)
-
     @Test
     fun writeMultipazFixtureForGoVerifierAndPairCircuitHashes() = runTest {
         val eeEudiw = EeEudiw.assumePresent()
@@ -92,7 +88,7 @@ class Step0CrossVerifyTest {
 
         // The proof the Go side must verify.
         val sessionTranscript = SessionTranscripts.forZkConformance()
-        val minted = mintAgeVerificationMdoc()
+        val minted = MdocMinter.mintAgeVerificationMdoc(sessionTranscript, SIGNED_AT)
         val spec = zkSystem.oneAttributeSpec()
         val zkDocument = zkSystem.generateProof(spec, minted.document, sessionTranscript, SIGNED_AT)
 
@@ -187,12 +183,6 @@ class Step0CrossVerifyTest {
     /** The circuit for a single requested attribute, which is what `age_over_18` alone needs. */
     private fun LongfellowZkSystem.oneAttributeSpec(): ZkSystemSpec =
         ZkConformanceSpecs.oneAttributeSpec(this)
-
-    private suspend fun mintAgeVerificationMdoc(): Minted {
-        val sessionTranscript = SessionTranscripts.forZkConformance()
-        val minted = MdocMinter.mintAgeVerificationMdoc(sessionTranscript, SIGNED_AT)
-        return Minted(minted.document, minted.issuerCert)
-    }
 
     private fun formatDate(i: Instant): String = ZkConformanceFormat.formatDate(i)
 
