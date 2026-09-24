@@ -159,8 +159,10 @@ the platform-asserted origin only (plan F7, `EE-RP-003`).
 - `DigitalCredentialsViewModel.processRequest` — takes the first doc request carrying a reader
   certificate chain, reads the leaf certificate's subject CN (multipaz `X509Cert.subject`,
   an `X500Name`; the `CN` component), and stores it in `DcUiState.readerSubject`.
-- `DigitalCredentialsScreen` — the consent screen renders the subject under the origin, present
-  only when the reader authenticated the request; absent otherwise (no placeholder, no claim).
+- `DigitalCredentialsScreen` — the consent screen renders the subject under the origin and its
+  "verified party" badge (review fix: not between them, so the badge never reads as vouching for
+  an untrusted certificate name), present only when the reader authenticated the request; absent
+  otherwise (no placeholder, no claim).
 
 Deviations:
 
