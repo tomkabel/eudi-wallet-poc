@@ -6,14 +6,17 @@ import android.os.Parcelable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import ee.cyber.wallet.R
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.data.repository.DocumentRepository
+import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.presentation.CredentialClaim
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
+import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -43,6 +46,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
@@ -53,6 +58,7 @@ class ProximityViewModel @Inject constructor(
     val openId4VPManager: OpenId4VPManager,
     var transferManager: TransferManager,
     val cryptoProviderFactory: CryptoProvider.Factory,
+    private val transactionLogRepository: TransactionLogRepository,
     private val userPreferencesDataSource: UserPreferencesDataSource
 ) : MviViewModel<Event, UiState, Effect>() {
 
@@ -255,6 +261,23 @@ class ProximityViewModel @Inject constructor(
                     documentIds = documentIds
                 )
                 transferManager.sendResponse(response)
+
+                // EE-ZKP-053: proximity presentations land in the same log as the online paths.
+                // A proximity reader cannot carry a ZK request either, so the tier is literally
+                // "the reader did not ask for a proof", and the row records what was disclosed.
+                state.value.credentials.forEach { credential ->
+                    val attributes = JsonObject(
+                        credential.allCheckedFields.associate { matchedField ->
+                            matchedField.field.name to JsonPrimitive(matchedField.field.value)
+                        }
+                    )
+                    transactionLogRepository.addTransactionLog(
+                        party = context.getString(R.string.log_entry_proximity_party),
+                        docType = credential.credentialType.docType(),
+                        attributes = attributes,
+                        tier = PresentationTier.PLAIN_NOT_REQUESTED
+                    )
+                }
             }
 
             Event.OnCancelClicked -> {
