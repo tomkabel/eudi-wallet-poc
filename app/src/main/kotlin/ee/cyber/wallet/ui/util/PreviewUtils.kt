@@ -73,5 +73,23 @@ fun document(credentialType: CredentialType, fields: List<DocumentField> = listO
             ),
             mDoc = MDocBuilder(DocType.AGE_VERIFICATION.uri).build(null)
         )
+
+        CredentialType.EE_POA -> MDocDocument(
+            id = "123",
+            type = credentialType.docType(),
+            fields = fields,
+            expired = false,
+            attestation = Attestation(
+                id = UUID.randomUUID().toString(),
+                credential = "",
+                type = credentialType,
+                keyAttestation = KeyAttestation(
+                    keyId = UUID.randomUUID().toString(),
+                    attestation = "",
+                    keyType = KeyType.EC
+                )
+            ),
+            mDoc = MDocBuilder(DocType.EE_POA.uri).build(null)
+        )
     }
 }

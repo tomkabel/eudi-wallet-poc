@@ -76,6 +76,40 @@ class SecureAreaKeyManager(
         )
     }
 
+    /**
+     * Batch key creation for the EE-PoA batches (conformance plan §4 item 6, EE-POA-011a): one
+     * Android Keystore round trip for [count] keys instead of [count] single generations. Every
+     * key carries the same settings — the provider challenge and the StrongBox/TEE selection of
+     * this device — and is immediately usable as a presentation key.
+     *
+     * multipaz 0.99.0's AndroidKeystoreSecureArea inherits the default [batchCreateKey], which
+     * loops [generateKey]-equivalent creation internally; the win is the shared settings and the
+     * single call site the issuer needs.
+     */
+    suspend fun batchCreateKey(count: Int): SecureAreaKeyBatch = withContext(dispatcher) {
+        require(count >= 1) { "a batch has at least one key" }
+        val challenge = attestationChallengeSource.challenge()
+        val settings = AndroidKeystoreCreateKeySettings
+            .Builder(kotlinx.io.bytestring.ByteString(challenge))
+            .setAlgorithm(Algorithm.ESP256)
+            .setUseStrongBox(selection.useStrongBox())
+            .build()
+        val result = secureArea.batchCreateKey(count, settings)
+        val keys = result.keyInfos.map { keyInfo ->
+            val attestationChain = requireNotNull(keyInfo.attestation.certChain) {
+                "the batch SecureArea key ${keyInfo.alias} has no attestation chain"
+            }
+            SecureAreaDeviceKey(
+                keyId = keyInfo.alias,
+                publicKey = keyInfo.publicKey,
+                attestationChain = attestationChain,
+                hardwareBacking = selection.backing()
+            )
+        }
+        logger.info("batch-created {} SecureArea keys", keys.size)
+        SecureAreaKeyBatch(keys)
+    }
+
     /** Signs through the SecureArea key; the private key never enters this process's heap. */
     suspend fun sign(keyId: String, dataToSign: ByteArray): EcSignature = withContext(dispatcher) {
         secureArea.sign(keyId, dataToSign, Reason.Unspecified)
@@ -146,6 +180,31 @@ data class SecureAreaDeviceKey(
     val attestationChain: org.multipaz.crypto.X509CertChain,
     val hardwareBacking: HardwareBacking
 )
+
+/** The keys of one [SecureAreaKeyManager.batchCreateKey] call, in creation order. */
+data class SecureAreaKeyBatch(val keys: List<SecureAreaDeviceKey>)
+
+/**
+ * The public half of a SecureArea key as a Nimbus [ECKey], for key material that did not come
+ * through [SecureAreaDeviceKey] (a batch-created key's own [org.multipaz.securearea.KeyInfo]).
+ * Only public material crosses this boundary; there is no private counterpart to export
+ * (EE-SEC-003).
+ */
+fun secureAreaJwk(
+    publicKey: org.multipaz.crypto.EcPublicKey,
+    attestationChain: org.multipaz.crypto.X509CertChain,
+    keyId: String = "secure-area-key"
+): com.nimbusds.jose.jwk.ECKey {
+    val coordinate = publicKey as EcPublicKeyDoubleCoordinate
+    val x5c = attestationChain.certificates.map {
+        com.nimbusds.jose.util.Base64.encode(it.encoded.toByteArray())
+    }
+    return com.nimbusds.jose.jwk.ECKey.Builder(
+        com.nimbusds.jose.jwk.Curve.P_256,
+        com.nimbusds.jose.util.Base64URL.encode(coordinate.x),
+        com.nimbusds.jose.util.Base64URL.encode(coordinate.y)
+    ).keyID(keyId).x509CertChain(x5c).build()
+}
 
 /**
  * The public half as a Nimbus ECKey for the wallet provider's attestation flow. Only public

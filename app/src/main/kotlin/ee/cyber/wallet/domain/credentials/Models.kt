@@ -10,14 +10,16 @@ enum class CredentialType(val value: String) {
     PID_SD_JWT("eu.europa.ec.eudiw.pid_vc_sd_jwt"), // TODO: eu.europa.ec.eudi.pid_vc_sd_jwt?
     PID_MDOC("eu.europa.ec.eudiw.pid_mso_mdoc"), // TODO: eu.europa.ec.eudi.pid_mso_mdoc?
     MDL("org.iso.18013.5.1.mDL"),
-    AGE_VERIFICATION("eu.europa.ec.av.1")
+    AGE_VERIFICATION("eu.europa.ec.av.1"),
+    EE_POA("ee.riik.poa.1")
 }
 
 enum class DocType(val uri: String) {
     PID_SD_JWT("urn:eudi:pid:1"),
     PID("eu.europa.ec.eudi.pid.1"),
     MDL("org.iso.18013.5.1.mDL"),
-    AGE_VERIFICATION("eu.europa.ec.av.1")
+    AGE_VERIFICATION("eu.europa.ec.av.1"),
+    EE_POA("ee.riik.poa.1")
 }
 
 enum class Namespace(val uri: String) {
@@ -25,6 +27,7 @@ enum class Namespace(val uri: String) {
     EU_EUROPA_EC_EUDI_PID_EE_1("eu.europa.ec.eudi.pid.ee.1"),
     ORG_ISO_18013_5_1("org.iso.18013.5.1"),
     EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1("eu.europa.ec.av.1"),
+    EE_RIIK_POA_1("ee.riik.poa.1"),
     NONE("");
 
     companion object {
@@ -173,6 +176,14 @@ enum class CredentialAttribute(
     ORG_ISO_18013_5_1_GIVEN_NAME_NATIONAL_CHARACTER(DocType.MDL, Namespace.ORG_ISO_18013_5_1, "given_name_national_character", true),
     ORG_ISO_18013_5_1_SIGNATURE_USUAL_MARK(DocType.MDL, Namespace.ORG_ISO_18013_5_1, "signature_usual_mark", true),
 
+
+    /*
+        EE Proof of Age (spec §9.2): predicates plus the mandatory metadata attributes
+     */
+    EE_POA_AGE_OVER_18(DocType.EE_POA, Namespace.EE_RIIK_POA_1, "age_over_18", true),
+    EE_POA_ISSUING_COUNTRY(DocType.EE_POA, Namespace.EE_RIIK_POA_1, "issuing_country", true),
+    EE_POA_ISSUING_AUTHORITY(DocType.EE_POA, Namespace.EE_RIIK_POA_1, "issuing_authority", true),
+    EE_POA_EXPIRY_DATE(DocType.EE_POA, Namespace.EE_RIIK_POA_1, "expiry_date", true),
 
     /*
         Age Verification Card
@@ -369,6 +380,21 @@ sealed class Credential(
         val locationStatus: LocationStatus,
     ) : Credential(
         type = CredentialType.MDL
+    )
+
+    /**
+     * The EE Proof of Age attestation (spec §9.2, EE-POA-001): only boolean age predicates and
+     * the three metadata attributes, no identifying claim. Issued from the same authoritative
+     * source and the same transaction as [AgeVerificationCredential] (EE-POA-003). No status
+     * reference — a PoA is consumed on plain presentation, not revoked (EE-POA-012).
+     */
+    data class EePoaCredential(
+        val ageOver18: Boolean,
+        val issuingCountry: String,
+        val issuingAuthority: String,
+        val expiryDate: LocalDate
+    ) : Credential(
+        type = CredentialType.EE_POA
     )
 
     data class AgeVerificationCredential(

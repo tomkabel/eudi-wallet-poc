@@ -46,6 +46,7 @@ class CredentialToDocumentMapper(
             CredentialType.PID_MDOC -> MDoc.fromCBORHex(attestation.credential).asDocument(attestation)
             CredentialType.MDL -> MDoc.fromCBORHex(attestation.credential).asDocument(attestation)
             CredentialType.AGE_VERIFICATION -> MDoc.fromCBORHex(attestation.credential).asDocument(attestation)
+            CredentialType.EE_POA -> MDoc.fromCBORHex(attestation.credential).asDocument(attestation)
         }
     }
 

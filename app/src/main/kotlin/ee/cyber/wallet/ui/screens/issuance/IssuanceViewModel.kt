@@ -16,6 +16,7 @@ import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.IssuePidUseCase
 import ee.cyber.wallet.domain.provider.ageverification.AgeVerificationProviderServiceMock
+import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
 import ee.cyber.wallet.domain.provider.mdl.MdlProviderServiceMock
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -55,6 +56,7 @@ class IssuanceViewModel @Inject constructor(
     private val issuePidUseCase: IssuePidUseCase,
     private val mdlProviderServiceMock: MdlProviderServiceMock,
     private val ageVerificationProviderServiceMock: AgeVerificationProviderServiceMock,
+    private val eePoaBatchIssuer: BatchAgeIssuer,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
     private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar
 ) : MviViewModel<Event, UiState, Effect>() {
@@ -133,9 +135,12 @@ class IssuanceViewModel @Inject constructor(
     }
 
     private suspend fun issueMockAgeVerification() {
-        val mockAgeVerification = ageVerificationProviderServiceMock.issueAgeVerification()
-        val document = credentialToDocumentMapper.convert(mockAgeVerification)!!
-        setState { copy(documents = listOf(document)) }
+        // EE-POA-003: one transaction mints the EE-PoA batch and the AV attestation together;
+        // on-device the batch keys come from SecureAreaKeyManager.batchCreateKey via the DI-wired
+        // issuer below, so both doctypes are stored (and consumed) through one flow.
+        val attestations = ageVerificationProviderServiceMock.issueEePoaBatch(eePoaBatchIssuer)
+        val documents = attestations.mapNotNull { credentialToDocumentMapper.convert(it) }
+        setState { copy(documents = documents) }
     }
 
     private suspend fun issueMdl() {

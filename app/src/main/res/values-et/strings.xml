@@ -46,6 +46,8 @@
     <string name="doc_type_right_to_drive_description">Juhtimisõigused</string>
     <string name="doc_type_age_verification_card">Age Verification Card</string>
     <string name="doc_type_age_verification_description">Elektrooniline vanusetõend</string>
+    <string name="doc_type_ee_poa">Eesti vanusetõend</string>
+    <string name="doc_type_ee_poa_description">Ühekordne vanusetõend</string>
 
     <!-- My documents -->
     <string name="my_documents_add_new_document">Lisa uus dokument</string>

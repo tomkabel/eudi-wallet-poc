@@ -99,6 +99,7 @@ sealed class MainRoute(
     ) {
         fun offerMdl() = route.replace("{type}", CredentialType.MDL.name)
         fun offerAgeVerification() = route.replace("{type}", CredentialType.AGE_VERIFICATION.name)
+        fun offerEePoa() = route.replace("{type}", CredentialType.EE_POA.name)
     }
 
     data object Issuance : MainRoute(

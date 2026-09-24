@@ -174,7 +174,12 @@ fun CredentialAttribute.label(): String = when (this) {
     CredentialAttribute.JWT_PID_1_PLACE_OF_BIRTH -> "required for field matching"
     CredentialAttribute.JWT_PID_1_ADDRESS -> "required for field matching"
     CredentialAttribute.JWT_PID_1_AGE_EQUAL_OR_OVER -> "required for field matching"
-    CredentialAttribute.AGE_VERIFICATION_AGE_OVER_18 -> stringResource(R.string.attr_age_over_18)
+    CredentialAttribute.AGE_VERIFICATION_AGE_OVER_18,
+    CredentialAttribute.EE_POA_AGE_OVER_18 -> stringResource(R.string.attr_age_over_18)
+
+    CredentialAttribute.EE_POA_ISSUING_COUNTRY -> stringResource(R.string.attr_issuing_country)
+    CredentialAttribute.EE_POA_ISSUING_AUTHORITY -> stringResource(R.string.attr_issuing_authority)
+    CredentialAttribute.EE_POA_EXPIRY_DATE -> stringResource(R.string.attr_expiry_date)
 }
 
 @Composable
@@ -183,6 +188,7 @@ fun CredentialType.docTypeName() = when (this) {
     CredentialType.PID_MDOC -> stringResource(R.string.doc_type_estonian_digital_id)
     CredentialType.MDL -> stringResource(R.string.doc_type_digital_driving_licence)
     CredentialType.AGE_VERIFICATION -> stringResource(R.string.doc_type_age_verification_card)
+    CredentialType.EE_POA -> stringResource(R.string.doc_type_ee_poa)
 }
 
 fun CredentialType.docType() = when (this) {
@@ -190,6 +196,7 @@ fun CredentialType.docType() = when (this) {
     CredentialType.PID_MDOC -> DocType.PID
     CredentialType.MDL -> DocType.MDL
     CredentialType.AGE_VERIFICATION -> DocType.AGE_VERIFICATION
+    CredentialType.EE_POA -> DocType.EE_POA
 }
 
 @Composable
@@ -207,6 +214,7 @@ fun DocType.docTypeName() = when (this) {
     DocType.PID -> stringResource(R.string.doc_type_estonian_digital_id)
     DocType.MDL -> stringResource(R.string.doc_type_digital_driving_licence)
     DocType.AGE_VERIFICATION -> stringResource(R.string.doc_type_age_verification_card)
+    DocType.EE_POA -> stringResource(R.string.doc_type_ee_poa)
 }
 
 @Composable
@@ -215,6 +223,7 @@ fun CredentialType.issuerName() = when (this) {
     CredentialType.PID_MDOC -> stringResource(R.string.issuer_pid_mdoc)
     CredentialType.MDL -> stringResource(R.string.issuer_mdl_mdoc)
     CredentialType.AGE_VERIFICATION -> stringResource(R.string.issuer_age_verification)
+    CredentialType.EE_POA -> stringResource(R.string.issuer_ee_poa)
 }
 
 @Composable
@@ -223,6 +232,7 @@ fun CredentialType.docTypeNameWithFormat() = when (this) {
     CredentialType.PID_MDOC -> "${stringResource(R.string.doc_type_estonian_digital_id)} (MDoc)"
     CredentialType.MDL -> "${stringResource(R.string.doc_type_digital_driving_licence)} (MDoc)"
     CredentialType.AGE_VERIFICATION -> stringResource(R.string.doc_type_age_verification_card)
+    CredentialType.EE_POA -> "${stringResource(R.string.doc_type_ee_poa)} (MDoc)"
 }
 
 fun CredentialDocument.credentialType(): CredentialType = when (this) {
@@ -231,6 +241,7 @@ fun CredentialDocument.credentialType(): CredentialType = when (this) {
         DocType.PID -> CredentialType.PID_MDOC
         DocType.MDL -> CredentialType.MDL
         DocType.AGE_VERIFICATION -> CredentialType.AGE_VERIFICATION
+        DocType.EE_POA -> CredentialType.EE_POA
         else -> throw IllegalStateException()
     }
 }
@@ -241,6 +252,7 @@ fun DocType.docTypeDescription(): String = when (this) {
     DocType.PID -> stringResource(R.string.doc_type_primary_description)
     DocType.MDL -> stringResource(R.string.doc_type_right_to_drive_description)
     DocType.AGE_VERIFICATION -> stringResource(R.string.doc_type_age_verification_description)
+    DocType.EE_POA -> stringResource(R.string.doc_type_ee_poa_description)
 }
 
 fun DocumentField.asCredentialAttribute(docType: DocType) = CredentialAttribute.entries.find { it.namespace == namespace && it.fieldName == name && it.docType == docType }
