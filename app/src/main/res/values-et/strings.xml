@@ -216,6 +216,7 @@
     <string name="tier_plain_not_requested">Tavaline mdoc (sidustatav) — see osapool ei küsinud nullteadmise tõendit</string>
     <string name="tier_plain_no_matching_circuit">Tavaline mdoc (sidustatav) — see osapool nõuab nullteadmise tõendit, mida see digikukkur ei suuda esitada</string>
     <string name="tier_plain_device_incapable">Tavaline mdoc (sidustatav) — see seade ei suuda nullteadmise tõendeid esitada</string>
+    <string name="tier_plain_proof_failed">Tavaline mdoc (sidustatav) — nullteadmise tõendi koostamine ebaõnnestus</string>
     <string name="log_entry_proximity_party">Lähivoo lugeja</string>
     <string name="log_entry_title">Esituse detailvaade</string>
     <string name="log_entry_request_title">Esituse kirjeldus</string>

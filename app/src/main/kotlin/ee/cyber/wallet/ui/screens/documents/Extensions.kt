@@ -198,6 +198,7 @@ fun PresentationTier.tierLabel(): String = when (this) {
     PresentationTier.PLAIN_NOT_REQUESTED -> stringResource(R.string.tier_plain_not_requested)
     PresentationTier.PLAIN_NO_MATCHING_CIRCUIT -> stringResource(R.string.tier_plain_no_matching_circuit)
     PresentationTier.PLAIN_DEVICE_INCAPABLE -> stringResource(R.string.tier_plain_device_incapable)
+    PresentationTier.PLAIN_PROOF_FAILED -> stringResource(R.string.tier_plain_proof_failed)
 }
 
 @Composable
