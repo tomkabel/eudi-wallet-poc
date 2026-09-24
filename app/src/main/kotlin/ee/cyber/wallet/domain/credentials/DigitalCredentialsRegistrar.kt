@@ -42,7 +42,15 @@ class DigitalCredentialsRegistrar @Inject constructor(
         // switch off nothing is registered (and any earlier registration is cleared), so the
         // platform never learns which attestations this wallet holds. Per-attestation selection
         // after a disable is OIA_08f's SHOULD and is not built in this PoC.
-        if (!documentRepository.isDcApiDisclosureEnabled.first()) {
+        // Fail closed (second review, finding 7): an unreadable preference must not re-register
+        // docTypes against the user's explicit disable — the safe reading of "unknown" is OFF.
+        val disclosureEnabled = try {
+            documentRepository.isDcApiDisclosureEnabled.first()
+        } catch (e: Exception) {
+            log.error("DC API disclosure preference unreadable; treating as disabled (fail closed)", e)
+            false
+        }
+        if (!disclosureEnabled) {
             log.info("DC API disclosure disabled by user setting (OIA_08f); clearing the registry")
             clearRegistry()
             return
