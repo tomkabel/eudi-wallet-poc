@@ -67,8 +67,10 @@ holder's name, birthdate and isikukood reached the platform (plan F5, OIA_08e
   the picker for requests it cannot fully answer — accepted by the ARF note to OIA_08e.
 - `DigitalCredentialsRegistrar.kt` — `toCBORBytes()` now encodes the `RegistryDocType` list; the
   mdoc map carries NO `namespaces` member. Attribute names and values never leave the wallet.
-- OIA_08f global setting: `user_preferences.proto` field 6 `dc_api_disclosure_enabled` (inverted
-  in the datasource mapping so an unset proto3 bool reads as OIA_08e's default-on);
+- OIA_08f global setting: `user_preferences.proto` field 6 `dc_api_disclosure_disabled` (stored
+  inverted so an unset proto3 bool reads as OIA_08e's default-on; the setter and the read mapping
+  both negate, pinned by `UserPreferencesDataSourceTest` — review fix: the field was first named
+  `..._enabled` and only the read negated, so the switch could never turn off);
   `UserPreferences.dcApiDisclosureEnabled`; `DocumentRepository.isDcApiDisclosureEnabled`;
   `DigitalCredentialsRegistrar.registerCredentials()` returns early and CLEARS the registry when
   the switch is off — with disclosure disabled the platform learns nothing about the wallet's
