@@ -37,9 +37,9 @@ import kotlin.time.Clock
  * the wallet re-enrols. User authentication (biometric gate) is plan §8.5 scope and is not
  * configured on these keys.
  *
- * The multipaz key-metadata store lives in a private SQLite database in the app's files dir: it
- * holds public metadata (public key, attestation chain) for keys whose private halves live in
- * Android Keystore itself.
+ * The multipaz key-metadata store lives in a private SQLite database in the app's no-backup files
+ * dir: it holds public metadata (public key, attestation chain) for keys whose private halves live
+ * in Android Keystore itself, so a restored copy would name keys the new device does not have.
  */
 class SecureAreaKeyManager(
     private val secureArea: AndroidKeystoreSecureArea,
@@ -110,7 +110,9 @@ class SecureAreaKeyManager(
 
         /**
          * Opens the multipaz AndroidKeystoreSecureArea on a private SQLite database. Suspend:
-         * the metadata table is created lazily on first access.
+         * the metadata table is created lazily on first access. AndroidStorage hands the path
+         * straight to SQLiteDatabase.openOrCreateDatabase, so it must be absolute - a bare file
+         * name resolves against the process working directory, not the app's data dir.
          */
         suspend fun create(
             context: Context,
@@ -118,7 +120,7 @@ class SecureAreaKeyManager(
             attestationChallengeSource: AttestationChallengeSource
         ): SecureAreaKeyManager {
             val storage = AndroidStorage(
-                databasePath = "secure_area.db",
+                databasePath = java.io.File(context.noBackupFilesDir, "secure_area.db").absolutePath,
                 clock = Clock.System,
                 coroutineContext = kotlinx.coroutines.Dispatchers.IO,
                 keySize = BaseStorage.MAX_KEY_SIZE

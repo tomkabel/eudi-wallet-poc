@@ -19,7 +19,10 @@ Branch: `step5-hardware-keys`. multipaz pinned at `0.99.0`
   `SecureAreaDeviceKey` (keyId, `EcPublicKey`, `X509CertChain` attestation,
   `HardwareBacking`) crosses its API. Key metadata (public half + attestation
   chain) is stored by multipaz in a private SQLite database
-  (`secure_area.db`) in the app's files dir.
+  (`secure_area.db`) in the app's no-backup files dir, opened by absolute path
+  (`AndroidStorage` passes the path to `SQLiteDatabase.openOrCreateDatabase`
+  unchanged, so a bare file name would resolve against the process working
+  directory).
 - `SecureAreaSelection.kt` — StrongBox when the device advertises
   `FEATURE_STRONGBOX_KEYSTORE`, TEE otherwise. The Android feature lookup is
   performed in `DeviceSecureAreaSelection` (Hilt-provided in
