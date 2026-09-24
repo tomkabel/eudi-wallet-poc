@@ -2,8 +2,6 @@ package ee.cyber.wallet.zk
 
 import java.io.File
 import org.junit.Assume.assumeTrue
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
