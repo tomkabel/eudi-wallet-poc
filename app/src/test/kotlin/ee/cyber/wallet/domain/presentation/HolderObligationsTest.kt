@@ -176,8 +176,10 @@ class HolderObligationsTest {
         val tiers = HolderObligations.escalateToResponseTier(
             listOf(PresentationTier.ZERO_KNOWLEDGE, PresentationTier.PLAIN_NOT_REQUESTED)
         )
+        // The proven row takes the plain sibling's tier: that document is why the response is
+        // linkable, and its reason is the true one (no invented "no matching circuit").
         assertEquals(
-            listOf(PresentationTier.PLAIN_NO_MATCHING_CIRCUIT, PresentationTier.PLAIN_NOT_REQUESTED),
+            listOf(PresentationTier.PLAIN_NOT_REQUESTED, PresentationTier.PLAIN_NOT_REQUESTED),
             tiers
         )
         // Both rows are now counted linkable by EE-ZKP-053's summary.

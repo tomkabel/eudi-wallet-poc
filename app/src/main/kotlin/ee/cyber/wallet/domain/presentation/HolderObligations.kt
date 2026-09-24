@@ -63,14 +63,14 @@ object HolderObligations {
      * from the same response session once any document in it went out plain — one identifying
      * document makes every row linkable (conformance plan §4 item 4c, review finding 7). The
      * per-row tier is still recorded first so the log keeps the per-document fact; this rule
-     * escalates the rows of a response in which any document fell back to a plain tier.
+     * escalates the rows of a response in which any document fell back to a plain tier. A proven
+     * row takes the tier of the plain document that made the response linkable, so its recorded
+     * reason (EE-ZKP-042 copy) is the one that actually applied, not an invented one.
      */
-    fun escalateToResponseTier(tiers: List<PresentationTier>): List<PresentationTier> =
-        if (tiers.any { it != PresentationTier.ZERO_KNOWLEDGE }) {
-            tiers.map { if (it == PresentationTier.ZERO_KNOWLEDGE) PresentationTier.PLAIN_NO_MATCHING_CIRCUIT else it }
-        } else {
-            tiers
-        }
+    fun escalateToResponseTier(tiers: List<PresentationTier>): List<PresentationTier> {
+        val plain = tiers.firstOrNull { it != PresentationTier.ZERO_KNOWLEDGE } ?: return tiers
+        return tiers.map { if (it == PresentationTier.ZERO_KNOWLEDGE) plain else it }
+    }
 
     /**
      * EE-ZKP-053: how many of the logged presentations the issuer can link. Rows without a tier
