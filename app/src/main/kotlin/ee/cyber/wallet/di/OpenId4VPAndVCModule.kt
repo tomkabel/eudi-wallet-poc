@@ -17,6 +17,7 @@ import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.CertificateChainValidator
 import ee.cyber.wallet.security.FetchLOTLCertificatesDSS
 import ee.cyber.wallet.util.JsonSupport
@@ -56,7 +57,8 @@ object OpenId4VPAndVCModule {
     fun providesOpenId4VPManager(
         @ApplicationContext context: Context,
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher,
-        cryptoProviderFactory: CryptoProvider.Factory
+        cryptoProviderFactory: CryptoProvider.Factory,
+        secureAreaKeyManager: SecureAreaKeyManager
     ): OpenId4VPManager {
         val openId4VPConfig = SiopOpenId4VPConfig(
             supportedClientIdPrefixes = listOf(
@@ -91,6 +93,7 @@ object OpenId4VPAndVCModule {
             dispatcher = dispatcher,
             openId4VPConfig = openId4VPConfig,
             cryptoProviderFactory = cryptoProviderFactory,
+            secureAreaKeyManager = secureAreaKeyManager,
             httpClient = createHttpClient()
         )
     }
