@@ -21,6 +21,7 @@ import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
+import ee.cyber.wallet.domain.presentation.HolderObligations
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
@@ -236,13 +237,11 @@ class DigitalCredentialsViewModel @Inject constructor(
         // Per credential, against its own docType's specs; the response is linkable if any one is.
         val tiers = credentials.mapNotNull { credential ->
             val docSpecs = specs[credential.credentialType.docType().uri].orEmpty()
-            when {
-                docSpecs.isEmpty() -> PresentationTier.PLAIN_NOT_REQUESTED
-                zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
-                matchZkSystemSpec(docSpecs, credential.allCheckedFields.size) == null ->
-                    PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
-                else -> null
-            }
+            HolderObligations.expectedPlainTier(
+                zkCapable = zkSystem != null,
+                proofRequested = docSpecs.isNotEmpty(),
+                satisfiable = matchZkSystemSpec(docSpecs, credential.allCheckedFields.size) != null
+            )
         }
         // A proof the party asked for and will not get outranks "never asked" in the wording.
         return tiers.firstOrNull { it != PresentationTier.PLAIN_NOT_REQUESTED } ?: tiers.firstOrNull()
@@ -267,13 +266,15 @@ class DigitalCredentialsViewModel @Inject constructor(
      * Returns true when the presentation was refused and nothing may be shared.
      */
     private suspend fun refusePlainWhenSpecsUnsatisfiable(currentState: DcUiState): Boolean {
-        if (zkSystem == null) return false
         // Each age document against the specs its own doc request advertised, never another's.
         val refused = currentState.credentials.firstOrNull { credential ->
             val specs = currentState.zkSystemSpecs[credential.credentialType.docType().uri].orEmpty()
             credential.credentialType.requiresZkProof() &&
-                specs.isNotEmpty() &&
-                matchZkSystemSpec(specs, credential.allCheckedFields.size) == null
+                HolderObligations.refusePlainFallback(
+                    zkCapable = zkSystem != null,
+                    proofRequested = specs.isNotEmpty(),
+                    satisfiable = matchZkSystemSpec(specs, credential.allCheckedFields.size) != null
+                )
         } ?: return false
 
         logger.warn("EE-ZKP-051: refusing plain fallback — device is ZK-capable but the advertised specs cannot be satisfied")
@@ -476,16 +477,22 @@ class DigitalCredentialsViewModel @Inject constructor(
     /**
      * Picks the strongest circuit we hold that the reader also allows, mirroring
      * [org.multipaz.mdoc.zkp.ZkSystem.getMatchingSystemSpec] without having to build multipaz
-     * `RequestedClaim`s the rest of this screen has no use for.
+     * `RequestedClaim`s the rest of this screen has no use for. The selection rule lives in
+     * [HolderObligations.strongestMatchingSpec] so it is unit tested on the JVM.
      */
     private fun matchZkSystemSpec(requested: List<ZkSystemSpec>, numAttributes: Int): ZkSystemSpec? {
-        val allowedCircuitHashes = requested.mapNotNull { it.getParam<String>("circuit_hash") }.toSet()
-        return (zkSystem ?: return null).systemSpecs
-            .filter {
-                it.getParam<String>("circuit_hash") in allowedCircuitHashes &&
-                    it.getParam<Long>("num_attributes") == numAttributes.toLong()
-            }
-            .maxByOrNull { it.getParam<Long>("version") ?: Long.MIN_VALUE }
+        val system = zkSystem ?: return null
+        val advertisedCircuitHashes = requested.mapNotNull { it.getParam<String>("circuit_hash") }.toSet()
+        val held = system.systemSpecs.map {
+            HolderObligations.SpecFingerprint(
+                circuitHash = it.getParam<String>("circuit_hash"),
+                numAttributes = it.getParam<Long>("num_attributes"),
+                version = it.getParam<Long>("version")
+            )
+        }
+        val best = HolderObligations.strongestMatchingSpec(held, advertisedCircuitHashes, numAttributes)
+            ?: return null
+        return system.systemSpecs[held.indexOf(best)]
     }
 
     /**
