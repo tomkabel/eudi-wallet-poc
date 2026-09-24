@@ -315,7 +315,7 @@ class DigitalCredentialsViewModel @Inject constructor(
      * documents keep the documented mixed-response behaviour.
      */
     private fun CredentialType.requiresZkProof(): Boolean = when (this) {
-        CredentialType.AGE_VERIFICATION -> true
+        CredentialType.AGE_VERIFICATION, CredentialType.EE_POA -> true
         else -> false
     }
 

@@ -122,6 +122,7 @@ fun NavGraphBuilder.mainNavGraph(appState: WalletAppState) {
                     when (it) {
                         CredentialType.MDL -> navController.navigate(MainRoute.CredentialOffer.offerMdl())
                         CredentialType.AGE_VERIFICATION -> navController.navigate(MainRoute.CredentialOffer.offerAgeVerification())
+                        CredentialType.EE_POA -> navController.navigate(MainRoute.CredentialOffer.offerEePoa())
                         else -> {}
                     }
                 },
@@ -143,6 +144,13 @@ fun NavGraphBuilder.mainNavGraph(appState: WalletAppState) {
                                 }
                             }
                             CredentialType.AGE_VERIFICATION -> {
+                                navController.navigate(MainRoute.Issuance.issueMockAgeVerification()) {
+                                    popUpTo(MainRoute.CredentialOffer) {
+                                        inclusive = true
+                                    }
+                                }
+                            }
+                            CredentialType.EE_POA -> {
                                 navController.navigate(MainRoute.Issuance.issueMockAgeVerification()) {
                                     popUpTo(MainRoute.CredentialOffer) {
                                         inclusive = true

@@ -46,7 +46,7 @@ class MyDocumentsViewModel @Inject constructor(
             .filter { // filter out MDL if MDOC PID is not issued yet
                 when (it) {
                     CredentialType.MDL -> documents.any { doc -> doc.credentialType() == CredentialType.PID_MDOC }
-                    CredentialType.PID_SD_JWT, CredentialType.PID_MDOC, CredentialType.AGE_VERIFICATION -> true
+                    CredentialType.PID_SD_JWT, CredentialType.PID_MDOC, CredentialType.AGE_VERIFICATION, CredentialType.EE_POA -> true
                     else -> false
                 }
             }

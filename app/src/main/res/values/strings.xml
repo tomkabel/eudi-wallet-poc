@@ -46,6 +46,8 @@
     <string name="doc_type_right_to_drive_description">Right to drive</string>
     <string name="doc_type_age_verification_card">Age Verification Card</string>
     <string name="doc_type_age_verification_description">Electronic age attestation</string>
+    <string name="doc_type_ee_poa">Estonian Proof of Age</string>
+    <string name="doc_type_ee_poa_description">Single-use proof of age</string>
 
     <!-- My documents -->
     <string name="my_documents_add_new_document">Add new document</string>
@@ -203,6 +205,7 @@
     <string name="issuer_pid_mdoc">Test Estonian Digital ID Issuer</string>
     <string name="issuer_mdl_mdoc">mDL Issuer</string>
     <string name="issuer_age_verification">Age Verification Issuer</string>
+    <string name="issuer_ee_poa">Estonian Proof of Age Issuer</string>
 
     <string name="cross_tutorial_item1">Find a computer with internet access.</string>
     <string name="cross_tutorial_item2">Go to the Estonian Digital ID Issuer website https://wallet-issuer.example.com</string>

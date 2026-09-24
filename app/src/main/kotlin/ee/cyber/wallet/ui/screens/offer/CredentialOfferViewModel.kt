@@ -66,6 +66,10 @@ class CredentialOfferViewModel @Inject constructor(
         CredentialType.AGE_VERIFICATION -> CredentialAttribute.entries.filter {
             it.docType == DocType.AGE_VERIFICATION && it.namespace == Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1 && it.disclosable
         }
+
+        CredentialType.EE_POA -> CredentialAttribute.entries.filter {
+            it.docType == DocType.EE_POA && it.namespace == Namespace.EE_RIIK_POA_1 && it.disclosable
+        }
     }.sortedBy { it.ordinal }
 
     private val _state = MutableStateFlow(

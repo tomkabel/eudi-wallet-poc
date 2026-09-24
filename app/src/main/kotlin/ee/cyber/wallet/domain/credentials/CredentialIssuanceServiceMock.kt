@@ -9,6 +9,7 @@ import ee.cyber.wallet.crypto.jwsSigner
 import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.domain.presentation.SupportedFormat
 import ee.cyber.wallet.domain.provider.Attestation
+import ee.cyber.wallet.domain.provider.ageverification.AgeIssuanceConstants
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.ui.model.IssuerKeyType
 import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
@@ -39,8 +40,11 @@ import org.cose.java.AlgorithmID
 import org.cose.java.OneKey
 import org.slf4j.LoggerFactory
 import java.security.KeyStore
+import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.time.Instant
+import kotlin.time.toJavaInstant
+import kotlinx.datetime.LocalDate
 
 class CredentialIssuanceServiceMock(
     val context: Context,
@@ -50,7 +54,7 @@ class CredentialIssuanceServiceMock(
     private val logger = LoggerFactory.getLogger("CredentialIssuanceServiceMock")
 
     override fun supports(credentialType: CredentialType): Boolean = when (credentialType) {
-        CredentialType.PID_SD_JWT, CredentialType.PID_MDOC, CredentialType.AGE_VERIFICATION -> true
+        CredentialType.PID_SD_JWT, CredentialType.PID_MDOC, CredentialType.AGE_VERIFICATION, CredentialType.EE_POA -> true
         else -> false
     }
 
@@ -61,6 +65,7 @@ class CredentialIssuanceServiceMock(
             is Credential.MdocPidCredential -> issueMDocPid(credential, keyAttestation)
             is Credential.MdocMdlCredential -> issueMDocMdl(credential, keyAttestation)
             is Credential.AgeVerificationCredential -> issueMDocAgeVerification(credential, keyAttestation)
+            is Credential.EePoaCredential -> issueMDocEePoa(credential, keyAttestation)
             else -> TODO("${credential.type} not supported yet")
         }.let {
             Attestation(
@@ -501,20 +506,11 @@ class CredentialIssuanceServiceMock(
             )
         )
 
+        // Spec §9.2 / conformance plan §4 item 6: the AV Profile attestation carries its single
+        // mandatory attribute age_over_18 and nothing else — the Commission's blueprint defines
+        // no other attribute, so the threshold zoo the older mock minted is gone.
         val mdoc = MDocBuilder(DocType.AGE_VERIFICATION.uri)
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_13", BooleanElement(ageVerification.ageOver13))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_15", BooleanElement(ageVerification.ageOver15))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_16", BooleanElement(ageVerification.ageOver16))
             .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_18", BooleanElement(ageVerification.ageOver18))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_21", BooleanElement(ageVerification.ageOver21))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_23", BooleanElement(ageVerification.ageOver23))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_25", BooleanElement(ageVerification.ageOver25))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_27", BooleanElement(ageVerification.ageOver27))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_28", BooleanElement(ageVerification.ageOver28))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_40", BooleanElement(ageVerification.ageOver40))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_60", BooleanElement(ageVerification.ageOver60))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_65", BooleanElement(ageVerification.ageOver65))
-            .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_67", BooleanElement(ageVerification.ageOver67))
 
         val status = Status(
             statusList = StatusListInfo(
@@ -531,5 +527,51 @@ class CredentialIssuanceServiceMock(
             getMdlKeyAlias(),
             status
         ).toCBORHex()
+    }
+
+    /**
+     * The EE Proof of Age attestation, spec §9.2 (conformance plan §4 item 6): exactly the
+     * mandatory predicate `age_over_18` plus the mandatory metadata attributes
+     * `issuing_country`, `issuing_authority` and `expiry_date` (EE-POA-001). No status
+     * reference: a single-use attestation is consumed on presentation (EE-POA-013), not revoked.
+     */
+    suspend fun issueMDocEePoa(poa: Credential.EePoaCredential, keyAttestation: KeyAttestation): String {
+        require(poa.expiryDate >= issuanceDay()) {
+            "EE-PoA validity must start at issuance and span at most ${AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS} days"
+        }
+
+        val deviceKeyInfo = DeviceKeyInfo(
+            DataElement.fromCBOR(
+                OneKey(keyAttestation.jwk.toECKey().toPublicKey(), null).AsCBOR().EncodeToBytes()
+            )
+        )
+
+        val mdoc = MDocBuilder(DocType.EE_POA.uri)
+            .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "age_over_18", BooleanElement(poa.ageOver18))
+            .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "issuing_country", StringElement(poa.issuingCountry))
+            .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "issuing_authority", StringElement(poa.issuingAuthority))
+            .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "expiry_date", FullDateElement(poa.expiryDate))
+
+        // EE-POA-012: no status reference — null Status writes none into the MSO.
+        val signed = Instant.fromEpochSeconds(1779711303L)
+        val issuerKeyPair = mdlIssuerKeyPair()
+        return mdoc.sign(
+            ValidityInfo(signed, signed, Instant.fromEpochSeconds(2095329603L)),
+            deviceKeyInfo,
+            mdlIssuerCryptoProvider(),
+            issuerKeyPair.keyID,
+            null
+        ).toCBORHex()
+    }
+
+    companion object {
+        /**
+         * The issuance day, midnight UTC, that every batch's ValidityInfo anchors to
+         * (EE-POA-012): the current UTC date, so validity is measured from the day of issuance.
+         */
+        internal fun issuanceDay(): kotlinx.datetime.LocalDate {
+            val javaDay = java.time.Instant.now().atZone(ZoneOffset.UTC).toLocalDate()
+            return kotlinx.datetime.LocalDate(javaDay.year, javaDay.monthValue, javaDay.dayOfMonth)
+        }
     }
 }
