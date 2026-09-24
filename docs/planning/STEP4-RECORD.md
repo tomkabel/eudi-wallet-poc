@@ -49,10 +49,12 @@ Deviations:
   cancellation at the Activity boundary (`DigitalCredentialsActivity` ends with
   `setResult(RESULT_CANCELED)`). Step 4a delivers the specific error inside the wallet (distinct
   from `JSONException`, distinct from the EE-ZKP-051 circuit refusal); second review: an empty or
-  unsupported protocol list now leaves the view model as `DcEffect.Refused(ProtocolRefusal)`,
-  carrying the localized `error_presentation_unsupported_protocol` reason, not a generic
-  `DcEffect.Error` with an English string. The wire-level distinguishability remains open,
-  recorded as a PENDING-DEVICE/§8 item below.
+  unsupported protocol list now sets `DcUiState.protocolRefusal` and sends
+  `DcEffect.Refused(ProtocolRefusal)` instead of a generic `DcEffect.Error` with an English
+  string, and the activity stays open so the screen shows the localized reason
+  (`error_presentation_unsupported_protocol`; an empty list, which names no protocol, shows
+  `error_presentation_unsupported_request_type`) until the user closes it. The wire-level
+  distinguishability remains open, recorded as a PENDING-DEVICE/§8 item below.
 
 PENDING-DEVICE: none for 4a itself; the refusals-look-like-cancellation gap is a code-level item
 carried for the F8 work, testable only once a relying-party harness drives the DC API end to end.

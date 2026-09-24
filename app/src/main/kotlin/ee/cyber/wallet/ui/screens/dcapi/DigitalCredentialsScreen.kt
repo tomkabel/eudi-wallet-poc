@@ -1,5 +1,6 @@
 package ee.cyber.wallet.ui.screens.dcapi
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ee.cyber.wallet.R
-import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialAttribute
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.presentation.PresentationTier
@@ -55,7 +55,9 @@ fun DigitalCredentialsScreen(
         }
         AppContent {
             if (state.plainRefusal != null) {
-                RefusedPlainContent(state.plainRefusal, onCancel = { onEvent(DcEvent.OnCancelClicked) })
+                RefusedPlainContent(state.plainRefusal.resId, onCancel = { onEvent(DcEvent.OnCancelClicked) })
+            } else if (state.protocolRefusal != null) {
+                RefusedPlainContent(state.protocolRefusal.messageRes, onCancel = { onEvent(DcEvent.OnCancelClicked) })
             } else if (state.isLoading && emptyFields) {
                 LoadingContent()
             } else if (state.credentials.isEmpty() && !state.isLoading) {
@@ -71,17 +73,18 @@ fun DigitalCredentialsScreen(
 /**
  * EE-ZKP-051, strict reading: the device can prove, but the relying party advertised only circuits
  * this wallet does not hold, or the proof failed. The plain fallback would be linkable, so it is
- * refused and the user is told why instead of being silently downgraded.
+ * refused and the user is told why instead of being silently downgraded. Also shows the EE-PRO-013
+ * protocol refusal (F8).
  */
 @Composable
-private fun RefusedPlainContent(reason: AppError, onCancel: () -> Unit) {
+private fun RefusedPlainContent(@StringRes message: Int, onCancel: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(reason.resId),
+            text = stringResource(message),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.SemiBold
