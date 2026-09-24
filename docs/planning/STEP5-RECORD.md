@@ -99,15 +99,14 @@ On this host (CachyOS, `ANDROID_HOME=/opt/android-sdk`):
 - `ANDROID_HOME=/opt/android-sdk ./gradlew :app:compileDebugKotlin --offline`
   — exit 0 (re-verified after the review-fix commits).
 - `ANDROID_HOME=/opt/android-sdk ./gradlew :app:testDebugUnitTest --offline`
-  — BUILD SUCCESSFUL: 37 tests, 0 failures, 0 errors (2 skipped as
+  — BUILD SUCCESSFUL: 33 tests, 0 failures, 0 errors (2 skipped as
   instrumented-only): SecureAreaSelectionTest 2/2, HolderObligationsTest
-  24/24 (incl. review-findings 6 and 7),
+  20/20 (incl. review-findings 6 and 7),
   WalletProviderServiceMockAttestationTest 4/4 (review finding 4),
   SecureAreaKeyCleanupTest 4/4 (review finding 5), EudiSdJwtTest 1/1,
   SampleTest + IssuanceTest skipped-by-assumption.
-- Full rerun from clean: `./gradlew :app:testDebug :zk-conformance:test
-  --offline --rerun-tasks` — BUILD SUCCESSFUL; 38 tests total across app and
-  zk-conformance, 0 failures, 0 errors (2 skipped as instrumented-only).
 - `ANDROID_HOME=/opt/android-sdk ./gradlew :zk-conformance:test --offline`
-  — BUILD SUCCESSFUL: AgeProofRoundTripTest tests=1 failures=0 (the ZK part
-  of acceptance; the presentation path compiles in the app module above).
+  — BUILD SUCCESSFUL: AgeProofRoundTripTest 1/1, Step0CrossVerifyTest 2/2,
+  Step2aDeviceResponseFixtureTest 1/1 (the ZK part of acceptance; the
+  presentation path compiles in the app module above).
+- Counts re-verified after rebasing onto the step 3 review fixes on master.
