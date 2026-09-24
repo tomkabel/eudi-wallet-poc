@@ -145,7 +145,8 @@ class DigitalCredentialsViewModel @Inject constructor(
                     origin,
                     sessionTranscript,
                     recipientPublicKey,
-                    docRequests.flatMap { it.zkSystemSpecs }
+                    // Keyed by docType: a ZK request for one document must not change how another is presented
+                    docRequests.groupBy({ it.docType }, { it.zkSystemSpecs }).mapValues { it.value.flatten() }
                 )
             } catch (e: Exception) {
                 logger.error("Error processing request", e)
@@ -161,7 +162,7 @@ class DigitalCredentialsViewModel @Inject constructor(
         origin: String,
         sessionTranscript: ListElement,
         recipientPublicKey: EcPublicKey,
-        zkSystemSpecs: List<ZkSystemSpec>
+        zkSystemSpecs: Map<String, List<ZkSystemSpec>>
     ) {
         when (val match = documentMatches.second) {
             is Match.NotMatched -> {
@@ -304,6 +305,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                 val mDoc = credential.mDoc
                 val checkedFields = credential.allCheckedFields.map { it.field }
                 val docType = credential.credentialType.docType().uri
+                val zkSystemSpecs = currentState.zkSystemSpecs[docType].orEmpty()
 
                 val mDocRequest = MDocRequestBuilder(docType).apply {
                     checkedFields.forEach {
@@ -328,7 +330,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // instead of showing its spinner.
                 val zkDocument = withContext(defaultDispatcher) {
                     val system = zkSystem
-                    val spec = matchZkSystemSpec(currentState.zkSystemSpecs, checkedFields.size)
+                    val spec = matchZkSystemSpec(zkSystemSpecs, checkedFields.size)
                     if (system == null || spec == null) {
                         null
                     } else {
@@ -350,7 +352,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // EE-ZKP-053 wants the distinction on the record.
                 val tier = when {
                     zkDocument != null -> PresentationTier.ZERO_KNOWLEDGE
-                    currentState.zkSystemSpecs.isEmpty() -> PresentationTier.PLAIN_NOT_REQUESTED
+                    zkSystemSpecs.isEmpty() -> PresentationTier.PLAIN_NOT_REQUESTED
                     zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
                     else -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
                 }
@@ -469,7 +471,7 @@ data class DcUiState(
     val shareDisabled: Boolean = false,
     val sessionTranscript: @RawValue ListElement? = null,
     val recipientPublicKey: @RawValue EcPublicKey? = null,
-    val zkSystemSpecs: @RawValue List<ZkSystemSpec> = listOf()
+    val zkSystemSpecs: @RawValue Map<String, List<ZkSystemSpec>> = mapOf()
 ) : ViewState, Parcelable
 
 sealed class DcEffect : ViewSideEffect {
