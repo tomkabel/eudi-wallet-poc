@@ -10,6 +10,7 @@ import com.upokecenter.cbor.CBORObject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.domain.documents.CredentialDocument
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -46,6 +47,8 @@ class DigitalCredentialsRegistrar @Inject constructor(
         // docTypes against the user's explicit disable — the safe reading of "unknown" is OFF.
         val disclosureEnabled = try {
             documentRepository.isDcApiDisclosureEnabled.first()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             log.error("DC API disclosure preference unreadable; treating as disabled (fail closed)", e)
             false
