@@ -26,6 +26,8 @@ import kotlin.test.assertTrue
  *
  * Run: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew
  * :zk-conformance:test --tests 'ee.cyber.wallet.zk.Step2aDeviceResponseFixtureTest' --offline)
+ * The ee-eudiw checkout defaults to a sibling directory; override it with
+ * `-Dstep0.eeEudiw=...`.
  */
 class Step2aDeviceResponseFixtureTest {
 
