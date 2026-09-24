@@ -212,8 +212,8 @@
     <!-- Activity log -->
     <string name="activity_log_title">Activity log</string>
     <string name="activity_log_description">Track all the data exchanges from your digital documents.</string>
-    <string name="activity_log_tier_summary">Presentations that can be linked to you by the issuer: %1$d. Presentations the issuer cannot link: %2$d.</string>
-    <string name="tier_zero_knowledge">Zero-knowledge proof (not linkable by the issuer)</string>
+    <string name="activity_log_tier_summary">Plain mdoc presentations, which the issuer can link to you: %1$d. Zero-knowledge presentations: %2$d.</string>
+    <string name="tier_zero_knowledge">Zero-knowledge proof (the issuer\'s signature was not shared)</string>
     <string name="tier_plain_not_requested">Plain mdoc (linkable) — this party did not ask for a zero-knowledge proof</string>
     <string name="tier_plain_no_matching_circuit">Plain mdoc (linkable) — this party requires a zero-knowledge proof this Wallet cannot produce</string>
     <string name="tier_plain_device_incapable">Plain mdoc (linkable) — this device cannot produce zero-knowledge proofs</string>

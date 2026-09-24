@@ -87,8 +87,8 @@ pre-share notice today, because a proof was expected when the notice was worked 
   either), party `log_entry_proximity_party` ("Proximity reader" / "Lähivoo lugeja"). Proximity
   rows did not exist in the log at all before this.
 - `app/src/main/kotlin/ee/cyber/wallet/ui/screens/activity/ActivityLogScreen.kt` — the screen
-  shows `activity_log_tier_summary` ("Presentations that can be linked to you by the issuer: N.
-  Presentations the issuer cannot link: M."), computed only over rows that carry a tier so
+  shows `activity_log_tier_summary` ("Plain mdoc presentations, which the issuer can link to you:
+  N. Zero-knowledge presentations: M."), computed only over rows that carry a tier so
   pre-tier rows do not skew it, and without refusal rows (tier plus `error`), which shared nothing. Each row also shows a `tierLabel()` line.
 - `app/src/main/kotlin/ee/cyber/wallet/ui/screens/documents/Extensions.kt` —
   `PresentationTier.tierLabel()` maps the tier to its string.
@@ -113,25 +113,28 @@ Findings:
 - EE-POA-023 finding: `doc_type_age_verification_description` called the EE-PoA a "document"
   ("Age verification document" / "Age verification document") — exactly the presentation as a
   legally equivalent document the requirement forbids. Rewritten as an attestation.
-- Two of the strings this step itself introduced initially over-claimed (caught in self-audit
-  before commit): a bare "not linkable / not linkable" without naming who cannot link. EE-ZKP-002
-  is about claims that hold on every build; a linkability claim scoped to the issuer is the one
-  this fork can stand behind (the verifier always receives issuer signatures on the plain path,
-  and the issuer always sees its own signature on ZK proofs of its circuits). Rewritten.
+- Two of the strings this step itself introduced over-claimed unlinkability. A first draft said
+  "not linkable"; the committed version said "not linkable by the issuer", and review caught that
+  this is untrue too until step 4c lands (plan F15): proving is not yet scoped to the age doctypes,
+  so a `ZERO_KNOWLEDGE` row can disclose an identifying value such as a PID `family_name`, or sit
+  in a response whose other document went out plain. Neither string may claim unlinkability
+  (EE-ZKP-002). They now state only what holds for every proof: the issuer's signature was not
+  shared. The summary counts plain rows as linkable, which is always true, and zero-knowledge rows
+  by what they are.
 
 Every changed string, before → after:
 
 | Name | Before (en) | After (en) |
 |---|---|---|
 | `doc_type_age_verification_description` | Age verification document | Electronic age attestation |
-| `activity_log_tier_summary` | Presentations that can be linked to you by the issuer: %1$d. Presentations that cannot be linked: %2$d. | Presentations that can be linked to you by the issuer: %1$d. Presentations the issuer cannot link: %2$d. |
-| `tier_zero_knowledge` | Zero-knowledge proof (not linkable) | Zero-knowledge proof (not linkable by the issuer) |
+| `activity_log_tier_summary` | Presentations that can be linked to you by the issuer: %1$d. Presentations the issuer cannot link: %2$d. | Plain mdoc presentations, which the issuer can link to you: %1$d. Zero-knowledge presentations: %2$d. |
+| `tier_zero_knowledge` | Zero-knowledge proof (not linkable by the issuer) | Zero-knowledge proof (the issuer's signature was not shared) |
 
 | Name | Before (et) | After (et) |
 |---|---|---|
 | `doc_type_age_verification_description` | Age verification document (untranslated English in the et file) | Elektrooniline vanusetõend |
-| `activity_log_tier_summary` | Esitused, mille väljaandja saab sinuga siduda: %1$d. Esitused, mida pole võimalik siduda: %2$d. | Esitused, mille väljaandja saab sinuga siduda: %1$d. Esitused, mida väljaandja siduda ei saa: %2$d. |
-| `tier_zero_knowledge` | Nullteadmise tõend (ei ole sidustatav) | Nullteadmise tõend (väljaandja ei saa siduda) |
+| `activity_log_tier_summary` | Esitused, mille väljaandja saab sinuga siduda: %1$d. Esitused, mida väljaandja siduda ei saa: %2$d. | Tavalised mdoc-esitused, mida väljaandja saab sinuga siduda: %1$d. Nullteadmise tõendiga esitused: %2$d. |
+| `tier_zero_knowledge` | Nullteadmise tõend (väljaandja ei saa siduda) | Nullteadmise tõend (väljaandja allkirja ei jagatud) |
 
 New strings introduced by this step (en + et, audited in the same pass):
 `presentation_zk_notice_proof_requested`, `presentation_zk_notice_not_requested`,
