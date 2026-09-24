@@ -156,7 +156,7 @@ class LocalCryptoProvider(
     }
 
     private suspend fun createKeyAttestation(keyType: KeyType, keyId: String): KeyAttestation =
-        walletProviderService.attestKey(keyId, keyType, loadJwkFromKeyStore(keyId), credentials.first())
+        walletProviderService.attestKey(keyId, keyType, loadJwkFromKeyStore(keyId).toPublicJWK(), credentials.first())
 
     private fun createKeyPair(keyType: KeyType, keyId: String) {
         require(keyType == KeyType.RSA) { "only RSA keys are generated in the software keystore since step 5" }
