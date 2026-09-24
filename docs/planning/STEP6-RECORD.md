@@ -67,7 +67,12 @@ Second review round hardened the wiring:
   error counts as present. `EePoaConsumptionTest` pins the survived-deletion case;
 - a batch whose attest, mint or insert fails after `batchCreateKey` deletes the aliases it created
   (finding 5), best-effort, before rethrowing: key creation is not transactional, and an alias no
-  record names would otherwise stay a live signing key until the next orphan sweep.
+  record names would otherwise stay a live signing key until the next orphan sweep. The rollback
+  (`SecureAreaKeyCleanup.deleteKeys`, also run when the issuance is cancelled) removes the
+  keyAttestation rows the earlier keys already wrote, each only once its key is verifiably gone,
+  so no row names a deleted key and a surviving key stays reachable by the data wipe.
+  `SecureAreaKeyCleanupTest` pins both; the `WalletProviderBatchAgeIssuer` call site itself needs
+  Android Keystore and is PENDING-DEVICE.
 
 ### Deviations
 

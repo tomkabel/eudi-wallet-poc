@@ -126,6 +126,35 @@ class SecureAreaKeyCleanupTest {
     }
 
     @Test
+    fun `a failed batch rolls back every key and the rows already written`() = runTest {
+        // Mid-batch failure: key-0 and key-1 got their rows, key-2 did not.
+        dao.rows.add(entity("key-0", KeyType.EC))
+        dao.rows.add(entity("key-1", KeyType.EC))
+        dao.rows.add(entity("unrelated", KeyType.EC))
+
+        cleanup.deleteKeys(listOf("key-0", "key-1", "key-2"))
+
+        assertEquals(listOf("key-0", "key-1", "key-2"), deleter.deletedAliases)
+        assertEquals(listOf("unrelated"), dao.rows.map { it.id })
+    }
+
+    @Test
+    fun `a batch key that survives deletion keeps its row`() = runTest {
+        dao.rows.add(entity("key-0", KeyType.EC))
+        dao.rows.add(entity("key-1", KeyType.EC))
+        val stuck = object : SecureAreaKeyDeleter {
+            override suspend fun deleteKey(keyId: String) = Unit
+            override suspend fun keyExists(keyId: String): Boolean = keyId == "key-0"
+            override suspend fun deleteAllKeys() = Unit
+        }
+
+        SecureAreaKeyCleanup(dao, stuck).deleteKeys(listOf("key-0", "key-1"))
+
+        // key-0 is still live: its row stays so deleteAll can still reach the alias.
+        assertEquals(listOf("key-0"), dao.rows.map { it.id })
+    }
+
+    @Test
     fun `mixed key types only consume the EC aliases`() = runTest {
         dao.rows.add(entity("rsa-1", KeyType.RSA))
         dao.rows.add(entity("ec-9", KeyType.EC))

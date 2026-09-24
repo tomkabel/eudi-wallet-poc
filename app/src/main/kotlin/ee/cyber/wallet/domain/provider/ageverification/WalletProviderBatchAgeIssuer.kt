@@ -8,9 +8,11 @@ import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
 import ee.cyber.wallet.domain.provider.wallet.WalletInstanceCredentials
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
+import ee.cyber.wallet.security.SecureAreaKeyCleanup
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.jwk
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 
@@ -49,8 +51,10 @@ class WalletProviderBatchAgeIssuer(
             // One SecureArea call for the whole batch (EE-POA-011a): the keys exist before the
             // first mint, so a mid-batch mint failure leaves no half-issued TRANSACTION. The key
             // creation itself is transactional in neither Keystore nor the mock, so a failure in
-            // attest/mint/insert leaves already-created aliases no record names — delete them
-            // best-effort rather than orphan live signing keys (second review, finding 5).
+            // attest/mint/insert leaves already-created aliases — and the keyAttestation rows
+            // written for the earlier keys — behind. Roll both back, best-effort, rather than
+            // orphan live signing keys or leave rows naming deleted ones (second review, finding
+            // 5). A key that survives its deletion keeps its row, so the data wipe still reaches it.
             val keys = secureAreaKeyManager.batchCreateKey(count).keys
             try {
                 keys.map { key ->
@@ -60,11 +64,9 @@ class WalletProviderBatchAgeIssuer(
                     logger.info("issued an EE-PoA batch of {}", it.size)
                 }
             } catch (e: Exception) {
-                keys.forEach { key ->
-                    runCatching { secureAreaKeyManager.deleteKey(key.keyId) }
-                        .onFailure { cleanupError ->
-                            logger.error("batch cleanup could not delete alias {}", key.keyId, cleanupError)
-                        }
+                // NonCancellable: a cancelled issuance must still roll back.
+                withContext(NonCancellable) {
+                    SecureAreaKeyCleanup(keyAttestationDao, secureAreaKeyManager).deleteKeys(keys.map { it.keyId })
                 }
                 throw e
             }
