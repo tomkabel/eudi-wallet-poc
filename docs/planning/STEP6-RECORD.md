@@ -62,7 +62,9 @@ Second review round hardened the wiring:
   must consume exactly as on the accepted paths; leaving it presentable was a replay window;
 - row deletion is gated on a verified key removal (finding 4): `SecureAreaKeyDeleter.keyExists`
   distinguishes a swallowed deletion failure from success, and consumption aborts (attestation
-  stays presentable and named) rather than orphaning a live signing key no record names;
+  stays presentable and named) rather than orphaning a live signing key no record names. The
+  probe fails closed: only multipaz's "no key with given alias" reads as gone, any other read
+  error counts as present. `EePoaConsumptionTest` pins the survived-deletion case;
 - a batch whose attest, mint or insert fails after `batchCreateKey` deletes the aliases it created
   (finding 5), best-effort, before rethrowing: key creation is not transactional, and an alias no
   record names would otherwise stay a live signing key until the next orphan sweep.
