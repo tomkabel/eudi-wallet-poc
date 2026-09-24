@@ -46,10 +46,13 @@ Deviations:
   unit test `refuses openid4vp as unsupported until section 82 work lands` pins this.
 - F8's distinguishable-error mechanism (`PendingIntentHandler.setGetCredentialException` versus
   `RESULT_CANCELED`) is still NOT implemented — refusals remain indistinguishable from a user
-  cancellation at the Activity boundary (`DigitalCredentialsActivity` ends `DcEffect.Error` with
+  cancellation at the Activity boundary (`DigitalCredentialsActivity` ends with
   `setResult(RESULT_CANCELED)`). Step 4a delivers the specific error inside the wallet (distinct
-  from `JSONException`, distinct from the EE-ZKP-051 circuit refusal); the wire-level
-  distinguishability remains open, recorded as a PENDING-DEVICE/§8 item below.
+  from `JSONException`, distinct from the EE-ZKP-051 circuit refusal); second review: an empty or
+  unsupported protocol list now leaves the view model as `DcEffect.Refused(ProtocolRefusal)`,
+  carrying the localized `error_presentation_unsupported_protocol` reason, not a generic
+  `DcEffect.Error` with an English string. The wire-level distinguishability remains open,
+  recorded as a PENDING-DEVICE/§8 item below.
 
 PENDING-DEVICE: none for 4a itself; the refusals-look-like-cancellation gap is a code-level item
 carried for the F8 work, testable only once a relying-party harness drives the DC API end to end.
@@ -74,7 +77,8 @@ holder's name, birthdate and isikukood reached the platform (plan F5, OIA_08e
   `UserPreferences.dcApiDisclosureEnabled`; `DocumentRepository.isDcApiDisclosureEnabled`;
   `DigitalCredentialsRegistrar.registerCredentials()` returns early and CLEARS the registry when
   the switch is off — with disclosure disabled the platform learns nothing about the wallet's
-  documents (and forgets what it knew). `SettingsScreen`/`SettingsViewModel` expose the switch;
+  documents (and forgets what it knew). Second review: a preference that cannot be read counts
+  as off (fail closed), so a read failure never re-registers against the user's disable. `SettingsScreen`/`SettingsViewModel` expose the switch;
   toggling re-runs registration. The OIA_08f SHOULD (per-attestation selection after a disable)
   is not built — PoC scope, noted in the plan.
 - `RegistryDocTypeTest` — decodes the CBOR payload and asserts id+docType only, and greps the
@@ -135,7 +139,11 @@ Deviations:
   regardless of which document proved. Fixed to `any { it.disclosesValue }`.
 - Per-doc-request `zkRequest` scoping: `resolveSchemeId` runs per credential over the specs of
   that credential's own docType (the base's docType-keyed map) and its own checked-field count,
-  with the doctype gate in front. Two doc requests for the same docType share one spec list.
+  with the doctype gate in front. Second review (finding 2): a repeated docType keeps its FIRST
+  doc request's specs (`zkSpecsByDocType`) instead of pooling both lists — the relying party
+  controls which doc request carries which specs, so a pool let an age request advertising only
+  unknown hashes borrow a held hash from a second same-docType request and slip past the
+  `EE-ZKP-051` refusal. `ZkPerDocRequestResolutionTest` pins the case.
 - The ZK tier copy is unchanged: it still says only that the issuer's signature was not shared.
   Scoping proving to the age doctypes does not by itself make a zero-knowledge row unlinkable
   (the proof can disclose a value; the response can carry a plain document), so the step 3 copy
@@ -156,8 +164,9 @@ Before: `DeviceRequestParser` parsed and checked `readerAuth` (and exposed
 `readerCertificateChain`), but nothing outside the parser consumed it — the consent screen named
 the platform-asserted origin only (plan F7, `EE-RP-003`).
 
-- `DigitalCredentialsViewModel.processRequest` — takes the first doc request carrying a reader
-  certificate chain, reads the leaf certificate's subject CN (multipaz `X509Cert.subject`,
+- `DigitalCredentialsViewModel.processRequest` — takes the first doc request whose `readerAuth`
+  signature check PASSED (`readerAuthSubject`; second review: the parser fills the chain even on
+  a failed check, so an ungated CN was attacker-chosen), reads the leaf certificate's subject CN (multipaz `X509Cert.subject`,
   an `X500Name`; the `CN` component), and stores it in `DcUiState.readerSubject`.
 - `DigitalCredentialsScreen` — the consent screen renders the subject under the origin and its
   "verified party" badge (review fix: not between them, so the badge never reads as vouching for
