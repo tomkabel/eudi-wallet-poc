@@ -107,6 +107,20 @@ class ZkProofBenchmarkTest {
         assertNull(readVmHwmKbFromText(""))
     }
 
+    @Test
+    fun readsTheVmHwmLineFromAStatusFile() {
+        val status = kotlin.io.path.createTempFile().toFile().apply {
+            writeText("Name:\tprover\nVmHWM:\t  2048 kB\n")
+            deleteOnExit()
+        }
+        assertEquals(2048L, readVmHwmKb(status.path))
+    }
+
+    @Test
+    fun anUnreadableStatusFileYieldsNullNotAnException() {
+        assertNull(readVmHwmKb("/nonexistent/proc/self/status"))
+    }
+
     // ---------------------------------------------------------------- measure()
 
     @Test
