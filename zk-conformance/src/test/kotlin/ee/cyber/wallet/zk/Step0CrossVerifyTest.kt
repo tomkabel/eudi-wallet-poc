@@ -9,6 +9,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import org.junit.Assume.assumeTrue
 import org.multipaz.asn1.ASN1Integer
 import org.multipaz.cbor.Bstr
 import org.multipaz.cbor.Cbor
@@ -82,6 +83,8 @@ class Step0CrossVerifyTest {
 
     @Test
     fun writeMultipazFixtureForGoVerifierAndPairCircuitHashes() = runTest {
+        // Without this, mkdirs below would invent an ee-eudiw tree nobody reads.
+        assumeTrue("step0: no ee-eudiw checkout at ${eeEudiw.absolutePath}", File(eeEudiw, "verifier/go/zk").isDirectory)
         val zkSystem = LongfellowZkSystem().apply { addDefaultCircuits() }
 
         // Every bundled circuit, so the seven hashes the 18 September log did
@@ -150,10 +153,7 @@ class Step0CrossVerifyTest {
     /** Verify ee_poa_demo's proof with multipaz's verifyProof — the reverse direction. */
     @Test
     fun verifyEePoaDemoProofWithMultipaz() = runTest {
-        if (!rustProverDir.isDirectory) {
-            println("step0: ${rustProverDir.absolutePath} does not exist; skipping the reverse direction")
-            return@runTest
-        }
+        assumeTrue("step0: ${rustProverDir.absolutePath} does not exist", rustProverDir.isDirectory)
         val zkSystem = LongfellowZkSystem().apply { addDefaultCircuits() }
 
         // The proof binds the issuer's `now` as a public input, so the timestamp
