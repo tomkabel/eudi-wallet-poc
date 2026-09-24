@@ -10,27 +10,12 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.junit.Assume.assumeTrue
-import org.multipaz.asn1.ASN1Integer
-import org.multipaz.cbor.Bstr
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.DataItem
-import org.multipaz.cbor.Tagged
-import org.multipaz.cbor.buildCborArray
 import org.multipaz.cbor.toDataItem
-import org.multipaz.cose.Cose
-import org.multipaz.cose.CoseLabel
-import org.multipaz.cose.CoseNumberLabel
-import org.multipaz.crypto.Algorithm
-import org.multipaz.crypto.AsymmetricKey
-import org.multipaz.crypto.Crypto
-import org.multipaz.crypto.EcCurve
 import org.multipaz.crypto.EcPublicKeyDoubleCoordinate
-import org.multipaz.crypto.X500Name
 import org.multipaz.crypto.X509Cert
 import org.multipaz.crypto.X509CertChain
-import org.multipaz.mdoc.devicesigned.buildDeviceNamespaces
-import org.multipaz.mdoc.issuersigned.buildIssuerNamespaces
-import org.multipaz.mdoc.mso.MobileSecurityObject
 import org.multipaz.mdoc.response.MdocDocument
 import org.multipaz.mdoc.zkp.ProofVerificationFailureException
 import org.multipaz.mdoc.zkp.ZkDocument
@@ -39,13 +24,11 @@ import org.multipaz.mdoc.zkp.ZkSystemSpec
 import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 /**
  * Step 0 of ee-eudiw's docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md §4:

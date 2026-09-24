@@ -9,7 +9,6 @@ import org.multipaz.mdoc.response.DeviceResponse as MdocDeviceResponse
 import org.multipaz.mdoc.response.buildDeviceResponse
 import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
