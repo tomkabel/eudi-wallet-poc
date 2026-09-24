@@ -93,19 +93,12 @@ object ZkProofBenchmark {
     }
 
     private fun runOnce(prover: Prover, vmHwmSource: VmHwmSource): Sample {
+        // No try/finally around the prover: a failure discards the whole session, so a VmHWM read
+        // on that path would go nowhere, and a failing read there would mask the prover's error.
         val start = System.nanoTime()
-        var peak: Long? = null
-        try {
-            prover.generateProof()
-        } finally {
-            // Read the high-water mark even on a prover failure: the allocation happened. The
-            // exception still propagates — this is capture, not handling.
-            peak = vmHwmSource.readVmHwmKb()
-        }
-        return Sample(
-            proofReadyMillis = (System.nanoTime() - start) / 1_000_000,
-            peakRssKb = peak
-        )
+        prover.generateProof()
+        val proofReadyMillis = (System.nanoTime() - start) / 1_000_000
+        return Sample(proofReadyMillis = proofReadyMillis, peakRssKb = vmHwmSource.readVmHwmKb())
     }
 
     /**

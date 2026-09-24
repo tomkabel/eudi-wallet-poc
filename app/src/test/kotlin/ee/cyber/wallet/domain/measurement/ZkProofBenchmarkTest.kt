@@ -164,6 +164,23 @@ class ZkProofBenchmarkTest {
     }
 
     @Test
+    fun aFailingVmHwmReadDoesNotMaskTheProverFailure() {
+        // The baseline read succeeds; any read after the failed proof would throw and, if it ran,
+        // replace the prover's exception.
+        var reads = 0
+        assertFailsWith<IllegalStateException> {
+            ZkProofBenchmark.measure(
+                prover = ZkProofBenchmark.Prover { error("prover blew up") },
+                coldRuns = 1,
+                warmRuns = 1,
+                vmHwmSource = ZkProofBenchmark.VmHwmSource {
+                    if (reads++ > 0) throw java.io.IOException("status unreadable") else 1L
+                }
+            )
+        }
+    }
+
+    @Test
     fun zeroColdOrWarmRunsIsRejected() {
         val prover = ZkProofBenchmark.Prover { }
         val source = ZkProofBenchmark.VmHwmSource { 1L }
