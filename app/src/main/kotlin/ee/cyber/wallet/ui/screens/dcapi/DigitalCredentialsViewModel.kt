@@ -159,12 +159,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                     is DcApiRequestDispatch.Decision.Take -> decision.index
                     is DcApiRequestDispatch.Decision.Empty -> {
                         logger.error("DC API request carries no protocol entries")
-                        sendEffect { DcEffect.Refused(ProtocolRefusal.UNSUPPORTED_PROTOCOL) }
+                        refuseProtocol(ProtocolRefusal.NO_REQUEST)
                         return@launch
                     }
                     is DcApiRequestDispatch.Decision.Unsupported -> {
                         logger.error("Unsupported DC API protocol: ${decision.protocolName}")
-                        sendEffect { DcEffect.Refused(ProtocolRefusal.UNSUPPORTED_PROTOCOL) }
+                        refuseProtocol(ProtocolRefusal.UNSUPPORTED_PROTOCOL)
                         return@launch
                     }
                 }
@@ -347,6 +347,12 @@ class DigitalCredentialsViewModel @Inject constructor(
             AppError.PRESENTATION_NO_MATCHING_CIRCUIT
         )
         return true
+    }
+
+    /** Shows the EE-PRO-013 refusal (F8); the user closes it, which ends as RESULT_CANCELED. */
+    private fun refuseProtocol(refusal: ProtocolRefusal) {
+        setState { copy(isLoading = false, protocolRefusal = refusal) }
+        sendEffect { DcEffect.Refused(refusal) }
     }
 
     /** Logs the EE-ZKP-051 refusal and shows it; nothing is shared. */
@@ -670,7 +676,9 @@ data class DcUiState(
     // would be linkable, carrying which linkable tier it would fall back to.
     val expectedPlainTier: PresentationTier? = null,
     // EE-ZKP-051 refusal already happened for this request; the screen shows this reason.
-    val plainRefusal: AppError? = null
+    val plainRefusal: AppError? = null,
+    // EE-PRO-013 (4a, F8): the request's protocol list was refused; the screen shows this reason.
+    val protocolRefusal: ProtocolRefusal? = null
 ) : ViewState, Parcelable
 
 sealed class DcEffect : ViewSideEffect {
@@ -680,9 +688,9 @@ sealed class DcEffect : ViewSideEffect {
     data class Error(val message: String) : DcEffect()
 
     /**
-     * A refusal with a user-facing, localized reason (F8): distinct from a generic error so the
-     * activity can surface the localized text instead of folding the case into cancellation.
-     * The wire-level exception mapping stays the record's open item.
+     * A refusal with a user-facing, localized reason (F8), set in [DcUiState.protocolRefusal]:
+     * the activity stays open so the screen shows it instead of folding the case into a silent
+     * cancellation. The wire-level exception mapping stays the record's open item.
      */
     data class Refused(val refusal: ProtocolRefusal) : DcEffect()
 

@@ -63,10 +63,11 @@ object DcApiRequestDispatch {
 }
 
 /**
- * The app error the unsupported-protocol refusal maps to. Distinct from the ZK circuit refusal
- * (EE-ZKP-051) and from the generic unsupported-request error so the relying party can tell them
- * apart (F8).
+ * The user-facing reason for a refused `requests[]` walk. [UNSUPPORTED_PROTOCOL] is distinct from
+ * the ZK circuit refusal (EE-ZKP-051) and from the generic unsupported-request error (F8);
+ * [NO_REQUEST] is an empty list, where no protocol was named at all.
  */
 enum class ProtocolRefusal(val messageRes: Int) {
-    UNSUPPORTED_PROTOCOL(R.string.error_presentation_unsupported_protocol)
+    UNSUPPORTED_PROTOCOL(R.string.error_presentation_unsupported_protocol),
+    NO_REQUEST(R.string.error_presentation_unsupported_request_type)
 }
