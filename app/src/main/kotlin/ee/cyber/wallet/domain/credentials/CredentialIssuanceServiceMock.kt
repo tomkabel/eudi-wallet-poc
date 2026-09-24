@@ -43,8 +43,11 @@ import java.security.KeyStore
 import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.time.Instant
-import kotlin.time.toJavaInstant
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
 
 class CredentialIssuanceServiceMock(
     val context: Context,
@@ -536,7 +539,8 @@ class CredentialIssuanceServiceMock(
      * reference: a single-use attestation is consumed on presentation (EE-POA-013), not revoked.
      */
     suspend fun issueMDocEePoa(poa: Credential.EePoaCredential, keyAttestation: KeyAttestation): String {
-        require(poa.expiryDate >= issuanceDay()) {
+        val issuanceDay = issuanceDay()
+        require(poa.expiryDate in issuanceDay..issuanceDay.plus(AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS, DateTimeUnit.DAY)) {
             "EE-PoA validity must start at issuance and span at most ${AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS} days"
         }
 
@@ -552,11 +556,13 @@ class CredentialIssuanceServiceMock(
             .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "issuing_authority", StringElement(poa.issuingAuthority))
             .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "expiry_date", FullDateElement(poa.expiryDate))
 
-        // EE-POA-012: no status reference — null Status writes none into the MSO.
-        val signed = Instant.fromEpochSeconds(1779711303L)
+        // EE-POA-012: signed and validFrom coarsened to 00:00:00Z of the issuance day.
+        // EE-POA-016: validUntil is the expiry_date, at most 90 days out.
+        // EE-POA-017: no status reference — null Status writes none into the MSO.
+        val signed = issuanceDay.atStartOfDayIn(TimeZone.UTC)
         val issuerKeyPair = mdlIssuerKeyPair()
         return mdoc.sign(
-            ValidityInfo(signed, signed, Instant.fromEpochSeconds(2095329603L)),
+            ValidityInfo(signed, signed, poa.expiryDate.atStartOfDayIn(TimeZone.UTC)),
             deviceKeyInfo,
             mdlIssuerCryptoProvider(),
             issuerKeyPair.keyID,
@@ -569,9 +575,9 @@ class CredentialIssuanceServiceMock(
          * The issuance day, midnight UTC, that every batch's ValidityInfo anchors to
          * (EE-POA-012): the current UTC date, so validity is measured from the day of issuance.
          */
-        internal fun issuanceDay(): kotlinx.datetime.LocalDate {
+        internal fun issuanceDay(): LocalDate {
             val javaDay = java.time.Instant.now().atZone(ZoneOffset.UTC).toLocalDate()
-            return kotlinx.datetime.LocalDate(javaDay.year, javaDay.monthValue, javaDay.dayOfMonth)
+            return LocalDate(javaDay.year, javaDay.monthValue, javaDay.dayOfMonth)
         }
     }
 }

@@ -10,7 +10,9 @@ Branches: `step6-ee-riik-poa` (ee-eudiw, repo side) and `step6-issuance-consumpt
 `Credential.EePoaCredential`: `age_over_18` (default true for the mock's adult users),
 `issuing_country` `EE`, `issuing_authority`, `expiry_date` as `FullDateElement`. Validity spans at
 most 90 days (`AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS`, EE-POA-016) anchored to the UTC
-issuance day. `null` Status writes no status reference into the MSO (EE-POA-012).
+issuance day, and the mint refuses an `expiry_date` outside that window. The MSO `ValidityInfo`
+follows it: `signed` and `validFrom` at 00:00:00Z of the issuance day (EE-POA-012), `validUntil` at
+the `expiry_date`. `null` Status writes no status reference into the MSO (EE-POA-017).
 
 The AV attestation (`eu.europa.ec.av.1`) is trimmed from the 13-threshold set to `age_over_18` only.
 
