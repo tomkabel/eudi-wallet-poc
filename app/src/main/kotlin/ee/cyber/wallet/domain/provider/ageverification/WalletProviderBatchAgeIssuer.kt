@@ -47,12 +47,26 @@ class WalletProviderBatchAgeIssuer(
             require(count >= 1) { "an EE-PoA batch has at least one attestation" }
 
             // One SecureArea call for the whole batch (EE-POA-011a): the keys exist before the
-            // first mint, so a mid-batch failure leaves no half-issued transaction.
-            secureAreaKeyManager.batchCreateKey(count).keys.map { key ->
-                val keyAttestation = registerAttestedKey(key.keyId, key.jwk())
-                issueCredential(credential, keyAttestation)
-            }.also {
-                logger.info("issued an EE-PoA batch of {}", it.size)
+            // first mint, so a mid-batch mint failure leaves no half-issued TRANSACTION. The key
+            // creation itself is transactional in neither Keystore nor the mock, so a failure in
+            // attest/mint/insert leaves already-created aliases no record names — delete them
+            // best-effort rather than orphan live signing keys (second review, finding 5).
+            val keys = secureAreaKeyManager.batchCreateKey(count).keys
+            try {
+                keys.map { key ->
+                    val keyAttestation = registerAttestedKey(key.keyId, key.jwk())
+                    issueCredential(credential, keyAttestation)
+                }.also {
+                    logger.info("issued an EE-PoA batch of {}", it.size)
+                }
+            } catch (e: Exception) {
+                keys.forEach { key ->
+                    runCatching { secureAreaKeyManager.deleteKey(key.keyId) }
+                        .onFailure { cleanupError ->
+                            logger.error("batch cleanup could not delete alias {}", key.keyId, cleanupError)
+                        }
+                }
+                throw e
             }
         }
 
