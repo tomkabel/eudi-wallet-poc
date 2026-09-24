@@ -25,6 +25,11 @@ import ee.cyber.wallet.domain.presentation.DcApiProtocol
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
 import ee.cyber.wallet.domain.presentation.HolderObligations
+import ee.cyber.wallet.domain.presentation.LongfellowZkPresenter
+import ee.cyber.wallet.domain.presentation.ZkPresentation
+import ee.cyber.wallet.domain.presentation.ZkPresentationReason
+import ee.cyber.wallet.domain.presentation.ZkPresenter
+import ee.cyber.wallet.domain.presentation.resolveSchemeId
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
@@ -87,6 +92,11 @@ class DigitalCredentialsViewModel @Inject constructor(
 ) : MviViewModel<DcEvent, DcUiState, DcEffect>() {
 
     private val logger = LoggerFactory.getLogger(DigitalCredentialsViewModel::class.java)
+
+    // EE-ZKP-004 (plan §4 item 4c): the ZK path sits behind an interface — the view model asks
+    // for a presentation over a scheme id and gets back a document or a reason. The Longfellow
+    // implementation wraps the same lazy prover as before; the scheme id travels in the proof.
+    private val zkPresenter: ZkPresenter by lazy { LongfellowZkPresenter(zkSystem) }
 
     // Null when this device cannot prove at all. Loading the prover pulls in libzkp.so, which is
     // only packaged for arm64-v8a and x86_64, so ask once here rather than discovering it as an
@@ -271,7 +281,10 @@ class DigitalCredentialsViewModel @Inject constructor(
             HolderObligations.expectedPlainTier(
                 zkCapable = zkSystem != null,
                 proofRequested = docSpecs.isNotEmpty(),
-                satisfiable = matchZkSystemSpec(docSpecs, credential.allCheckedFields.size) != null
+                // Only the age doctypes are ever proved (step 4c); any other document goes out
+                // plain, so the notice must not expect a proof for it.
+                satisfiable = credential.credentialType.requiresZkProof() &&
+                    resolveSchemeId(zkSystem, docSpecs, credential.allCheckedFields.size) != null
             )
         }
         // A proof the party asked for and will not get outranks "never asked" in the wording.
@@ -304,7 +317,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                 HolderObligations.refusePlainFallback(
                     zkCapable = zkSystem != null,
                     proofRequested = specs.isNotEmpty(),
-                    satisfiable = matchZkSystemSpec(specs, credential.allCheckedFields.size) != null
+                    satisfiable = resolveSchemeId(zkSystem, specs, credential.allCheckedFields.size) != null
                 )
         } ?: return false
 
@@ -444,31 +457,33 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // Proving is seconds of blocking native work, and the first match also forces the
                 // lazy circuit load. Both stay off the main thread or the share screen freezes
                 // instead of showing its spinner.
-                var proofFailed = false
-                val zkDocument = withContext(defaultDispatcher) {
-                    val system = zkSystem
-                    val spec = matchZkSystemSpec(zkSystemSpecs, checkedFields.size)
-                    if (system == null || spec == null) {
-                        null
+                //
+                // EE-ZKP-004 (plan §4 item 4c, F11/F15): the view model asks the ZkPresenter for a
+                // presentation over a scheme id and gets back a document or a reason. The scheme
+                // is resolved from THIS document's own request — its doctype's zkRequest and its
+                // own checked-field count — never from a spec pool merged across doc requests.
+                // Proving itself stays scoped to the age doctypes.
+                val zkResult = withContext(defaultDispatcher) {
+                    val schemeId = if (credential.credentialType.requiresZkProof()) {
+                        resolveSchemeId(zkSystem, zkSystemSpecs, checkedFields.size)
                     } else {
-                        runCatching {
-                            system.generateProof(
-                                zkSystemSpec = spec,
-                                document = MdocDocument.fromDataItem(Cbor.decode(documentResponse.toMapElement().toCBOR())),
-                                sessionTranscript = Cbor.decode(sessionTranscript.toCBOR())
-                            )
-                        }.onFailure {
-                            proofFailed = true
-                            logger.warn("ZK proof generation failed", it)
-                        }.getOrNull()
+                        // Other doctypes are never asked to prove; the reason is recorded as
+                        // NO_SCHEME_REQUESTED so the log and the response agree.
+                        null
                     }
+                    zkPresenter.presentation(
+                        schemeId = schemeId,
+                        document = MdocDocument.fromDataItem(Cbor.decode(documentResponse.toMapElement().toCBOR())),
+                        sessionTranscript = Cbor.decode(sessionTranscript.toCBOR())
+                    )
                 }
+                val reason = (zkResult as? ZkPresentation.Unavailable)?.reason
                 // EE-ZKP-051, strict reading: the device is capable and the party asked for a proof
                 // of an age document, so a failed prover must not become a silent linkable
                 // presentation (no EE-ZKP-042 notice was shown — a proof was expected). A party able
                 // to make proving fail would otherwise hold the same downgrade lever as one that
                 // advertises an unknown circuit. Nothing has been sent yet; refuse the whole response.
-                if (proofFailed && credential.credentialType.requiresZkProof()) {
+                if (reason == ZkPresentationReason.PROVER_FAILED && credential.credentialType.requiresZkProof()) {
                     refusePlain(
                         currentState.verifier,
                         credential.credentialType.docType(),
@@ -477,6 +492,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                     )
                     return
                 }
+                val zkDocument = (zkResult as? ZkPresentation.Proved)?.zkDocument
                 if (zkDocument == null) {
                     responseDocuments.add(documentResponse)
                 } else {
@@ -486,13 +502,18 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // Named rather than inferred from the null above: "the verifier never asked" and
                 // "this device cannot prove" are the same response but very different facts, and
                 // EE-ZKP-053 wants the distinction on the record. The pre-share notice the user
-                // saw (EE-ZKP-042) is worded from the same computation.
-                val tier = when {
-                    zkDocument != null -> PresentationTier.ZERO_KNOWLEDGE
-                    proofFailed -> PresentationTier.PLAIN_PROOF_FAILED
-                    zkSystemSpecs.isEmpty() -> PresentationTier.PLAIN_NOT_REQUESTED
-                    zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
-                    else -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
+                // saw (EE-ZKP-042) is worded from the same computation. The reason from the
+                // presenter decides, so the tier can no longer disagree with the attempt.
+                val tier = when (reason) {
+                    null -> PresentationTier.ZERO_KNOWLEDGE
+                    ZkPresentationReason.NO_SCHEME_REQUESTED -> HolderObligations.tierFor(
+                        zkUsed = false,
+                        proofRequested = zkSystemSpecs.isNotEmpty(),
+                        zkCapable = zkSystem != null
+                    )
+                    ZkPresentationReason.PROVER_UNAVAILABLE -> PresentationTier.PLAIN_DEVICE_INCAPABLE
+                    ZkPresentationReason.UNKNOWN_SCHEME -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
+                    ZkPresentationReason.PROVER_FAILED -> PresentationTier.PLAIN_PROOF_FAILED
                 }
                 // EE-ZKP-053 / F9: record what was shared, as the redirect path already does.
                 val attributes = JsonObject(
@@ -531,27 +552,6 @@ class DigitalCredentialsViewModel @Inject constructor(
         } finally {
             setState { copy(isLoading = false) }
         }
-    }
-
-    /**
-     * Picks the strongest circuit we hold that the reader also allows, mirroring
-     * [org.multipaz.mdoc.zkp.ZkSystem.getMatchingSystemSpec] without having to build multipaz
-     * `RequestedClaim`s the rest of this screen has no use for. The selection rule lives in
-     * [HolderObligations.strongestMatchingSpec] so it is unit tested on the JVM.
-     */
-    private fun matchZkSystemSpec(requested: List<ZkSystemSpec>, numAttributes: Int): ZkSystemSpec? {
-        val system = zkSystem ?: return null
-        val advertisedCircuitHashes = requested.mapNotNull { it.getParam<String>("circuit_hash") }.toSet()
-        val held = system.systemSpecs.map {
-            HolderObligations.SpecFingerprint(
-                circuitHash = it.getParam<String>("circuit_hash"),
-                numAttributes = it.getParam<Long>("num_attributes"),
-                version = it.getParam<Long>("version")
-            )
-        }
-        val best = HolderObligations.strongestMatchingSpec(held, advertisedCircuitHashes, numAttributes)
-            ?: return null
-        return system.systemSpecs[held.indexOf(best)]
     }
 
     /**

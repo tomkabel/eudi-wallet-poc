@@ -81,7 +81,48 @@ object HolderObligations {
         val linkable = counted.count { it.isLinkable }
         return linkable to counted.size - linkable
     }
+
+    /**
+     * The tier one document's presentation lands on, given the reason its ZK path took. The
+     * EE-ZKP-004 interface answers per document; the response-level escalation to
+     * [escalateToResponseTier] then raises every row of a mixed response.
+     */
+    fun tierFor(zkUsed: Boolean, proofRequested: Boolean, zkCapable: Boolean): PresentationTier = when {
+        zkUsed -> PresentationTier.ZERO_KNOWLEDGE
+        !proofRequested -> PresentationTier.PLAIN_NOT_REQUESTED
+        !zkCapable -> PresentationTier.PLAIN_DEVICE_INCAPABLE
+        else -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
+    }
+
+    /**
+     * Conformance plan §4 item 4c, F15 fix bullet: "mark every row of a response linkable when
+     * any document in it discloses a non-predicate attribute". A proof hides the undisclosed
+     * attributes and the issuer signature, but a disclosed identifying value names the holder —
+     * whichever document carried it, the response is identifying.
+     */
+    fun responseIsIdentifying(documents: List<DisclosedDocument>): Boolean =
+        documents.any { it.disclosesValue }
+
+    /**
+     * The EE-ZKP-042 combined-request notice: an age predicate proved zero-knowledge alongside
+     * an identifying PID attribute from another document in the same response. The proof does
+     * not launder the identifying document; the user is told the presentation names them.
+     */
+    fun combinedRequestNotice(documents: List<DisclosedDocument>): Boolean =
+        documents.any { !it.proofUsed && it.disclosesValue } && documents.any { it.proofUsed }
 }
+
+/**
+ * One document of a would-be response, as the tier and notice decisions see it.
+ *
+ * @param proofUsed true when this document goes out as a zero-knowledge proof.
+ * @param disclosesValue true when a disclosed element carries an identifying value (text claim),
+ * as opposed to a derived predicate such as `age_over_18 = true`.
+ */
+data class DisclosedDocument(
+    val proofUsed: Boolean,
+    val disclosesValue: Boolean
+)
 
 /**
  * EE-ZKP-042 notice wording. Both variants state the same fact — this presentation can be linked

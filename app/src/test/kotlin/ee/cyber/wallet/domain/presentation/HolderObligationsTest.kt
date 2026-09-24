@@ -206,4 +206,74 @@ class HolderObligationsTest {
             HolderObligations.escalateToResponseTier(listOf(PresentationTier.PLAIN_NOT_REQUESTED))
         )
     }
+
+    // ------------------------------------------------------------------
+    // EE-ZKP-004 interface, conformance plan §4 item 4c: per-document tier
+    // and the combined-request acceptance.
+    // ------------------------------------------------------------------
+
+    /**
+     * The plan's acceptance case: `age_over_18` proved over its own `zkRequest` plus a PID
+     * attribute from another document in the same response. The proof hides the undisclosed
+     * attributes and the issuer signature, but the response names the holder — so the rows
+     * log linkable and the combined-request notice is shown. A ZK row next to a PID row must
+     * not read "unlinkable" (F15).
+     */
+    @Test
+    fun `age_over_18 plus a PID attribute logs linkable and shows the combined-request notice`() {
+        val documents = listOf(
+            // The age document: proved in zero knowledge over its own scheme, a predicate only.
+            DisclosedDocument(proofUsed = true, disclosesValue = false),
+            // The PID document: plain, discloses an identifying text value (e.g. family_name).
+            DisclosedDocument(proofUsed = false, disclosesValue = true)
+        )
+
+        // The response is identifying and every row escalates to a linkable tier...
+        assertTrue(HolderObligations.responseIsIdentifying(documents))
+        val perRow = listOf(PresentationTier.ZERO_KNOWLEDGE, PresentationTier.PLAIN_NOT_REQUESTED)
+        val escalated = HolderObligations.escalateToResponseTier(perRow)
+        assertTrue(escalated.all { it.isLinkable })
+
+        // ...and the user is told, before sharing, that this presentation names them.
+        assertTrue(HolderObligations.combinedRequestNotice(documents))
+    }
+
+    @Test
+    fun `a pure predicate response stays unlinkable and shows no combined notice`() {
+        val documents = listOf(
+            DisclosedDocument(proofUsed = true, disclosesValue = false),
+            DisclosedDocument(proofUsed = true, disclosesValue = false)
+        )
+        assertFalse(HolderObligations.responseIsIdentifying(documents))
+        assertFalse(HolderObligations.combinedRequestNotice(documents))
+    }
+
+    @Test
+    fun `identifying value inside a proof still makes the response identifying`() {
+        // F15: the circuit does not care about doctype and will disclose a text value. A proof
+        // over family_name hides the signature, not the name.
+        assertTrue(
+            HolderObligations.responseIsIdentifying(
+                listOf(DisclosedDocument(proofUsed = true, disclosesValue = true))
+            )
+        )
+    }
+
+    @Test
+    fun `plain identifying document without any proof shows no combined notice`() {
+        // No ZK row to escalate: the ordinary EE-ZKP-042 notice covers it, not the combined one.
+        assertFalse(
+            HolderObligations.combinedRequestNotice(
+                listOf(DisclosedDocument(proofUsed = false, disclosesValue = true))
+            )
+        )
+    }
+
+    @Test
+    fun `tier per document follows the reason its ZK path took`() {
+        assertEquals(PresentationTier.ZERO_KNOWLEDGE, HolderObligations.tierFor(zkUsed = true, proofRequested = true, zkCapable = true))
+        assertEquals(PresentationTier.PLAIN_NOT_REQUESTED, HolderObligations.tierFor(zkUsed = false, proofRequested = false, zkCapable = true))
+        assertEquals(PresentationTier.PLAIN_DEVICE_INCAPABLE, HolderObligations.tierFor(zkUsed = false, proofRequested = true, zkCapable = false))
+        assertEquals(PresentationTier.PLAIN_NO_MATCHING_CIRCUIT, HolderObligations.tierFor(zkUsed = false, proofRequested = true, zkCapable = true))
+    }
 }
