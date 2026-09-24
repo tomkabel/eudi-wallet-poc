@@ -41,8 +41,13 @@ below and the instrumented runner around it.
 What one measured run produces:
 
 - `Report.coldPercentiles` / `Report.warmPercentiles` — the approval-to-proof-ready p50/p95/p99
-  for the `EE-ZKP-040` row, cold (first proofs after circuit load) and warm (the steady state
-  the budget is written against);
+  for the `EE-ZKP-040` row, cold (first proofs after circuit load) and warm (the steady state).
+  `EE-ZKP-040` does not qualify its budget by circuit state, so both phases are read against
+  it. Nearest-rank never interpolates, so a percentile finer than the sample count allows is
+  the slowest run: over 5 cold runs p95 and p99 are both the slowest cold run, and over 45 warm
+  runs p99 is the slowest warm run (a p99 distinct from the maximum needs 100 samples, more than
+  the 50 plan §6 budgets). The `Result` cell names such a figure as the maximum of n runs
+  rather than as a percentile;
 - `Report.vmHwmBeforeKb` and `Report.peakProverKb` — the `VmHWM` baseline and the peak, for
   the `EE-ZKP-041` row. The figure read against the 250 MB budget is the delta
   `peakProverKb − vmHwmBeforeKb`: `EE-ZKP-041` bounds prover memory and plan §6 reads `VmHWM`
