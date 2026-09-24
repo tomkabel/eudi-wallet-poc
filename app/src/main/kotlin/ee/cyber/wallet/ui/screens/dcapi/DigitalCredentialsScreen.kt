@@ -148,7 +148,10 @@ private fun DcPresentationContent(
         )
         // EE-RP-003 (4d, F7): when the reader authenticated the request, the consent screen shows
         // the readerAuth certificate subject — a relying-party name from the request itself, not
-        // just the platform-asserted origin. Absent when the reader did not authenticate.
+        // just the platform-asserted origin. Absent when the reader did not authenticate. It sits
+        // below the "verified party" badge, which belongs to the origin: the certificate's trust
+        // is not validated (§8.3), so the badge must not read as vouching for this name.
+        VerifiedParty()
         state.readerSubject?.let { subject ->
             Text(
                 text = subject,
@@ -157,7 +160,6 @@ private fun DcPresentationContent(
                 textAlign = TextAlign.Center
             )
         }
-        VerifiedParty()
         VSpace(24.dp)
         Text(
             style = MaterialTheme.typography.bodyMedium,
