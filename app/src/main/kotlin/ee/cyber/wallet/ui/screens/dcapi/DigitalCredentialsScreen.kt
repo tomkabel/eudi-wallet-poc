@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import ee.cyber.wallet.R
 import ee.cyber.wallet.domain.credentials.CredentialAttribute
 import ee.cyber.wallet.domain.credentials.DocType
+import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.ui.components.AppContent
 import ee.cyber.wallet.ui.components.DocumentCardHeader
 import ee.cyber.wallet.ui.components.FadedProgressIndicator
@@ -51,7 +52,9 @@ fun DigitalCredentialsScreen(
             credential.fields.isEmpty()
         }
         AppContent {
-            if (state.isLoading && emptyFields) {
+            if (state.plainRefused) {
+                RefusedPlainContent(onCancel = { onEvent(DcEvent.OnCancelClicked) })
+            } else if (state.isLoading && emptyFields) {
                 LoadingContent()
             } else if (state.credentials.isEmpty() && !state.isLoading) {
                 NoMatchContent(onCancel = { onEvent(DcEvent.OnCancelClicked) })
@@ -60,6 +63,32 @@ fun DigitalCredentialsScreen(
             }
         }
         FullScreenFadedScrimProgressIndicator(visible = state.isLoading && !emptyFields)
+    }
+}
+
+/**
+ * EE-ZKP-051, strict reading: the device can prove, but the relying party advertised only circuits
+ * this wallet does not hold. The plain fallback would be linkable, so it is refused and the user
+ * is told why instead of being silently downgraded.
+ */
+@Composable
+private fun RefusedPlainContent(onCancel: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = stringResource(R.string.error_presentation_no_matching_circuit),
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.SemiBold
+        )
+        VSpace(24.dp)
+        SecondaryButton(
+            text = stringResource(R.string.close_btn),
+            onClick = onCancel
+        )
     }
 }
 
@@ -136,6 +165,22 @@ private fun DcPresentationContent(
             text = stringResource(R.string.presentation_footer_note, state.verifier),
             textAlign = TextAlign.Center
         )
+        state.expectedPlainTier?.let { tier ->
+            VSpace(24.dp)
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                // EE-ZKP-042: the user is told, before sharing, that this presentation can be
+                // linked by the issuer. The wording depends on whether the party asked for a
+                // proof the wallet cannot give, or never asked for one at all.
+                text = stringResource(
+                    PresentationTier.zkNoticeRes(tier != PresentationTier.PLAIN_NOT_REQUESTED)
+                ),
+                textAlign = TextAlign.Center
+            )
+        }
         VSpace(24.dp)
         WSpace()
         Row(

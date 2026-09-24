@@ -8,6 +8,7 @@ import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.DocumentField
+import ee.cyber.wallet.domain.presentation.PresentationTier
 
 @Composable
 fun String.humanReadableValue() = if (this == "true") stringResource(R.string.yes) else this
@@ -189,6 +190,14 @@ fun CredentialType.docType() = when (this) {
     CredentialType.PID_MDOC -> DocType.PID
     CredentialType.MDL -> DocType.MDL
     CredentialType.AGE_VERIFICATION -> DocType.AGE_VERIFICATION
+}
+
+@Composable
+fun PresentationTier.tierLabel(): String = when (this) {
+    PresentationTier.ZERO_KNOWLEDGE -> stringResource(R.string.tier_zero_knowledge)
+    PresentationTier.PLAIN_NOT_REQUESTED -> stringResource(R.string.tier_plain_not_requested)
+    PresentationTier.PLAIN_NO_MATCHING_CIRCUIT -> stringResource(R.string.tier_plain_no_matching_circuit)
+    PresentationTier.PLAIN_DEVICE_INCAPABLE -> stringResource(R.string.tier_plain_device_incable)
 }
 
 @Composable

@@ -66,6 +66,11 @@ class DigitalCredentialsActivity : AppCompatActivity() {
                                     // UI will show no match state
                                 }
 
+                                DcEffect.RefusedPlainFallback -> {
+                                    log.info("EE-ZKP-051: plain fallback refused, UI shows the refusal notice")
+                                    // UI will show the refusal state
+                                }
+
                                 is DcEffect.Error -> {
                                     log.error("Error: ${effect.message}")
                                     setResult(RESULT_CANCELED)

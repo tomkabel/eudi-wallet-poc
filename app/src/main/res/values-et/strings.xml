@@ -82,6 +82,9 @@
     <string name="presentation_requests_following_data_to">Küsib järgnevaid andmeid:</string>
     <string name="presentation_footer_note">Kontrolli tähelepanelikult üle andmed, mida esitad %1$s!</string>
     <string name="presentation_image_stub">[Image]</string>
+    <string name="presentation_zk_notice_proof_requested">See osapool küsis nullteadmise tõendit, kuid see esitus ei saa seda kasutada. Seetõttu saab dokumendi väljaandja selle esituse sinuga siduda.</string>
+    <string name="presentation_zk_notice_not_requested">See osapool ei küsinud nullteadmise tõendit. Jagatavad andmed kannavad väljaandja allkirja, seega saab väljaandja seda esitust sinuga siduda.</string>
+    <string name="error_presentation_no_matching_circuit">Jagamine peatati. See osapool nõuab nullteadmise tõendit, mida see digikukkur ei suuda esitada, ja ilma selleta võiks dokumendi väljaandja seda esitust sinuga siduda.</string>
 
     <!-- Errors -->
     <string name="error_presentation_rp_connection_failed">Andmete päringu esitajaga ei õnnestunud ühendust luua.</string>
@@ -208,6 +211,12 @@
     <!-- Activity log -->
     <string name="activity_log_title">Andmete esitamiste ajalugu</string>
     <string name="activity_log_description">Vaata, mis andmeid oled jaganud enda digikukrust.</string>
+    <string name="activity_log_tier_summary">Esitused, mille väljaandja saab sinuga siduda: %1$d. Esitused, mida pole võimalik siduda: %2$d.</string>
+    <string name="tier_zero_knowledge">Nullteadmise tõend (ei ole sidustatav)</string>
+    <string name="tier_plain_not_requested">Tavaline mdoc (sidustatav) — see osapool ei küsinud nullteadmise tõendit</string>
+    <string name="tier_plain_no_matching_circuit">Tavaline mdoc (sidustatav) — see osapool nõuab nullteadmise tõendit, mida see digikukkur ei suuda esitada</string>
+    <string name="tier_plain_device_incable">Tavaline mdoc (sidustatav) — see seade ei suuda nullteadmise tõendeid esitada</string>
+    <string name="log_entry_proximity_party">Lähivoo lugeja</string>
     <string name="log_entry_title">Esituse detailvaade</string>
     <string name="log_entry_request_title">Esituse kirjeldus</string>
     <string name="log_entry_relying_party">Andmete saaja</string>

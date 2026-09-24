@@ -82,6 +82,9 @@
     <string name="presentation_requests_following_data_to">Requests the following information:</string>
     <string name="presentation_footer_note">Review carefully what data you are going to share with the %1$s!</string>
     <string name="presentation_image_stub">[Image]</string>
+    <string name="presentation_zk_notice_proof_requested">This party asked for a zero-knowledge proof, but this presentation cannot use one. The issuer of your document can therefore link this presentation to you.</string>
+    <string name="presentation_zk_notice_not_requested">This party did not ask for a zero-knowledge proof. The data you share carries the signature of the issuer, who can therefore link this presentation to you.</string>
+    <string name="error_presentation_no_matching_circuit">Sharing stopped. This party requires a zero-knowledge proof this Wallet cannot produce, and without it the issuer of your document could link this presentation to you.</string>
 
     <!-- Errors -->
     <string name="error_presentation_rp_connection_failed">Connecting to the party requesting the data failed.</string>
@@ -208,6 +211,11 @@
     <!-- Activity log -->
     <string name="activity_log_title">Activity log</string>
     <string name="activity_log_description">Track all the data exchanges from your digital documents.</string>
+    <string name="activity_log_tier_summary">Presentations that can be linked to you by the issuer: %1$d. Presentations that cannot be linked: %2$d.</string>
+    <string name="tier_zero_knowledge">Zero-knowledge proof (not linkable)</string>
+    <string name="tier_plain_not_requested">Plain mdoc (linkable) — this party did not ask for a zero-knowledge proof</string>
+    <string name="tier_plain_no_matching_circuit">Plain mdoc (linkable) — this party requires a zero-knowledge proof this Wallet cannot produce</string>
+    <string name="tier_plain_device_incable">Plain mdoc (linkable) — this device cannot produce zero-knowledge proofs</string>
     <string name="log_entry_title">Log entry</string>
     <string name="log_entry_request_title">Data exchange description</string>
     <string name="log_entry_relying_party">Recipient of the data</string>
