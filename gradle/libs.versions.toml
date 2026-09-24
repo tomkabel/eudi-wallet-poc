@@ -43,10 +43,6 @@ androidxSecurityCrypto = "1.1.0-alpha07"
 dependencyCheck = "1.32.0"
 spotless = "7.0.3"
 ktlint = "0.50.0"
-googleServices = "4.4.2"
-firebaseBom = "33.13.0"
-firebaseCrashlyticsPlugin = "3.0.3"
-firebaseDistributionPlugin = "5.1.1"
 zxing-core = "3.5.3"
 appcompat = "1.7.0"
 arrow = "2.0.1"
@@ -133,9 +129,6 @@ sha2 = { module = "org.kotlincrypto.hash:sha2", version.ref = "sha2" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 slf4j-android = { module = "org.slf4j:slf4j-android", version.ref = "slf4j-android" }
 waltid-mdoc-credentials = { module = "id.walt.mdoc-credentials:waltid-mdoc-credentials", version.ref = "waltidMdocCredentials" }
-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
-firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
-firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing-core" }
 
 # Arrow
@@ -163,7 +156,4 @@ android-navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin", vers
 protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependencyCheck" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
-google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin"}
-firebase-distribution = { id = "com.google.firebase.appdistribution", version.ref = "firebaseDistributionPlugin"}
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
