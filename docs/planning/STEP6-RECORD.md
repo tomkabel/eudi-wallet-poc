@@ -63,7 +63,9 @@ binding in `RepositoriesModule`.
   ignores (trimmed to `age_over_18`); the model is shared with older issuance paths.
 - EE-PoA shares the mDL issuer key in the mock (distinct doctype, same mock issuer identity)
   pending a dedicated signer key.
-- `IssuanceViewModel` routes both age doctypes through one mock issuance route.
+- `IssuanceViewModel` routes both age doctypes through one mock issuance route. The screen previews
+  only the first document, so the transaction returns the AV attestation first and the EE-PoA
+  batch after it; "Add to wallet" saves all four.
 
 ### Tests
 
