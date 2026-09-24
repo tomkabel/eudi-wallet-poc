@@ -5,7 +5,7 @@ Funded by the European Union. Views and opinions expressed are however those of 
 necessarily reflect those of the European Union or Potential Consortium. Neither the European Union nor the granting 
 authority can be held responsible for them.
 
-# EE Wallet PoC
+# EUDI Wallet PoC (independent fork of EE Wallet PoC)
 
 Proof of Concept EE Digital Identity Wallet application for Android.
 
@@ -18,6 +18,9 @@ and the presentation flow is based on the
 [OpenID for Verifiable Presentations Draft 22](https://openid.net/specs/openid-4-verifiable-presentations-1_0-22.html).
 
 ## Testing using pre-built package
+
+This fork publishes no APK. The release linked below is upstream's, and installs RIA's app (`ee.ria.wallet`), not
+this fork; to run this fork, build it from source.
 
 1. Download and install
    the [wallet application (the APK can be found under Assets)](https://github.com/open-eid/eudi-wallet-poc/releases).
