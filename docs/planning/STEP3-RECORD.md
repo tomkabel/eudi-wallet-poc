@@ -138,9 +138,10 @@ Every changed string, before → after:
 
 New strings introduced by this step (en + et, audited in the same pass):
 `presentation_zk_notice_proof_requested`, `presentation_zk_notice_not_requested`,
-`error_presentation_no_matching_circuit`, `tier_plain_not_requested`,
-`tier_plain_no_matching_circuit`, `tier_plain_device_incapable`,
-`activity_log_tier_summary`, `log_entry_proximity_party`.
+`error_presentation_no_matching_circuit`, `error_presentation_proof_failed`,
+`tier_plain_not_requested`, `tier_plain_no_matching_circuit`, `tier_plain_device_incapable`,
+`tier_plain_proof_failed`, `activity_log_tier_summary`, `log_entry_proximity_party`. The two
+proof-failed strings claim linkability only for the plain mdoc that was not sent, which holds.
 
 ## 3e — DC API rows record what was shared (F9)
 
