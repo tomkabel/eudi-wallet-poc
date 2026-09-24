@@ -77,8 +77,9 @@ class SecureAreaKeyManager(
     }
 
     /**
-     * Batch key creation for the EE-PoA batches (conformance plan §4 item 6, EE-POA-011a): one
-     * Android Keystore round trip for [count] keys instead of [count] single generations. Every
+     * Batch key creation for the EE-PoA batches (conformance plan §4 item 6): one Android
+     * Keystore round trip for [count] keys instead of [count] single generations, called at
+     * issuance time — pre-generation off the critical path (EE-POA-011a) is plan §8.4. Every
      * key carries the same settings — the provider challenge and the StrongBox/TEE selection of
      * this device — and is immediately usable as a presentation key.
      *

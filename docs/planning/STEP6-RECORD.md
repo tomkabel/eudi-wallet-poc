@@ -16,11 +16,12 @@ the `expiry_date`. `null` Status writes no status reference into the MSO (EE-POA
 
 The AV attestation (`eu.europa.ec.av.1`) is trimmed from the 13-threshold set to `age_over_18` only.
 
-### One transaction, batch of three (EE-POA-003 / EE-POA-011a)
+### One transaction, batch of three (EE-POA-003)
 
 `WalletProviderBatchAgeIssuer` issues the EE-PoA batch and the AV attestation in one transaction:
 the batch keys are created through `SecureAreaKeyManager.batchCreateKey(3)` — one Android Keystore
-call for the whole batch, off the presentation critical path — each attested by the (mock) wallet
+call for the whole batch, made at issuance time while the user waits; pre-generation off the
+critical path (EE-POA-011a) is not done here and stays in §8.4 — each attested by the (mock) wallet
 provider with its own provider key (step 5's fix) and registered in the `key_attestations` table so
 cleanup keeps seeing every alias. Batch size 3 is the plan's deliberate choice: enough to test
 consumption and never-the-last; ≥ 30 and OpenID4VCI batch issuance stay in §8.4.

@@ -17,17 +17,16 @@ import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 
 /**
- * The production [AgeVerificationProviderServiceMock.BatchAgeIssuer]: one transaction's keys and
- * mints (conformance plan §4 item 6, EE-POA-003/011).
+ * The production [BatchAgeIssuer]: one transaction's keys and mints (conformance plan §4 item 6,
+ * EE-POA-003/011).
  *
  * The EE-PoA batch keys are created through [SecureAreaKeyManager.batchCreateKey] — one
- * Android Keystore call for the whole batch, the off-critical-path key generation EE-POA-011a
- * points at — and each is attested by the (mock) wallet provider and registered in the
- * keyAttestation table exactly like a single generated key, so SecureArea cleanup keeps seeing
- * every alias. The AV attestation gets a single key on the same manager. The Android Keystore
- * interaction itself is PENDING-DEVICE (docs/planning/STEP6-RECORD.md); the JVM acceptance test
- * drives the mint through the [AgeVerificationProviderServiceMock.BatchAgeIssuer] seam with
- * fake keys instead.
+ * Android Keystore call for the whole batch, at issuance time; pre-generation off the critical
+ * path (EE-POA-011a) stays in plan §8.4 — and each is attested by the (mock) wallet provider and
+ * registered in the keyAttestation table exactly like a single generated key, so SecureArea
+ * cleanup keeps seeing every alias. The AV attestation gets a single key on the same manager. The
+ * Android Keystore interaction itself is PENDING-DEVICE (docs/planning/STEP6-RECORD.md); the JVM
+ * acceptance test drives the mint through the [BatchAgeIssuer] seam with fake keys instead.
  */
 class WalletProviderBatchAgeIssuer(
     private val secureAreaKeyManager: SecureAreaKeyManager,
