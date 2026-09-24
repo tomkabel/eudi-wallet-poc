@@ -305,6 +305,9 @@ dependencies {
     // Longfellow ZK prover: bundles libzkp.so (arm64-v8a, x86_64) and the pre-built circuits
     implementation(libs.multipaz.longfellow)
 
+    // Hardware-backed device keys (AndroidKeystoreSecureArea) are used directly, not only transitively
+    implementation(libs.multipaz.android)
+
     // multipaz-longfellow needs a newer multipaz than eudi-iso18013-data-transfer pins. Constrain
     // the multipaz artifacts it pulls in transitively so core and -android stay on one version.
     constraints {
