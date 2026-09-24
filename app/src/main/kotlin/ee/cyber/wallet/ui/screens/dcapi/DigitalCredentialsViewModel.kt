@@ -15,6 +15,7 @@ import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.di.Dispatcher
 import ee.cyber.wallet.di.WalletDispatchers
+import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
@@ -51,6 +52,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.json.JSONObject
 import org.multipaz.cbor.Cbor
 import org.multipaz.crypto.EcPublicKey
@@ -212,12 +215,77 @@ class DigitalCredentialsViewModel @Inject constructor(
                             credentials = credentials,
                             sessionTranscript = sessionTranscript,
                             recipientPublicKey = recipientPublicKey,
-                            zkSystemSpecs = zkSystemSpecs
+                            zkSystemSpecs = zkSystemSpecs,
+                            expectedPlainTier = expectedPlainTier(zkSystemSpecs, credentials)
                         )
                     }
                 }
             }
         }
+    }
+
+    /**
+     * The linkable tier this presentation would fall back to, or null when a zero-knowledge proof
+     * is expected for every matched document. Drives the EE-ZKP-042 pre-share notice: the user is
+     * told before sharing whenever the response would carry issuer-signed, linkable documents.
+     */
+    private fun expectedPlainTier(
+        specs: Map<String, List<ZkSystemSpec>>,
+        credentials: List<DcCredential>
+    ): PresentationTier? {
+        // Per credential, against its own docType's specs; the response is linkable if any one is.
+        val tiers = credentials.mapNotNull { credential ->
+            val docSpecs = specs[credential.credentialType.docType().uri].orEmpty()
+            when {
+                docSpecs.isEmpty() -> PresentationTier.PLAIN_NOT_REQUESTED
+                zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
+                matchZkSystemSpec(docSpecs, credential.allCheckedFields.size) == null ->
+                    PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
+                else -> null
+            }
+        }
+        // A proof the party asked for and will not get outranks "never asked" in the wording.
+        return tiers.firstOrNull { it != PresentationTier.PLAIN_NOT_REQUESTED } ?: tiers.firstOrNull()
+    }
+
+    /**
+     * The doctypes the ZK path exists for. EE-ZKP-051 is applied strictly to these; other
+     * documents keep the documented mixed-response behaviour.
+     */
+    private fun CredentialType.requiresZkProof(): Boolean = when (this) {
+        CredentialType.AGE_VERIFICATION -> true
+        else -> false
+    }
+
+    /**
+     * EE-ZKP-051, strict reading, scoped to the age doctypes. The device here is capable of the
+     * ZKP path in general, but the relying party advertised only circuits this wallet does not
+     * hold. The lenient reading would let that advertisement work as a downgrade lever —
+     * advertise an unknown circuit hash, receive a linkable presentation — so the wallet refuses,
+     * tells the user why, and logs the refusal.
+     *
+     * Returns true when the presentation was refused and nothing may be shared.
+     */
+    private suspend fun refusePlainWhenSpecsUnsatisfiable(currentState: DcUiState): Boolean {
+        if (zkSystem == null) return false
+        // Each age document against the specs its own doc request advertised, never another's.
+        val refused = currentState.credentials.firstOrNull { credential ->
+            val specs = currentState.zkSystemSpecs[credential.credentialType.docType().uri].orEmpty()
+            credential.credentialType.requiresZkProof() &&
+                specs.isNotEmpty() &&
+                matchZkSystemSpec(specs, credential.allCheckedFields.size) == null
+        } ?: return false
+
+        logger.warn("EE-ZKP-051: refusing plain fallback — device is ZK-capable but the advertised specs cannot be satisfied")
+        transactionLogRepository.addTransactionLog(
+            party = currentState.verifier,
+            docType = refused.credentialType.docType(),
+            tier = PresentationTier.PLAIN_NO_MATCHING_CIRCUIT,
+            error = AppError.PRESENTATION_NO_MATCHING_CIRCUIT
+        )
+        setState { copy(isLoading = false, plainRefused = true) }
+        sendEffect { DcEffect.RefusedPlainFallback }
+        return true
     }
 
     private fun PresentationDefinition.getDocumentMatches(
@@ -296,12 +364,16 @@ class DigitalCredentialsViewModel @Inject constructor(
         val sessionTranscript = currentState.sessionTranscript ?: return
         val recipientPublicKey = currentState.recipientPublicKey ?: return
 
+        // EE-ZKP-051, strict reading: before anything is signed, refuse a linkable plain fallback
+        // for the age doctypes when the device could prove but the advertised specs cannot be met.
+        if (refusePlainWhenSpecsUnsatisfiable(currentState)) return
+
         setState { copy(isLoading = true) }
 
         try {
             val responseDocuments = mutableListOf<MDoc>()
             val zkDocuments = mutableListOf<ZkDocument>()
-            val presented = mutableListOf<Pair<DocType, PresentationTier>>()
+            val presented = mutableListOf<Triple<DocType, JsonObject, PresentationTier>>()
 
             currentState.credentials.forEach { credential ->
                 val mDoc = credential.mDoc
@@ -357,7 +429,8 @@ class DigitalCredentialsViewModel @Inject constructor(
 
                 // Named rather than inferred from the null above: "the verifier never asked" and
                 // "this device cannot prove" are the same response but very different facts, and
-                // EE-ZKP-053 wants the distinction on the record.
+                // EE-ZKP-053 wants the distinction on the record. The pre-share notice the user
+                // saw (EE-ZKP-042) is worded from the same computation.
                 val tier = when {
                     zkDocument != null -> PresentationTier.ZERO_KNOWLEDGE
                     proofFailed -> PresentationTier.PLAIN_PROOF_FAILED
@@ -365,7 +438,13 @@ class DigitalCredentialsViewModel @Inject constructor(
                     zkSystem == null -> PresentationTier.PLAIN_DEVICE_INCAPABLE
                     else -> PresentationTier.PLAIN_NO_MATCHING_CIRCUIT
                 }
-                presented.add(credential.credentialType.docType() to tier)
+                // EE-ZKP-053 / F9: record what was shared, as the redirect path already does.
+                val attributes = JsonObject(
+                    checkedFields.associate { field ->
+                        field.name to JsonPrimitive(field.value)
+                    }
+                )
+                presented.add(Triple(credential.credentialType.docType(), attributes, tier))
             }
 
             val deviceResponseBytes = if (zkDocuments.isEmpty()) {
@@ -375,8 +454,13 @@ class DigitalCredentialsViewModel @Inject constructor(
             }
             val response = getEncryptedResponse(recipientPublicKey, deviceResponseBytes, sessionTranscript)
             // Logged only once there is a response to send, so a failed share leaves no record of a presentation
-            presented.forEach { (docType, tier) ->
-                transactionLogRepository.addTransactionLog(party = currentState.verifier, docType = docType, tier = tier)
+            presented.forEach { (docType, attributes, tier) ->
+                transactionLogRepository.addTransactionLog(
+                    party = currentState.verifier,
+                    docType = docType,
+                    attributes = attributes,
+                    tier = tier
+                )
             }
 
             logger.info("Response generated successfully")
@@ -480,7 +564,12 @@ data class DcUiState(
     val shareDisabled: Boolean = false,
     val sessionTranscript: @RawValue ListElement? = null,
     val recipientPublicKey: @RawValue EcPublicKey? = null,
-    val zkSystemSpecs: @RawValue Map<String, List<ZkSystemSpec>> = mapOf()
+    val zkSystemSpecs: @RawValue Map<String, List<ZkSystemSpec>> = mapOf(),
+    // EE-ZKP-042: set once a match exists, before the user shares. Non-null when the response
+    // would be linkable, carrying which linkable tier it would fall back to.
+    val expectedPlainTier: PresentationTier? = null,
+    // EE-ZKP-051 refusal already happened for this request; the screen shows the refusal notice.
+    val plainRefused: Boolean = false
 ) : ViewState, Parcelable
 
 sealed class DcEffect : ViewSideEffect {
@@ -488,6 +577,9 @@ sealed class DcEffect : ViewSideEffect {
     data object Cancel : DcEffect()
     data object NoMatch : DcEffect()
     data class Error(val message: String) : DcEffect()
+
+    // EE-ZKP-051: the plain fallback was refused because the advertised ZK specs cannot be met.
+    data object RefusedPlainFallback : DcEffect()
 }
 
 sealed class DcEvent : ViewEvent {
