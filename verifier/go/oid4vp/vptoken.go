@@ -2,8 +2,6 @@ package oid4vp
 
 import (
 	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -31,8 +29,16 @@ type ZKPresentation struct {
 // VPToken is the OpenID4VP 1.0 vp_token: DCQL credential id -> presentations.
 type VPToken map[string][]string
 
-// Parse pulls the single presentation matching the query's credential id out of
-// a vp_token and checks it answers the question that was asked.
+// Parse pulls the single presentation matching the query's credential id out
+// of a vp_token and checks it answers the question that was asked. The entry's
+// bytes name the carrier (the mso_mdoc_zk format's CBOR DeviceResponse, or the
+// interim JSON envelope; sniffed here for a plain-format query), and the
+// checks each carrier applies are carrier.go's, not this method's.
+//
+// ZKPresentation below stays the versioned-interim-encoding envelope this
+// method originally parsed; it is an explicit interim encoding, not an
+// interop claim. Callers wanting one presentation with one shape across
+// carriers use the CheckedPresentation this returns.
 func (t VPToken) Parse(q CredentialQuery) (*ZKPresentation, []byte, error) {
 	entries, ok := t[q.ID]
 	if !ok {
@@ -41,54 +47,79 @@ func (t VPToken) Parse(q CredentialQuery) (*ZKPresentation, []byte, error) {
 	if len(entries) != 1 {
 		return nil, nil, fmt.Errorf("expected exactly one presentation for %q, got %d", q.ID, len(entries))
 	}
-	raw, err := base64.RawURLEncoding.DecodeString(entries[0])
+	raw, err := DecodeBase64URL(entries[0])
 	if err != nil {
-		// tolerate padded base64url, which wallets do emit
-		raw, err = base64.URLEncoding.DecodeString(entries[0])
-		if err != nil {
-			return nil, nil, fmt.Errorf("presentation is not base64url: %w", err)
-		}
+		return nil, nil, fmt.Errorf("presentation is not base64url: %w", err)
 	}
-	var p ZKPresentation
-	if err := json.Unmarshal(raw, &p); err != nil {
-		return nil, nil, fmt.Errorf("presentation is not a ZK presentation envelope: %w", err)
-	}
-
-	// The presentation must answer the query that was actually asked.
-	if p.DocType != q.Meta.DoctypeValue {
-		return nil, nil, fmt.Errorf("presentation doctype %q does not match the query's %q",
-			p.DocType, q.Meta.DoctypeValue)
-	}
-	if p.Namespace != q.Namespace() {
-		return nil, nil, fmt.Errorf("presentation namespace %q does not match the query's %q",
-			p.Namespace, q.Namespace())
-	}
-	if p.AttrID != q.Element() {
-		return nil, nil, fmt.Errorf("presentation discloses %q but the query asked for %q",
-			p.AttrID, q.Element())
-	}
-	if p.ZKSystem != "longfellow-libzk-v1" {
-		return nil, nil, fmt.Errorf("unsupported zk_system %q", p.ZKSystem)
-	}
-
-	proof, err := base64.RawStdEncoding.DecodeString(p.ProofB64)
+	carrier, err := CarrierForBytes(raw, q, nil)
 	if err != nil {
-		proof, err = base64.StdEncoding.DecodeString(p.ProofB64)
-		if err != nil {
-			return nil, nil, fmt.Errorf("proof is not base64: %w", err)
-		}
-	}
-	attrCBOR, err := hex.DecodeString(p.AttrCBORHex)
-	if err != nil {
-		return nil, nil, fmt.Errorf("attr_cbor_hex is not hex: %w", err)
-	}
-	// EE-ZKP-021(b): the proof binds a value, and checking only the attribute's
-	// identity accepts a proof that the predicate is FALSE as an answer to
-	// "is this holder over 18?".
-	if err := matchesQueryValue(p.AttrID, attrCBOR, q.Values()); err != nil {
 		return nil, nil, err
 	}
-	return &p, proof, nil
+	cp, err := carrier.Parse(raw, q)
+	if err != nil {
+		return nil, nil, err
+	}
+	if carrier != Carrier(InterimJSON{}) {
+		// The CBOR carrier's presentation carries everything the interim
+		// envelope's fields name except the fields the envelope format
+		// predates; surface it as the interim struct so callers keep one
+		// type, with the envelope-only fields (block sizes, version) coming
+		// from the allowlisted circuit as before.
+		return &ZKPresentation{
+			ZKSystem:      cp.ZKSystem,
+			Version:       0, // the CBOR carrier defers to the registry circuit
+			NumAttributes: 0,
+			DocType:       cp.DocType,
+			Namespace:     cp.Namespace,
+			AttrID:        cp.AttrID,
+			AttrCBORHex:   "f5",
+			ProofB64:      base64.RawStdEncoding.EncodeToString(cp.Proof),
+		}, cp.Proof, nil
+	}
+	return interimFromChecked(cp)
+}
+
+// ParseCarrier is the carrier-agnostic form of Parse: the same vp_token entry
+// selection, returning the normalized CheckedPresentation plus the carrier
+// that parsed it. Dispatch order: an explicit override (the -carrier flag),
+// the query's format, then the first-byte sniff (carrier.go).
+func (t VPToken) ParseCarrier(q CredentialQuery, override Carrier) (*CheckedPresentation, Carrier, error) {
+	entries, ok := t[q.ID]
+	if !ok {
+		return nil, nil, fmt.Errorf("vp_token has no entry for credential id %q", q.ID)
+	}
+	if len(entries) != 1 {
+		return nil, nil, fmt.Errorf("expected exactly one presentation for %q, got %d", q.ID, len(entries))
+	}
+	raw, err := DecodeBase64URL(entries[0])
+	if err != nil {
+		return nil, nil, fmt.Errorf("presentation is not base64url: %w", err)
+	}
+	carrier, err := CarrierForBytes(raw, q, override)
+	if err != nil {
+		return nil, nil, err
+	}
+	cp, err := carrier.Parse(raw, q)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cp, carrier, nil
+}
+
+// interimFromChecked rebuilds the interim envelope from a CheckedPresentation
+// the interim carrier produced — a plain field copy, so the two entry points
+// never disagree on what the envelope held.
+func interimFromChecked(cp *CheckedPresentation) (*ZKPresentation, []byte, error) {
+	return &ZKPresentation{
+		ZKSystem:      cp.ZKSystem,
+		Version:       cp.Version,
+		NumAttributes: cp.NumAttributes,
+		DocType:       cp.DocType,
+		Namespace:     cp.Namespace,
+		AttrID:        cp.AttrID,
+		AttrCBORHex:   "f5",
+		ProofB64:      base64.RawStdEncoding.EncodeToString(cp.Proof),
+	}, cp.Proof, nil
 }
 
 // matchesQueryValue reports whether the presented CBOR is one of the values the

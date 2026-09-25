@@ -9,6 +9,62 @@ import (
 	"fmt"
 )
 
+// Flow selects one transcript derivation. The two flows are NEVER
+// interchangeable — this is the F2 replay lesson made structural: a proof
+// bound to the OpenID4VP redirect handover does not verify over the ISO dcapi
+// handover and vice versa (asserted byte-for-byte in both language halves),
+// and TranscriptForFlow is the only door to the transcript bytes, so a caller
+// cannot accidentally mix what it hashes. Carriers declare which flow their
+// proofs bind (carrier.go), and the verifier derives the transcript for
+// exactly that flow from its own session data — never from the response.
+type Flow int
+
+const (
+	// FlowRedirectB261 is OpenID4VP 1.0 Appendix B.2.6.1, invocation via
+	// redirects: [null, null, ["OpenID4VPHandover", h]] — the transcript
+	// both the interim-JSON envelope and the de-facto mso_mdoc_zk CBOR
+	// carrier bind (fixture-verified both directions, step 8.7).
+	FlowRedirectB261 Flow = iota
+	// FlowDcapiISO is ISO/IEC 18013-7 Annex C over the Digital Credentials
+	// API: [null, null, ["dcapi", h]] — the transcript the ISO dcapi path
+	// binds.
+	FlowDcapiISO
+)
+
+// TranscriptParams are the verifier-side inputs one flow's derivation needs.
+// Which fields matter depends on the flow: FlowRedirectB261 hashes
+// client_id/nonce/jwkThumbprint/response_uri, FlowDcapiISO hashes
+// encryptionInfoB64/origin. Everything here is a verifier fact from the stored
+// session; nothing is ever taken from the response.
+type TranscriptParams struct {
+	ClientID      string
+	Nonce         string
+	ResponseURI   string
+	JWKThumbprint []byte // RFC 7638 thumbprint; nil for the unencrypted direct_post
+
+	EncryptionInfoB64 string // the dcapi handover's base64url EncryptionInfo
+	Origin            string // the dcapi origin the session was created under
+}
+
+// TranscriptForFlow is the single entry point over the two transcript
+// derivations this verifier knows. Every caller names the flow it wants and
+// supplies verifier-side facts; the caller never picks between byte layouts by
+// hand. The two flows are never interchangeable: for the same inputs they
+// hash different handover bytes, so a proof made for one flow cannot be
+// replayed over the other — a transcript-registry test pins that both
+// directions fail, and the carrier's TranscriptFlow field keeps response
+// handling on the one flow its proof was made for.
+func TranscriptForFlow(f Flow, p TranscriptParams) ([]byte, error) {
+	switch f {
+	case FlowRedirectB261:
+		return SessionTranscript(p.ClientID, p.Nonce, p.JWKThumbprint, p.ResponseURI)
+	case FlowDcapiISO:
+		return ISOTranscript(p.EncryptionInfoB64, p.Origin)
+	default:
+		return nil, fmt.Errorf("oid4vp: no transcript derivation for flow %d", int(f))
+	}
+}
+
 // SessionTranscript builds the CBOR structure defined in OpenID4VP 1.0
 // Appendix B.2.6.1 (invocation via redirects):
 //
