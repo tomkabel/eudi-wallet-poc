@@ -30,10 +30,11 @@ import org.multipaz.mdoc.zkp.ZkSystemSpec
 import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 
 /**
- * Helpers shared by the :zk-conformance fixture tests (Step0CrossVerifyTest and
- * Step2aDeviceResponseFixtureTest): the session transcript shape, the minted
- * age-verification mdoc, the single-attribute circuit pick and Longfellow's own
- * timestamp formatting. Kept out of the test classes so both fixtures are
+ * Helpers shared by the :zk-conformance fixture tests (Step0CrossVerifyTest,
+ * Step2aDeviceResponseFixtureTest and Step87OpenID4VPFixtureTest): the session
+ * transcript shape, the minted age-verification mdoc, the single-attribute
+ * circuit pick, Longfellow's own timestamp formatting and the provenance and
+ * trust-store output. Kept out of the test classes so every fixture is
  * provably minted the same way.
  */
 object ZkConformanceConsts {
@@ -45,7 +46,7 @@ object ZkConformanceConsts {
     fun signedAtNow(): Instant = Instant.fromEpochSeconds(Clock.System.now().epochSeconds, 0)
 }
 
-/** The ee-eudiw checkout both fixture tests write into. */
+/** The ee-eudiw checkout the fixture tests write into. */
 object EeEudiw {
     // Defaults live in build.gradle.kts, the one place that knows the repository root.
     val dir: File
