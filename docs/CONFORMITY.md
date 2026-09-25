@@ -62,6 +62,7 @@ Per algorithm, its quantum exposure, its migration path, and which exposure is s
 | AES-256 | Challenge expansion (CTR as bare PRF) | Grover; 256-bit keys keep a wide margin | Soundness | Part of the ciphersuite selection `EE-ZKP-022c` governs |
 | ECDSA P-256 | Issuer (MSO) and device (DeviceAuthentication) signatures | Shor — broken by a CRQC | Both: forgery of MSOs (soundness) and, via device keys, impersonation (soundness); not directly privacy | Post-quantum signature inside the circuit statement or hybrid issuer signatures; the presentation path migrates with the issuer, the WSCD path with the secure area |
 | ECDH P-256 (HPKE DHKEM_P256_HKDF_SHA256_HKDF_SHA256_AES_128_GCM) | DC API response encryption | Shor — broken by a CRQC | Privacy (response confidentiality) | HPKE suite negotiation to a PQ/hybrid KEM when the profile defines one |
+| ECDH-ES + A256KW / A256GCM (compact JWE) | OpenID4VP `direct_post.jwt` response encryption (ADR-003, default on) | Shor — broken by a CRQC | Privacy (response confidentiality) | Same hybrid-KEM posture as the HPKE row when a profile defines one |
 | Longfellow v7 circuits | ZK age proof | No known quantum speedup against the hash-based soundness argument beyond Grover-on-SHA-256 | Soundness | Re-parameterisation to ≥125 bits (`EE-ZKP-022a`); the scheme's soundness resting only on hash functions is why no scheme migration is needed |
 
 What this wallet **can claim today**:
@@ -72,6 +73,16 @@ What this wallet **can claim today**:
   runtime and the reverse, both directions PASS with committed fixtures (step 0 of the
   conformance plan, `verifier/go/zk/testdata/step0-multipaz/` and `testdata/step0-rust-prover/`
   in the reference repository, 23 September 2026).
+- Over OpenID4VP the spine now runs the de-facto `mso_mdoc_zk` carrier (profile v1.0 above)
+  with `direct_post.jwt` response encryption on by default (ADR-003), e2e-verified end to end
+  in `tests/e2e.sh` (13 assertions, both response modes, both carriers, one- and
+  two-credential sessions). The relying-party verify budget is honestly re-derived rather than
+  met: host verification is ~95% Longfellow sumcheck arithmetic, p95 3.2–4.9 s across rounds on
+  an i5-8365U-class host, and the 1.0 s p95 figure is now recorded as the device-side prover
+  budget with the verifier budget expressed as a capacity statement — see
+  [`docs/MEASUREMENTS.md`](MEASUREMENTS.md) "Host verify optimization log" (W2, 25 September
+  2026), where all three host optimization candidates (Rust PGO, FFI scratch arena, Go PGO)
+  were measured and rejected on evidence.
 - Device keys are generated in hardware: multipaz `AndroidKeystoreSecureArea`, StrongBox where
   the device advertises `FEATURE_STRONGBOX_KEYSTORE`, TEE otherwise, with no API that can
   return private-key material; `ee.riik.poa.1` is issued over them in one transaction and a
