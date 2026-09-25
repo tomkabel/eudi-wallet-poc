@@ -207,7 +207,7 @@ documented two-command opt-in; wiring it into the default build needs a committe
 unjustified.
 
 Interleaved A/B (both statically linked test binaries re-run back-to-back, 20-run
-percentiles per round, three rounds; loadavg 4.7–6.4 throughout, shared between arms):
+percentiles per round, three rounds; loadavg 4.1–5.9 throughout, shared between arms):
 
 | round | baseline p50 / p95 | PGO p50 / p95 | Δ p50 |
 |---|---|---|---|
@@ -215,8 +215,9 @@ percentiles per round, three rounds; loadavg 4.7–6.4 throughout, shared betwee
 | 2 | 2.801 s / 3.464 s | 2.963 s / 3.596 s | +5.8 % |
 | 3 | 3.721 s / 4.741 s | 3.131 s / 3.914 s | −15.9 % |
 
-Round 3 is the cleanest comparison (the paired arms share its load spike); rounds 1–2 carry
-the same caveat in the other direction, so no round is taken alone. Final 10x bench pair:
+Round 3 shows the largest apparent effect and is also the round where both arms shared the
+heaviest load spike; rounds 1–2 show the opposite sign under milder load, so no round is
+taken alone. Final 10x bench pair:
 baseline 2.864 s/op vs PGO 3.155 s/op. The deltas flip sign across
 rounds while round-to-round variation of the *identical* baseline binary (p95 3.54 → 4.74)
 is three times the largest apparent PGO effect. A CPU-time cross-check (bash `time`, user+sys
