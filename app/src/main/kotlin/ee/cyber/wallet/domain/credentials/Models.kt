@@ -1,10 +1,9 @@
 package ee.cyber.wallet.domain.credentials
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import eu.europa.ec.eudi.openid4vci.AuthorizationRequestPrepared
-import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 enum class CredentialType(val value: String) {
     PID_SD_JWT("eu.europa.ec.eudiw.pid_vc_sd_jwt"), // TODO: eu.europa.ec.eudi.pid_vc_sd_jwt?
@@ -175,7 +174,6 @@ enum class CredentialAttribute(
     ORG_ISO_18013_5_1_FAMILY_NAME_NATIONAL_CHARACTER(DocType.MDL, Namespace.ORG_ISO_18013_5_1, "family_name_national_character", true),
     ORG_ISO_18013_5_1_GIVEN_NAME_NATIONAL_CHARACTER(DocType.MDL, Namespace.ORG_ISO_18013_5_1, "given_name_national_character", true),
     ORG_ISO_18013_5_1_SIGNATURE_USUAL_MARK(DocType.MDL, Namespace.ORG_ISO_18013_5_1, "signature_usual_mark", true),
-
 
     /*
         EE Proof of Age (spec §9.2): predicates plus the mandatory metadata attributes
@@ -377,7 +375,7 @@ sealed class Credential(
         val familyNameNationalCharacter: String? = null,
         val givenNameNationalCharacter: String? = null,
         val signatureUsualMark: ByteArray? = null,
-        val locationStatus: LocationStatus,
+        val locationStatus: LocationStatus
     ) : Credential(
         type = CredentialType.MDL
     )
@@ -411,7 +409,7 @@ sealed class Credential(
         val ageOver60: Boolean,
         val ageOver65: Boolean,
         val ageOver67: Boolean,
-        val locationStatus: LocationStatus,
+        val locationStatus: LocationStatus
     ) : Credential(
         type = CredentialType.AGE_VERIFICATION
     )

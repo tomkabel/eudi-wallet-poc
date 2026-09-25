@@ -1,9 +1,9 @@
 package ee.cyber.wallet.domain.presentation
 
+import ee.cyber.wallet.util.DeviceRequestParser
 import org.multipaz.cbor.DataItem
 import org.multipaz.mdoc.response.MdocDocument
 import org.multipaz.mdoc.zkp.ZkDocument
-import ee.cyber.wallet.util.DeviceRequestParser
 import org.multipaz.mdoc.zkp.ZkSystem
 import org.multipaz.mdoc.zkp.ZkSystemSpec
 import org.slf4j.LoggerFactory

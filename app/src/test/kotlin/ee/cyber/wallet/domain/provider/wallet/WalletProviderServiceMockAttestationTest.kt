@@ -1,7 +1,5 @@
 package ee.cyber.wallet.domain.provider.wallet
 
-import com.nimbusds.jose.JWSAlgorithm
-import com.nimbusds.jose.JWSObject
 import com.nimbusds.jose.crypto.RSASSAVerifier
 import com.nimbusds.jose.jwk.ECKey
 import com.nimbusds.jose.jwk.JWK
@@ -19,19 +17,16 @@ import java.math.BigInteger
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.KeyStore
-import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.SecureRandom
 import java.security.Security
 import java.security.interfaces.RSAPublicKey
 import java.security.spec.AlgorithmParameterSpec
 import java.security.spec.ECGenParameterSpec
-import java.security.spec.RSAKeyGenParameterSpec
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Base64
 import java.util.Date
-import java.util.UUID
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -66,7 +66,6 @@ import ee.cyber.wallet.ui.theme.PreviewThemes
 import ee.cyber.wallet.ui.theme.PreviewThemesSmallScreen
 import ee.cyber.wallet.ui.theme.WalletThemePreviewSurface
 import ee.cyber.wallet.ui.theme.green_600
-import id.walt.mdoc.doc.MDoc
 import id.walt.mdoc.doc.MDocBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -101,9 +100,17 @@ private val testOptFields: MatchedFields = listOf(
 )
 
 private val credentialDocument = CredentialDocument.MDocDocument(
-    "", DocType.PID_SD_JWT, emptyList(), false, Attestation(
-        "", "", CredentialType.PID_SD_JWT, KeyAttestation(
-            "", "",
+    "",
+    DocType.PID_SD_JWT,
+    emptyList(),
+    false,
+    Attestation(
+        "",
+        "",
+        CredentialType.PID_SD_JWT,
+        KeyAttestation(
+            "",
+            "",
             EC
         )
     ),

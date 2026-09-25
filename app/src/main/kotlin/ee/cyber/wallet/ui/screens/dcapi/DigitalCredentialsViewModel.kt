@@ -10,7 +10,6 @@ import com.upokecenter.cbor.CBORObject
 import com.upokecenter.cbor.CBORType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.crypto.CryptoProvider
-import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.data.repository.TransactionLogRepository
@@ -20,25 +19,24 @@ import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
-import ee.cyber.wallet.domain.presentation.DcApiRequestDispatch
-import ee.cyber.wallet.domain.presentation.EePoaConsumption
-import ee.cyber.wallet.domain.presentation.DcApiProtocol
-import ee.cyber.wallet.domain.presentation.ProtocolRefusal
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.CredentialClaim
+import ee.cyber.wallet.domain.presentation.DcApiRequestDispatch
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.HolderObligations
 import ee.cyber.wallet.domain.presentation.LongfellowZkPresenter
+import ee.cyber.wallet.domain.presentation.OpenId4VPManager
+import ee.cyber.wallet.domain.presentation.PresentationTier
+import ee.cyber.wallet.domain.presentation.ProtocolRefusal
 import ee.cyber.wallet.domain.presentation.ZkPresentation
 import ee.cyber.wallet.domain.presentation.ZkPresentationReason
 import ee.cyber.wallet.domain.presentation.ZkPresenter
 import ee.cyber.wallet.domain.presentation.mergeZkSpecs
 import ee.cyber.wallet.domain.presentation.resolveSchemeId
 import ee.cyber.wallet.domain.presentation.zkSpecsByDocType
-import ee.cyber.wallet.util.zkSpecsByDocTypeFromDcql
-import ee.cyber.wallet.domain.presentation.OpenId4VPManager
-import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
 import ee.cyber.wallet.ui.mvi.ViewSideEffect
@@ -51,6 +49,7 @@ import ee.cyber.wallet.ui.screens.presentation.fields
 import ee.cyber.wallet.util.DeviceRequestParser
 import ee.cyber.wallet.util.readerAuthSubject
 import ee.cyber.wallet.util.toPresentationDefinition
+import ee.cyber.wallet.util.zkSpecsByDocTypeFromDcql
 import eu.europa.ec.eudi.prex.FieldQueryResult
 import eu.europa.ec.eudi.prex.Match
 import eu.europa.ec.eudi.prex.PresentationDefinition
@@ -69,10 +68,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.json.JSONObject
-import kotlinx.serialization.json.Json
 import org.multipaz.cbor.Cbor
 import org.multipaz.crypto.EcPublicKey
 import org.multipaz.crypto.Hpke
@@ -494,7 +493,8 @@ class DigitalCredentialsViewModel @Inject constructor(
             currentState.credentials.firstOrNull { it.attestation.keyAttestation.keyType != KeyType.EC }?.let {
                 logger.error(
                     "Device auth is ECDSA-only (mso_mdoc_zk requires it); key {} is {}",
-                    it.attestation.keyAttestation.keyId, it.attestation.keyAttestation.keyType
+                    it.attestation.keyAttestation.keyId,
+                    it.attestation.keyAttestation.keyType
                 )
                 throw IllegalStateException("Device authentication requires an EC device key")
             }
@@ -680,10 +680,12 @@ class DigitalCredentialsViewModel @Inject constructor(
         val enc = encrypter.encapsulatedKey.toByteArray()
         val encryptedResponse = CBORObject.NewArray().apply {
             Add("dcapi")
-            Add(CBORObject.NewMap().apply {
-                Add("enc", enc)
-                Add("cipherText", cipherText)
-            })
+            Add(
+                CBORObject.NewMap().apply {
+                    Add("enc", enc)
+                    Add("cipherText", cipherText)
+                }
+            )
         }.EncodeToBytes()
 
         val responseJson = JSONObject()

@@ -13,11 +13,10 @@ import org.multipaz.mdoc.zkp.ZkDocument
 import org.multipaz.mdoc.zkp.ZkSystem
 import org.multipaz.mdoc.zkp.ZkSystemSpec
 import org.multipaz.request.RequestedClaim
-import kotlin.time.Instant
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 /**
  * Review finding 2 acceptance tests: the ZK scheme resolution runs per doc request — a spec
@@ -104,6 +103,7 @@ class ZkPerDocRequestResolutionTest {
             heldSpec("scheme-b", "bbb", numAttributes = 2, version = 1)
         )
     )
+
     @Test
     fun `the pooled flatMap would have satisfied doc request 1 - the per-request map does not`() = runTest {
         val requests = listOf(

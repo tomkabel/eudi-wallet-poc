@@ -12,8 +12,8 @@ import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.ui.util.toStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlin.time.Instant
 import javax.inject.Inject
+import kotlin.time.Instant
 
 data class LogEntryModel(
     val id: Long = 0,

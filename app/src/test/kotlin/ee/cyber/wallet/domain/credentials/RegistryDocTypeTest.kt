@@ -13,15 +13,20 @@ class RegistryDocTypeTest {
     private fun List<RegistryDocType>.toRegistryCbor(): ByteArray {
         val docsBuilder = com.upokecenter.cbor.CBORObject.NewArray()
         forEach { registryEntry ->
-            docsBuilder.Add(com.upokecenter.cbor.CBORObject.NewMap().apply {
-                Add("title", "Title")
-                Add("subtitle", "Subtitle")
-                Add("bitmap", byteArrayOf(0))
-                Add("mdoc", com.upokecenter.cbor.CBORObject.NewMap().apply {
-                    Add("id", registryEntry.id)
-                    Add("docType", registryEntry.docType)
-                })
-            })
+            docsBuilder.Add(
+                com.upokecenter.cbor.CBORObject.NewMap().apply {
+                    Add("title", "Title")
+                    Add("subtitle", "Subtitle")
+                    Add("bitmap", byteArrayOf(0))
+                    Add(
+                        "mdoc",
+                        com.upokecenter.cbor.CBORObject.NewMap().apply {
+                            Add("id", registryEntry.id)
+                            Add("docType", registryEntry.docType)
+                        }
+                    )
+                }
+            )
         }
         return docsBuilder.EncodeToBytes()
     }

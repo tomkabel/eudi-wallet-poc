@@ -57,7 +57,11 @@ class DocumentViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             documentRepository.getDocumentById(documentId).collect {
-                setState { copy(document = it?.let { doc -> DocumentView(doc, doc.credentialType() == CredentialType.MDL || doc.credentialType() == CredentialType.AGE_VERIFICATION) }) }
+                setState {
+                    copy(
+                        document = it?.let { doc -> DocumentView(doc, doc.credentialType() == CredentialType.MDL || doc.credentialType() == CredentialType.AGE_VERIFICATION) }
+                    )
+                }
                 generateQrCodeIfNeeded(it)
             }
         }

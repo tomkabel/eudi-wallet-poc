@@ -9,14 +9,12 @@ import ee.cyber.wallet.domain.provider.pid.MOCK_APP_PREFS
 import ee.cyber.wallet.domain.provider.pid.MOCK_USER_PID
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 import java.time.ZoneOffset
 import kotlin.time.Clock
 import kotlin.time.toJavaInstant
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
-import kotlinx.datetime.toKotlinLocalDateTime
 
 /** Mock-issuance constants shared between the service and its tests. */
 object AgeIssuanceConstants {

@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import ee.cyber.wallet.R
 import ee.cyber.wallet.domain.credentials.CredentialAttribute
 import ee.cyber.wallet.domain.credentials.DocType
-import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.presentation.zkNoticeRes
 import ee.cyber.wallet.ui.components.AppContent
 import ee.cyber.wallet.ui.components.DocumentCardHeader

@@ -3,7 +3,8 @@ package ee.cyber.wallet.ui.util
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
-import ee.cyber.wallet.domain.documents.CredentialDocument.*
+import ee.cyber.wallet.domain.documents.CredentialDocument.JwtDocument
+import ee.cyber.wallet.domain.documents.CredentialDocument.MDocDocument
 import ee.cyber.wallet.domain.documents.DocumentField
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation

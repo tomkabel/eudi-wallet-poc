@@ -187,7 +187,12 @@ private fun DocumentTypes(supportedTypes: List<CredentialType>, onAddDocument: (
                 if (supportedTypes.contains(CredentialType.PID_SD_JWT)) DocumentTypeItem(credentialType = CredentialType.PID_SD_JWT) { onAddDocument(CredentialType.PID_SD_JWT) }
                 if (supportedTypes.contains(CredentialType.PID_MDOC)) DocumentTypeItem(credentialType = CredentialType.PID_MDOC) { onAddDocument(CredentialType.PID_MDOC) }
                 if (supportedTypes.contains(CredentialType.MDL)) DocumentTypeItem(credentialType = CredentialType.MDL) { onAddDocument(CredentialType.MDL) }
-                if (supportedTypes.contains(CredentialType.AGE_VERIFICATION)) DocumentTypeItem(credentialType = CredentialType.AGE_VERIFICATION) { onAddDocument(CredentialType.AGE_VERIFICATION) }
+                if (supportedTypes.contains(
+                        CredentialType.AGE_VERIFICATION
+                    )
+                ) {
+                    DocumentTypeItem(credentialType = CredentialType.AGE_VERIFICATION) { onAddDocument(CredentialType.AGE_VERIFICATION) }
+                }
             }
         }
     }

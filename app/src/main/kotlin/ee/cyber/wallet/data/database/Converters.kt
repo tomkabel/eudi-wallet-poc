@@ -2,10 +2,10 @@ package ee.cyber.wallet.data.database
 
 import androidx.room.TypeConverter
 import ee.cyber.wallet.domain.AppError
-import kotlin.time.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlin.time.Instant
 
 internal class InstantConverter {
     @TypeConverter

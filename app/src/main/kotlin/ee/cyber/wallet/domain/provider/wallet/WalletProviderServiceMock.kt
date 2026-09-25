@@ -1,7 +1,6 @@
 package ee.cyber.wallet.domain.provider.wallet
 
 import android.security.keystore.KeyProperties
-import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.JWSHeader
 import com.nimbusds.jose.JWSObject
 import com.nimbusds.jose.JWSSigner
@@ -9,7 +8,6 @@ import com.nimbusds.jose.Payload
 import com.nimbusds.jose.crypto.factories.DefaultJWSSignerFactory
 import com.nimbusds.jose.jwk.JWK
 import com.nimbusds.jose.jwk.OctetSequenceKey
-import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.JWTClaimsSet
 import ee.cyber.wallet.crypto.jwsSigner
 import ee.cyber.wallet.security.KeyStoreManager

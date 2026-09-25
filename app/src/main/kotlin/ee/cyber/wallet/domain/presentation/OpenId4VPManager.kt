@@ -1,10 +1,8 @@
 package ee.cyber.wallet.domain.presentation
 
-import android.util.Base64
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.util.Base64URL
 import ee.cyber.wallet.crypto.CryptoProvider
-import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.crypto.keyBindingSigner
 import ee.cyber.wallet.domain.credentials.CredentialAttribute
@@ -12,6 +10,7 @@ import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.DocumentField
 import ee.cyber.wallet.domain.documents.mdoc.DeviceResponse
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.getDeviceAuthentication
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import eu.europa.ec.eudi.openid4vp.Consensus
 import eu.europa.ec.eudi.openid4vp.EncryptionParameters
 import eu.europa.ec.eudi.openid4vp.Resolution
@@ -82,7 +81,8 @@ class OpenId4VPManager(
         openId4Vp.resolveRequestUri(urlEncodeQueryParam(uri, "dcql_query"))
     }
 
-    private fun urlEncodeQueryParam(uri: String, paramName: String): String { // TODO: Remove. Only used for https://verifier.ageverification.dev/ where dcql_query needs to be url encoded
+    // TODO: Remove. Only used for https://verifier.ageverification.dev/ where dcql_query needs to be url encoded
+    private fun urlEncodeQueryParam(uri: String, paramName: String): String {
         val paramPrefix = "$paramName="
         val startIndex = uri.indexOf(paramPrefix)
         if (startIndex == -1) return uri
@@ -183,7 +183,7 @@ class OpenId4VPManager(
 
             // Build presentations from documents
             val jwkThumbprint = request.responseEncryptionSpecification?.recipientKey?.computeThumbprint()?.decode()
-            //val jwkThumbprintBase64 = jwkThumbprint?.let { Base64.encodeToString(it, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) }
+            // val jwkThumbprintBase64 = jwkThumbprint?.let { Base64.encodeToString(it, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP) }
 
             val presentations = documents.map { document ->
                 presentDocument(document, disclosures, request.client.id, request.nonce, request.responseMode, jwkThumbprint)
@@ -302,10 +302,10 @@ class OpenId4VPManager(
             // 1. Exact match (e.g., "nationalities" matches "nationalities")
             // 2. This path is a child of a disclosed field (e.g., "nationalities[0]" is child of "nationalities")
             val shouldInclude = disclosedFieldNames.contains(pathString) ||
-                    disclosedFieldNames.any { fieldName ->
-                        // Check if pathString is a child: starts with "fieldName." or "fieldName["
-                        pathString.startsWith("$fieldName.") || pathString.startsWith("$fieldName[")
-                    }
+                disclosedFieldNames.any { fieldName ->
+                    // Check if pathString is a child: starts with "fieldName." or "fieldName["
+                    pathString.startsWith("$fieldName.") || pathString.startsWith("$fieldName[")
+                }
 
             if (shouldInclude) {
                 toBeDisclosed.addAll(disclosures)

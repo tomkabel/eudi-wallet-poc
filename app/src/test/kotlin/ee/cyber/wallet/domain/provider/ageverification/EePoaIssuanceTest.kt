@@ -1,12 +1,11 @@
 package ee.cyber.wallet.domain.provider.ageverification
 
+import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.domain.credentials.Credential
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
-import ee.cyber.wallet.crypto.CryptoProvider
-import ee.cyber.wallet.domain.credentials.CredentialIssuanceService
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

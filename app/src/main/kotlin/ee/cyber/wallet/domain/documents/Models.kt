@@ -8,13 +8,13 @@ import ee.cyber.wallet.domain.credentials.isFamilyName
 import ee.cyber.wallet.domain.credentials.isGivenName
 import ee.cyber.wallet.domain.presentation.SupportedFormat
 import ee.cyber.wallet.domain.provider.Attestation
+import ee.cyber.wallet.util.JsonElementParceler
 import eu.europa.ec.eudi.sdjwt.JwtAndClaims
 import eu.europa.ec.eudi.sdjwt.SdJwt
 import id.walt.mdoc.doc.MDoc
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.TypeParceler
 import kotlinx.serialization.json.JsonElement
-import ee.cyber.wallet.util.JsonElementParceler
 
 sealed class CredentialDocument(
     open val id: String,

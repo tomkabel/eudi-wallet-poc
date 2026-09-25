@@ -4,10 +4,10 @@ import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.ui.screens.documents.credentialType
 import ee.cyber.wallet.ui.screens.presentation.Credential
 import ee.cyber.wallet.ui.screens.presentation.MatchedField
-import eu.europa.ec.eudi.openid4vp.dcql.DCQL
 import eu.europa.ec.eudi.openid4vp.dcql.ClaimPathElement
 import eu.europa.ec.eudi.openid4vp.dcql.ClaimsQuery
 import eu.europa.ec.eudi.openid4vp.dcql.CredentialQuery
+import eu.europa.ec.eudi.openid4vp.dcql.DCQL
 import eu.europa.ec.eudi.openid4vp.dcql.metaMsoMdoc
 import eu.europa.ec.eudi.openid4vp.dcql.metaSdJwtVc
 import org.slf4j.LoggerFactory

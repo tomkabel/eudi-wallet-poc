@@ -112,7 +112,8 @@ class MsoMdocZkParsingTest {
         val heldSpec = zkSystem.systemSpecs
             .first { it.getParam<Long>("num_attributes") == 1L && it.getParam<String>("circuit_hash") == heldHash }
         assertEquals(
-            heldSpec.id, schemeId,
+            heldSpec.id,
+            schemeId,
             "the held circuit's own id resolves over the reader-advertised one"
         )
     }

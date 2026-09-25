@@ -8,16 +8,15 @@ import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.data.repository.DocumentRepository
-import ee.cyber.wallet.domain.credentials.CredentialType
-import ee.cyber.wallet.domain.presentation.EePoaConsumption
-import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.domain.AppError
+import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.documents.DocumentField
-import ee.cyber.wallet.domain.documents.mdoc.MDocUtils
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
+import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -119,7 +118,7 @@ class PresentationRequestViewModel @Inject constructor(
     private val transactionLogRepository: TransactionLogRepository,
     private val dcqlRequestProcessor: DcqlRequestProcessor,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
-    private val eePoaConsumption: EePoaConsumption,
+    private val eePoaConsumption: EePoaConsumption
 ) : MviViewModel<Event, UiState, Effect>() {
 
     private val log = LoggerFactory.getLogger("PresentationRequestViewModel")
@@ -362,7 +361,6 @@ class PresentationRequestViewModel @Inject constructor(
         }
     }
 
-
     /**
      * EE-POA-013 / WIAM_21 (plan §4 item 6): a completed plain presentation of `ee.riik.poa.1`
      * consumes the attestation and its SecureArea key — never the last in the batch. The tier
@@ -383,7 +381,7 @@ class PresentationRequestViewModel @Inject constructor(
             }
         }
     }
-    private fun setLoading(isLoading: Boolean) = setState { copy(isLoading = isLoading) }
+    private fun setLoading(isLoading: Boolean) = setState { copy(isLoading = isLoading) }
 
     private fun showError(error: Error) = sendEffect { Effect.ShowError(error) }
 

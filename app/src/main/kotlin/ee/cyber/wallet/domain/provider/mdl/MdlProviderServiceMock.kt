@@ -8,9 +8,9 @@ import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.pid.MOCK_APP_PREFS
 import ee.cyber.wallet.domain.provider.pid.MOCK_USER_PID
 import ee.cyber.wallet.domain.provider.wallet.KeyType
-import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 import java.util.*
+import kotlin.time.Instant
 
 class MdlProviderServiceMock(
     private val context: Context,

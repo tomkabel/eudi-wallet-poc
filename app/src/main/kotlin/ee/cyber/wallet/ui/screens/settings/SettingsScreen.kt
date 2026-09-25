@@ -44,13 +44,15 @@ data class SettingsNavigationHandler(
 @PreviewThemes
 private fun SettingsScreenPreview() {
     WalletThemePreviewSurface {
-        SettingsContent(UiState(
-            language = LanguageResource.ET,
-            blePeripheralMode = true,
-            lotlEnabled = true,
-            lotlSynced = true,
-            lotlCertificateCount = 42
-        ))
+        SettingsContent(
+            UiState(
+                language = LanguageResource.ET,
+                blePeripheralMode = true,
+                lotlEnabled = true,
+                lotlSynced = true,
+                lotlCertificateCount = 42
+            )
+        )
     }
 }
 

@@ -23,8 +23,8 @@ import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.ui.theme.PreviewThemes
 import ee.cyber.wallet.ui.theme.WalletThemePreviewSurface
 import ee.cyber.wallet.ui.theme.colorsBlueBlue300
-import ee.cyber.wallet.ui.theme.pink
 import ee.cyber.wallet.ui.theme.green_600
+import ee.cyber.wallet.ui.theme.pink
 
 @Composable
 @PreviewThemes

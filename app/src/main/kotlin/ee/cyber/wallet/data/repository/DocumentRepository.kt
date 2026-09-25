@@ -2,9 +2,9 @@ package ee.cyber.wallet.data.repository
 
 import ee.cyber.wallet.data.database.dao.AttestationDao
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
-import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.data.database.toEntity
 import ee.cyber.wallet.data.database.toModel
+import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.provider.wallet.KeyType

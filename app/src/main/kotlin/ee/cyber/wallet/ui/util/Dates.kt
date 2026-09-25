@@ -1,10 +1,10 @@
 package ee.cyber.wallet.ui.util
 
-import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.time.Instant
 
 const val DATE_FORMAT = "dd.MM.yyyy HH:mm"
 
