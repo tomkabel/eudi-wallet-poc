@@ -20,7 +20,8 @@ those fields as `addParam` params — the same param names the ISO `zkRequest.pa
 keyed by `meta.doctype_value` exactly as `zkSpecsByDocType` keys the ISO path. An entry missing a
 required field is skipped (fails closed); a non-numeric `num_attributes`/`version`/`block_*` is
 left unset so `getParam<Long>` returns null and the match fails. First entry per doctype wins,
-mirroring the ISO duplicate-docType rule.
+mirroring the ISO duplicate-docType rule; an entry that yields no spec (no `zk_system_type`
+entry with both `system` and `id`) claims nothing, so it cannot shadow a later, well-formed one.
 
 Parsing lives at this level, not in a library: eudi-lib-jvm-siop-openid4vp-kt has no
 `mso_mdoc_zk` notion, and multipaz's own `DcqlQuery` (checked in the 0.99.0 gradle-cache jars —
@@ -83,7 +84,7 @@ get produced (DCQL-carried specs now resolve).
 
 ## Tests
 
-`MsoMdocZkParsingTest` (11, JVM):
+`MsoMdocZkParsingTest` (12, JVM):
 
 1. `zk_system_type` parses into `ZkSystemSpec` with every param the ISO path names (id verbatim,
    system, circuit_hash, num_attributes, version, block_enc_hash, block_enc_sig).
@@ -99,9 +100,10 @@ get produced (DCQL-carried specs now resolve).
 6. An entry missing `circuit_hash`/`num_attributes` fails closed.
 7. First entry per doctype wins on a duplicate.
 8. Two doctypes key independently.
-9. `mergeZkSpecs`: DCQL specs apply where the ISO doc request carried no `zkRequest` (empty list).
-10. `mergeZkSpecs`: non-empty ISO specs win over DCQL on a shared doctype.
-11. `mergeZkSpecs`: a doctype only DCQL names is added.
+9. An entry with no parseable `zk_system_type` does not shadow a later valid one for the doctype.
+10. `mergeZkSpecs`: DCQL specs apply where the ISO doc request carried no `zkRequest` (empty list).
+11. `mergeZkSpecs`: non-empty ISO specs win over DCQL on a shared doctype.
+12. `mergeZkSpecs`: a doctype only DCQL names is added.
 
 Gates after the rebase onto `1830d7a`: `:app:testDebugUnitTest` 102 tests / 0 failures (8 of
 them `MsoMdocZkParsingTest`), `:zk-conformance:test` 5 / 0 (`AgeProofRoundTripTest` proves and

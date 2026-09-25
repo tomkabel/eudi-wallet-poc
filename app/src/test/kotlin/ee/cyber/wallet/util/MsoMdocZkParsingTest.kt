@@ -208,6 +208,26 @@ class MsoMdocZkParsingTest {
     }
 
     @Test
+    fun `an entry with no parseable zk_system_type does not shadow a later valid one`() {
+        val query = dcqlQuery(
+            """
+            {
+              "id": "malformed",
+              "format": "mso_mdoc_zk",
+              "meta": {
+                "doctype_value": "eu.europa.ec.av.1",
+                "zk_system_type": [{"circuit_hash": "no-system-no-id"}]
+              }
+            }
+            """.trimIndent(),
+            zkEntryJson(circuitHash = "bbb")
+        )
+
+        val specs = zkSpecsByDocTypeFromDcql(query)["eu.europa.ec.av.1"].orEmpty()
+        assertEquals("bbb", specs.single().getParam<String>("circuit_hash"))
+    }
+
+    @Test
     fun `two doctypes key independently`() {
         val query = dcqlQuery(
             zkEntryJson(circuitHash = "aaa", docType = "eu.europa.ec.av.1"),
