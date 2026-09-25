@@ -60,7 +60,10 @@ object EeEudiw {
     }
 }
 
-/** The transcript shape both fixture proofs bind. */
+/**
+ * The synthetic transcript the step 0 and step 2a proofs bind. A placeholder,
+ * not the ISO 18013-7 Annex C dcapi transcript.
+ */
 object SessionTranscripts {
     fun forZkConformance(): DataItem = buildCborArray {
         add(Bstr(byteArrayOf(1, 2, 3)))
