@@ -4,7 +4,23 @@ Source: `~/Documents/ee-eudiw` at `e368fc1` (`main`, "Merge pull request #27 fro
 tomkabel/step8-7-mso-mdoc-zk"). Target: this repository, branch `ee-eudiw-zk-import`, based on
 `master` at `edafc46`.
 
-This file is the plan only. Nothing below has been executed yet except creating the branch.
+**Status, 25 September 2026: executed.** Steps 1–6 are on this branch. Deviations from the
+text below:
+
+- **Publication (answered: option 3, now narrowed).** The code, the spec and the ZK docs are
+  published. Three documents are held back for now, not "the analyses and records": the
+  conformance plan, `OPEN-EID-POC-CRITIQUE.md` and `CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md`. The
+  step records are published. The comments in five
+  Go files, one GENERATED-BY file and one Kotlin KDoc still name
+  `docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md`, which resolves once that plan is
+  cleared.
+- **Step 5.** On freshly generated fixtures, `TestStep87HandleResponse` fails, because it
+  requires a proof older than the timestamp window and a fresh one is accepted as valid.
+  That is the expected behaviour on fresh fixtures, and one more reason to restore the
+  committed bytes. The generators for step 2a and 8.7 now also write a `fork commit:` line
+  from `git describe`. The committed files, generated before that, carry none, and none was
+  added.
+- **Step 1.** `eudi-arf` is fetched over https.
 
 Revision 2 of this plan. Revision 1 pinned `c8a42d1`, a pre-rebase commit that no ref in ee-eudiw
 contains (only the reflog, `HEAD@{343}`). `main` differs from it in 32 files of the import set.
@@ -21,7 +37,7 @@ specification and `OPEN-EID-POC-CRITIQUE.md`, a critique of `open-eid/eudi-walle
 would sit on a public fork of that same repository. It also includes
 `CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md`, which describes ee-eudiw as private.
 
-**Until you answer, every step commits locally and nothing is pushed.** The options:
+The options put to you (you chose 3; see Status):
 
 1. Publish: push to `fork` as each step lands.
 2. Keep it private: add a private remote for this branch and push there.

@@ -80,3 +80,18 @@ Assembled APKs can be found here: `build/outputs/apk/`
 
 > The app uses `local_mocks` as the default build variant. This build variant is used to run the app with all the
 > backend services mocked. This is useful for development and testing purposes.
+
+## EE-EUDIW specification and ZK age-proof spine
+
+[`spec/EE-EUDIW-TS-1.0.md`](spec/EE-EUDIW-TS-1.0.md) is an independent Estonian EUDIW technical
+specification with a zero-knowledge proof-of-age profile. The Python issuer and holder, the Go
+verifier over the Rust Longfellow runtime, and the prover examples that exercise it live in
+`issuer/`, `wallet/`, `verifier/` and `zk-age-poc/`. All were imported from ee-eudiw at `e368fc1`.
+
+> **Status: independent draft.** Not issued by RIA, the Ministry of Justice and Digital Affairs, or any
+> Estonian public authority, and not affiliated with them.
+
+Building, running and the checks that define green: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+Measured on the demo host ([`demo/README.md`](demo/README.md)): prove 6.1–6.5 s, verify 2.5 s,
+proof ~360 KB (359,988 B). Where this wallet stands against the specification:
+[`docs/CONFORMITY.md`](docs/CONFORMITY.md).
