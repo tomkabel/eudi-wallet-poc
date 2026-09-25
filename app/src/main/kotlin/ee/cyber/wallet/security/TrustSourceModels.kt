@@ -13,7 +13,7 @@ import java.security.KeyStore
 data class TrustedListConfig(
     val location: URL,
     val serviceTypeIdentifier: String,
-    val keystoreConfig: KeyStoreConfig,
+    val keystoreConfig: KeyStoreConfig
 )
 
 /**
@@ -26,5 +26,5 @@ data class TrustedListConfig(
 data class KeyStoreConfig(
     val keystoreType: String = "PKCS12",
     val keystorePassword: String? = "",
-    val keystore: KeyStore,
+    val keystore: KeyStore
 )

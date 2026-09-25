@@ -44,6 +44,16 @@ android {
         }
         resourceConfigurations += arrayOf("en", "et")
         configureEnvironment(Environment.TEST)
+        // E3 (codesec CS-L4 / jvm JVM-L7): build-time digest pin of the bundled LOTL
+        // signing-keystore asset. LOTLInitializer refuses to load the keystore (and
+        // therefore refuses to sync trust anchors) when the packaged bytes differ from
+        // the pinned digest — an attacker swapping the asset in a repackaged APK cannot
+        // redirect the wallet's LOTL trust. Update by re-running: sha256sum
+        // app/src/main/assets/certs/lotl-keystore.p12
+        stringBuildConfig(
+            "LOTL_KEYSTORE_SHA256",
+            "326d40d1682b48f310ce53ec0b157df6d3516ccc4d3334497303fa58f7944803"
+        )
         ndk {
             // multipaz-longfellow ships libzkp.so for these two ABIs only. Other dependencies pull
             // in armeabi-v7a and x86, and installing there would give a wallet that cannot generate
@@ -84,7 +94,6 @@ android {
             applicationIdSuffix = ".debug"
             signingConfig = signingConfigs.getByName("debug")
             configureEnvironment(Environment.TEST)
-
         }
         create("local") {
             initWith(buildTypes.getByName("debug"))
