@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 )
 
 func TestCircuitHashKnown(t *testing.T) {

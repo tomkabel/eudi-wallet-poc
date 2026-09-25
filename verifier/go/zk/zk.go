@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 )
 
 const errBufLen = 512

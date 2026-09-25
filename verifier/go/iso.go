@@ -34,8 +34,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/oid4vp"
-	"github.com/tomkabel/ee-eudiw/verifier/go/zk"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
 
 //go:embed iso.html

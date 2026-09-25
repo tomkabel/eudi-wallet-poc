@@ -12,7 +12,7 @@ cargo --version
 cargo build --release -p mdoc-zk-runtime          # 50.6 s, no system deps
 # A fresh clone has no examples/ directory, so the mkdir is not optional.
 mkdir -p applications/mdoc_zk/runtime/examples
-cp /path/to/ee-eudiw/zk-age-poc/*.rs applications/mdoc_zk/runtime/examples/
+cp /path/to/eudi-wallet-poc/zk-age-poc/*.rs applications/mdoc_zk/runtime/examples/
 cd applications/mdoc_zk/runtime
 cargo run --release --example age_demo --features testonly
 ```

@@ -28,9 +28,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
-	"github.com/tomkabel/ee-eudiw/verifier/go/oid4vp"
-	"github.com/tomkabel/ee-eudiw/verifier/go/zk"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
 
 // step87Fixture is the request-side metadata the fork records next to the

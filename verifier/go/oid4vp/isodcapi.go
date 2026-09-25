@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
-	"github.com/tomkabel/ee-eudiw/verifier/go/internal/cborsub"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/cborsub"
 )
 
 // This file is the verifier half of an ISO/IEC 18013-7 Annex C presentation

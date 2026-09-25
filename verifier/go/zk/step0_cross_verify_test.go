@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 )
 
 // fixture describes one directory holding a complete proof plus everything a

@@ -4,7 +4,7 @@ import (
 	"crypto/ecdh"
 	"fmt"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 )
 
 // The Digital Credentials API extension of the presentation session, plan §5.1

@@ -17,8 +17,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
-	"github.com/tomkabel/ee-eudiw/verifier/go/internal/cborsub"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/cborsub"
 )
 
 const (

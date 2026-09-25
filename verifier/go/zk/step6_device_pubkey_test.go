@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 )
 
 const step6FixtureDir = "testdata/step6-device-pubkey"

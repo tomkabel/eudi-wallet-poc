@@ -10,3 +10,15 @@ build/
 local.properties
 .kotlin
 app/google-services.json
+
+# ZK spine (verifier, prover examples, Python tooling). demo-data/ holds a minted
+# holder device private key; demo/demo.sh re-mints it on demand.
+target/
+*.proof
+verifier/zkverify
+out/
+demo-data/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/

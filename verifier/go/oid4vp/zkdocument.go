@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tomkabel/ee-eudiw/verifier/go/internal/cborsub"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/cborsub"
 )
 
 // ISO 18013-7 Annex C response-side containers this file owns: the dcapi
