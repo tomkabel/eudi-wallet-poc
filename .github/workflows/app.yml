@@ -9,6 +9,7 @@ on:
       - 'gradle/**'
       - '*.gradle.kts'
       - 'gradle.properties'
+      - 'zk-conformance/**'
       - '.github/workflows/app.yml'
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - 'gradle/**'
       - '*.gradle.kts'
       - 'gradle.properties'
+      - 'zk-conformance/**'
       - '.github/workflows/app.yml'
 
 concurrency:
@@ -38,5 +40,11 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+      # ZK conformance rides with the app workflow (devsecops C6-rider): the
+      # fixtures it must stay byte-identical to are pinned from THIS module, so
+      # an app-side change that shifts the minted transcript fails the suite
+      # in the same PR instead of surfacing later in the verifier build.
+      - name: ZK conformance (byte-identical fixtures)
+        run: ./gradlew :zk-conformance:test
       - name: Unit tests (local_mocks)
         run: ./gradlew :app:testLocal_mocksUnitTest

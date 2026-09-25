@@ -1,0 +1,12 @@
+# cargo-deny baseline (C12): the scheduled cargo-deny.yml workflow runs
+# `cargo deny check advisories sources` report-only until this baseline is
+# triaged. Move each reviewed finding into the matching ignore list with a
+# one-line justification (or fix the manifest), then drop continue-on-error
+# in the workflow so the check gates.
+[advisories]
+version = 2
+ignore = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

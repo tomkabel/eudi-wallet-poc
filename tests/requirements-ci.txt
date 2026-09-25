@@ -1,0 +1,11 @@
+# Pinned inputs for the CI steps that run the Python helpers (devsecops F3):
+# wallet/test_transcript.py, issuer/test_mint_device_key.py and tests/e2e.sh.
+#
+# The transcript vectors are golden — a cbor2 encoder change can shift the
+# canonical bytes they pin — so CI must install exactly the versions the
+# vectors were last verified against, not whatever PyPI serves that day.
+# Version bumps are deliberate, reviewed changes to this file, and the
+# transcript tests re-run whenever it changes (ci.yml watches tests/**).
+cbor2==6.1.4
+cryptography==50.0.1
+jwcrypto==1.6.1

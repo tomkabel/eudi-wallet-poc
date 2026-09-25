@@ -3,6 +3,9 @@ package ee.cyber.wallet.zk
 import java.io.File
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 import org.multipaz.asn1.ASN1Integer
 import org.multipaz.cbor.Bstr
@@ -81,13 +84,36 @@ object ZkConformanceSpecs {
 /**
  * The timestamp format Longfellow proofs bind: whole seconds, 'Z' suffix. Uses
  * LongfellowZkSystem's own private formatDate via reflection, so a fixture
- * cannot drift from what generateProof actually bound.
+ * cannot drift from what generateProof actually bound. If the multipaz upgrade
+ * removes or reshapes that private method this fails with a message naming the
+ * drift instead of an opaque reflection error mid-mint.
  */
 object ZkConformanceFormat {
-    fun formatDate(i: Instant): String =
+    fun formatDate(i: Instant): String = try {
         LongfellowZkSystem::class.java.getDeclaredMethod("formatDate", Instant::class.java)
             .apply { isAccessible = true }
-            .invoke(LongfellowZkSystem(), i) as String
+            .invoke(LongfellowZkSystem(), i) as? String
+            ?: error("LongfellowZkSystem.formatDate returned a non-String")
+    } catch (e: NoSuchMethodException) {
+        throw IllegalStateException(
+            "LongfellowZkSystem.formatDate(Instant) no longer exists — multipaz changed the private " +
+                "timestamp formatting. Re-derive ZkConformanceFormat from the new source before minting " +
+                "any fixture: the Go verifier (isodcapi.go) enforces RFC3339 UTC, 20 chars, whole seconds.",
+            e
+        )
+    }
+}
+
+/** Surrogate self-test for [ZkConformanceFormat]: pins the shape the Go side enforces. */
+class ZkConformanceFormatTest {
+    @Test
+    fun formatDateMatchesRfc3339UtcShape() {
+        val formatted = ZkConformanceFormat.formatDate(Instant.fromEpochSeconds(1735689600, 0))
+        assertEquals("2025-01-01T00:00:00Z", formatted)
+        // RFC3339 UTC: 20 chars, whole seconds, 'Z' — what isodcapi.go's timestamp parsing accepts.
+        assertEquals(20, formatted.length)
+        assertTrue(formatted.endsWith("Z"))
+    }
 }
 
 /** The minted mdoc a fixture proof is made over, plus the issuer cert that signed it. */

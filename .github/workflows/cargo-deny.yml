@@ -1,0 +1,30 @@
+name: cargo-deny
+
+# Weekly advisory/source audit of the Rust FFI crate (devsecops F17). There is
+# no deny.toml gate today, so this starts report-only: findings land in the run
+# log without failing the workflow. Once the baseline is triaged — each finding
+# either fixed or moved into [advisories] ignore with a justification — drop
+# continue-on-error and let it gate.
+on:
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deny:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: cargo deny check (advisories, sources)
+        # Pinned by commit SHA (the tag ref is mutable; the SHA is not).
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
+        with:
+          command: check
+          arguments: advisories sources --manifest-path verifier/zkverify-ffi/Cargo.toml
+        continue-on-error: true

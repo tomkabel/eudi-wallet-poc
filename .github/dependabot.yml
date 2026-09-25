@@ -1,0 +1,28 @@
+# Dependabot keeps the manifest ecosystems on notice (devsecops F6).
+#
+# Gradle PRs mostly stay manual: gradle/libs.versions.toml is CRLF (a bot bump
+# would rewrite line endings) and the mirror-constrained groups (org.cose,
+# com.signerry.*, id.walt.*) must not float — they are pinned to the committed
+# mirror by sha256. The low open-PRequests limit reflects that.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+  - package-ecosystem: cargo
+    directory: /verifier/zkverify-ffi
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 2

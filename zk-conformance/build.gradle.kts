@@ -17,6 +17,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
 }
 
+// Supply-chain pin (devsecops F5): lockfile coverage for the JVM module too.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 tasks.withType<Test>().configureEach {
     // The fixture tests write into build/fixture-root by default, so a plain test run
     // leaves the committed fixtures alone. -Dzk.regenerate=true writes into this

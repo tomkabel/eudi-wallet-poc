@@ -88,7 +88,10 @@ jobs:
         # Package zk links libzkverify.a through cgo, and package main imports
         # zk, so neither test binary can be linked without a Rust build. The
         # e2e job runs those two once the staticlib exists; this job stays cheap.
-        run: go test ./oid4vp/... ./internal/... ./circuits/...
+        # -race (codesec F8-race): these tests assert concurrency behaviour
+        # (session store sweeps, reads-limiter bounds), which only the race
+        # detector exercises — CGO is on by default when the detector is on.
+        run: go test -race ./oid4vp/... ./internal/... ./circuits/...
 
       - name: python compiles
         run: python3 -m compileall -q issuer verifier wallet tests
@@ -118,7 +121,7 @@ jobs:
         # runner has neither, and without this install the step fails on the
         # import rather than on the vectors.
         run: |
-          pip install cbor2 cryptography jwcrypto
+          pip install -r tests/requirements-ci.txt
           python3 wallet/test_transcript.py
 
       - name: the mint's device public key path
@@ -209,6 +212,21 @@ jobs:
           cd verifier/go && go build -o ../zkverify . \
             -ldflags "-X main.longfellowRev=$(tr -d '[:space:]' < ../zkverify-ffi/longfellow-rev.txt)"
 
+      - name: assert the built longfellow matches the pinned revision
+        # Belt to the bootstrap step (B-M2): bootstrap-longfellow.sh checks out
+        # the pinned rev, but if the script is ever bypassed the binary would
+        # silently embed a different revision than the one the verifier links
+        # and reports. Make the drift loud at build time.
+        working-directory: eudi-wallet-poc/verifier/zkverify-ffi
+        run: |
+          built="$(git -C ../../../longfellow-zk rev-parse HEAD)"
+          pinned="$(tr -d '[:space:]' < longfellow-rev.txt)"
+          echo "built=$built pinned=$pinned"
+          [ "$built" = "$pinned" ] || {
+            echo "::error::longfellow-zk HEAD $built != pinned $pinned (verifier/zkverify-ffi/longfellow-rev.txt)"
+            exit 1
+          }
+
       - name: go test (the packages that link the Rust staticlib)
         working-directory: eudi-wallet-poc/verifier/go
         # The counterpart of the fast job's `go test ./oid4vp/... ./internal/...
@@ -216,11 +234,11 @@ jobs:
         # Keeping this narrow also keeps a regression legible — an oid4vp
         # failure reported here would mask the e2e assertion below that is the
         # more informative signal.
-        run: go test . ./zk/...
+        run: go test -race . ./zk/...
 
       - name: tests/e2e.sh
         env:
           EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
         run: |
-          pip install cbor2 cryptography jwcrypto
+          pip install -r tests/requirements-ci.txt
           tests/e2e.sh

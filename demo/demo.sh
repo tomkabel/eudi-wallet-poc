@@ -11,7 +11,9 @@
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-prover="${EE_PROVER:-/home/notroot/Documents/longfellow-zk/rust/target/release/examples/ee_poa_demo}"
+# Where a developer's longfellow-zk checkout lives. Defaults to the sibling of
+# this repository (the layout `make deps` produces), overridable with EE_PROVER.
+prover="${EE_PROVER:-$repo/../longfellow-zk/rust/target/release/examples/ee_poa_demo}"
 port="${EE_PORT:-8080}"
 data="$repo/demo-data"
 
@@ -39,6 +41,10 @@ case "${1:-}" in
 serve)
 	mint
 	ip="$(lan_ip)"
+	# Binding 0.0.0.0 is what makes the phone demo work (the phone dials this
+	# laptop), but it also exposes the verifier to everything else on the LAN.
+	# Demo data only — but say it out loud every time.
+	echo "WARNING: binding 0.0.0.0:$port — the verifier accepts connections from the whole LAN (trusted-network demo only)." >&2
 	echo "verifier: http://$ip:$port  (phone and laptop must share this network)"
 	exec "$repo/verifier/zkverify" \
 		-registry "$repo/verifier/circuits.json" \
