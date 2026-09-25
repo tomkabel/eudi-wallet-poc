@@ -148,9 +148,9 @@ def main() -> None:
     status, req = http_json(started["request_uri"])
     if status != 200:
         sys.exit(f"could not fetch the request object: {status} {req}")
-    cq = req["dcql_query"]["credentials"][0]
-    namespace, element = cq["claims"][0]["path"]
-    print(f"request    : {cq['meta']['doctype_value']} / {namespace} / {element}")
+    queries = req["dcql_query"]["credentials"]
+    print(f"request    : {len(queries)} credential(s): "
+          + ", ".join(c["id"] + "=" + c["meta"]["doctype_value"] for c in queries))
     print(f"client_id  : {req['client_id']}")
     print(f"nonce      : {req['nonce'][:16]}…")
 
@@ -179,57 +179,77 @@ def main() -> None:
     print(f"transcript : {len(transcript)} bytes, sha256 {hashlib.sha256(transcript).hexdigest()[:16]}…"
           + ("   (DELIBERATELY WRONG NONCE)" if args.tamper_nonce else ""))
 
-    # 3. Re-sign deviceAuth over it and prove.
+    # 3. Re-sign deviceAuth over it and prove — one presentation per queried
+    # credential. A multi-credential request (W6) carries one DCQL credential
+    # per queried document; this wallet proves each from --credential, which
+    # must carry that document's doctype. The prover is deterministic per
+    # (attestation, predicate, transcript), so each query gets its own proof.
+    queries = req["dcql_query"]["credentials"]
     src = args.credential
     params = open(os.path.join(src, "params.txt")).read().splitlines()
-    doc_type = params[3]
+    cred_doc_type = params[3]
     device_key = serialization.load_pem_private_key(
         open(os.path.join(src, "device_key.pem"), "rb").read(), password=None)
-    mdoc = resign_device_auth(open(os.path.join(src, "mdoc.bin"), "rb").read(),
-                              device_key, transcript, doc_type)
 
-    session_dir = tempfile.mkdtemp(prefix="ee-present-")
-    try:
-        open(os.path.join(session_dir, "mdoc.bin"), "wb").write(mdoc)
-        open(os.path.join(session_dir, "transcript.bin"), "wb").write(transcript)
-        # The verifier fixes `now`; the holder does not get to choose it.
-        open(os.path.join(session_dir, "params.txt"), "w").write(
-            "\n".join([params[0], params[1], req["expected_now"], *params[3:5]]) + "\n")
+    presentations = []
+    for cq in queries:
+        namespace, element = cq["claims"][0]["path"]
+        want_doctype = cq["meta"]["doctype_value"]
+        if want_doctype != cred_doc_type:
+            sys.exit(f"this wallet holds {cred_doc_type} but the request also asks "
+                     f"for {want_doctype} (credential {cq['id']!r}): point "
+                     f"--credential at a directory holding that document")
+        print(f"proving    : {cq['id']} = {want_doctype} / {namespace} / {element}")
+        mdoc = resign_device_auth(open(os.path.join(src, "mdoc.bin"), "rb").read(),
+                                  device_key, transcript, cred_doc_type)
 
-        cmd = [args.prover, session_dir, element]
-        if args.allow_false_predicate:
-            cmd.append("--allow-false-predicate")
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-        if proc.returncode != 0:
-            print(proc.stdout, proc.stderr, sep="\n")
-            sys.exit("proving failed")
-        for line in proc.stdout.splitlines():
-            if line.startswith(("PROVE", "VERIFY   ")):
-                print(f"  {line}")
+        session_dir = tempfile.mkdtemp(prefix="ee-present-")
+        try:
+            open(os.path.join(session_dir, "mdoc.bin"), "wb").write(mdoc)
+            open(os.path.join(session_dir, "transcript.bin"), "wb").write(transcript)
+            # The verifier fixes `now`; the holder does not get to choose it.
+            open(os.path.join(session_dir, "params.txt"), "w").write(
+                "\n".join([params[0], params[1], req["expected_now"], *params[3:5]]) + "\n")
 
-        request_json = json.load(open(os.path.join(session_dir, "request.json")))
-        proof = open(os.path.join(session_dir, "proof.bin"), "rb").read()
-    finally:
-        if not args.keep:
-            shutil.rmtree(session_dir, ignore_errors=True)
-        else:
-            print(f"session dir: {session_dir}")
+            cmd = [args.prover, session_dir, element]
+            if args.allow_false_predicate:
+                cmd.append("--allow-false-predicate")
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode != 0:
+                print(proc.stdout, proc.stderr, sep="\n")
+                sys.exit("proving failed")
+            for line in proc.stdout.splitlines():
+                if line.startswith(("PROVE", "VERIFY   ")):
+                    print(f"  {line}")
 
-    # 4. Post the vp_token. Under direct_post.jwt the token goes out as
-    # `response=<compact JWE>` (the form field OpenID4VP 1.0 defines for the
-    # encrypted response), encrypted to the verifier's response key.
-    presentation = {
-        "zk_system": "longfellow-libzk-v1",
-        "version": request_json["version"],
-        "num_attributes": request_json["num_attributes"],
-        "doc_type": doc_type,
-        "namespace": namespace,
-        "attr_id": element,
-        "attr_cbor_hex": request_json["attr_cbor_hex"],
-        "proof_b64": base64.b64encode(proof).decode(),
-    }
-    vp_token = {cq["id"]: [base64.urlsafe_b64encode(
-        json.dumps(presentation).encode()).decode().rstrip("=")]}
+            request_json = json.load(open(os.path.join(session_dir, "request.json")))
+            proof = open(os.path.join(session_dir, "proof.bin"), "rb").read()
+        finally:
+            if not args.keep:
+                shutil.rmtree(session_dir, ignore_errors=True)
+            else:
+                print(f"session dir: {session_dir}")
+
+        presentations.append({
+            "id": cq["id"],
+            "envelope": {
+                "zk_system": "longfellow-libzk-v1",
+                "version": request_json["version"],
+                "num_attributes": request_json["num_attributes"],
+                "doc_type": cred_doc_type,
+                "namespace": namespace,
+                "attr_id": element,
+                "attr_cbor_hex": request_json["attr_cbor_hex"],
+                "proof_b64": base64.b64encode(proof).decode(),
+            },
+        })
+
+    # 4. Post the vp_token: one entry per queried credential id. Under
+    # direct_post.jwt the token goes out as `response=<compact JWE>` (the form
+    # field OpenID4VP 1.0 defines for the encrypted response), encrypted to the
+    # verifier's response key.
+    vp_token = {p["id"]: [base64.urlsafe_b64encode(
+        json.dumps(p["envelope"]).encode()).decode().rstrip("=")] for p in presentations}
 
     def post_response(again: bool):
         """Post (or re-post) the response, in whichever mode the request set."""

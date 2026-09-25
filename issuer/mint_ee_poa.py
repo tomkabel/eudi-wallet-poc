@@ -46,6 +46,11 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, utils as asym_utils
 
 DOCTYPE = NAMESPACE = "ee.riik.poa.1"
+# The second doctype fixture (W6 multi-credential): the EU AV Profile
+# document, minted by --doctype eu.europa.ec.av.1 so one DCQL session can
+# request the national PoA and the AV document together. Same element set;
+# the namespace equals the doctype, the convention the PoA document uses.
+AV_DOCTYPE = NAMESPACE_AV = "eu.europa.ec.av.1"
 COSE_PROTECTED_ES256 = bytes.fromhex("a10126")          # {1: -7}
 SIG_STRUCT_PREFIX = bytes.fromhex("846a5369676e61747572653143a1012640")
 DEVICE_AUTH_HEADER = bytes.fromhex("8474") + b"DeviceAuthentication"
@@ -234,6 +239,10 @@ def main() -> None:
                          "age_over_16/21 in v1 — spec finding S10)")
     ap.add_argument("--under", type=int, nargs="*", default=[],
                     help="thresholds to attest as false, e.g. --over 16 --under 18 21")
+    ap.add_argument("--doctype", default="ee.riik.poa.1", choices=["ee.riik.poa.1", AV_DOCTYPE],
+                    help="document type to mint (default: ee.riik.poa.1; the AV "
+                         "document eu.europa.ec.av.1 is the second fixture the "
+                         "multi-credential e2e requests alongside it)")
     ap.add_argument("--device-public-key", metavar="KEY",
                     help="bind the attestation to this holder-held P-256 public "
                          "key (F12) instead of generating a device key; hex "
@@ -255,6 +264,12 @@ def main() -> None:
     if args.device_public_key and args.batch > 1:
         ap.error("--device-public-key binds one holder key; --batch > 1 would share it "
                  "(EE-POA-010: a distinct key per attestation)")
+
+    # The doctype selects which document the mint emits. The namespace equals
+    # the doctype for both fixtures, so one global pair covers both; the
+    # minting helpers read the same module globals the default path did.
+    global DOCTYPE, NAMESPACE
+    DOCTYPE = NAMESPACE = args.doctype
 
     # Coarsened per EE-POA-012: every attestation in a batch shares these to the
     # second, so timestamps cannot be used to correlate presentations.
