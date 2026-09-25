@@ -28,9 +28,10 @@ import kotlin.test.assertTrue
  * written exactly as ee-eudiw's oid4vp.SessionTranscript builds it, with the
  * fixed handover parameters recorded in `request.json` so the Go test can
  * re-derive the bytes from the session rather than trusting the fixture. The
- * ISO dcapi transcript used by the step 2a fixture is a different structure
- * ([deviceEngagement, serverHandoverInfo, dcapiHandover]); a proof bound to it
- * must NOT verify here — that is the second assertion in this test.
+ * step 2a fixture binds a different, synthetic transcript
+ * (SessionTranscripts.forZkConformance, not the ISO 18013-7 Annex C dcapi
+ * one); a proof bound here must NOT verify over it — that is the second
+ * assertion in this test.
  *
  * Run: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew
  * :zk-conformance:test --tests 'ee.cyber.wallet.zk.Step87OpenID4VPFixtureTest' --offline)
@@ -60,11 +61,11 @@ class Step87OpenID4VPFixtureTest {
         zkSystem.verifyProof(zkDocument, spec, sessionTranscript)
         assertTrue(zkDocument.proof.size > 0, "prover returned an empty proof")
 
-        // And must NOT verify against the ISO dcapi transcript: if the two
-        // bindings were interchangeable, the Go test's negative control would
-        // mean nothing.
+        // And must NOT verify against the step 2a fixture's synthetic
+        // transcript, which the Go test's negative control reads: if the two
+        // bindings were interchangeable, that control would mean nothing.
         assertFailsWith<ProofVerificationFailureException>(
-            "a proof bound to the OpenID4VP handover verified against the ISO dcapi transcript"
+            "a proof bound to the OpenID4VP handover verified against the step 2a transcript"
         ) {
             zkSystem.verifyProof(zkDocument, spec, SessionTranscripts.forZkConformance())
         }
