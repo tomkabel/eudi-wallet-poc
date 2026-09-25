@@ -333,13 +333,19 @@ func CarrierForBytes(raw []byte, q CredentialQuery, override Carrier) (Carrier, 
 	if override != nil {
 		return override, nil
 	}
+	// An interim JSON envelope is unambiguous — '{' cannot head a
+	// DeviceResponse in the accepted CBOR subset — and it is the encoding
+	// every holder in this PoC speaks, so it wins over the query's format
+	// label: an mso_mdoc_zk query answered with the interim envelope parses
+	// as interim JSON instead of dying as a CBOR refusal. Bytes that are not
+	// JSON follow the query's format, then the first-byte sniff.
+	if len(raw) > 0 && raw[0] == '{' {
+		return InterimJSON{}, nil
+	}
 	if q.Format == FormatMsoMdocZk {
 		return MsoMdocZkCBOR{}, nil
 	}
 	if len(raw) > 0 {
-		if raw[0] == '{' {
-			return InterimJSON{}, nil
-		}
 		if raw[0]>>5 == 4 || raw[0]>>5 == 5 { // CBOR major 4 (array) or 5 (map)
 			return MsoMdocZkCBOR{}, nil
 		}

@@ -287,6 +287,8 @@ func TestVPTokenParseCarrierDispatch(t *testing.T) {
 		{"cbor device response, format-named", true,
 			goldenDR(t),
 			"mso-mdoc-zk-cbor"},
+		{"interim envelope wins over the zk format label", true,
+			interimWrap(t, proof), "interim-json"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			tq := q

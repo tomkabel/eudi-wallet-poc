@@ -36,12 +36,15 @@ failures=0
 pass() { printf '  PASS  %s\n' "$1"; }
 fail() { printf '  FAIL  %s\n' "$1"; failures=$((failures + 1)); }
 
-# 1. Mint the two identities: one over 18, one not.
+# 1. Mint the identities: adult and minor over the national doctype, plus the
+# second doctype fixture (W6) — the EU AV document from its own issuer key, so
+# the two-credential session has two doctypes from two issuers to trust.
 python3 "$repo/issuer/mint_ee_poa.py" --out "$work/adult" --over 16 18 21 >"$work/mint-adult.log"
 python3 "$repo/issuer/mint_ee_poa.py" --out "$work/minor" --over 16 --under 18 21 >"$work/mint-minor.log"
+python3 "$repo/issuer/mint_ee_poa.py" --out "$work/av" --doctype eu.europa.ec.av.1 --over 16 18 21 >"$work/mint-av.log"
 
-# Both were minted by different issuer keys, so the trust store holds both.
-python3 - "$work/adult/issuers.json" "$work/minor/issuers.json" "$work/issuers.json" <<'PY'
+# All three were minted by different issuer keys, so the trust store holds all.
+python3 - "$work/adult/issuers.json" "$work/minor/issuers.json" "$work/av/issuers.json" "$work/issuers.json" <<'PY'
 import json, sys
 out = {"issuers": []}
 for path in sys.argv[1:-1]:
@@ -295,10 +298,112 @@ fi
 
 stop_verifier
 
+# ===== W6: multi-credential DCQL (still the plain-mode verifier) =====
+start_verifier -response-mode direct_post -allow-unencrypted-response -multi-credentials 2
+
+# A two-credential session: the wallet answers BOTH queried credentials (the
+# national PoA and the EU AV document, two doctypes from two issuers) with one
+# vp_token carrying one entry per credential id. The verifier must verify both
+# under the session's single ExpectedNow and answer valid:true only because
+# every queried credential verified.
+echo "12. multi-credential: one session requests and verifies two doctypes"
+present "$work/12.log" "$work/adult" --credential "$work/av"
+if grep -q '"valid": true' "$work/12.log" && grep -q 'all 2 credentials proved in zero knowledge' "$work/12.log"; then
+	pass "a two-credential (two doctype, two issuer) session verified both"
+else
+	fail "expected valid:true over both credentials"; tail -20 "$work/12.log"
+fi
+
+# The all-or-error rule: a response answering only one of the two queried
+# credentials must fail the session, with the missing credential id named —
+# an answer is not a pass, and the answer says which credential never arrived.
+echo "13. multi-credential negative: one missing vp_token entry names the id"
+missing_check="$(python3 - "$base" "$prover" "$work/adult" "$repo" <<'PY'
+import base64, json, os, shutil, subprocess, sys, tempfile, urllib.error, urllib.request
+base, prover, cred, repo = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+
+def http_json(url, payload=None):
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(url, data=data, method="POST",
+                                 headers={"Content-Type": "application/json"} if data else {})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        return json.load(e)
+
+started = http_json(base + "/present/new", {"element": "age_over_18"})
+req = json.load(urllib.request.urlopen(started["request_uri"], timeout=30))
+queries = req["dcql_query"]["credentials"]
+assert len(queries) == 2, queries
+
+# The session transcript, exactly as wallet/present.py derives it.
+import cbor2, hashlib
+info = cbor2.dumps([req["client_id"], req["nonce"], None, req["response_uri"]], canonical=True)
+digest = hashlib.sha256(info).digest()
+transcript = cbor2.dumps([None, None, ["OpenID4VPHandover", digest]], canonical=True)
+
+sys.path.insert(0, os.path.join(repo, "wallet"))
+import present as wallet  # noqa: E402  (reuse the wallet's exact re-signing)
+
+params = open(os.path.join(cred, "params.txt")).read().splitlines()
+doc_type = params[3]
+device_key = wallet.serialization.load_pem_private_key(
+    open(os.path.join(cred, "device_key.pem"), "rb").read(), password=None)
+mdoc = wallet.resign_device_auth(open(os.path.join(cred, "mdoc.bin"), "rb").read(),
+                                 device_key, transcript, doc_type)
+
+entries = {}
+for cq in queries:
+    ns, element = cq["claims"][0]["path"]
+    session_dir = tempfile.mkdtemp(prefix="ee-missing-")
+    try:
+        open(os.path.join(session_dir, "mdoc.bin"), "wb").write(mdoc)
+        open(os.path.join(session_dir, "transcript.bin"), "wb").write(transcript)
+        open(os.path.join(session_dir, "params.txt"), "w").write(
+            "\n".join([params[0], params[1], req["expected_now"], *params[3:5]]) + "\n")
+        proc = subprocess.run([prover, session_dir, element], capture_output=True, text=True)
+        assert proc.returncode == 0, proc.stderr
+        rj = json.load(open(os.path.join(session_dir, "request.json")))
+        proof = open(os.path.join(session_dir, "proof.bin"), "rb").read()
+    finally:
+        shutil.rmtree(session_dir, ignore_errors=True)
+    entries[cq["id"]] = [base64.urlsafe_b64encode(json.dumps({
+        "zk_system": "longfellow-libzk-v1",
+        "version": rj["version"], "num_attributes": rj["num_attributes"],
+        "doc_type": doc_type, "namespace": ns, "attr_id": element,
+        "attr_cbor_hex": rj["attr_cbor_hex"],
+        "proof_b64": base64.b64encode(proof).decode(),
+    }).encode()).decode().rstrip("=")]
+
+# Drop the LAST queried credential's entry: the answer covers one of two.
+answered = dict(list(entries.items())[:1])
+body = json.dumps({"vp_token": answered, "expected_now": req["expected_now"]}).encode()
+req_obj = urllib.request.Request(req["response_uri"], data=body, method="POST",
+                                 headers={"Content-Type": "application/json"})
+try:
+    with urllib.request.urlopen(req_obj, timeout=60) as r:
+        resp = json.load(r)
+    ok = resp.get("valid") is False and queries[1]["id"] in resp.get("detail", "")
+    print("OK" if ok else f"BAD {resp}")
+except urllib.error.HTTPError as e:
+    txt = e.read().decode()
+    ok = queries[1]["id"] in txt
+    print("OK" if ok else f"BAD {e.code} {txt[:200]}")
+PY
+)" || true
+if [ "$missing_check" = "OK" ]; then
+	pass "the one-of-two answer failed the session, naming the missing id"
+else
+	fail "missing-credential refusal: $missing_check"
+fi
+
+stop_verifier
+
 echo
 if [ "$failures" -eq 0 ]; then
-	echo "PASS: 11/11"
+	echo "PASS: 13/13"
 else
-	echo "FAIL: $failures of 11 assertions failed"
+	echo "FAIL: $failures of 13 assertions failed"
 fi
 exit "$((failures > 0))"

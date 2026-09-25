@@ -341,6 +341,9 @@ func main() {
 	dcapiOrigin := flag.String("dcapi-origin", "",
 		"browser origin the Digital Credentials API (ISO 18013-7 Annex C) handover binds; "+
 			"required for /present/dcapi/*, never taken from request headers")
+	multiCreds := flag.Int("multi-credentials", 1,
+		"demo switch: how many credentials /present/new asks for (>= 2 adds the "+
+			"eu.europa.ec.av.1 fixture doctype as the second credential; W6 e2e)")
 	version := flag.Bool("version", false, "print the linked longfellow-zk revision and exit")
 	flag.Parse()
 
@@ -504,6 +507,8 @@ func main() {
 		offered:          reg.Accepted(),
 
 		maxCredentials: *maxCreds,
+
+		demoCredentials: *multiCreds,
 	}
 
 	srvAddr := *addr

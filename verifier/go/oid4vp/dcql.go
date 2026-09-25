@@ -34,6 +34,12 @@ const (
 	FormatMsoMdocZk = "mso_mdoc_zk"
 )
 
+// AvDoctypeDemo is the second fixture doctype (the EU AV Profile document
+// issuer/mint_ee_poa.py mints with --doctype eu.europa.ec.av.1). The
+// -multi-credentials demo switch asks for it alongside the configured
+// doctype, so one session requests two documents from two issuers.
+const AvDoctypeDemo = "eu.europa.ec.av.1"
+
 // DCQL is the Digital Credentials Query Language query carried in an
 // OpenID4VP 1.0 authorization request. Presentation Exchange was removed from
 // OpenID4VP before Final and is not used here (EE-PRO-002).

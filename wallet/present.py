@@ -114,8 +114,11 @@ def encrypt_vp_token(vp_token: dict, jwks_json: dict) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--credential", required=True,
-                    help="directory holding mdoc.bin, params.txt and device_key.pem")
+    ap.add_argument("--credential", required=True, action="append",
+                    help="directory holding mdoc.bin, params.txt and device_key.pem; "
+                         "repeat once per document the wallet holds — a "
+                         "multi-credential request is answered from the directory "
+                         "whose params.txt doctype matches the queried one")
     ap.add_argument("--verifier", default="http://127.0.0.1:8080",
                     help="verifier base URL")
     ap.add_argument("--prover", default=os.environ.get(
@@ -181,27 +184,34 @@ def main() -> None:
 
     # 3. Re-sign deviceAuth over it and prove — one presentation per queried
     # credential. A multi-credential request (W6) carries one DCQL credential
-    # per queried document; this wallet proves each from --credential, which
-    # must carry that document's doctype. The prover is deterministic per
-    # (attestation, predicate, transcript), so each query gets its own proof.
+    # per queried document; each is answered from the --credential directory
+    # whose params.txt doctype matches the query. The prover is deterministic
+    # per (attestation, predicate, transcript), so each query gets its own
+    # proof over its own document.
     queries = req["dcql_query"]["credentials"]
-    src = args.credential
-    params = open(os.path.join(src, "params.txt")).read().splitlines()
-    cred_doc_type = params[3]
-    device_key = serialization.load_pem_private_key(
-        open(os.path.join(src, "device_key.pem"), "rb").read(), password=None)
+    holdings = {}
+    for src in args.credential:
+        params = open(os.path.join(src, "params.txt")).read().splitlines()
+        doc_type = params[3]
+        if doc_type in holdings:
+            sys.exit(f"two --credential directories hold {doc_type}: "
+                     f"{holdings[doc_type][0]} and {src}")
+        holdings[doc_type] = (src, params)
 
     presentations = []
     for cq in queries:
         namespace, element = cq["claims"][0]["path"]
         want_doctype = cq["meta"]["doctype_value"]
-        if want_doctype != cred_doc_type:
-            sys.exit(f"this wallet holds {cred_doc_type} but the request also asks "
-                     f"for {want_doctype} (credential {cq['id']!r}): point "
-                     f"--credential at a directory holding that document")
+        if want_doctype not in holdings:
+            sys.exit(f"the request asks for {want_doctype} (credential {cq['id']!r}) "
+                     f"but this wallet holds only {', '.join(sorted(holdings))}: "
+                     f"pass one --credential per document")
+        src, params = holdings[want_doctype]
         print(f"proving    : {cq['id']} = {want_doctype} / {namespace} / {element}")
+        device_key = serialization.load_pem_private_key(
+            open(os.path.join(src, "device_key.pem"), "rb").read(), password=None)
         mdoc = resign_device_auth(open(os.path.join(src, "mdoc.bin"), "rb").read(),
-                                  device_key, transcript, cred_doc_type)
+                                  device_key, transcript, want_doctype)
 
         session_dir = tempfile.mkdtemp(prefix="ee-present-")
         try:
@@ -236,7 +246,7 @@ def main() -> None:
                 "zk_system": "longfellow-libzk-v1",
                 "version": request_json["version"],
                 "num_attributes": request_json["num_attributes"],
-                "doc_type": cred_doc_type,
+                "doc_type": want_doctype,
                 "namespace": namespace,
                 "attr_id": element,
                 "attr_cbor_hex": request_json["attr_cbor_hex"],

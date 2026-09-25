@@ -63,6 +63,12 @@ type presenter struct {
 	// queries itself, so the cap bites on NewMulti/NewWithMulti callers and
 	// on any future endpoint that accepts a holder-supplied DCQL list.
 	maxCredentials int
+
+	// demoCredentials is the -multi-credentials demo switch: when > 1,
+	// /present/new asks for that many credentials (the second being the AV
+	// fixture doctype) so the multi-credential e2e has a request to answer.
+	// 0/1 keeps the historical single-credential /present/new.
+	demoCredentials int
 }
 
 // authorizationRequest is the OpenID4VP 1.0 request object, unsigned.
@@ -180,7 +186,34 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 		body.Element = "age_over_18"
 	}
 
-	q := oid4vp.AgeQuery("proof_of_age", p.docType, p.nsID, body.Element)
+	// The demo surface asks for the doctype this server is configured for. A
+	// credentials > 1 additionally asks for the second fixture doctype
+	// (eu.europa.ec.av.1), the W6 two-credential shape: one mso_mdoc_zk query
+	// per document, both over the registry's circuit, one session.
+	n := p.demoCredentials
+	if n < 1 {
+		n = 1
+	}
+	if n == 1 {
+		p.startSession(w, oid4vp.AgeQuery("proof_of_age", p.docType, p.nsID, body.Element))
+		return
+	}
+	c := p.offered[0] // the registry is non-empty (main refuses an empty one)
+	secondDoctype := oid4vp.AvDoctypeDemo
+	if p.docType == secondDoctype {
+		// Degenerate demo config (-doctype eu.europa.ec.av.1): keep the two
+		// credentials distinct rather than asking twice for one document.
+		secondDoctype = "eu.europa.ec.av.1.second"
+	}
+	q := oid4vp.DCQL{Credentials: []oid4vp.CredentialQuery{
+		oid4vp.ZkCredentialQuery("proof_of_age", p.docType, p.nsID, body.Element, []circuits.Circuit{c}),
+		oid4vp.ZkCredentialQuery("av_document", secondDoctype, secondDoctype, body.Element, []circuits.Circuit{c}),
+	}}
+	p.startSessionMulti(w, q)
+}
+
+// startSession finishes handleNew for a single-credential query.
+func (p *presenter) startSession(w http.ResponseWriter, q oid4vp.DCQL) {
 	var tp []byte
 	if p.responseKey != nil {
 		// direct_post.jwt (ADR-003): the handover binds this key's
@@ -193,6 +226,26 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s, err := p.store.New(p.clientID, p.baseURL+"/present/response", q, tp)
+	p.finishNew(w, s, err)
+}
+
+// startSessionMulti finishes handleNew for a multi-credential query, under
+// this server's -max-credentials cap.
+func (p *presenter) startSessionMulti(w http.ResponseWriter, q oid4vp.DCQL) {
+	var tp []byte
+	if p.responseKey != nil {
+		var tpErr error
+		if tp, tpErr = p.responseKey.Thumbprint(); tpErr != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "response key thumbprint"})
+			return
+		}
+	}
+	s, err := p.store.NewMulti(p.clientID, p.baseURL+"/present/response", q, p.maxCredentials, tp)
+	p.finishNew(w, s, err)
+}
+
+// finishNew is the shared tail of every handleNew path: the 201 and the URIs.
+func (p *presenter) finishNew(w http.ResponseWriter, s *oid4vp.Session, err error) {
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -430,12 +483,28 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int) {
 	// Parse every credential first: a missing, extra, or malformed entry is
 	// refused before any FFI work runs, for any credential.
-	cps, _, err := token.ParseCarrierMulti(qs, p.carrier)
+	cps, carriers, err := token.ParseCarrierMulti(qs, p.carrier)
 	if err != nil {
 		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
 	}
 	for i, cq := range qs {
-		valid, detail, code := p.verifyZkPresentation(s, cq, cps[i])
+		var valid bool
+		var detail string
+		var code int
+		if _, ok := carriers[i].(oid4vp.InterimJSON); ok {
+			// The interim envelope's rule chain allowlists on the registry's
+			// (version, num_attributes) tuple — its CircuitSpecID is an audit
+			// label, never an allowlist key (carrier.go). The CBOR carrier's
+			// presentation runs the zk_system_type rules instead. Each carrier
+			// keeps its own verifier; one session may carry either shape.
+			pres, proof, perr := interimOfChecked(cps[i], carriers[i])
+			if perr != nil {
+				return false, fmt.Sprintf("credential %q: %s", cq.ID, perr.Error()), http.StatusBadRequest
+			}
+			valid, detail, code = p.verifyPlain(s, pres, proof)
+		} else {
+			valid, detail, code = p.verifyZkPresentation(s, cq, cps[i])
+		}
 		if !valid || code != http.StatusOK {
 			// All-or-error: name the credential that failed so the holder can
 			// act on it, but the session never reports a partial pass.
