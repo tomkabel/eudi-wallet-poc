@@ -1,0 +1,299 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.signerry.dss-android",
+    "module": "dss-utils-google-guava",
+    "version": "1.02.08",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.4.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-utils",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-utils-google-guava-1.02.08.aar",
+          "url": "dss-utils-google-guava-1.02.08.aar",
+          "size": 6826,
+          "sha512": "3e4592ceaed5a16182e406d34aa8df3f9b64b5c1b084d415064b5871d7b23c8f9fbcccfe2f51316e8f9195c85aba658d89ff83eafff6344526586259ad1e490d",
+          "sha256": "9725f8684455c15ec1eaf4b3e6367b423f251360fceb955330187d0f8ac95bb0",
+          "sha1": "4e61aed4bb89499b7e4dac62a797ee4a5ce1e985",
+          "md5": "1ee1c272e60a3ecaa7e9e655fdc4354e"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.h2database",
+          "module": "h2",
+          "version": {
+            "requires": "2.1.210"
+          }
+        },
+        {
+          "group": "org.apache.httpcomponents.client5",
+          "module": "httpclient5",
+          "version": {
+            "requires": "5.2.1"
+          }
+        },
+        {
+          "group": "com.signerry.santuario",
+          "module": "xmlsec",
+          "version": {
+            "requires": "2.3.4"
+          }
+        },
+        {
+          "group": "xerces",
+          "module": "xercesImpl",
+          "version": {
+            "requires": "2.12.2"
+          }
+        },
+        {
+          "group": "com.signerry",
+          "module": "androidawt",
+          "version": {
+            "requires": "1.0.4"
+          }
+        },
+        {
+          "group": "org.glassfish.jaxb",
+          "module": "jaxb-runtime",
+          "version": {
+            "requires": "3.1.6"
+          }
+        },
+        {
+          "group": "xalan",
+          "module": "xalan",
+          "version": {
+            "requires": "2.7.2"
+          }
+        },
+        {
+          "group": "com.google.guava",
+          "module": "guava",
+          "version": {
+            "requires": "31.0.1-jre"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-utils",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-utils-google-guava-1.02.08.aar",
+          "url": "dss-utils-google-guava-1.02.08.aar",
+          "size": 6826,
+          "sha512": "3e4592ceaed5a16182e406d34aa8df3f9b64b5c1b084d415064b5871d7b23c8f9fbcccfe2f51316e8f9195c85aba658d89ff83eafff6344526586259ad1e490d",
+          "sha256": "9725f8684455c15ec1eaf4b3e6367b423f251360fceb955330187d0f8ac95bb0",
+          "sha1": "4e61aed4bb89499b7e4dac62a797ee4a5ce1e985",
+          "md5": "1ee1c272e60a3ecaa7e9e655fdc4354e"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "dss-utils-google-guava-1.02.08-sources.jar",
+          "url": "dss-utils-google-guava-1.02.08-sources.jar",
+          "size": 5389,
+          "sha512": "c3143e151b6765dca89621822c2504d95986df5b7ce7b30976394071b9a5328a699155e787508d869d5d715797983c651959f2a6224d2cbe9784100408e00a9a",
+          "sha256": "bf50de9b99d13a8c2135ca8272106b4b8e16c0c4ca1031c9626bafd7cf53209b",
+          "sha1": "d2f93fd32443269c87b9b18f5eac544518a749ba",
+          "md5": "e61967be66ee1630c785bb1a4fa9712c"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-utils-google-guava",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-utils-google-guava-1.02.08-test-fixtures.aar",
+          "url": "dss-utils-google-guava-1.02.08-test-fixtures.aar",
+          "size": 760,
+          "sha512": "ba025f72ac8db311189680078a7710a43e2d753a91622d33123a904e323a9d86aa4cd6f37237aa5e3fd0c3045a3f3719671f980792a4ad0beb54811a902ae70d",
+          "sha256": "027017db795d8fcf17c561fdbebe0a22f29351d74b9148f798f7ab97fb7a81f7",
+          "sha1": "c3ce669dd8dd27aa3783e61463eed7aadf0a50f3",
+          "md5": "9a6e482a16f95c70ef183a7f6f2749f0"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-utils-google-guava-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-utils-google-guava",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "org.junit.jupiter",
+          "module": "junit-jupiter-api",
+          "version": {
+            "requires": "5.8.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-utils-google-guava-1.02.08-test-fixtures.aar",
+          "url": "dss-utils-google-guava-1.02.08-test-fixtures.aar",
+          "size": 760,
+          "sha512": "ba025f72ac8db311189680078a7710a43e2d753a91622d33123a904e323a9d86aa4cd6f37237aa5e3fd0c3045a3f3719671f980792a4ad0beb54811a902ae70d",
+          "sha256": "027017db795d8fcf17c561fdbebe0a22f29351d74b9148f798f7ab97fb7a81f7",
+          "sha1": "c3ce669dd8dd27aa3783e61463eed7aadf0a50f3",
+          "md5": "9a6e482a16f95c70ef183a7f6f2749f0"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-utils-google-guava-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    }
+  ]
+}

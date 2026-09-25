@@ -37,10 +37,4 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
       - name: Unit tests (local_mocks)
-        # settings.gradle.kts reads these for the signerry and aarmam GitHub
-        # Packages registries; the key needs read:packages. Fork PRs get no
-        # secrets, so this job fails there with a 401.
-        env:
-          GPR_USER: ${{ github.repository_owner }}
-          GPR_API_KEY: ${{ secrets.GPR_API_KEY }}
         run: ./gradlew :app:testLocal_mocksUnitTest

@@ -65,6 +65,9 @@ For example, you can set up your own verifier using the
   [Android](https://plugins.jetbrains.com/plugin/22989-android) plugin
 * Android SDK API 35
 
+No credentials are needed to build: the signerry/aarmam fork artifacts resolve from
+a public Maven mirror on gh-pages, seeded by `.github/workflows/mirror.yml`.
+
 If you build from a command line be sure to have `ANDROID_HOME` env variable pointing to Android SDK folder.
 
 ## Quick-Start
@@ -152,9 +155,10 @@ Where the wallet stands against the specification, requirement by requirement:
 lint, Go vet and unit tests — no Rust toolchain) and an `e2e` job that builds the Rust
 staticlib and prover and runs `tests/e2e.sh`. `.github/workflows/app.yml` runs the Android
 app's unit tests (`:app:testLocal_mocksUnitTest`) on app or Gradle changes, kept apart so
-Kotlin-only pushes don't pay for the Rust build. Note: the app job reads GitHub Packages
-registries and needs a `GPR_API_KEY` secret with `read:packages` — fork PRs get no secrets and
-fail that job with a 401. Running everything locally, including the `-Dzk.regenerate=true`
+Kotlin-only pushes don't pay for the Rust build. The signerry/aarmam fork artifacts resolve
+from a public Maven mirror on the fork's gh-pages (published by
+`.github/workflows/mirror.yml`), so the app build needs no credentials and fork PRs run
+the same job without secrets. Running everything locally, including the `-Dzk.regenerate=true`
 fixture regeneration flag, is documented in
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md); every test and check is catalogued in
 [`tests/README.md`](tests/README.md).

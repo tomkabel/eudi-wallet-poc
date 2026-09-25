@@ -1,0 +1,285 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.signerry.dss-android",
+    "module": "dss-alert",
+    "version": "1.02.08",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.4.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-alert-1.02.08.aar",
+          "url": "dss-alert-1.02.08.aar",
+          "size": 11270,
+          "sha512": "17660d87a8b39753293d27e4bbb0d8606a54b441b86ca96c42e655016e14b2694a68fe38a64f0e53d9ed0872e1e0679631b8c7733888fe4fd4021279df9d60d8",
+          "sha256": "3923a46171577b4b6f7d540c364c3194a3cc4d936f424a15330618595576a19f",
+          "sha1": "25d5a7003c2553bac10bd23110b1399ee6320c20",
+          "md5": "d8b325635963537df8c1c88af254ffdb"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.h2database",
+          "module": "h2",
+          "version": {
+            "requires": "2.1.210"
+          }
+        },
+        {
+          "group": "org.apache.httpcomponents.client5",
+          "module": "httpclient5",
+          "version": {
+            "requires": "5.2.1"
+          }
+        },
+        {
+          "group": "com.signerry.santuario",
+          "module": "xmlsec",
+          "version": {
+            "requires": "2.3.4"
+          }
+        },
+        {
+          "group": "xerces",
+          "module": "xercesImpl",
+          "version": {
+            "requires": "2.12.2"
+          }
+        },
+        {
+          "group": "com.signerry",
+          "module": "androidawt",
+          "version": {
+            "requires": "1.0.4"
+          }
+        },
+        {
+          "group": "org.glassfish.jaxb",
+          "module": "jaxb-runtime",
+          "version": {
+            "requires": "3.1.6"
+          }
+        },
+        {
+          "group": "xalan",
+          "module": "xalan",
+          "version": {
+            "requires": "2.7.2"
+          }
+        },
+        {
+          "group": "org.slf4j",
+          "module": "slf4j-api",
+          "version": {
+            "requires": "1.7.35"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-alert-1.02.08.aar",
+          "url": "dss-alert-1.02.08.aar",
+          "size": 11270,
+          "sha512": "17660d87a8b39753293d27e4bbb0d8606a54b441b86ca96c42e655016e14b2694a68fe38a64f0e53d9ed0872e1e0679631b8c7733888fe4fd4021279df9d60d8",
+          "sha256": "3923a46171577b4b6f7d540c364c3194a3cc4d936f424a15330618595576a19f",
+          "sha1": "25d5a7003c2553bac10bd23110b1399ee6320c20",
+          "md5": "d8b325635963537df8c1c88af254ffdb"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "dss-alert-1.02.08-sources.jar",
+          "url": "dss-alert-1.02.08-sources.jar",
+          "size": 20553,
+          "sha512": "a20bc896f329021160d82c0cf13e4103ec90e9e4ecdd93d1a1a7fcbc990401b3aa438ae5e6c41048feafd16f400d5dc6be43bb7a839a4a9c451ed9a150542839",
+          "sha256": "b2619a100214ddd21d7688f3998b2c2f2b9d49518a48aecb0829037498da7a69",
+          "sha1": "e8677f7c2e5d235e02d2b888f72f107975853e0e",
+          "md5": "cbb0a9ba8185ba20eaf6c62ea902cb89"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-alert",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-alert-1.02.08-test-fixtures.aar",
+          "url": "dss-alert-1.02.08-test-fixtures.aar",
+          "size": 757,
+          "sha512": "96d94374e34c44d077f8f8932240ebad36bd9d427c68c749e7140ffb4f83b9827a38d585f58b5f771ceead45c62ef39e6317507f2541c1255526fa8a78ac237d",
+          "sha256": "15be37de4fb9c33552e68b4bfb276eb5f639f9a845b2294f12ac2cf69770df4e",
+          "sha1": "586ccb437d30b09023d27e2946f0599bf5016904",
+          "md5": "f7a99e12617911c156c62ad89a932c77"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-alert-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-alert",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "org.junit.jupiter",
+          "module": "junit-jupiter-api",
+          "version": {
+            "requires": "5.8.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-alert-1.02.08-test-fixtures.aar",
+          "url": "dss-alert-1.02.08-test-fixtures.aar",
+          "size": 757,
+          "sha512": "96d94374e34c44d077f8f8932240ebad36bd9d427c68c749e7140ffb4f83b9827a38d585f58b5f771ceead45c62ef39e6317507f2541c1255526fa8a78ac237d",
+          "sha256": "15be37de4fb9c33552e68b4bfb276eb5f639f9a845b2294f12ac2cf69770df4e",
+          "sha1": "586ccb437d30b09023d27e2946f0599bf5016904",
+          "md5": "f7a99e12617911c156c62ad89a932c77"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-alert-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    }
+  ]
+}

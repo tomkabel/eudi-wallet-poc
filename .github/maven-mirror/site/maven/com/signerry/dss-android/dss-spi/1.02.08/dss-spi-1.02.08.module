@@ -1,0 +1,355 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.signerry.dss-android",
+    "module": "dss-spi",
+    "version": "1.02.08",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.4.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-model",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-android-compatibility",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-alert",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-utils",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-crl-parser",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-spi-1.02.08.aar",
+          "url": "dss-spi-1.02.08.aar",
+          "size": 257076,
+          "sha512": "bd74d0bdf5a6fd9f3ea1ba06cc7979c17ffbffd8928af0d28756dbc0ad77800758834d634530549f3b7ed13432bc1769db71ae2804de843cfba02fe08379da80",
+          "sha256": "563fd967a3d32c14899050f2008fb94b1a223c085e2cfdb2b3f107390a725acb",
+          "sha1": "47296e24428ccf91ffba897fbb42959c9656b0ee",
+          "md5": "15d788fbc79d1850facc32830f30ada2"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.h2database",
+          "module": "h2",
+          "version": {
+            "requires": "2.1.210"
+          }
+        },
+        {
+          "group": "org.apache.httpcomponents.client5",
+          "module": "httpclient5",
+          "version": {
+            "requires": "5.2.1"
+          }
+        },
+        {
+          "group": "com.signerry.santuario",
+          "module": "xmlsec",
+          "version": {
+            "requires": "2.3.4"
+          }
+        },
+        {
+          "group": "xerces",
+          "module": "xercesImpl",
+          "version": {
+            "requires": "2.12.2"
+          }
+        },
+        {
+          "group": "com.signerry",
+          "module": "androidawt",
+          "version": {
+            "requires": "1.0.4"
+          }
+        },
+        {
+          "group": "org.glassfish.jaxb",
+          "module": "jaxb-runtime",
+          "version": {
+            "requires": "3.1.6"
+          }
+        },
+        {
+          "group": "xalan",
+          "module": "xalan",
+          "version": {
+            "requires": "2.7.2"
+          }
+        },
+        {
+          "group": "org.slf4j",
+          "module": "slf4j-api",
+          "version": {
+            "requires": "1.7.35"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-model",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-android-compatibility",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-alert",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-utils",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-crl-parser",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-spi-1.02.08.aar",
+          "url": "dss-spi-1.02.08.aar",
+          "size": 257076,
+          "sha512": "bd74d0bdf5a6fd9f3ea1ba06cc7979c17ffbffd8928af0d28756dbc0ad77800758834d634530549f3b7ed13432bc1769db71ae2804de843cfba02fe08379da80",
+          "sha256": "563fd967a3d32c14899050f2008fb94b1a223c085e2cfdb2b3f107390a725acb",
+          "sha1": "47296e24428ccf91ffba897fbb42959c9656b0ee",
+          "md5": "15d788fbc79d1850facc32830f30ada2"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "dss-spi-1.02.08-sources.jar",
+          "url": "dss-spi-1.02.08-sources.jar",
+          "size": 252642,
+          "sha512": "fa7b220fe06118dd61883dbad45eb97bdc3b99c3fe82d14df737e42007607cd35f8d5ab467b8cafc12a01206d7a63aa2270ee656896a05646cdda05e2a6bc457",
+          "sha256": "c0a663ad8d22f582ee9cab11a1a324e72c1abea724e974adc447dc8ee607cb86",
+          "sha1": "680637a03b7a35ef73e56cd250df0c946ccebb84",
+          "md5": "41a5b3cdd3e78ceed712935daa61303a"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-spi",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-spi-1.02.08-test-fixtures.aar",
+          "url": "dss-spi-1.02.08-test-fixtures.aar",
+          "size": 756,
+          "sha512": "a70d86e5cfba15102c13eab8491cfcd60f7073862347e244f11ae8381b9cbcab68ed5b041055620f3c05d03c97520aa6030e926afc572f73ed9ca6c6da1f5b80",
+          "sha256": "471cec4a5315f7b0d4fdd63cfead5edd7d48271a4d078fd5af17d07cd5be747c",
+          "sha1": "280ada68719fe0b311cb968af53c9f455c1a9c03",
+          "md5": "eebc8c90e5bc87fb0e9db81ffde480a3"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-spi-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-spi",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "org.junit.jupiter",
+          "module": "junit-jupiter-api",
+          "version": {
+            "requires": "5.8.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-spi-1.02.08-test-fixtures.aar",
+          "url": "dss-spi-1.02.08-test-fixtures.aar",
+          "size": 756,
+          "sha512": "a70d86e5cfba15102c13eab8491cfcd60f7073862347e244f11ae8381b9cbcab68ed5b041055620f3c05d03c97520aa6030e926afc572f73ed9ca6c6da1f5b80",
+          "sha256": "471cec4a5315f7b0d4fdd63cfead5edd7d48271a4d078fd5af17d07cd5be747c",
+          "sha1": "280ada68719fe0b311cb968af53c9f455c1a9c03",
+          "md5": "eebc8c90e5bc87fb0e9db81ffde480a3"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-spi-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    }
+  ]
+}

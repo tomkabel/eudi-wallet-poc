@@ -1,0 +1,83 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.signerry",
+    "module": "androidawt",
+    "version": "1.0.4",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.5.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "com.jaredrummler",
+          "module": "sfntly",
+          "version": {
+            "requires": "1.0.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "androidawt-1.0.4.aar",
+          "url": "androidawt-1.0.4.aar",
+          "size": 1889472,
+          "sha512": "94379fda7a7258181b367e2f62aac93dc669ef6d8e6321de85241b63440298186a0ec1da94f286293e66ea3a1ed33a8b7fbea2e1571f5e8216699e86063a63ac",
+          "sha256": "e6493407b49bd3f9d1f92a7298b132208d14ebd3748a5860031ceaf596d891f7",
+          "sha1": "715ac5bd1de252e0895c1e49712a8f785c2414cd",
+          "md5": "3455d0e82fc4a85f7cebc932af163bba"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.google.code.findbugs",
+          "module": "jsr305",
+          "version": {
+            "requires": "3.0.2"
+          }
+        },
+        {
+          "group": "com.jaredrummler",
+          "module": "sfntly",
+          "version": {
+            "requires": "1.0.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "androidawt-1.0.4.aar",
+          "url": "androidawt-1.0.4.aar",
+          "size": 1889472,
+          "sha512": "94379fda7a7258181b367e2f62aac93dc669ef6d8e6321de85241b63440298186a0ec1da94f286293e66ea3a1ed33a8b7fbea2e1571f5e8216699e86063a63ac",
+          "sha256": "e6493407b49bd3f9d1f92a7298b132208d14ebd3748a5860031ceaf596d891f7",
+          "sha1": "715ac5bd1de252e0895c1e49712a8f785c2414cd",
+          "md5": "3455d0e82fc4a85f7cebc932af163bba"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,299 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.signerry.dss-android",
+    "module": "dss-crl-parser",
+    "version": "1.02.08",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.4.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-model",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-crl-parser-1.02.08.aar",
+          "url": "dss-crl-parser-1.02.08.aar",
+          "size": 9620,
+          "sha512": "3a4346202285b70791049be30069a0dfd669d9a70862dc0e4421f2f0128d7cdf9474fc1f39858895ed41eb9b7924d78261401c319b01899583a39f1816e5035d",
+          "sha256": "a8ce95687885482894640b0b279189fe56f3501b2f7d2bbbb19e317fcec6176f",
+          "sha1": "d567e8a106e084870414b200c3deb53c94d4321d",
+          "md5": "84f0828b51c9b696970b9e4517066707"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.h2database",
+          "module": "h2",
+          "version": {
+            "requires": "2.1.210"
+          }
+        },
+        {
+          "group": "org.apache.httpcomponents.client5",
+          "module": "httpclient5",
+          "version": {
+            "requires": "5.2.1"
+          }
+        },
+        {
+          "group": "com.signerry.santuario",
+          "module": "xmlsec",
+          "version": {
+            "requires": "2.3.4"
+          }
+        },
+        {
+          "group": "xerces",
+          "module": "xercesImpl",
+          "version": {
+            "requires": "2.12.2"
+          }
+        },
+        {
+          "group": "com.signerry",
+          "module": "androidawt",
+          "version": {
+            "requires": "1.0.4"
+          }
+        },
+        {
+          "group": "org.glassfish.jaxb",
+          "module": "jaxb-runtime",
+          "version": {
+            "requires": "3.1.6"
+          }
+        },
+        {
+          "group": "xalan",
+          "module": "xalan",
+          "version": {
+            "requires": "2.7.2"
+          }
+        },
+        {
+          "group": "org.slf4j",
+          "module": "slf4j-api",
+          "version": {
+            "requires": "1.7.35"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-model",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-crl-parser-1.02.08.aar",
+          "url": "dss-crl-parser-1.02.08.aar",
+          "size": 9620,
+          "sha512": "3a4346202285b70791049be30069a0dfd669d9a70862dc0e4421f2f0128d7cdf9474fc1f39858895ed41eb9b7924d78261401c319b01899583a39f1816e5035d",
+          "sha256": "a8ce95687885482894640b0b279189fe56f3501b2f7d2bbbb19e317fcec6176f",
+          "sha1": "d567e8a106e084870414b200c3deb53c94d4321d",
+          "md5": "84f0828b51c9b696970b9e4517066707"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "dss-crl-parser-1.02.08-sources.jar",
+          "url": "dss-crl-parser-1.02.08-sources.jar",
+          "size": 11602,
+          "sha512": "b208721db4c866355d217274f5a3353194b26a7b436d8364de42a3f60598557e4389b9211034ebf930e71b20f8a9a0eb550503589e0166252c79d07fd0b33333",
+          "sha256": "d4e6fbfe1e172f2f14f22daefee85dfddaf10ce06b239cbea5392fbdea71f55f",
+          "sha1": "83d2db4f01ff2e6092e2e24ee9aef4981e1a7594",
+          "md5": "243dad94a16d93b799ed882137ce7899"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-crl-parser",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-crl-parser-1.02.08-test-fixtures.aar",
+          "url": "dss-crl-parser-1.02.08-test-fixtures.aar",
+          "size": 21802,
+          "sha512": "3e418bee615eb087877e87bad7e952a0e6a891b222e6efd3af9685d7d2dab223eb46c939af633292a238f14f5f29df07459b0de052e6a67947523c0fc02f145e",
+          "sha256": "1243a8bc243ed4c7ffba3ef9cd66b5f7d100022f49bbb634aeb11e2de7dda4fd",
+          "sha1": "52bec479e106df4c7d781dfe582c0d34ff068931",
+          "md5": "271ad412cd3a83029ff7e9f2e8b9923f"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-crl-parser-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-crl-parser",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "org.junit.jupiter",
+          "module": "junit-jupiter-api",
+          "version": {
+            "requires": "5.8.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-crl-parser-1.02.08-test-fixtures.aar",
+          "url": "dss-crl-parser-1.02.08-test-fixtures.aar",
+          "size": 21802,
+          "sha512": "3e418bee615eb087877e87bad7e952a0e6a891b222e6efd3af9685d7d2dab223eb46c939af633292a238f14f5f29df07459b0de052e6a67947523c0fc02f145e",
+          "sha256": "1243a8bc243ed4c7ffba3ef9cd66b5f7d100022f49bbb634aeb11e2de7dda4fd",
+          "sha1": "52bec479e106df4c7d781dfe582c0d34ff068931",
+          "md5": "271ad412cd3a83029ff7e9f2e8b9923f"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-crl-parser-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    }
+  ]
+}

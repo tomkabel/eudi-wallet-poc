@@ -1,0 +1,292 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.signerry.dss-android",
+    "module": "dss-simple-certificate-report-jaxb",
+    "version": "1.02.08",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.4.2"
+    }
+  },
+  "variants": [
+    {
+      "name": "releaseVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-jaxb-parsers",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-simple-certificate-report-jaxb-1.02.08.aar",
+          "url": "dss-simple-certificate-report-jaxb-1.02.08.aar",
+          "size": 35693,
+          "sha512": "7f3dd15917b9fb6618bde501332f83a1dce3e8cdabcc0b6528ce7dc05dc6151c2ade016a6adb28226849d0f41df177bed564e17b7bf75c47772b9031bbe5aca7",
+          "sha256": "32ef1cd7b0b0d16fc2d6516530577f48e9a21eaa6095d8d4c4268505057c4b8c",
+          "sha1": "ccfbe057d7807d23eafed19e5a5297bbfcd576af",
+          "md5": "5c68678c0502fb0d085eec6db9a1395b"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.h2database",
+          "module": "h2",
+          "version": {
+            "requires": "2.1.210"
+          }
+        },
+        {
+          "group": "org.apache.httpcomponents.client5",
+          "module": "httpclient5",
+          "version": {
+            "requires": "5.2.1"
+          }
+        },
+        {
+          "group": "com.signerry.santuario",
+          "module": "xmlsec",
+          "version": {
+            "requires": "2.3.4"
+          }
+        },
+        {
+          "group": "xerces",
+          "module": "xercesImpl",
+          "version": {
+            "requires": "2.12.2"
+          }
+        },
+        {
+          "group": "com.signerry",
+          "module": "androidawt",
+          "version": {
+            "requires": "1.0.4"
+          }
+        },
+        {
+          "group": "org.glassfish.jaxb",
+          "module": "jaxb-runtime",
+          "version": {
+            "requires": "3.1.6"
+          }
+        },
+        {
+          "group": "xalan",
+          "module": "xalan",
+          "version": {
+            "requires": "2.7.2"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcprov-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "org.bouncycastle",
+          "module": "bcpkix-jdk15on",
+          "version": {
+            "requires": "1.70"
+          }
+        },
+        {
+          "group": "net.lingala.zip4j",
+          "module": "zip4j",
+          "version": {
+            "requires": "2.11.5"
+          }
+        },
+        {
+          "group": "com.tom-roush",
+          "module": "pdfbox-android",
+          "version": {
+            "requires": "2.0.27.0"
+          },
+          "excludes": [
+            {
+              "group": "org.bouncycastle",
+              "module": "*"
+            }
+          ]
+        },
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-jaxb-parsers",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-simple-certificate-report-jaxb-1.02.08.aar",
+          "url": "dss-simple-certificate-report-jaxb-1.02.08.aar",
+          "size": 35693,
+          "sha512": "7f3dd15917b9fb6618bde501332f83a1dce3e8cdabcc0b6528ce7dc05dc6151c2ade016a6adb28226849d0f41df177bed564e17b7bf75c47772b9031bbe5aca7",
+          "sha256": "32ef1cd7b0b0d16fc2d6516530577f48e9a21eaa6095d8d4c4268505057c4b8c",
+          "sha1": "ccfbe057d7807d23eafed19e5a5297bbfcd576af",
+          "md5": "5c68678c0502fb0d085eec6db9a1395b"
+        }
+      ]
+    },
+    {
+      "name": "releaseVariantReleaseSourcePublication",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "dss-simple-certificate-report-jaxb-1.02.08-sources.jar",
+          "url": "dss-simple-certificate-report-jaxb-1.02.08-sources.jar",
+          "size": 35027,
+          "sha512": "35a466d4b216bfdb233d4fc5e0edc08b379906c651d3bb33dbda93cf2880c2ac73cc216c0cb15948af39fe26538447ea101b42600fd20d58b81e0f62029f1acd",
+          "sha256": "82da1fe9d7d4550f21d46146cea7b4fb070167b19e04fa1d76667d2097e4724a",
+          "sha1": "12c6bb2c8a74bc10b150f7060100b4ef9ef0dc56",
+          "md5": "46dd10977f3696a91a47aa14961506a2"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseApiPublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-simple-certificate-report-jaxb",
+          "version": {
+            "requires": "1.02.08"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-simple-certificate-report-jaxb-1.02.08-test-fixtures.aar",
+          "url": "dss-simple-certificate-report-jaxb-1.02.08-test-fixtures.aar",
+          "size": 768,
+          "sha512": "4c0f649dc7035ac539086ebff5f4dc3943d143383fa2e323742342b327a0231d311d587f27daae82947dfad41a50080bcb2c94e979c5d43a1c6e3557e0c87aa9",
+          "sha256": "42e92ade24475b9b8b50c9ae1b9ec21f8c8051c12ea138262fb9428ba92ac511",
+          "sha1": "da5976eb9c4791102692b8e03260a59a37542d32",
+          "md5": "b832f3e04baa5ff33fb1723ba40653e3"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-simple-certificate-report-jaxb-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    },
+    {
+      "name": "releaseTestFixturesVariantReleaseRuntimePublication",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.libraryelements": "aar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.signerry.dss-android",
+          "module": "dss-simple-certificate-report-jaxb",
+          "version": {
+            "requires": "1.02.08"
+          }
+        },
+        {
+          "group": "org.junit.jupiter",
+          "module": "junit-jupiter-api",
+          "version": {
+            "requires": "5.8.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "dss-simple-certificate-report-jaxb-1.02.08-test-fixtures.aar",
+          "url": "dss-simple-certificate-report-jaxb-1.02.08-test-fixtures.aar",
+          "size": 768,
+          "sha512": "4c0f649dc7035ac539086ebff5f4dc3943d143383fa2e323742342b327a0231d311d587f27daae82947dfad41a50080bcb2c94e979c5d43a1c6e3557e0c87aa9",
+          "sha256": "42e92ade24475b9b8b50c9ae1b9ec21f8c8051c12ea138262fb9428ba92ac511",
+          "sha1": "da5976eb9c4791102692b8e03260a59a37542d32",
+          "md5": "b832f3e04baa5ff33fb1723ba40653e3"
+        }
+      ],
+      "capabilities": [
+        {
+          "group": "com.signerry.dss-android",
+          "name": "dss-simple-certificate-report-jaxb-test-fixtures",
+          "version": "unspecified"
+        }
+      ]
+    }
+  ]
+}

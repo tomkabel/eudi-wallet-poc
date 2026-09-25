@@ -1,0 +1,1073 @@
+{
+ "artifacts": [
+  {
+   "path": "com/signerry/androidawt/1.0.4/androidawt-1.0.4.aar",
+   "sha256": "e6493407b49bd3f9d1f92a7298b132208d14ebd3748a5860031ceaf596d891f7",
+   "sources": [
+    "central",
+    "gpr:signerry/android-awt",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/signerry/androidawt/1.0.4/androidawt-1.0.4.module",
+   "sha256": "b7b58a8bfb3be43e417ec8092b9d598b4e3528cfb9cc43e623622f9278eb37af",
+   "sources": [
+    "central",
+    "gpr:signerry/android-awt",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/signerry/androidawt/1.0.4/androidawt-1.0.4.pom",
+   "sha256": "b7a72f93cb3dedcbb6156db1aa22993b6906dff0fdd9866a545ec86bb399f18d",
+   "sources": [
+    "central",
+    "gpr:signerry/android-awt",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-alert/1.02.08/dss-alert-1.02.08.aar",
+   "sha256": "3923a46171577b4b6f7d540c364c3194a3cc4d936f424a15330618595576a19f",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-alert/1.02.08/dss-alert-1.02.08.module",
+   "sha256": "0c4492c6ee401dd8d98b2b418222b8954dceac5d7bb8a435d5d7ec254946c9cc",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-alert/1.02.08/dss-alert-1.02.08.pom",
+   "sha256": "bd4983318b38aa1c0e8d3afe564a91d56d77231b5548fb328910bcf9c988f24e",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-android-compatibility/1.02.08/dss-android-compatibility-1.02.08.aar",
+   "sha256": "04780e250138dc6956b55adf0c16e0fd6985326bde11d3c1e5416d369dbe10ad",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-android-compatibility/1.02.08/dss-android-compatibility-1.02.08.module",
+   "sha256": "a6d4e6b2cbf79b85e6092bcf2162ca0d084edbe671c1f89a377886ee763fa0a0",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-android-compatibility/1.02.08/dss-android-compatibility-1.02.08.pom",
+   "sha256": "6a3dca344214c1f756fc50ebeb0872bd08149a2a1703008bf8e6f076e7a183a3",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-crl-parser/1.02.08/dss-crl-parser-1.02.08.aar",
+   "sha256": "a8ce95687885482894640b0b279189fe56f3501b2f7d2bbbb19e317fcec6176f",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-crl-parser/1.02.08/dss-crl-parser-1.02.08.module",
+   "sha256": "a0d9d524ffd3101d055980ce3a3565c10646ccecdf270724c6aec66d0bc2e190",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-crl-parser/1.02.08/dss-crl-parser-1.02.08.pom",
+   "sha256": "1a3e3e933734f209ea05ba2d02233408053ce7af32c9b7a3beab5d5d26d9bf5b",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-detailed-report-jaxb/1.02.08/dss-detailed-report-jaxb-1.02.08.aar",
+   "sha256": "d5ad588dfef105afac62b303e2f9e1be0a0fffc13622d5983b9cf2c09b80f233",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-detailed-report-jaxb/1.02.08/dss-detailed-report-jaxb-1.02.08.module",
+   "sha256": "b2585bba607e82545e4efb397b0df71f7b56f8cb60e2dbd93c05524e608476be",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-detailed-report-jaxb/1.02.08/dss-detailed-report-jaxb-1.02.08.pom",
+   "sha256": "84a3cf8a24bb6bd2959e201284f1c3e789cac1111c8e7ee41f5c0730a936599e",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-diagnostic-jaxb/1.02.08/dss-diagnostic-jaxb-1.02.08.aar",
+   "sha256": "af52ef589f53729c5bc84c4fc2345e8cd21d1c52e4a19754d0820088e20fd87a",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-diagnostic-jaxb/1.02.08/dss-diagnostic-jaxb-1.02.08.module",
+   "sha256": "74b466941671dfc205e832751d38baf336e2fe25c8b42dc0c2e26f5d28cea6ac",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-diagnostic-jaxb/1.02.08/dss-diagnostic-jaxb-1.02.08.pom",
+   "sha256": "e8a82de3dd0cae041b502e6ab46c1f2a6066f6c86e9f8d5ebd13c2a73fe5f9a5",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-document/1.02.08/dss-document-1.02.08.aar",
+   "sha256": "050d31dadfdfbcf427e6b623573012233a0565e6ff221780eba999d867f54262",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-document/1.02.08/dss-document-1.02.08.module",
+   "sha256": "455db610b9f95ff5dc05b147d1d367a735f84fe7c0381dc501680f62f8de8e64",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-document/1.02.08/dss-document-1.02.08.pom",
+   "sha256": "41fef6187191778711c9f1c977fccfbfad2e476ff306110477ee1df661e303f8",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-enumerations/1.02.08/dss-enumerations-1.02.08.aar",
+   "sha256": "83113dbadd4a6294d2104dc2730a02d6a34cb4a45108e19cb1a234c95b9ed1aa",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-enumerations/1.02.08/dss-enumerations-1.02.08.module",
+   "sha256": "d92b23fe03b189093d442338a5028823624f5e4e681089c283d107f708c61ca8",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-enumerations/1.02.08/dss-enumerations-1.02.08.pom",
+   "sha256": "fb54db15ccacdfc2cb6f1cb2ae6f0075039f9d42aaa9da61a4bdc02ec7bb720f",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-i18n/1.02.08/dss-i18n-1.02.08.aar",
+   "sha256": "af9e17a23b0f1f2afe4476a8739a74909aa021275d22a6806eebda86857382fb",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-i18n/1.02.08/dss-i18n-1.02.08.module",
+   "sha256": "7168281172672e52c61c1e2e6c896581dedebd8642017f25b66c7618a1fb90a7",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-i18n/1.02.08/dss-i18n-1.02.08.pom",
+   "sha256": "3fdd95cb466d24365325bca38e48d86195237140cec58aa28032414606281d25",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-jaxb-common/1.02.08/dss-jaxb-common-1.02.08.aar",
+   "sha256": "faf5fd814ea14af377f57e7f2797528d5098ccc1fe6680185b1a3ddead1063f1",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-jaxb-common/1.02.08/dss-jaxb-common-1.02.08.module",
+   "sha256": "e09379cc9a4eaee7601708f029ec36fca906aa2074cefa7aead5fb1bc3fc5175",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-jaxb-common/1.02.08/dss-jaxb-common-1.02.08.pom",
+   "sha256": "16c5a865a72218b4abf270f183983495df713a0b3a9962a2e3bd310c88871a28",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-jaxb-parsers/1.02.08/dss-jaxb-parsers-1.02.08.aar",
+   "sha256": "81c03330eeb9056b9c1031fb27fa325478d74169449115109e80dc93cec586d2",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-jaxb-parsers/1.02.08/dss-jaxb-parsers-1.02.08.module",
+   "sha256": "20e0dd32335e821c7fdcf6de3194e2e791c84da6f506d8a44079215d1c30f186",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-jaxb-parsers/1.02.08/dss-jaxb-parsers-1.02.08.pom",
+   "sha256": "d7c89734fb8b454914c3a7edde17098cbf0d6bf06bffb9a9b1a76c7a3e3b72fb",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-model/1.02.08/dss-model-1.02.08.aar",
+   "sha256": "84c3460b9fa7041d2148ed48de2f8117889fb5dc204a51d487ae9e3d993b5d1d",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-model/1.02.08/dss-model-1.02.08.module",
+   "sha256": "17270e7c5ff0a42baa3465172c6bfb4598646c03e9b01e7576332762f04d6b56",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-model/1.02.08/dss-model-1.02.08.pom",
+   "sha256": "9612e05ba0412a917b0c440bac7ff6711bbeb1bcdd174aff21df818c9dd48d88",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-policy-jaxb/1.02.08/dss-policy-jaxb-1.02.08.aar",
+   "sha256": "1108d069c0d3d3587fad723e97ca67c07c65e0dd2b44d3926852440756bc9eb8",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-policy-jaxb/1.02.08/dss-policy-jaxb-1.02.08.module",
+   "sha256": "28f66513cafb31d8dc2731aa79d5677df5bd1b9ce6079498a1f4d64231b7bea7",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-policy-jaxb/1.02.08/dss-policy-jaxb-1.02.08.pom",
+   "sha256": "353ffece6ac6aa1e2385a21cd6ef32243c1de9e8017df11f3897542b76edcf89",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-service/1.02.08/dss-service-1.02.08.aar",
+   "sha256": "a6463d27b9eaa9ee2ecfdff2716d9f37c327e9e90afd6dba47250a6b27a441d2",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-service/1.02.08/dss-service-1.02.08.module",
+   "sha256": "7a18a066a8e19eb040470da8096a8cd39c3acd826e1237ccf877a9e6cd871862",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-service/1.02.08/dss-service-1.02.08.pom",
+   "sha256": "8fd36665801cd9f6583fe198423616d136e329c8cef78586c6a3e4084bbd639e",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-simple-certificate-report-jaxb/1.02.08/dss-simple-certificate-report-jaxb-1.02.08.aar",
+   "sha256": "32ef1cd7b0b0d16fc2d6516530577f48e9a21eaa6095d8d4c4268505057c4b8c",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-simple-certificate-report-jaxb/1.02.08/dss-simple-certificate-report-jaxb-1.02.08.module",
+   "sha256": "fba74742cf7a9b66d84a50951758ca8a1cce23497fe257f71297a9df251050e3",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-simple-certificate-report-jaxb/1.02.08/dss-simple-certificate-report-jaxb-1.02.08.pom",
+   "sha256": "a36b329914be3aa04c0916e50676f79706e5cf21f65a68d46b5e9b897ee4dc21",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-simple-report-jaxb/1.02.08/dss-simple-report-jaxb-1.02.08.aar",
+   "sha256": "662144d2302cb5e994323a330cada8b44ea63611bb7f46b82cedbcc26565f5b2",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-simple-report-jaxb/1.02.08/dss-simple-report-jaxb-1.02.08.module",
+   "sha256": "cd8d4be2e0e90a262d085a5ab533974683737956b32cb8ccec2c48a3dd2af339",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-simple-report-jaxb/1.02.08/dss-simple-report-jaxb-1.02.08.pom",
+   "sha256": "8fa0fb87015e2182264083880c9c47e17295c2567f77b2fe745c813f3f526160",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-spi/1.02.08/dss-spi-1.02.08.aar",
+   "sha256": "563fd967a3d32c14899050f2008fb94b1a223c085e2cfdb2b3f107390a725acb",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-spi/1.02.08/dss-spi-1.02.08.module",
+   "sha256": "0e6cb8d61436447daf00c207c461995c142e0f4f6a2a1a27bc7551a90d0e5081",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-spi/1.02.08/dss-spi-1.02.08.pom",
+   "sha256": "b40279e6f091ffbfb5f361772e8ad05c48f918f55991ef22957f2ef8c09e1554",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-token/1.02.08/dss-token-1.02.08.aar",
+   "sha256": "8f1b2cbc080a0f957af557ca9f1a8122907c47725cfe98354d55a24c0cefa933",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-token/1.02.08/dss-token-1.02.08.module",
+   "sha256": "f702242075fb9554e75478043af57fc43eb80cbe4d46102b0bb37878b25861e8",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-token/1.02.08/dss-token-1.02.08.pom",
+   "sha256": "905002eef4995d95764462b9261434ea1c3b98a58f4b371b7374b0c221e62c54",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-tsl-validation/1.02.08/dss-tsl-validation-1.02.08.aar",
+   "sha256": "e7779edf1af8bf22622a45376288c7f2a5b14fd8bfb552a42a90b95dbf384a8a",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-tsl-validation/1.02.08/dss-tsl-validation-1.02.08.module",
+   "sha256": "ef0715c1bd7e67e6285c5257a753e61678e4570a38a52ba0882ef4b26a2a188e",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-tsl-validation/1.02.08/dss-tsl-validation-1.02.08.pom",
+   "sha256": "a7d33d1a8d3cc101b578f76f1db6cd918566fea7e951f9889879c8e29afafaa8",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-utils-google-guava/1.02.08/dss-utils-google-guava-1.02.08.aar",
+   "sha256": "9725f8684455c15ec1eaf4b3e6367b423f251360fceb955330187d0f8ac95bb0",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-utils-google-guava/1.02.08/dss-utils-google-guava-1.02.08.module",
+   "sha256": "4f51ffcfd08312c168f4beaa7745b9d8b9907395162d355d779416815d9fa047",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-utils-google-guava/1.02.08/dss-utils-google-guava-1.02.08.pom",
+   "sha256": "588924bd6b9a538a0d141033d93cae1b381625b17ba72786c8e1d225ae55e95a",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-utils/1.02.08/dss-utils-1.02.08.aar",
+   "sha256": "c0351ac6344aab03f3043679864192a8eff55458de700fb42ea342df900150b3",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-utils/1.02.08/dss-utils-1.02.08.module",
+   "sha256": "d1ff7c1205f120cf42e162f69131354781df4892ece87123a24955c419586b0c",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-utils/1.02.08/dss-utils-1.02.08.pom",
+   "sha256": "d4694d1ccf0c12098ea8dad17a21b2718fd1189e19b2854a68f87b9abff70e63",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xades/1.02.08/dss-xades-1.02.08.aar",
+   "sha256": "a1bd7b3f3faa125d8ffbbb83f0b17883fa807f25179dae821a9da55a0b4fa69a",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xades/1.02.08/dss-xades-1.02.08.module",
+   "sha256": "0a6bfbeb414cc2d7d1dd69ea7e9a17f1f000a00402a9861d561f0b2c5a5d90c9",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xades/1.02.08/dss-xades-1.02.08.pom",
+   "sha256": "9f385d0263d08c5c74bfbfdda915ae4343b92d44fdd2db94d87fe066784188d5",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xml-common/1.02.08/dss-xml-common-1.02.08.aar",
+   "sha256": "fb9add1e3930443522809a16766939ff1694ea9a5cae8982c7e5304b745b1224",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xml-common/1.02.08/dss-xml-common-1.02.08.module",
+   "sha256": "aadd2f517ce8744b86d0c475b123356b1f3803c7e105beabe13e1eb6de70bad4",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xml-common/1.02.08/dss-xml-common-1.02.08.pom",
+   "sha256": "b0153e10cc735aff7ba4f6cffa8674eb275aff0b7192a8c7de1aee52e4b1e3b2",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xml-utils/1.02.08/dss-xml-utils-1.02.08.aar",
+   "sha256": "668817f648d29ddba4e56b0822eadff1e021334229effd997b04d62a2f66fd90",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xml-utils/1.02.08/dss-xml-utils-1.02.08.module",
+   "sha256": "9f483550beda2e5b69bd8671faa35e5642c86630a67e526b478f394feb0d91cb",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/dss-xml-utils/1.02.08/dss-xml-utils-1.02.08.pom",
+   "sha256": "2d05521ef5a1c664b31898d915476e0a66b1761aa2021b3680cc1a78398b74c7",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-trusted-list/1.02.08/specs-trusted-list-1.02.08.aar",
+   "sha256": "634879bfb236ddb1d102fca096c34b9a62ae40aa7f2db7331ca6f7d1d4262b42",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-trusted-list/1.02.08/specs-trusted-list-1.02.08.module",
+   "sha256": "c35faa4f528f3ebf97a6edb5c86bbeb0fccdc6603d445904194137bff53e944b",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-trusted-list/1.02.08/specs-trusted-list-1.02.08.pom",
+   "sha256": "24266ac58cad95aeea7d7b27ebf5ca167ee48a74a83a061cd983faddb06df26d",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-validation-report/1.02.08/specs-validation-report-1.02.08.aar",
+   "sha256": "5a80512b3ca9c92b29192a1e82eb74eae84a55a10b272980442027fb1ee53707",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-validation-report/1.02.08/specs-validation-report-1.02.08.module",
+   "sha256": "f181404722f4226fc7ed9dfa3621a422982d7b6f836080f45406140ce44862f3",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-validation-report/1.02.08/specs-validation-report-1.02.08.pom",
+   "sha256": "ece733a867aa6704acdcc564d88a7bc100fae6b284414ac829a9426f7df35bdb",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-xades/1.02.08/specs-xades-1.02.08.aar",
+   "sha256": "b9d81af9f6ead0bb68cc0a51280970032262902f3c2bd7e345cf9d73f191b3cf",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-xades/1.02.08/specs-xades-1.02.08.module",
+   "sha256": "97177a0048e31867c61e3add6ade264bea1cefdabae7002e63073e2cbcd8ca64",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-xades/1.02.08/specs-xades-1.02.08.pom",
+   "sha256": "39f1548ab2b693f24f4e5a84a8c2d0d4ad75e77c9dde38c941ab3a87e4d8c183",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-xmldsig/1.02.08/specs-xmldsig-1.02.08.aar",
+   "sha256": "f33a1f3caa85a7ba1378057e6a69668badd78123cfd158de5dd5794ea4c2909c",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-xmldsig/1.02.08/specs-xmldsig-1.02.08.module",
+   "sha256": "29013faf2a15f6bf0bdcb0da20b52a56cc689598347e30a1ece4dd2e43ae5a4c",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/specs-xmldsig/1.02.08/specs-xmldsig-1.02.08.pom",
+   "sha256": "7dd5fd706927293643a068e9b2114975c1913cecd3897878ebe8ca4b6d4f0e47",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/validation-policy/1.02.08/validation-policy-1.02.08.aar",
+   "sha256": "2fa228b9f75e9738c286df61a3f789da03a5e9484ce8baed2590cc456d74d4a6",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/validation-policy/1.02.08/validation-policy-1.02.08.module",
+   "sha256": "5b1495dfe3e351bff2419e5508803227b680bbee108b645e2c92e6c07bbaa4e5",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/dss-android/validation-policy/1.02.08/validation-policy-1.02.08.pom",
+   "sha256": "14c332e8911077c99f3412a81c4d39753ef03442e424c15d7b19feeea27c8f6c",
+   "sources": [
+    "central",
+    "gpr:aarmam/packages",
+    "gpr:signerry/packages",
+    "gpr:signerry/android-awt"
+   ]
+  },
+  {
+   "path": "com/signerry/santuario/xmlsec/2.3.4/xmlsec-2.3.4.jar",
+   "sha256": "e92b829ebd6b7f53e98a693b440a1c756ac622c4b861a68dd68f1224c404dcd5",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/signerry/santuario/xmlsec/2.3.4/xmlsec-2.3.4.pom",
+   "sha256": "1e7dcb1023d778517cfdf56ceeffb982f29755ddcf11e5968631ea1700f163fe",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/jaxb-bom-ext/2.3.2/jaxb-bom-ext-2.3.2.pom",
+   "sha256": "1a7dec2b27e7e055744cdb8cf1b90def4fd473acd1b804eff098139358959bd7",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/jaxb-bom-ext/3.1.6/jaxb-bom-ext-3.1.6.pom",
+   "sha256": "8d6a7b241e2cb8e211b0cc85c345a39b3db6e8339bdca106d7e89752d8e8c491",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/mvn/jaxb-parent/2.3.2/jaxb-parent-2.3.2.pom",
+   "sha256": "20dd6dc34ab7549ac40da1d82e92222ec4347ad0ec0cb118ef6c5703bed53a18",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/mvn/jaxb-parent/3.1.6/jaxb-parent-3.1.6.pom",
+   "sha256": "9aafef3f01d77df3f80035ceae66db3ff41192b58c8f875e02435e052d9866ec",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/mvn/jaxb-runtime-parent/2.3.2/jaxb-runtime-parent-2.3.2.pom",
+   "sha256": "b24f8d51f184a68bc1b86d48c0e3cfefeb21a44ede1c5f7303c58ae0488533ec",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/mvn/jaxb-runtime-parent/3.1.6/jaxb-runtime-parent-3.1.6.pom",
+   "sha256": "0f4667d6f34f342ed73bc89bdbb5c1a10793b4f1a2126c165b79720611ca42b6",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/mvn/jaxb-txw-parent/2.3.2/jaxb-txw-parent-2.3.2.pom",
+   "sha256": "b55d3efa9b158f483a30e92c78ccb600f93314733d089eba9b74436f01b314a4",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "com/sun/xml/bind/mvn/jaxb-txw-parent/3.1.6/jaxb-txw-parent-3.1.6.pom",
+   "sha256": "45878406ee7510514c96b32d22040316c6793f7a3b3500a4078c6936510d1aff",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-bom/2.3.2/jaxb-bom-2.3.2.pom",
+   "sha256": "a1018bb54678ed9f5acb2f7a4084e385ff510201f4e9dbf5f75dc6a675f66be7",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-bom/3.1.6/jaxb-bom-3.1.6.pom",
+   "sha256": "2305a6a8dd38c97766f0598cf914d591a2c082a7fe1dd6e46c8ecd2b3c80db55",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-core/3.1.6/jaxb-core-3.1.6.jar",
+   "sha256": "befaac9d84fcede0c31563dec34a62331eccde73e71af05660c6b190db79f906",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-core/3.1.6/jaxb-core-3.1.6.pom",
+   "sha256": "268dcc055091456f3ee8c211d59ee22f61774d170344e576b1d95f73d7cafc40",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar",
+   "sha256": "e6e0a1e89fb6ff786279e6a0082d5cef52dc2ebe67053d041800737652b4fd1b",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.pom",
+   "sha256": "9448a5ad7fa68a6083dfbe4f42c8c83e082b9202a105401fc68e944c26548b34",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-runtime/3.1.6/jaxb-runtime-3.1.6.jar",
+   "sha256": "950efc0455389781c81d16b3248771d147496cf7c2a4992cd7bb0d00af8021f7",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/jaxb-runtime/3.1.6/jaxb-runtime-3.1.6.pom",
+   "sha256": "85ec257d62bffde9e14efc6fc130eddd8ca311e4eb4911b46c43ef521b9b7705",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar",
+   "sha256": "4a6a9f483388d461b81aa9a28c685b8b74c0597993bf1884b04eddbca95f48fe",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.pom",
+   "sha256": "a79dd002fb038183ff286a2635be2e68c103b87e0e64717d8d44bfd017fd33ea",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/txw2/3.1.6/txw2-3.1.6.jar",
+   "sha256": "7f4c1560fea4278e9d37848d10bf110ab2360f6c399155add7abf52d0a338979",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  },
+  {
+   "path": "org/glassfish/jaxb/txw2/3.1.6/txw2-3.1.6.pom",
+   "sha256": "289b0f47d21b5a8984e6935ebbd1523c487655d409a14caec9e667f0345c010e",
+   "sources": [
+    "central",
+    "gpr:signerry/packages",
+    "gpr:aarmam/packages"
+   ]
+  }
+ ],
+ "mirror_root": "https://tomkabel.github.io/eudi-wallet-poc/maven"
+}

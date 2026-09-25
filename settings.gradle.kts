@@ -21,20 +21,20 @@ dependencyResolutionManagement {
             url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
             mavenContent { snapshotsOnly() }
         }
-        // signerry/android-awt, signerry/jaxb-ri
+        // Mirror of the signerry/aarmam fork artifacts (com.signerry.dss-android:1.02.08,
+        // com.signerry:androidawt, com.signerry.santuario:xmlsec and the JAXB 3.1.6
+        // rebuilds), published to gh-pages by .github/workflows/mirror.yml and pinned
+        // by .github/maven-mirror/manifest.json. Static HTTPS, no credentials — fork
+        // PRs build without secrets.
         maven {
-            url = uri("https://maven.pkg.github.com/signerry/packages")
-            credentials {
-                username = System.getenv("GPR_USER") ?: ""
-                password = System.getenv("GPR_API_KEY") ?: ""
-            }
-        }
-        // aarmam/dss-android, aarmam/santuario-xml-security-java
-        maven {
-            url = uri("https://maven.pkg.github.com/aarmam/packages")
-            credentials {
-                username = System.getenv("GPR_USER") ?: ""
-                password = System.getenv("GPR_API_KEY") ?: ""
+            url = uri("https://tomkabel.github.io/eudi-wallet-poc/maven")
+            content {
+                includeGroup("com.signerry")
+                includeGroup("com.signerry.dss-android")
+                includeGroup("com.signerry.santuario")
+                includeGroup("org.glassfish.jaxb")
+                includeGroup("com.sun.xml.bind")
+                includeGroup("com.sun.xml.bind.mvn")
             }
         }
     }
