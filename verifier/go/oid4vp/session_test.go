@@ -19,12 +19,12 @@ func TestStoreNewCleansExpiredSessionsBeforeEnforcingLimit(t *testing.T) {
 		st.sessions[id] = &Session{ID: id, Created: time.Now()}
 	}
 
-	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery()); !errors.Is(err, ErrStoreFull) {
+	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); !errors.Is(err, ErrStoreFull) {
 		t.Fatalf("New() error = %v, want %v", err, ErrStoreFull)
 	}
 
 	st.sessions["session-0"].Created = time.Now().Add(-2 * time.Minute)
-	s, err := st.New("verifier.example", "https://verifier.example/response", testQuery())
+	s, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil)
 	if err != nil {
 		t.Fatalf("New() after expiry: %v", err)
 	}
@@ -38,7 +38,7 @@ func TestStoreNewCleansExpiredSessionsBeforeEnforcingLimit(t *testing.T) {
 
 func TestStoreCompleteAndGetConcurrently(t *testing.T) {
 	st := NewStore(time.Minute)
-	s, err := st.New("verifier.example", "https://verifier.example/response", testQuery())
+	s, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil)
 	if err != nil {
 		t.Fatalf("New(): %v", err)
 	}
@@ -81,7 +81,7 @@ func TestStoreCompleteAndGetConcurrently(t *testing.T) {
 
 func TestStoreReturnsSnapshotsAndCompletesUnderLock(t *testing.T) {
 	st := NewStore(time.Minute)
-	created, err := st.New("verifier.example", "https://verifier.example/response", testQuery())
+	created, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil)
 	if err != nil {
 		t.Fatalf("New(): %v", err)
 	}
@@ -117,20 +117,96 @@ func TestStoreReturnsSnapshotsAndCompletesUnderLock(t *testing.T) {
 func TestStoreNewWithIDIsTheResponsePathSegment(t *testing.T) {
 	st := NewStore(time.Minute)
 	uri := "https://verifier.example.com/present/response/step87"
-	s, err := st.NewWith("https://verifier.example.com", uri, "nonce", testQuery())
+	s, err := st.NewWith("https://verifier.example.com", uri, "nonce", testQuery(), nil)
 	if err != nil {
 		t.Fatalf("NewWith: %v", err)
 	}
 	if s.ID != "step87" || s.ResponseURI != uri {
 		t.Fatalf("ID %q, ResponseURI %q; want step87 and the full URI", s.ID, s.ResponseURI)
 	}
-	if _, err := st.NewWith("https://verifier.example.com", uri, "other", testQuery()); !errors.Is(err, ErrIDInUse) {
+	if _, err := st.NewWith("https://verifier.example.com", uri, "other", testQuery(), nil); !errors.Is(err, ErrIDInUse) {
 		t.Fatalf("second NewWith on the same URI: %v, want %v", err, ErrIDInUse)
 	}
 	if got, _ := st.Get("step87"); got == nil || got.Nonce != "nonce" {
 		t.Fatal("the refused NewWith replaced the live session")
 	}
-	if _, err := st.NewWith("https://verifier.example.com", "https://verifier.example.com/", "n", testQuery()); err == nil {
+	if _, err := st.NewWith("https://verifier.example.com", "https://verifier.example.com/", "n", testQuery(), nil); err == nil {
 		t.Fatal("a response URI with no final path segment was accepted")
+	}
+}
+
+// A session created with a thumbprint is an encrypted-response session: the
+// transcript gains the thumbprint element and plain responses are refused.
+// Both constructors must pin this, and nil must leave the plain mode intact.
+func TestStoreThumbprintSetsEncryptedResponse(t *testing.T) {
+	tp := make([]byte, 32)
+	for i := range tp {
+		tp[i] = byte(i)
+	}
+
+	st := NewStore(time.Minute)
+	plain, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil)
+	if err != nil {
+		t.Fatalf("New(nil): %v", err)
+	}
+	if plain.RequireEncryptedResponse || plain.JWKThumbprint() != nil {
+		t.Fatal("New(nil) produced an encrypted-response session")
+	}
+	enc, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), tp)
+	if err != nil {
+		t.Fatalf("New(tp): %v", err)
+	}
+	if !enc.RequireEncryptedResponse {
+		t.Fatal("New(tp) did not require encrypted responses")
+	}
+
+	// NewWith: both sides pinned, same nonce and URI as the fixture tests use.
+	uri := "https://verifier.example.com/present/response/tp87"
+	st2 := NewStore(time.Minute)
+	enc2, err := st2.NewWith("https://verifier.example.com", uri, "nonce", testQuery(), tp)
+	if err != nil {
+		t.Fatalf("NewWith(tp): %v", err)
+	}
+	if !enc2.RequireEncryptedResponse || enc2.JWKThumbprint() == nil {
+		t.Fatal("NewWith(tp) did not set the encrypted response mode")
+	}
+	plain2, err := st2.NewWith("https://verifier.example.com", uri+"2", "nonce", testQuery(), nil)
+	if err != nil {
+		t.Fatalf("NewWith(nil): %v", err)
+	}
+	if plain2.RequireEncryptedResponse {
+		t.Fatal("NewWith(nil) required encrypted responses")
+	}
+
+	// The transcripts must differ exactly by the thumbprint element, and the
+	// encrypted one must equal the direct SessionTranscript call.
+	base, err := SessionTranscript(plain.ClientID, plain.Nonce, nil, plain.ResponseURI)
+	if err != nil {
+		t.Fatalf("SessionTranscript(nil): %v", err)
+	}
+	if got, _ := plain.Transcript(); string(got) != string(base) {
+		t.Fatal("the plain session's transcript differs from the nil-thumbprint call")
+	}
+	bound, err := SessionTranscript(enc.ClientID, enc.Nonce, tp, enc.ResponseURI)
+	if err != nil {
+		t.Fatalf("SessionTranscript(tp): %v", err)
+	}
+	if got, _ := enc.Transcript(); string(got) != string(bound) {
+		t.Fatal("the encrypted session's transcript differs from the thumbprint-bound call")
+	}
+	if string(base) == string(bound) {
+		t.Fatal("the thumbprint did not reach the transcript")
+	}
+}
+
+// A thumbprint that is not exactly a SHA-256 digest is a configuration error,
+// refused at session creation — not a session that fails per presentation.
+func TestStoreRejectsWrongThumbprintSize(t *testing.T) {
+	st := NewStore(time.Minute)
+	if _, err := st.New("v", "https://v/response", testQuery(), []byte{1, 2, 3}); err == nil {
+		t.Fatal("New accepted a 3-byte thumbprint")
+	}
+	if _, err := st.NewWith("v", "https://v/response/tp", "n", testQuery(), make([]byte, 31)); err == nil {
+		t.Fatal("NewWith accepted a 31-byte thumbprint")
 	}
 }

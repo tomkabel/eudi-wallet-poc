@@ -2,6 +2,7 @@ package oid4vp
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -32,6 +33,15 @@ type Session struct {
 	// session's handover hashes; never a request header (plan §5.3).
 	iso    *ISOExtension
 	origin string
+
+	// Response encryption (direct_post.jwt), ADR-003. jwkThumbprint is the
+	// RFC 7638 SHA-256 thumbprint of the verifier's response key — nil means
+	// the plain, unencrypted direct_post mode. Unexported: like iso, it must
+	// not silently ride along on JSON snapshots; a session either requires
+	// encryption (then the response MUST be a JWE this key opens) or it does
+	// not (then a JWE is still accepted — encryption is never a downgrade).
+	RequireEncryptedResponse bool
+	jwkThumbprint            []byte
 }
 
 // Expired reports whether the session is past its time-to-live. A presentation
@@ -64,9 +74,14 @@ func randomB64(n int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// New creates a session with a fresh nonce.
-func (st *Store) New(clientID, responseURIBase string, q DCQL) (*Session, error) {
+// New creates a session with a fresh nonce. A non-nil thumbprint opts the
+// session into response encryption: the handover binds the key's RFC 7638
+// thumbprint and the session requires a direct_post.jwt response.
+func (st *Store) New(clientID, responseURIBase string, q DCQL, jwkThumbprint []byte) (*Session, error) {
 	if _, err := q.Single(); err != nil {
+		return nil, err
+	}
+	if err := checkThumbprint(jwkThumbprint); err != nil {
 		return nil, err
 	}
 	id, err := randomB64(12)
@@ -86,6 +101,9 @@ func (st *Store) New(clientID, responseURIBase string, q DCQL) (*Session, error)
 		Query:       q,
 		Created:     created,
 		ExpectedNow: created.UTC().Format("2006-01-02T15:04:05Z"),
+
+		jwkThumbprint:            jwkThumbprint,
+		RequireEncryptedResponse: jwkThumbprint != nil,
 	}
 	return st.put(s)
 }
@@ -95,8 +113,11 @@ func (st *Store) New(clientID, responseURIBase string, q DCQL) (*Session, error)
 // the B.2.6.1 handover, so it has to be the value the holder's proof was bound
 // to); production sessions keep using New. The session ID is the response
 // URI's last path segment, as New's is, so /present/response/<id> finds it.
-func (st *Store) NewWith(clientID, responseURI, nonce string, q DCQL) (*Session, error) {
+func (st *Store) NewWith(clientID, responseURI, nonce string, q DCQL, jwkThumbprint []byte) (*Session, error) {
 	if _, err := q.Single(); err != nil {
+		return nil, err
+	}
+	if err := checkThumbprint(jwkThumbprint); err != nil {
 		return nil, err
 	}
 	if clientID == "" || nonce == "" || responseURI == "" {
@@ -119,8 +140,23 @@ func (st *Store) NewWith(clientID, responseURI, nonce string, q DCQL) (*Session,
 		Query:       q,
 		Created:     created,
 		ExpectedNow: created.UTC().Format("2006-01-02T15:04:05Z"),
+
+		jwkThumbprint:            jwkThumbprint,
+		RequireEncryptedResponse: jwkThumbprint != nil,
 	}
 	return st.put(s)
+}
+
+// checkThumbprint validates the optional response-key thumbprint: nil is the
+// unencrypted mode, otherwise it must be exactly a SHA-256 digest.
+func checkThumbprint(tp []byte) error {
+	if tp == nil {
+		return nil
+	}
+	if len(tp) != sha256.Size {
+		return fmt.Errorf("oid4vp: jwkThumbprint must be %d bytes or nil, got %d", sha256.Size, len(tp))
+	}
+	return nil
 }
 
 // put installs a built session, applying the shared expiry/size discipline.
@@ -232,8 +268,14 @@ func (s *Session) ISOTranscript() ([]byte, error) {
 }
 
 // Transcript is the session transcript this session's holder must sign over.
+// The third handover element is the response key's RFC 7638 thumbprint when
+// the session was created for direct_post.jwt, and null for plain
+// direct_post — which bytes it is was fixed at session creation, never by
+// anything on the response.
 func (s *Session) Transcript() ([]byte, error) {
-	// nil thumbprint: this PoC uses direct_post, not direct_post.jwt, so the
-	// response is not encrypted and the third handover element is null.
-	return SessionTranscript(s.ClientID, s.Nonce, nil, s.ResponseURI)
+	return SessionTranscript(s.ClientID, s.Nonce, s.jwkThumbprint, s.ResponseURI)
 }
+
+// JWKThumbprint returns the response-key thumbprint the session's handover
+// binds: nil for the unencrypted direct_post mode.
+func (s *Session) JWKThumbprint() []byte { return s.jwkThumbprint }

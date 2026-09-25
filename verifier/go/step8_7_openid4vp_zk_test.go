@@ -80,7 +80,7 @@ func step87Session(t *testing.T, meta step87Fixture) (*oid4vp.Session, oid4vp.Cr
 	circuit := zkCircuitFor(t, meta.Version, meta.NumAttributes)
 	store := oid4vp.NewStore(time.Hour)
 	s, err := store.NewWith(meta.ClientID, meta.ResponseURI, meta.Nonce,
-		oid4vp.ZkAgeQuery("age_credential", meta.DocType, meta.Namespace, meta.AttrID, circuit))
+		oid4vp.ZkAgeQuery("age_credential", meta.DocType, meta.Namespace, meta.AttrID, circuit), nil)
 	if err != nil {
 		t.Fatalf("session: %v", err)
 	}
@@ -366,7 +366,7 @@ func postStep87(t *testing.T, deviceResponse []byte) *httptest.ResponseRecorder 
 	st := oid4vp.NewStore(time.Minute)
 	s, err := st.NewWith(meta.ClientID, meta.ResponseURI, meta.Nonce,
 		oid4vp.ZkAgeQuery("age_credential", meta.DocType, meta.Namespace, meta.AttrID,
-			zkCircuitFor(t, meta.Version, meta.NumAttributes)))
+			zkCircuitFor(t, meta.Version, meta.NumAttributes)), nil)
 	if err != nil {
 		t.Fatalf("session: %v", err)
 	}

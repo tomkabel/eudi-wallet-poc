@@ -9,10 +9,14 @@ package jose
 
 import (
 	"crypto/ecdh"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 )
 
@@ -157,3 +161,49 @@ func (j JWK) Thumbprint() ([]byte, error) {
 // errorsNew keeps errors.New local to the two uses above without an import
 // alias dance; fmt.Errorf with no verbs would trip go vet's printf check.
 func errorsNew(s string) error { return fmt.Errorf("%s", s) }
+
+// JWKSet is the JWKS document shape: a `keys` array of JWKs. It carries only
+// public members — JWK.MarshalJSON drops any private material.
+type JWKSet struct {
+	Keys []JWK `json:"keys"`
+}
+
+// ThumbprintB64 returns the key's RFC 7638 thumbprint, base64url-encoded —
+// the form logs and configs quote.
+func ThumbprintB64(k *JWK) string {
+	tp, err := k.Thumbprint()
+	if err != nil {
+		return ""
+	}
+	return base64.RawURLEncoding.EncodeToString(tp)
+}
+
+// LoadPEMKey parses a PEM-encoded EC P-256 private key, either SEC 1
+// ("EC PRIVATE KEY", the traditional form) or PKIX ("PRIVATE KEY", PKCS#8).
+func LoadPEMKey(pemBytes []byte) (*JWK, error) {
+	block, _ := pem.Decode(pemBytes)
+	if block == nil {
+		return nil, errorsNew("no PEM block found")
+	}
+	var priv *ecdsa.PrivateKey
+	if k, err := x509.ParseECPrivateKey(block.Bytes); err == nil {
+		priv = k
+	} else if k8, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil {
+		pk, ok := k8.(*ecdsa.PrivateKey)
+		if !ok {
+			return nil, errorsNew("PKCS#8 key is not an EC key")
+		}
+		priv = pk
+	} else {
+		return nil, errorsNew("not an EC private key (tried SEC 1 and PKCS#8)")
+	}
+	if priv.Curve != elliptic.P256() {
+		return nil, errorsNew("EC key is not P-256")
+	}
+	return &JWK{
+		Kty: "EC", Crv: "P-256",
+		X: base64.RawURLEncoding.EncodeToString(priv.X.FillBytes(make([]byte, 32))),
+		Y: base64.RawURLEncoding.EncodeToString(priv.Y.FillBytes(make([]byte, 32))),
+		D: base64.RawURLEncoding.EncodeToString(priv.D.FillBytes(make([]byte, 32))),
+	}, nil
+}

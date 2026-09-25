@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/jose"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
@@ -230,6 +231,13 @@ func main() {
 	clientID := flag.String("client-id", "x509_san_dns:verifier.example.ee", "OpenID4VP client identifier")
 	docType := flag.String("doctype", "ee.riik.poa.1", "doctype to request")
 	sessionTTL := flag.Duration("session-ttl", 3*time.Minute, "presentation request lifetime")
+	responseMode := flag.String("response-mode", "direct_post.jwt",
+		"response mode: direct_post.jwt (encrypted, default) or direct_post (plain)")
+	responseKeyFile := flag.String("response-key-file", "",
+		"PEM file holding the EC P-256 response-encryption key (SEC 1 or PKIX); "+
+			"generated fresh at startup when empty — persist one for restart-stable thumbprints")
+	allowUnencrypted := flag.Bool("allow-unencrypted-response", false,
+		"permit -response-mode direct_post; the explicit downgrade switch for the encrypted default (ADR-003)")
 	unsafeDevAPI := flag.Bool("unsafe-dev-api", false,
 		"expose POST /zkverify, the unauthenticated low-level API (development only)")
 	maxVerify := flag.Int("max-concurrent-verify", runtime.NumCPU(),
@@ -251,6 +259,47 @@ func main() {
 
 	if *maxVerify < 1 {
 		log.Fatalf("-max-concurrent-verify must be at least 1, got %d", *maxVerify)
+	}
+	switch *responseMode {
+	case "direct_post.jwt":
+	case "direct_post":
+		if !*allowUnencrypted {
+			log.Fatalf("-response-mode direct_post needs -allow-unencrypted-response: " +
+				"the plain mode ships the ~360 KB proof and the holder's answers unencrypted (ADR-003)")
+		}
+		log.Printf("WARNING: -response-mode direct_post: responses are NOT encrypted; " +
+			"HAIP 1.0 and EE-PRO-001 require direct_post.jwt — this is an explicit downgrade")
+	default:
+		log.Fatalf("-response-mode must be direct_post.jwt or direct_post, got %q", *responseMode)
+	}
+
+	// The response-encryption key. The default is generate-at-startup, which
+	// rotates the key (and every transcript's thumbprint) per process — fine
+	// for the demo, where sessions die with it. Persist a PEM via
+	// -response-key-file when sessions must outlive a restart.
+	var responseKey *jose.JWK
+	if *responseMode == "direct_post.jwt" {
+		if *responseKeyFile != "" {
+			pemBytes, err := os.ReadFile(*responseKeyFile)
+			if err != nil {
+				log.Fatalf("response key: %v", err)
+			}
+			responseKey, err = jose.LoadPEMKey(pemBytes)
+			if err != nil {
+				log.Fatalf("response key %s: %v", *responseKeyFile, err)
+			}
+			log.Printf("response key: loaded %s (thumbprint %s)",
+				*responseKeyFile, jose.ThumbprintB64(responseKey))
+		} else {
+			k, err := jose.GenerateKey()
+			if err != nil {
+				log.Fatalf("response key generation: %v", err)
+			}
+			responseKey = &k
+			log.Printf("response key: generated fresh for this run (thumbprint %s); "+
+				"use -response-key-file to persist one across restarts",
+				jose.ThumbprintB64(responseKey))
+		}
 	}
 	if *dcapiOrigin == "" {
 		log.Printf("WARNING: -dcapi-origin is not set; the ISO 18013-7 Annex C path (POST /present/dcapi/new) is disabled")
@@ -299,6 +348,8 @@ func main() {
 		nsID:        *docType,
 		sem:         sem,
 		reads:       reads,
+		responseKey: responseKey,
+		allowPlain:  *allowUnencrypted,
 		dcapiOrigin: *dcapiOrigin,
 		offered:     reg.Accepted(),
 	}
@@ -320,6 +371,15 @@ func main() {
 	mux.HandleFunc("/present/request/", p.handleRequest)
 	mux.HandleFunc("/present/response/", p.handleResponse)
 	mux.HandleFunc("/present/result/", p.handleResult)
+	// The response-encryption key, published as a JWKS for wallets that fetch
+	// instead of reading client_metadata.jwks from the request. The key is
+	// generated at startup (or loaded with -response-key-file), so this is
+	// stable for the life of the process.
+	if responseKey != nil {
+		mux.HandleFunc("/present/jwks.json", func(w http.ResponseWriter, r *http.Request) {
+			writeJSON(w, http.StatusOK, jose.JWKSet{Keys: []jose.JWK{responseKey.Public()}})
+		})
+	}
 	// The ISO 18013-7 Annex C path only exists when an origin is configured:
 	// without one the handover has nothing to bind and every session it could
 	// start would be unverifiable by construction.

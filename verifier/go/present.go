@@ -8,10 +8,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/jose"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
@@ -28,6 +30,13 @@ type presenter struct {
 	sem      limiter
 	// reads bounds requests that are reading or decoding a body; nil is unlimited.
 	reads limiter
+
+	// Response encryption (ADR-003): responseKey is the verifier's P-256
+	// response-encryption key, nil only when the operator explicitly
+	// downgraded to plain direct_post. allowPlain is that operator's
+	// confirmation, checked once in main, not per request.
+	responseKey *jose.JWK
+	allowPlain  bool
 
 	// dcapiOrigin is the -dcapi-origin value the ISO 18013-7 Annex C handover
 	// binds; empty disables that path. offered is the circuit set the ISO
@@ -52,16 +61,26 @@ type authorizationRequest struct {
 	State        string      `json:"state"`
 	DCQLQuery    oid4vp.DCQL `json:"dcql_query"`
 
+	// client_metadata carries the response-encryption key inline (the `jwks`
+	// member) so the wallet never needs a second fetch; present only under
+	// direct_post.jwt.
+	ClientMetadata *clientMetadata `json:"client_metadata,omitempty"`
+
 	// Extension, not OpenID4VP: the instant the circuit checks the attestation's
 	// validity window against. The verifier fixes it so the wallet cannot pick a
 	// time at which an expired attestation would still verify.
 	ExpectedNow string `json:"expected_now"`
 }
 
+// client_metadata is the OpenID4VP 1.0 §5.9 Verifier Metadata member set this
+// verifier sends. jwks holds exactly one key: the response-encryption key.
+type clientMetadata struct {
+	JWKS *jose.JWKSet `json:"jwks,omitempty"`
+}
+
 func (p *presenter) request(s *oid4vp.Session) authorizationRequest {
-	return authorizationRequest{
+	req := authorizationRequest{
 		ResponseType: "vp_token",
-		ResponseMode: "direct_post",
 		ClientID:     s.ClientID,
 		ResponseURI:  s.ResponseURI,
 		Nonce:        s.Nonce,
@@ -69,6 +88,20 @@ func (p *presenter) request(s *oid4vp.Session) authorizationRequest {
 		DCQLQuery:    s.Query,
 		ExpectedNow:  s.ExpectedNow,
 	}
+	if s.RequireEncryptedResponse {
+		// ADR-003: publish the response key in the request itself. The JWE
+		// the wallet answers with is opened by this key, and the transcript
+		// binds its thumbprint.
+		req.ResponseMode = "direct_post.jwt"
+		if p.responseKey != nil {
+			req.ClientMetadata = &clientMetadata{
+				JWKS: &jose.JWKSet{Keys: []jose.JWK{p.responseKey.Public()}},
+			}
+		}
+	} else {
+		req.ResponseMode = "direct_post"
+	}
+	return req
 }
 
 // handleNew starts a presentation and hands back what a wallet needs to fetch
@@ -92,7 +125,18 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	q := oid4vp.AgeQuery("proof_of_age", p.docType, p.nsID, body.Element)
-	s, err := p.store.New(p.clientID, p.baseURL+"/present/response", q)
+	var tp []byte
+	if p.responseKey != nil {
+		// direct_post.jwt (ADR-003): the handover binds this key's
+		// thumbprint, and the session will refuse an unencrypted response.
+		var tpErr error
+		tp, tpErr = p.responseKey.Thumbprint()
+		if tpErr != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "response key thumbprint"})
+			return
+		}
+	}
+	s, err := p.store.New(p.clientID, p.baseURL+"/present/response", q, tp)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -118,7 +162,10 @@ func (p *presenter) handleRequest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, p.request(s))
 }
 
-// handleResponse consumes the vp_token. This is the direct_post endpoint.
+// handleResponse consumes the vp_token. This is the direct_post and
+// direct_post.jwt endpoint (ADR-003): an encrypted session expects the form
+// field `response=<compact JWE>` whose plaintext is the vp_token JSON; a
+// plain session accepts the unencrypted JSON body as before.
 func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "POST only"})
@@ -132,9 +179,62 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 	}
 	defer p.reads.release()
 
+	// The session's own stored response mode decides how the body is read —
+	// never the Content-Type or anything else on the request. Look the
+	// session up without claiming it first; Claim still burns it below.
+	peek, peekErr := p.store.Get(id)
+	if peekErr != nil {
+		writeJSON(w, statusFor(peekErr), map[string]string{"error": peekErr.Error()})
+		return
+	}
+
 	var token oid4vp.VPToken
 	ct := r.Header.Get("Content-Type")
 	switch {
+	case peek.RequireEncryptedResponse:
+		// direct_post.jwt: `response=<compact JWE>`, form-urlencoded. The
+		// JWE is self-delimiting, so ParseForm's ceiling here is the same
+		// 8 MB the JSON branch enforces.
+		r.Body = http.MaxBytesReader(w, r.Body, 8<<20)
+		if err := r.ParseForm(); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "malformed form"})
+			return
+		}
+		jweB64 := r.PostFormValue("response")
+		if jweB64 == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{
+				"error": "this session requires an encrypted response: post response=<JWE>, not a plain vp_token",
+			})
+			return
+		}
+		jwe, err := url.QueryUnescape(jweB64)
+		if err != nil || !strings.HasPrefix(jwe, "eyJ") {
+			// ParseForm already unescapes once; the double-unescape guard
+			// catches clients that pre-escaped it themselves. Either way the
+			// token must smell like compact JWE.
+			jwe = jweB64
+		}
+		if p.responseKey == nil {
+			// A session cannot have been created encrypted without a key in
+			// the first place; this is defence in depth, not a live path.
+			log.Printf("/present/response/%s: encrypted session but no response key is configured", id)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "verifier configuration error"})
+			return
+		}
+		inner, err := jose.Decrypt(p.responseKey, jwe)
+		if err != nil {
+			// Tampered, wrong key, or garbage: one answer, no partial parse,
+			// and the distinction stays in the log.
+			log.Printf("/present/response/%s: jwe decrypt failed: %v", id, err)
+			writeJSON(w, http.StatusBadRequest, map[string]string{
+				"error": "the encrypted response could not be decrypted",
+			})
+			return
+		}
+		if err := json.Unmarshal(inner, &token); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "decrypted vp_token is not JSON"})
+			return
+		}
 	case strings.HasPrefix(ct, "application/x-www-form-urlencoded"):
 		// ParseForm reads the whole body, so it needs the same ceiling the JSON
 		// branch has: without it a form post is an unbounded allocation.

@@ -46,7 +46,10 @@ func (st *Store) NewISO(clientID, responseURIBase string, q DCQL, origin string,
 	if origin == "" {
 		return nil, fmt.Errorf("oid4vp: the dcapi origin is required (it is hashed into the handover)")
 	}
-	s, err := st.New(clientID, responseURIBase, q)
+	// The dcapi path keeps the plain (unencrypted) response mode: its own
+	// HPKE envelope is the confidentiality layer there, and the B.2.6.1
+	// handover it hashes has no jwkThumbprint of its own.
+	s, err := st.New(clientID, responseURIBase, q, nil)
 	if err != nil {
 		return nil, err
 	}
