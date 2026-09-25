@@ -358,12 +358,13 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 	return false, verifyErrorCategory(lastErr), http.StatusBadRequest
 }
 
-// checkZk verifies an mso_mdoc_zk vp_token (plan §8.7): the vp_token entry is a
-// base64url CBOR DeviceResponse carrying zkDocuments, the proof binds the
-// B.2.6.1 OpenID4VPHandover transcript this session's request was issued under,
-// and the circuit allowlist is resolved here from the session's own
-// (verifier-built) zk_system_type. The caller must hold a verification slot:
-// this may call zk.Verify once per trusted issuer for the doctype.
+// checkZk verifies an mso_mdoc_zk vp_token through the carrier layer (plan
+// §8.7, carrier.go): the vp_token entry is a base64url CBOR DeviceResponse
+// carrying zkDocuments, the proof binds the B.2.6.1 OpenID4VPHandover
+// transcript this session's request was issued under, and the circuit
+// allowlist is resolved here from the session's own (verifier-built)
+// zk_system_type. The caller must hold a verification slot: this may call
+// zk.Verify once per trusted issuer for the doctype.
 //
 // Rule order mirrors the ISO path: the advertised-circuit allowlist (EE-ZKP-023,
 // before any FFI work), then the per-zkDocument rules, then zk.Verify.
@@ -377,34 +378,32 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 		return false, "circuit is not in the accepted set", http.StatusForbidden
 	}
 
-	docs, err := token.ParseZkVPToken(cq)
+	cp, _, err := token.ParseCarrier(cq, nil)
 	if err != nil {
+		if errors.Is(err, oid4vp.ErrNoZkDocument) {
+			// The wallet answered with no provable document. That is an
+			// answer, not an error — but not the yes the verifier asked for.
+			return false, err.Error(), http.StatusOK
+		}
 		// The holder sent this; telling them exactly what was wrong with it is
 		// the whole value of the answer.
 		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
 	}
-	d, err := oid4vp.MatchQueryZkDocument(docs, cq)
-	if err != nil {
-		return false, err.Error(), http.StatusBadRequest
-	}
-	if d == nil {
-		// The wallet answered with no provable document. That is an answer,
-		// not an error — but not the yes the verifier was asking for.
-		return false, "no zkDocument: the wallet presented nothing provable in this response", http.StatusOK
-	}
 
-	// Rule (c), mso_mdoc_zk form: the zkDocument's own zkSystemId must be one
-	// of the circuits the query advertised (all of which are registry-listed).
+	// Rule (c), mso_mdoc_zk form: the presentation's own circuit spec must be
+	// one of the circuits the query advertised (all of which are
+	// registry-listed). The allowlist keys on the registry entry, never on
+	// the holder-supplied string alone.
 	var circuit circuits.Circuit
 	known := false
 	for _, c := range advertised {
-		if c.SpecID() == d.ZkSystemSpecID {
+		if c.SpecID() == cp.CircuitSpecID {
 			circuit, known = c, true
 			break
 		}
 	}
 	if !known {
-		log.Printf("/present/response/%s: refused unsolicited zkSystemSpecId %q", s.ID, d.ZkSystemSpecID)
+		log.Printf("/present/response/%s: refused unsolicited zkSystemSpecId %q", s.ID, cp.CircuitSpecID)
 		return false, "the zk system spec was not offered in this session", http.StatusForbidden
 	}
 
@@ -412,21 +411,30 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 	// ZkDocumentData.timestamp, so Now must be that value — window-checked
 	// against the verifier's clock, never the session's ExpectedNow alone
 	// (plan §8.7 takes CheckTimestampWindow as the freshness starting point).
-	if err := oid4vp.CheckTimestampWindow(s.Created, time.Now(), d.Timestamp); err != nil {
+	if err := oid4vp.CheckTimestampWindow(s.Created, time.Now(), cp.Timestamp); err != nil {
 		return false, err.Error(), http.StatusBadRequest
 	}
 
 	// Rule (b): issuer keys from the trust store only; msoX5chain selects.
-	issuer, err := p.selectIssuer([][]byte{d.MSOX5Chain}, d.DocType)
+	issuer, err := p.selectIssuer([][]byte{cp.MSOX5Chain}, cp.DocType)
 	if err != nil {
 		log.Printf("/present/response/%s: issuer selection: %v", s.ID, err)
 		return false, "no trusted issuer matches this presentation", http.StatusForbidden
 	}
 
-	// The transcript is the session's own B.2.6.1 OpenID4VPHandover — client
-	// id, nonce and response_uri come from the stored session, never from the
-	// response (transcript.go).
-	transcript, err := s.Transcript()
+	// The transcript is the session's own, derived for exactly the flow the
+	// carrier reported the proof binds — client id, nonce and response_uri
+	// come from the stored session, never from the response (carrier.go,
+	// transcript.go).
+	transcript, err := oid4vp.TranscriptForFlow(cp.TranscriptFlow, oid4vp.TranscriptParams{
+		ClientID:    s.ClientID,
+		Nonce:       s.Nonce,
+		ResponseURI: s.ResponseURI,
+		// The dcapi params are nil by construction here: a redirect-flow
+		// session carries no EncryptionInfo, and a proof reporting the dcapi
+		// flow on this endpoint is a flow the session was not created for.
+		JWKThumbprint: s.JWKThumbprint(),
+	})
 	if err != nil {
 		log.Printf("/present/response/%s: transcript: %v", s.ID, err)
 		return false, "verifier configuration error", http.StatusInternalServerError
@@ -437,17 +445,17 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 		NumAttributes: circuit.NumAttributes,
 		PKx:           issuer.PKx,
 		PKy:           issuer.PKy,
-		DocType:       d.DocType,
-		Namespace:     cq.Namespace(),
-		AttrID:        cq.Element(),
+		DocType:       cp.DocType,
+		Namespace:     cp.Namespace,
+		AttrID:        cp.AttrID,
 		AttrCBOR:      []byte{0xf5},
-		Now:           d.Timestamp,
+		Now:           cp.Timestamp,
 		Transcript:    transcript,
-		Proof:         d.Proof,
+		Proof:         cp.Proof,
 	})
 	switch {
 	case err == nil:
-		return true, fmt.Sprintf("%s proved in zero knowledge, issued by %s", cq.Element(), issuer.Name), http.StatusOK
+		return true, fmt.Sprintf("%s proved in zero knowledge, issued by %s", cp.AttrID, issuer.Name), http.StatusOK
 	case errors.Is(err, zk.ErrInvalid):
 		// A proof that does not verify is an answer, not a failure: 200,
 		// valid:false. Only the runtime's wording stays server-side.
