@@ -1,7 +1,7 @@
 package ee.cyber.wallet.util
 
 import ee.cyber.wallet.domain.presentation.HolderObligations
-import ee.cyber.wallet.domain.presentation.resolveSchemeIdPerDocRequest
+import ee.cyber.wallet.domain.presentation.resolveSchemeId
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -106,7 +106,7 @@ class MsoMdocZkParsingTest {
         // The DCQL-parsed spec satisfies the same resolution the ISO zkRequest path runs: the
         // HELD spec's id is resolved (the id travels in the proof; the verifier allowlists by
         // the query's own circuit_hash, which is how ee-eudiw's ZkSystemTypeAllowlist keys it).
-        val schemeId = resolveSchemeIdPerDocRequest(zkSystem, specsByDocType, "eu.europa.ec.av.1", 1)
+        val schemeId = resolveSchemeId(zkSystem, specsByDocType["eu.europa.ec.av.1"].orEmpty(), 1)
         val heldSpec = zkSystem.systemSpecs
             .first { it.getParam<Long>("num_attributes") == 1L && it.getParam<String>("circuit_hash") == heldHash }
         assertEquals(
@@ -128,15 +128,13 @@ class MsoMdocZkParsingTest {
         val specsByDocType = zkSpecsByDocTypeFromDcql(query)
         assertTrue(specsByDocType.isNotEmpty(), "the query parses — the refusal is about the circuit, not the shape")
 
-        val schemeId = resolveSchemeIdPerDocRequest(zkSystem, specsByDocType, "eu.europa.ec.av.1", 1)
+        val schemeId = resolveSchemeId(zkSystem, specsByDocType["eu.europa.ec.av.1"].orEmpty(), 1)
         assertNull(schemeId, "an unheld circuit must not resolve to a proof")
 
         // The full refusal chain on this path: proof was requested, the device is ZK-capable,
         // but no advertised circuit is satisfiable — the plain fallback is refused.
         val proofRequested = specsByDocType.values.any { it.isNotEmpty() }
-        val satisfiable = HolderObligations.satisfiableOverRefusable(
-            listOf(true to (schemeId != null))
-        )
+        val satisfiable = schemeId != null
         assertTrue(
             HolderObligations.refusePlainFallback(zkCapable = true, proofRequested = proofRequested, satisfiable = satisfiable),
             "EE-ZKP-051 must refuse the plain fallback for an unregistered zk_system_type"
