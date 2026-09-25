@@ -14,6 +14,7 @@ a real wallet does inside its WSCD.
 """
 import argparse, base64, hashlib, json, os, shutil, subprocess, sys, tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 import cbor2
 from cryptography.hazmat.primitives import hashes, serialization
@@ -80,6 +81,36 @@ def http_json(url: str, payload=None, method=None):
         raise SystemExit(f"verifier unreachable at {url}: {e}") from e
 
 
+def encrypt_vp_token(vp_token: dict, jwks_json: dict) -> str:
+    """Wrap the vp_token as a direct_post.jwt compact JWE (ADR-003).
+
+    alg=ECDH-ES+A256KW, enc=A256GCM, to the verifier's P-256 response key —
+    the same minimal profile the Go verifier implements in internal/jose.
+    jwcrypto is the sanctioned Python-side library here (the plan's fallback:
+    the local `cryptography` has no JWE API, and a hand-rolled one on the
+    wallet side would be a second implementation to pin).
+    """
+    from jwcrypto import jwk as jwk_mod
+    from jwcrypto import jwe as jwe_mod
+
+    keys = jwks_json.get("keys") or []
+    if not keys:
+        sys.exit("--encrypt-for got a JWKS with no keys")
+    key = jwk_mod.JWK.from_json(json.dumps(keys[0]))
+    if key.get("crv") != "P-256" or key.get("kty") != "EC":
+        sys.exit("--encrypt-for: the verifier's response key is not an EC P-256 key")
+
+    protected = json.dumps({
+        "alg": "ECDH-ES+A256KW",
+        "enc": "A256GCM",
+        "kid": key.get("kid", ""),
+    })
+    jwe = jwe_mod.JWE(plaintext=json.dumps(vp_token).encode(),
+                      protected=protected)
+    jwe.add_recipient(key)
+    return jwe.serialize(compact=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -91,6 +122,12 @@ def main() -> None:
         "EE_PROVER", os.path.expanduser("~/longfellow-zk/rust/target/release/examples/ee_poa_demo")),
         help="path to the ee_poa_demo prover binary")
     ap.add_argument("--element", default="age_over_18", help="predicate to disclose")
+    ap.add_argument("--encrypt-for", dest="encrypt_for", default=None, metavar="JWKS",
+                    help="post the vp_token as an encrypted direct_post.jwt response (ADR-003). "
+                         "Value: a JWKS JSON file carrying the verifier's EC P-256 response-encryption "
+                         "key (the {keys:[…]} document, inline in the request's client_metadata.jwks "
+                         "or at GET /present/jwks.json). This mirrors what a real wallet's response "
+                         "encryption does; jwcrypto does the JWE (see ADR-003 for the profile).")
     ap.add_argument("--tamper-nonce", action="store_true",
                     help="prove against a different nonce, to show the binding holds")
     ap.add_argument("--replay", action="store_true",
@@ -117,9 +154,28 @@ def main() -> None:
     print(f"client_id  : {req['client_id']}")
     print(f"nonce      : {req['nonce'][:16]}…")
 
-    # 2. Derive the transcript this presentation must be bound to.
+    # 2. Derive the transcript this presentation must be bound to. Under
+    # direct_post.jwt the third element is the verifier response key's RFC 7638
+    # thumbprint, taken from the request's own client_metadata.jwks (never from
+    # a second fetch — the transcript is fixed before anything is posted).
     nonce = "A" * 43 if args.tamper_nonce else req["nonce"]
-    transcript = session_transcript(req["client_id"], nonce, None, req["response_uri"])
+    jwks = None
+    thumbprint = None
+    if req.get("response_mode") == "direct_post.jwt":
+        jwks = (req.get("client_metadata") or {}).get("jwks")
+        if not jwks and args.encrypt_for:
+            jwks = json.load(open(args.encrypt_for))
+        if not jwks:
+            status, jwks = http_json(f"{args.verifier}/present/jwks.json")
+            if status != 200:
+                sys.exit("the request is direct_post.jwt but carries no client_metadata.jwks "
+                         "and /present/jwks.json did not answer")
+        tp_input = json.dumps({"crv": "P-256", "kty": "EC",
+                               "x": jwks["keys"][0]["x"], "y": jwks["keys"][0]["y"]},
+                              separators=(",", ":"), sort_keys=True).encode()
+        thumbprint = hashlib.sha256(tp_input).digest()
+        print(f"resp key   : P-256, thumbprint {thumbprint.hex()[:16]}…")
+    transcript = session_transcript(req["client_id"], nonce, thumbprint, req["response_uri"])
     print(f"transcript : {len(transcript)} bytes, sha256 {hashlib.sha256(transcript).hexdigest()[:16]}…"
           + ("   (DELIBERATELY WRONG NONCE)" if args.tamper_nonce else ""))
 
@@ -159,7 +215,9 @@ def main() -> None:
         else:
             print(f"session dir: {session_dir}")
 
-    # 4. Post the vp_token.
+    # 4. Post the vp_token. Under direct_post.jwt the token goes out as
+    # `response=<compact JWE>` (the form field OpenID4VP 1.0 defines for the
+    # encrypted response), encrypted to the verifier's response key.
     presentation = {
         "zk_system": "longfellow-libzk-v1",
         "version": request_json["version"],
@@ -173,13 +231,38 @@ def main() -> None:
     vp_token = {cq["id"]: [base64.urlsafe_b64encode(
         json.dumps(presentation).encode()).decode().rstrip("=")]}
 
-    body = {"vp_token": vp_token, "expected_now": req["expected_now"]}
-    status, result = http_json(req["response_uri"], body)
+    def post_response(again: bool):
+        """Post (or re-post) the response, in whichever mode the request set."""
+        if req.get("response_mode") == "direct_post.jwt":
+            data = urllib.parse.urlencode({"response": jwe}).encode()
+            headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        else:
+            data = json.dumps({"vp_token": vp_token,
+                               "expected_now": req["expected_now"]}).encode()
+            headers = {"Content-Type": "application/json"}
+        req_obj = urllib.request.Request(req["response_uri"], data=data,
+                                         method="POST", headers=headers)
+        try:
+            with urllib.request.urlopen(req_obj, timeout=60) as r:
+                return r.status, json.load(r)
+        except urllib.error.HTTPError as e:
+            return e.code, json.load(e)
+        except (urllib.error.URLError, TimeoutError) as e:
+            raise SystemExit(f"verifier unreachable at {req['response_uri']}: {e}") from e
+
+    if req.get("response_mode") == "direct_post.jwt":
+        if jwks is None:
+            sys.exit("cannot encrypt the response: the request carried no JWKS")
+        jwe = encrypt_vp_token(vp_token, jwks)
+        status, result = post_response(False)
+    else:
+        jwe = None
+        status, result = post_response(False)
     print(f"\nresponse   : HTTP {status}")
     print(json.dumps(result, indent=2))
 
     if args.replay:
-        status2, result2 = http_json(req["response_uri"], body)
+        status2, result2 = post_response(True)
         print(f"\nreplay     : HTTP {status2}")
         print(json.dumps(result2, indent=2))
         if status2 == 200:
