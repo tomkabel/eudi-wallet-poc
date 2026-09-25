@@ -4,6 +4,13 @@
 // Upstream's reference verifier links the C++ libmdoc_static. This links the
 // Rust implementation instead, so the service builds with a Rust toolchain and
 // cgo but no C++ toolchain.
+//
+// The LDFLAGS below link ../../zkverify-ffi/target/release/libzkverify.a at
+// link time, which is before any Go code runs — there is no TestMain or init
+// that could preflight it, so a missing staticlib surfaces only as
+// "ld: cannot find -lzkverify" with a [build failed] test binary. The loud,
+// actionable check therefore lives where the build is driven: make test-go-zk
+// stats the file first and points at make deps.
 package zk
 
 /*
