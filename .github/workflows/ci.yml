@@ -1,0 +1,221 @@
+name: CI
+
+# Only the ZK spine is built here; the Android app has no CI job. Kotlin-only
+# pushes would otherwise pay for the e2e job's Rust build.
+on:
+  push:
+    paths:
+      - 'verifier/**'
+      - 'zk-age-poc/**'
+      - 'issuer/**'
+      - 'wallet/**'
+      - 'tests/**'
+      - 'demo/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'verifier/**'
+      - 'zk-age-poc/**'
+      - 'issuer/**'
+      - 'wallet/**'
+      - 'tests/**'
+      - 'demo/**'
+      - '.github/workflows/ci.yml'
+
+# A PR from a branch in this repo triggers both `push` and `pull_request`. Keying
+# on head_ref for PRs puts both in the same group so the newer one cancels the
+# older, instead of paying twice for the same commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # google/longfellow-zk is a path dependency, not a registry one, so the version
+  # lives here rather than in a lockfile. Bump deliberately.
+  LONGFELLOW_REV: 61a8a735964d1b22bccf79bf14ef6767249cdf92
+
+defaults:
+  run:
+    # zkverify-ffi path-depends on ../../../longfellow-zk, so the two trees must
+    # be siblings. Checking out into a subdirectory makes the sibling live inside
+    # the workspace, which keeps every cache path relative and ordinary.
+    working-directory: eudi-wallet-poc
+
+jobs:
+  fast:
+    name: fast (lint, vet, unit tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: eudi-wallet-poc
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: eudi-wallet-poc/verifier/go/go.mod
+          # The module has no third-party dependencies and therefore no go.sum,
+          # which the built-in cache needs to key on.
+          cache: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: gofmt
+        working-directory: eudi-wallet-poc/verifier/go
+        run: |
+          unformatted="$(gofmt -l .)"
+          # gofmt -l exits 0 whether or not it listed anything, so the output is
+          # the signal.
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-clean:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        working-directory: eudi-wallet-poc/verifier/go
+        # vet type-checks the cgo package without linking it, so this covers
+        # every package with no Rust toolchain in sight.
+        run: go vet ./...
+
+      - name: go test (packages that do not link the Rust staticlib)
+        working-directory: eudi-wallet-poc/verifier/go
+        # Package zk links libzkverify.a through cgo, and package main imports
+        # zk, so neither test binary can be linked without a Rust build. The
+        # e2e job runs those two once the staticlib exists; this job stays cheap.
+        run: go test ./oid4vp/... ./internal/... ./circuits/...
+
+      - name: python compiles
+        run: python3 -m compileall -q issuer verifier wallet tests
+
+      - name: ruff
+        # F (pyflakes) and E9 catch undefined names, unused imports and syntax
+        # errors — the things that are wrong rather than merely unfashionable.
+        # The wider default set flags this codebase's deliberate compact style
+        # (`if not x: return`, grouped imports) and enforcing it would mean
+        # reformatting working code to satisfy a linter added after the fact.
+        #
+        # The submodule is a separate project with its own lint setup, and a
+        # developer tree has it checked out even where CI leaves it empty.
+        # Keep our linter out of them, or `ruff check .` flags their code.
+        run: |
+          pip install ruff==0.16.6
+          ruff check --isolated --select F,E9 --exclude eudi-arf .
+
+      - name: the wallet's half of the transcript pin
+        # The Go half of these golden vectors runs in the step above; this is the
+        # other half, and until now nothing ran it. The two implementations derive
+        # the SessionTranscript independently, and a one-byte disagreement fails
+        # every proof with an error that says nothing about why — so the agreement
+        # is pinned from both sides or it is not pinned at all.
+        #
+        # It loads wallet/present.py, which imports cbor2 and cryptography: the
+        # runner has neither, and without this install the step fails on the
+        # import rather than on the vectors.
+        run: |
+          pip install cbor2 cryptography
+          python3 wallet/test_transcript.py
+
+      - name: the mint's device public key path
+        # Nothing else runs --device-public-key: the Go tests read static
+        # fixture bytes and no demo or e2e script passes the flag. cbor2 and
+        # cryptography are installed by the step above.
+        run: python3 issuer/test_mint_device_key.py
+
+      - name: shellcheck
+        # Info-level findings are style opinions and their codes drift between
+        # shellcheck releases (SC2317 became SC2329), so gating on them would
+        # make the job fail when the runner image updates rather than when the
+        # scripts change. The remaining info notes here are false positives:
+        # cleanup() looks unreachable because `trap` invokes it.
+        run: shellcheck --severity=warning tests/*.sh
+
+  e2e:
+    name: e2e (prover + verifier, tests/e2e.sh)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      EE_BENCH_SKIP: "1"   # the percentile run is a host measurement, not a check; STEP8-RECORD
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: eudi-wallet-poc
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: eudi-wallet-poc/verifier/go/go.mod
+          cache: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: clone longfellow-zk at the pinned revision
+        working-directory: ${{ github.workspace }}
+        run: |
+          git init -q longfellow-zk
+          git -C longfellow-zk remote add origin https://github.com/google/longfellow-zk.git
+          git -C longfellow-zk fetch -q --depth 1 origin "$LONGFELLOW_REV"
+          git -C longfellow-zk checkout -q --detach FETCH_HEAD
+          got="$(git -C longfellow-zk rev-parse HEAD)"
+          # A shallow fetch of a SHA is only as trustworthy as this check.
+          [ "$got" = "$LONGFELLOW_REV" ] || { echo "got $got, want $LONGFELLOW_REV"; exit 1; }
+
+      - name: cache cargo registry and build artefacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            longfellow-zk/rust/target
+            eudi-wallet-poc/verifier/zkverify-ffi/target
+          # The pinned longfellow revision plus the lockfile, the manifests and
+          # the copied-in example sources are what decide what gets built.
+          key: e2e-${{ runner.os }}-lf${{ env.LONGFELLOW_REV }}-${{ hashFiles('eudi-wallet-poc/verifier/zkverify-ffi/Cargo.lock', 'eudi-wallet-poc/verifier/zkverify-ffi/Cargo.toml', 'eudi-wallet-poc/verifier/zkverify-ffi/.cargo/config.toml', 'eudi-wallet-poc/zk-age-poc/*.rs') }}
+          restore-keys: |
+            e2e-${{ runner.os }}-lf${{ env.LONGFELLOW_REV }}-
+
+      - name: build the prover
+        env:
+          # longfellow-zk's own rust/.cargo/config.toml sets target-cpu=native,
+          # which has produced SIGILL binaries on virtualised hosts. Match the
+          # baseline zkverify-ffi pins.
+          RUSTFLAGS: -C target-cpu=x86-64-v3
+        run: |
+          # A fresh clone has no examples/ directory. Without this mkdir the cp
+          # fails, and `cargo build --examples` then matches no targets, prints a
+          # warning and exits 0 — a green build with no binary.
+          mkdir -p ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples
+          cp zk-age-poc/*.rs ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples/
+          cd ../longfellow-zk/rust/applications/mdoc_zk/runtime
+          cargo build --release --examples --features testonly
+
+      - name: the prover binary exists
+        # The build above can succeed without producing this. Say so out loud.
+        run: test -x ../longfellow-zk/rust/target/release/examples/ee_poa_demo
+
+      - name: build the verifier
+        run: |
+          # cd rather than --manifest-path: cargo discovers .cargo/config.toml
+          # from the working directory, and zkverify-ffi's is what pins its
+          # target-cpu.
+          (cd verifier/zkverify-ffi && cargo build --release)
+          cd verifier/go && go build -o ../zkverify .
+
+      - name: go test (the packages that link the Rust staticlib)
+        working-directory: eudi-wallet-poc/verifier/go
+        # The counterpart of the fast job's `go test ./oid4vp/... ./internal/...
+        # ./circuits/...`: between them the two jobs cover the module once.
+        # Keeping this narrow also keeps a regression legible — an oid4vp
+        # failure reported here would mask the e2e assertion below that is the
+        # more informative signal.
+        run: go test . ./zk/...
+
+      - name: tests/e2e.sh
+        env:
+          EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
+        run: |
+          pip install cbor2 cryptography
+          tests/e2e.sh
