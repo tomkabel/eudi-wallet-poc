@@ -222,7 +222,10 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 		log.Printf("/present/response/%s: transcript: %v", s.ID, err)
 		return false, "verifier configuration error", http.StatusInternalServerError
 	}
-	attrCBOR, _ := hex.DecodeString(pres.AttrCBORHex)
+	attrCBOR, err := hex.DecodeString(pres.AttrCBORHex)
+	if err != nil {
+		return false, "attr_cbor_hex is not hex", http.StatusBadRequest
+	}
 
 	// Any trusted issuer for this doctype may have issued it.
 	var lastErr error
@@ -270,7 +273,7 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 	if err != nil {
 		// The holder sent this; telling them exactly what was wrong with it is
 		// the whole value of the answer.
-		return false, err.Error(), http.StatusBadRequest
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
 	}
 	d, err := oid4vp.MatchQueryZkDocument(docs, cq)
 	if err != nil {

@@ -44,6 +44,36 @@ unsafe fn as_bytes<'a>(p: *const u8, len: usize) -> Option<&'a [u8]> {
     Some(if len == 0 { &[] } else { slice::from_raw_parts(p, len) })
 }
 
+/// Byte length of a CBOR text-string header for a string of `n` bytes.
+fn cbor_str_header_len(n: usize) -> usize {
+    match n {
+        0..=23 => 1,
+        24..=0xff => 2,
+        0x100..=0xffff => 3,
+        _ => 5,
+    }
+}
+
+/// Reject inputs that overflow the fixed-width slots of the legacy input hash
+/// (longfellow `legacy/public.rs`). Upstream pads with `(slot - len) * 8`, which
+/// wraps on oversize input and aborts the process on the resulting allocation —
+/// an abort `catch_unwind` cannot stop. `now` is a holder-supplied timestamp.
+fn check_input_sizes(version: u32, now: &str, attr_id: &str, attr_cbor: &[u8]) -> Result<(), &'static str> {
+    if now.len() > 20 {
+        return Err("timestamp longer than 20 bytes");
+    }
+    let id_enc = cbor_str_header_len(attr_id.len()) + attr_id.len();
+    let fits = if version >= 7 {
+        id_enc <= 32 && attr_cbor.len() <= 64
+    } else {
+        id_enc + cbor_str_header_len(12) + 12 + attr_cbor.len() <= 96
+    };
+    if !fits {
+        return Err("attribute id or value too long for circuit");
+    }
+    Ok(())
+}
+
 /// Verify a Longfellow proof that a single attribute is present in an mdoc.
 ///
 /// `version` / `num_attributes` select the circuit; the caller is expected to
@@ -89,6 +119,9 @@ pub unsafe extern "C" fn zkv_verify(
         ) else {
             return (ZKV_ERR_ARGS, "null buffer argument".to_string());
         };
+        if let Err(msg) = check_input_sizes(version, now, attr_id, attr_cbor) {
+            return (ZKV_ERR_ARGS, msg.to_string());
+        }
 
         let circuit = match provider::materialize(version as usize, num_attributes as usize) {
             Ok(c) => c,
@@ -158,5 +191,25 @@ pub unsafe extern "C" fn zkv_circuit_hash(
         }
         Ok(Err(_)) => ZKV_ERR_CIRCUIT,
         Err(_) => ZKV_ERR_PANIC,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn oversize_inputs_are_rejected_not_aborted() {
+        let mut err = [0 as c_char; 128];
+        let call = |now: &str, id: &str, val: &[u8], err: &mut [c_char; 128]| unsafe {
+            let c = |s: &str| std::ffi::CString::new(s).unwrap();
+            let (pk, dt, ns, id, now) = (c("0x1"), c("org.iso.18013.5.1.mDL"), c("org.iso.18013.5.1"), c(id), c(now));
+            zkv_verify(7, 1, pk.as_ptr(), pk.as_ptr(), [0u8].as_ptr(), 1, dt.as_ptr(), ns.as_ptr(),
+                id.as_ptr(), val.as_ptr(), val.len(), now.as_ptr(), [0u8].as_ptr(), 1, err.as_mut_ptr(), 128)
+        };
+        assert_eq!(call("2026-09-25T09:00:00+03:00", "age_over_18", &[0xf5], &mut err), ZKV_ERR_ARGS);
+        assert_eq!(call("2026-09-25T09:00:00Z", &"a".repeat(31), &[0xf5], &mut err), ZKV_ERR_ARGS);
+        assert_eq!(call("2026-09-25T09:00:00Z", "age_over_18", &[0u8; 65], &mut err), ZKV_ERR_ARGS);
+        assert!(check_input_sizes(7, "2026-09-25T09:00:00Z", &"a".repeat(30), &[0u8; 64]).is_ok());
     }
 }

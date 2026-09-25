@@ -374,6 +374,12 @@ func TestISOTimestampWindowNegative(t *testing.T) {
 	if err := oid4vp.CheckTimestampWindow(time.Now(), time.Now(), future); err == nil {
 		t.Fatal("a timestamp 120s in the future must be refused")
 	}
+	// In-window but with a numeric offset: 25 bytes would overflow the
+	// circuit's 20-byte timestamp slot, so it must never reach zk.Verify.
+	offset := time.Now().In(time.FixedZone("EEST", 3*3600)).Format(time.RFC3339)
+	if err := oid4vp.CheckTimestampWindow(time.Now(), time.Now(), offset); err == nil {
+		t.Fatalf("a numeric-offset timestamp %q must be refused", offset)
+	}
 }
 
 func mustTranscript(t *testing.T, s *oid4vp.Session) []byte {

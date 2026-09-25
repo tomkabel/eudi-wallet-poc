@@ -37,6 +37,12 @@ type Limits struct {
 	MaxItems int
 	// MaxString bounds one byte or text string in bytes.
 	MaxString int
+	// MaxTotalItems bounds the items decoded across the whole walk, tag-24
+	// re-decodes included. The per-container caps alone let a few MB of
+	// valid CBOR fan out into hundreds of MB of decoded Values.
+	MaxTotalItems int
+	// MaxTotalBytes bounds the byte-string bytes copied across the whole walk.
+	MaxTotalBytes int
 }
 
 // DefaultLimits are sized for a DeviceResponse: documents with COSE structures
@@ -44,7 +50,7 @@ type Limits struct {
 // deliberately two orders of magnitude above anything a conformant response
 // carries and far below anything that could exhaust a verification slot.
 func DefaultLimits() Limits {
-	return Limits{MaxDepth: 32, MaxItems: 1024, MaxString: 1 << 20}
+	return Limits{MaxDepth: 32, MaxItems: 1024, MaxString: 1 << 20, MaxTotalItems: 1 << 15, MaxTotalBytes: 16 << 20}
 }
 
 func (l Limits) withDefaults() Limits {
@@ -56,6 +62,12 @@ func (l Limits) withDefaults() Limits {
 	}
 	if l.MaxString == 0 {
 		l.MaxString = 1 << 20
+	}
+	if l.MaxTotalItems == 0 {
+		l.MaxTotalItems = 1 << 15
+	}
+	if l.MaxTotalBytes == 0 {
+		l.MaxTotalBytes = 16 << 20
 	}
 	return l
 }
@@ -159,7 +171,7 @@ func (v *Value) MapGet(key string) (*Value, bool, error) {
 // trailing bytes are an error, so a response cannot smuggle a second root.
 func Decode(data []byte, limits Limits) (*Value, error) {
 	l := limits.withDefaults()
-	d := decoder{data: data, limits: l}
+	d := decoder{data: data, limits: l, budget: &budget{items: l.MaxTotalItems, bytes: l.MaxTotalBytes}}
 	v, err := d.item(0)
 	if err != nil {
 		return nil, err
@@ -183,7 +195,12 @@ type decoder struct {
 	// level a fresh depth budget — an allocation and stack amplifier on the
 	// unauthenticated pre-HPKE parse path.
 	tagNesting int
+	// budget is shared with every nested tag-24 decoder, so the whole walk
+	// draws on one cumulative allowance.
+	budget *budget
 }
+
+type budget struct{ items, bytes int }
 
 func (d *decoder) byteAt(what string) (byte, error) {
 	if d.pos >= len(d.data) {
@@ -269,6 +286,9 @@ func (d *decoder) item(depth int) (*Value, error) {
 	if depth > d.limits.MaxDepth {
 		return nil, fail("nesting deeper than %d", d.limits.MaxDepth)
 	}
+	if d.budget.items--; d.budget.items < 0 {
+		return nil, fail("more than %d items in total", d.limits.MaxTotalItems)
+	}
 	h, err := d.head("an item")
 	if err != nil {
 		return nil, err
@@ -300,6 +320,9 @@ func (d *decoder) itemBody(h head, depth int) (*Value, error) {
 		}
 		raw := d.data[d.pos-n : d.pos]
 		if h.major == 2 {
+			if d.budget.bytes -= n; d.budget.bytes < 0 {
+				return nil, fail("more than %d byte-string bytes in total", d.limits.MaxTotalBytes)
+			}
 			b := make([]byte, n)
 			copy(b, raw)
 			return &Value{Kind: KBytes, Bytes: b}, nil
@@ -383,7 +406,7 @@ func (d *decoder) itemBody(h head, depth int) (*Value, error) {
 			d.tagNesting--
 			return nil, fail("tag 24 nesting deeper than %d", d.limits.MaxDepth)
 		}
-		sub := decoder{data: inner.Bytes, limits: d.limits, tagNesting: d.tagNesting}
+		sub := decoder{data: inner.Bytes, limits: d.limits, tagNesting: d.tagNesting, budget: d.budget}
 		_, nestedErr := sub.item(depth + 1)
 		d.tagNesting--
 		if nestedErr != nil {

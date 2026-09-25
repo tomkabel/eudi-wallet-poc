@@ -287,3 +287,26 @@ func FuzzDecode(f *testing.F) {
 		}
 	})
 }
+
+// A valid tree inside every per-container cap must still hit the cumulative
+// budget: 1024 arrays of 1024 zeros is ~1 MB of input and a million Values.
+func TestDecodeEnforcesCumulativeBudget(t *testing.T) {
+	inner := append([]byte{0x99, 0x04, 0x00}, make([]byte, 1024)...)
+	wide := []byte{0x99, 0x04, 0x00}
+	for i := 0; i < 1024; i++ {
+		wide = append(wide, inner...)
+	}
+	if _, err := Decode(wide, DefaultLimits()); err == nil || !strings.Contains(err.Error(), "items in total") {
+		t.Fatalf("want item budget error, got %v", err)
+	}
+
+	// 20 byte strings of 1 MiB each: every one within MaxString, 20 MiB total.
+	bs := append([]byte{0x5a, 0x00, 0x10, 0x00, 0x00}, make([]byte, 1<<20)...)
+	many := []byte{0x94}
+	for i := 0; i < 20; i++ {
+		many = append(many, bs...)
+	}
+	if _, err := Decode(many, DefaultLimits()); err == nil || !strings.Contains(err.Error(), "byte-string bytes in total") {
+		t.Fatalf("want byte budget error, got %v", err)
+	}
+}

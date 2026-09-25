@@ -480,13 +480,20 @@ func ParseZkDocuments(root *cborsub.Value) ([]*ZkDocument, error) {
 // generated for the wallet's own timestamp, so the verifier must verify against
 // that value — and bound it, or a wallet holding an expired attestation could
 // prove validity at a moment of its choosing (plan §5.3, EE-ZKP-021(d)).
+// The upper anchor is the verifier's own clock at receipt, so the holder still
+// picks the moment within [session created, receipt] ± SessionTZ; the session
+// TTL is what bounds that choice.
+//
+// Only the UTC "Z" form is accepted: it is what multipaz emits and what the
+// Longfellow circuit's fixed 20-byte timestamp slot holds. A numeric offset
+// is valid RFC 3339 but 25 bytes long, so it could never verify anyway.
 func CheckTimestampWindow(sessionCreated, now time.Time, timestamp string) error {
 	if timestamp == "" {
 		return fail("documentData.timestamp is empty")
 	}
 	ts, err := time.Parse(time.RFC3339, timestamp)
-	if err != nil {
-		return fail("documentData.timestamp %q is not RFC 3339", timestamp)
+	if err != nil || len(timestamp) != 20 || timestamp[19] != 'Z' {
+		return fail("documentData.timestamp %q is not RFC 3339 UTC (yyyy-MM-ddTHH:mm:ssZ)", timestamp)
 	}
 	if !ts.Equal(ts.Truncate(time.Second)) {
 		return fail("documentData.timestamp %q has fractional seconds; ISO/IEC 18013-5 clauses 7.1 and 9.1.2.4 forbid them", timestamp)

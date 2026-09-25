@@ -73,3 +73,22 @@ func readStep6FixtureIssuer(t *testing.T) (meta struct {
 	}
 	return meta
 }
+
+// Hex case is not identity: an uppercase store entry must still match the
+// lowercase coordinates the presentation path derives, and vice versa.
+func TestTrustStoreSelectIgnoresHexCase(t *testing.T) {
+	path := t.TempDir() + "/issuers.json"
+	body := `{"issuers":[{"name":"up","doc_type":"d","pkx":"0xABCD","pky":"0xEF01"}]}`
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ts, err := LoadTrustStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range [][2]string{{"0xabcd", "0xef01"}, {"0xABCD", "0xEF01"}} {
+		if _, err := ts.Select("d", k[0], k[1]); err != nil {
+			t.Fatalf("Select(%s, %s): %v", k[0], k[1], err)
+		}
+	}
+}

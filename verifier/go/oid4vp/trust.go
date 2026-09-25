@@ -45,6 +45,8 @@ func LoadTrustStore(path string) (*TrustStore, error) {
 		if is.DocType == "" || !strings.HasPrefix(is.PKx, "0x") || !strings.HasPrefix(is.PKy, "0x") {
 			return nil, fmt.Errorf("trust store: issuer %q needs doc_type and 0x-prefixed pkx/pky", is.Name)
 		}
+		// Select compares hex strings, so both sides are held in one case.
+		is.PKx, is.PKy = strings.ToLower(is.PKx), strings.ToLower(is.PKy)
 		ts.byDocType[is.DocType] = append(ts.byDocType[is.DocType], is)
 	}
 	if len(ts.byDocType) == 0 {
@@ -74,7 +76,7 @@ func (ts *TrustStore) Select(docType, pkx, pky string) (Issuer, error) {
 		return Issuer{}, err
 	}
 	for _, cand := range is {
-		if cand.PKx == pkx && cand.PKy == pky {
+		if cand.PKx == strings.ToLower(pkx) && cand.PKy == strings.ToLower(pky) {
 			return cand, nil
 		}
 	}

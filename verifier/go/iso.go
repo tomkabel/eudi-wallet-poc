@@ -34,6 +34,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/cborsub"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
@@ -239,7 +240,7 @@ func (p *presenter) isoCheck(s *oid4vp.Session, responseB64 string) (bool, strin
 	}
 	enc, cipherText, err := oid4vp.ParseEnvelope(envelope)
 	if err != nil {
-		return false, err.Error(), http.StatusBadRequest
+		return false, holderDetail("/present/dcapi/response/"+s.ID, err), http.StatusBadRequest
 	}
 
 	// 2. The transcript is recomputed from the verifier's own stored state —
@@ -266,7 +267,7 @@ func (p *presenter) isoCheck(s *oid4vp.Session, responseB64 string) (bool, strin
 	// 4. Strict-CBOR DeviceResponse (ADR-002).
 	docs, err := oid4vp.ParseZkDocumentsBytes(plain)
 	if err != nil {
-		return false, err.Error(), http.StatusBadRequest
+		return false, holderDetail("/present/dcapi/response/"+s.ID, err), http.StatusBadRequest
 	}
 
 	// 5. The per-zkDocument rules, then zk.Verify.
@@ -283,6 +284,16 @@ func (p *presenter) isoCheck(s *oid4vp.Session, responseB64 string) (bool, strin
 		// both get the same refusal.
 		return false, fmt.Sprintf("expected exactly one zkDocument, got %d", len(docs)), http.StatusBadRequest
 	}
+}
+
+// holderDetail keeps cborsub's decoder wording (which names its limits) in the
+// server log, per cborsub.ErrDecode's contract; shape errors pass through.
+func holderDetail(logPrefix string, err error) string {
+	if errors.Is(err, cborsub.ErrDecode) {
+		log.Printf("%s: %v", logPrefix, err)
+		return "response is not the accepted CBOR subset"
+	}
+	return err.Error()
 }
 
 // verifyZkDocument runs rules (a)-(d) on one parsed ZkDocument and verifies it.
