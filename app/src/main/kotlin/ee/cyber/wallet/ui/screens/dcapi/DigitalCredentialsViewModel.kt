@@ -211,12 +211,6 @@ class DigitalCredentialsViewModel @Inject constructor(
                 val documents = documentRepository.documents.first()
                 val documentMatches = presentationDefinition.getDocumentMatches(documents)
 
-                // Plan §8.7: whether ANY source advertised a proof — the ISO zkRequest or the
-                // mso_mdoc_zk DCQL format — decides EE-ZKP-042's "proof requested" reading and
-                // the issuer-disclosure consent string.
-                val proofRequested = effectiveSpecsByDocType.values.any { it.isNotEmpty() }
-                val issuerDisclosureExpected = proofRequested || dcqlSpecsByDocType.isNotEmpty()
-
                 handleMatchResult(
                     documentMatches,
                     origin,
@@ -226,8 +220,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                     // is presented. A repeated docType keeps its first doc request's specs only;
                     // the DCQL carrier's specs fill the docTypes whose ISO zkRequest is absent.
                     effectiveSpecsByDocType,
-                    readerSubject,
-                    issuerDisclosureExpected
+                    readerSubject
                 )
             } catch (e: Exception) {
                 logger.error("Error processing request", e)
@@ -244,8 +237,7 @@ class DigitalCredentialsViewModel @Inject constructor(
         sessionTranscript: ListElement,
         recipientPublicKey: EcPublicKey,
         zkSystemSpecs: Map<String, List<ZkSystemSpec>>,
-        readerSubject: String?,
-        issuerDisclosureExpected: Boolean
+        readerSubject: String?
     ) {
         when (val match = documentMatches.second) {
             is Match.NotMatched -> {
@@ -302,8 +294,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                             // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's
                             // certificate chain (msoX5chain) into every ZkDocument, so the
                             // verifier sees which issuer stands behind the attestation. The
-                            // consent screen says so before the user shares.
-                            issuerDisclosesToVerifier = issuerDisclosureExpected
+                            // consent screen says so before the user shares — for a matched
+                            // credential whose own docType resolved specs, as expectedPlainTier
+                            // is scoped, not for a request that merely named mso_mdoc_zk.
+                            issuerDisclosesToVerifier = credentials.any {
+                                zkSystemSpecs[it.credentialType.docType().uri].orEmpty().isNotEmpty()
+                            }
                         )
                     }
                 }
