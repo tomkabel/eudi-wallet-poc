@@ -336,6 +336,8 @@ func main() {
 			"or empty (the default) to dispatch per query format, sniffing the entry bytes")
 	maxVerify := flag.Int("max-concurrent-verify", runtime.NumCPU(),
 		"verifications allowed in flight at once; excess requests get 503")
+	maxCreds := flag.Int("max-credentials", oid4vp.MaxCredentialsDefault,
+		"credential queries accepted in one DCQL session; a query list over this is refused")
 	dcapiOrigin := flag.String("dcapi-origin", "",
 		"browser origin the Digital Credentials API (ISO 18013-7 Annex C) handover binds; "+
 			"required for /present/dcapi/*, never taken from request headers")
@@ -500,6 +502,8 @@ func main() {
 		requestKeyPublic: requestKeyPublicOf(requestKey),
 		dcapiOrigin:      *dcapiOrigin,
 		offered:          reg.Accepted(),
+
+		maxCredentials: *maxCreds,
 	}
 
 	srvAddr := *addr

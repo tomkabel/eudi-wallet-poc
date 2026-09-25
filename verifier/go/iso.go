@@ -105,7 +105,7 @@ func (p *presenter) handleDCAPIPage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
-	cq, err := s.Query.Single()
+	cq, err := s.SingleQuery()
 	if err != nil {
 		log.Printf("/present/dcapi/%s: query: %v", id, err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "session query is unusable"})
@@ -152,7 +152,7 @@ func (p *presenter) handleDCAPIRequest(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "session has no dcapi extension"})
 		return
 	}
-	cq, err := s.Query.Single()
+	cq, err := s.SingleQuery()
 	if err != nil {
 		log.Printf("/present/dcapi/request/%s: query: %v", s.ID, err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "session query is unusable"})
@@ -243,7 +243,7 @@ func (p *presenter) isoCheck(s *oid4vp.Session, responseB64 string) (bool, strin
 	if ext == nil {
 		return false, "session has no dcapi extension", http.StatusInternalServerError
 	}
-	cq, err := s.Query.Single()
+	cq, err := s.SingleQuery()
 	if err != nil {
 		log.Printf("/present/dcapi/response/%s: session query is unusable: %v", s.ID, err)
 		return false, "verifier configuration error", http.StatusInternalServerError

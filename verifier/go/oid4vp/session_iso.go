@@ -41,7 +41,9 @@ func (s *Session) SessionISO() *ISOExtension {
 func (s *Session) ISOOrigin() string { return s.origin }
 
 // NewISO creates a presentation session carrying the dcapi extension. The
-// redirect path keeps using New; nothing about New changes.
+// redirect path keeps using New; nothing about New changes. The dcapi path is
+// single-credential by policy (the ISO DeviceRequest carries one docRequest),
+// so there is no Multi form of it.
 func (st *Store) NewISO(clientID, responseURIBase string, q DCQL, origin string, offered []circuits.Circuit) (*Session, error) {
 	if origin == "" {
 		return nil, fmt.Errorf("oid4vp: the dcapi origin is required (it is hashed into the handover)")

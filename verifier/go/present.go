@@ -56,6 +56,13 @@ type presenter struct {
 	// the startup self-check hashed.
 	dcapiOrigin string
 	offered     []circuits.Circuit
+
+	// maxCredentials caps how many credential queries one session may carry
+	// (-max-credentials); a query list over this is refused at session
+	// construction. The plain /present/new path builds single-credential
+	// queries itself, so the cap bites on NewMulti/NewWithMulti callers and
+	// on any future endpoint that accepts a holder-supplied DCQL list.
+	maxCredentials int
 }
 
 // authorizationRequest is the OpenID4VP 1.0 request object, unsigned.
@@ -326,14 +333,28 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 	// Shed load BEFORE claiming. Claim burns the session permanently, so a 503
 	// issued after it would tell the holder to retry a nonce that can never be
 	// answered again — turning a load spike into a self-inflicted denial of
-	// service. One slot covers the whole request, including the issuer loop in
-	// check, so a request is never shed with half its verifications done.
-	if !p.sem.tryAcquire() {
-		busy(w)
-		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "verifier busy, retry"})
-		return
+	// service. One slot per credential is taken here, before Claim: a
+	// multi-credential response costs N admission slots, never 1, because the
+	// cgo thread-kill math prices per verification (main.go's limiter
+	// comment); acquiring them as a batch means a response is never shed with
+	// half its verifications done.
+	for i, n := 0, len(peek.Query.Credentials); i < n; i++ {
+		if !p.sem.tryAcquire() {
+			// Release what this loop took (the loop has not taken slot i);
+			// slots taken by earlier requests release on their own paths.
+			for j := 0; j < i; j++ {
+				p.sem.release()
+			}
+			busy(w)
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "verifier busy, retry"})
+			return
+		}
 	}
-	defer p.sem.release()
+	defer func() {
+		for i, n := 0, len(peek.Query.Credentials); i < n; i++ {
+			p.sem.release()
+		}
+	}()
 
 	// Claim marks the session answered, so the same nonce cannot be used twice.
 	s, err := p.store.Claim(id)
@@ -351,19 +372,33 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 
 // check runs the actual verification and returns a plain answer.
 //
-// The caller must hold a verification slot: this may call zk.Verify once per
-// trusted issuer for the doctype.
+// The caller must hold one verification slot per credential the session asked
+// for (handleResponse takes them before Claim). A multi-credential mso_mdoc_zk
+// session therefore costs N slots, never 1: each zk.Verify is a cgo call
+// holding an OS thread for ~2.5 s, and the thread-kill math in main.go prices
+// per verification, not per response.
 //
 // What a caller learns here is deliberately coarser than what the log records.
 // Anything that is the presentation's own fault is named, because the holder
 // can act on it; anything that is ours, or the Rust runtime's, becomes a
 // category and the detail goes to the log under the session id.
+//
+// The answer is all-or-nothing: the session is valid only when every queried
+// credential verifies, and a failure on any credential ends the walk — partial
+// results are never returned, so "learn whether the holder presented" is all
+// the outcome ever reveals.
 func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string, int) {
-	cq, err := s.Query.Single()
+	qs, err := s.Query.Validate(0)
 	if err != nil {
+		// The session's own stored query; a validation failure here is a
+		// construction bug, not holder input.
 		log.Printf("/present/response/%s: session query is unusable: %v", s.ID, err)
 		return false, "verifier configuration error", http.StatusInternalServerError
 	}
+	if len(qs) > 1 {
+		return p.checkMulti(s, qs, token)
+	}
+	cq := qs[0]
 	// The mso_mdoc_zk carrier answers in the same vp_token with a CBOR
 	// DeviceResponse instead of the JSON envelope (plan §8.7).
 	if cq.Format == oid4vp.FormatMsoMdocZk {
@@ -381,6 +416,33 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 		return false, err.Error(), http.StatusBadRequest
 	}
 	return p.verifyPlain(s, pres, proof)
+}
+
+// checkMulti verifies every credential in a multi-credential session. The
+// caller holds one admission slot PER credential (handleResponse took them all
+// before Claim — a shed response never holds sessions hostage, and a
+// 4-credential response occupies 4 slots, never 1: each zk.Verify is a cgo
+// call holding an OS thread for ~2.5 s, and main.go's thread-kill math prices
+// per verification). Any failure — a missing or extra vp_token entry, a
+// refused presentation, a proof that does not verify — fails the whole
+// session, naming the offending credential id; partial results are never
+// returned, so the outcome still reveals nothing beyond "did they present".
+func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int) {
+	// Parse every credential first: a missing, extra, or malformed entry is
+	// refused before any FFI work runs, for any credential.
+	cps, _, err := token.ParseCarrierMulti(qs, p.carrier)
+	if err != nil {
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+	}
+	for i, cq := range qs {
+		valid, detail, code := p.verifyZkPresentation(s, cq, cps[i])
+		if !valid || code != http.StatusOK {
+			// All-or-error: name the credential that failed so the holder can
+			// act on it, but the session never reports a partial pass.
+			return false, fmt.Sprintf("credential %q: %s", cq.ID, detail), code
+		}
+	}
+	return true, fmt.Sprintf("all %d credentials proved in zero knowledge", len(qs)), http.StatusOK
 }
 
 // interimOfChecked rebuilds the interim envelope the plain path verifies from
@@ -469,15 +531,6 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 // Rule order mirrors the ISO path: the advertised-circuit allowlist (EE-ZKP-023,
 // before any FFI work), then the per-zkDocument rules, then zk.Verify.
 func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int) {
-	// The advertised circuits come from this session's own (verifier-built)
-	// query; resolve them against the registry here, before any FFI work, so
-	// verify uses the registry entry, never the query's copy.
-	advertised, err := oid4vp.ZkSystemTypeAllowlist(cq.Meta, p.registry.Accepted())
-	if err != nil {
-		log.Printf("/present/response/%s: %v", s.ID, err)
-		return false, "circuit is not in the accepted set", http.StatusForbidden
-	}
-
 	cp, _, err := token.ParseCarrier(cq, p.carrier)
 	if err != nil {
 		if errors.Is(err, oid4vp.ErrNoZkDocument) {
@@ -488,6 +541,24 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 		// The holder sent this; telling them exactly what was wrong with it is
 		// the whole value of the answer.
 		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+	}
+	return p.verifyZkPresentation(s, cq, cp)
+}
+
+// verifyZkPresentation runs the rule chain on an already-parsed mso_mdoc_zk
+// presentation: the advertised-circuit allowlist (EE-ZKP-023, before any FFI
+// work), the circuit match, the timestamp window, trust-store issuer
+// selection, the session transcript, and zk.Verify. Split from checkZk so the
+// multi-credential path parses every credential once (ParseCarrierMulti) and
+// then walks the rules per credential.
+func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.CredentialQuery, cp *oid4vp.CheckedPresentation) (bool, string, int) {
+	// The advertised circuits come from this session's own (verifier-built)
+	// query; resolve them against the registry here, before any FFI work, so
+	// verify uses the registry entry, never the query's copy.
+	advertised, err := oid4vp.ZkSystemTypeAllowlist(cq.Meta, p.registry.Accepted())
+	if err != nil {
+		log.Printf("/present/response/%s: %v", s.ID, err)
+		return false, "circuit is not in the accepted set", http.StatusForbidden
 	}
 
 	// Rule (c), mso_mdoc_zk form: the presentation's own circuit spec must be

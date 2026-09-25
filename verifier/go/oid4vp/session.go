@@ -81,36 +81,13 @@ func randomB64(n int) (string, error) {
 
 // New creates a session with a fresh nonce. A non-nil thumbprint opts the
 // session into response encryption: the handover binds the key's RFC 7638
-// thumbprint and the session requires a direct_post.jwt response.
+// thumbprint and the session requires a direct_post.jwt response. The query
+// list is validated under the default credential cap (MaxCredentialsDefault).
 func (st *Store) New(clientID, responseURIBase string, q DCQL, jwkThumbprint []byte) (*Session, error) {
-	if _, err := q.Single(); err != nil {
+	if _, err := q.Validate(0); err != nil {
 		return nil, err
 	}
-	if err := checkThumbprint(jwkThumbprint); err != nil {
-		return nil, err
-	}
-	id, err := randomB64(12)
-	if err != nil {
-		return nil, err
-	}
-	nonce, err := randomB64(32)
-	if err != nil {
-		return nil, err
-	}
-	created := time.Now()
-	s := &Session{
-		ID:          id,
-		Nonce:       nonce,
-		ClientID:    clientID,
-		ResponseURI: fmt.Sprintf("%s/%s", responseURIBase, id),
-		Query:       q,
-		Created:     created,
-		ExpectedNow: created.UTC().Format("2006-01-02T15:04:05Z"),
-
-		jwkThumbprint:            jwkThumbprint,
-		RequireEncryptedResponse: jwkThumbprint != nil,
-	}
-	return st.put(s)
+	return st.newSession(clientID, responseURIBase, "", q, jwkThumbprint)
 }
 
 // NewWith is New with the nonce and response URI chosen by the caller instead
@@ -119,23 +96,62 @@ func (st *Store) New(clientID, responseURIBase string, q DCQL, jwkThumbprint []b
 // to); production sessions keep using New. The session ID is the response
 // URI's last path segment, as New's is, so /present/response/<id> finds it.
 func (st *Store) NewWith(clientID, responseURI, nonce string, q DCQL, jwkThumbprint []byte) (*Session, error) {
-	if _, err := q.Single(); err != nil {
+	if _, err := q.Validate(0); err != nil {
 		return nil, err
 	}
+	return st.newSession(clientID, responseURI, nonce, q, jwkThumbprint)
+}
+
+// NewMulti is New for an explicit multi-credential session: maxCaps bounds how
+// many credential queries the session may carry (<= 0: MaxCredentialsDefault).
+// The plain-format constructors above keep the default cap.
+func (st *Store) NewMulti(clientID, responseURIBase string, q DCQL, maxCreds int, jwkThumbprint []byte) (*Session, error) {
+	if _, err := q.Validate(maxCreds); err != nil {
+		return nil, err
+	}
+	return st.newSession(clientID, responseURIBase, "", q, jwkThumbprint)
+}
+
+// NewWithMulti is NewWith with the same explicit credential cap.
+func (st *Store) NewWithMulti(clientID, responseURI, nonce string, q DCQL, maxCreds int, jwkThumbprint []byte) (*Session, error) {
+	if _, err := q.Validate(maxCreds); err != nil {
+		return nil, err
+	}
+	return st.newSession(clientID, responseURI, nonce, q, jwkThumbprint)
+}
+
+// newSession is the shared constructor body behind New, NewWith and the Multi
+// variants. nonce == "" generates the nonce, id and response URI (the New
+// shape); a caller-supplied nonce means the response URI is complete and its
+// last path segment is the id (the NewWith shape). The query is already
+// validated when this runs.
+func (st *Store) newSession(clientID, responseURI, nonce string, q DCQL, jwkThumbprint []byte) (*Session, error) {
 	if err := checkThumbprint(jwkThumbprint); err != nil {
 		return nil, err
 	}
-	if clientID == "" || nonce == "" || responseURI == "" {
-		return nil, errors.New("oid4vp: clientID, nonce and responseURI are all required")
+	if nonce == "" {
+		var err error
+		var id string
+		if id, err = randomB64(12); err != nil {
+			return nil, err
+		}
+		if nonce, err = randomB64(32); err != nil {
+			return nil, err
+		}
+		responseURI = fmt.Sprintf("%s/%s", responseURI, id)
+	} else {
+		if clientID == "" || nonce == "" || responseURI == "" {
+			return nil, errors.New("oid4vp: clientID, nonce and responseURI are all required")
+		}
+		u, err := url.Parse(responseURI)
+		if err != nil {
+			return nil, fmt.Errorf("oid4vp: responseURI: %w", err)
+		}
+		if id := path.Base(u.Path); id == "." || id == "/" {
+			return nil, errors.New("oid4vp: responseURI has no final path segment to use as the session id")
+		}
 	}
-	u, err := url.Parse(responseURI)
-	if err != nil {
-		return nil, fmt.Errorf("oid4vp: responseURI: %w", err)
-	}
-	id := path.Base(u.Path)
-	if id == "." || id == "/" {
-		return nil, errors.New("oid4vp: responseURI has no final path segment to use as the session id")
-	}
+	id := path.Base(responseURI)
 	created := time.Now()
 	s := &Session{
 		ID:          id,
@@ -302,6 +318,15 @@ func (st *Store) AttachISO(id string, ext *ISOExtension, origin string) error {
 	s.iso = ext
 	s.origin = origin
 	return nil
+}
+
+// SingleQuery returns the session's sole credential query. Sessions created
+// through New, NewWith, NewISO and NewISOWith carry exactly one credential by
+// construction — the plain-format and ISO dcapi paths are single-credential by
+// policy (dcql.go Validate); a session from NewMulti/NewWithMulti carries a
+// list and callers walk it with s.Query.Credentials instead.
+func (s *Session) SingleQuery() (CredentialQuery, error) {
+	return s.Query.Single()
 }
 
 // ISOTranscript is the dcapi session transcript, computed from the session's

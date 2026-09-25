@@ -106,6 +106,37 @@ func (t VPToken) ParseCarrier(q CredentialQuery, override Carrier) (*CheckedPres
 	return cp, carrier, nil
 }
 
+// ParseCarrierMulti parses one vp_token entry per query, in query order, and
+// refuses exactly the shapes a multi-credential response must not have. Every
+// credential id in the query list must have exactly one entry, and the token
+// must carry no entry for an id the query never asked for — an extra entry is
+// either a confused wallet or a smuggling attempt, and both get the same
+// refusal naming the offending id.
+//
+// The per-credential checks (doctype, namespace, element, predicate value, zk
+// system) stay inside each carrier's Parse; what is added here is the list
+// discipline over the vp_token envelope itself.
+func (t VPToken) ParseCarrierMulti(qs []CredentialQuery, override Carrier) ([]*CheckedPresentation, []Carrier, error) {
+	cps := make([]*CheckedPresentation, 0, len(qs))
+	carriers := make([]Carrier, 0, len(qs))
+	asked := make(map[string]bool, len(qs))
+	for _, q := range qs {
+		cp, carrier, err := t.ParseCarrier(q, override)
+		if err != nil {
+			return nil, nil, fmt.Errorf("credential %q: %w", q.ID, err)
+		}
+		asked[q.ID] = true
+		cps = append(cps, cp)
+		carriers = append(carriers, carrier)
+	}
+	for id := range t {
+		if !asked[id] {
+			return nil, nil, fmt.Errorf("vp_token carries an entry for %q, which this session did not ask for", id)
+		}
+	}
+	return cps, carriers, nil
+}
+
 // interimFromChecked rebuilds the interim envelope from a CheckedPresentation
 // the interim carrier produced — a plain field copy, so the two entry points
 // never disagree on what the envelope held.
