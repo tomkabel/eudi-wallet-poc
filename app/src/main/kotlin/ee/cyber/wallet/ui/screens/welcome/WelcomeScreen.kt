@@ -2,18 +2,13 @@ package ee.cyber.wallet.ui.screens.welcome
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -23,7 +18,6 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.os.ConfigurationCompat
-import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.R
 import ee.cyber.wallet.ui.components.AppContent
 import ee.cyber.wallet.ui.components.AppHeader
@@ -63,26 +57,19 @@ fun WelcomeScreen(viewModel: LanguageViewModel, onContinueClicked: () -> Unit = 
     val locale = Locale.current
     LaunchedEffect(locale) {
         viewModel.updateLocales()
-        if (AppConfig.useMocks) {
-            viewModel.updateIssuerKeyType()
-        }
     }
 
     WelcomeScreenContent(
         state = state,
-        showIssuerKeySelection = AppConfig.useMocks,
         onContinueClicked = onContinueClicked,
-        onLanguageSelected = { viewModel.changeAppLanguage(it) },
-        onIssuerKeyToggle = { viewModel.toggleIssuerKeyType() }
+        onLanguageSelected = { viewModel.changeAppLanguage(it) }
     )
 }
 
 @Composable
 private fun WelcomeScreenContent(
     state: UiState,
-    showIssuerKeySelection: Boolean = false,
     onLanguageSelected: (LanguageItem) -> Unit = {},
-    onIssuerKeyToggle: () -> Unit = {},
     onContinueClicked: () -> Unit = {}
 ) {
     println("WelcomeScreenContent: ${ConfigurationCompat.getLocales(LocalConfiguration.current)[0]}")
@@ -134,42 +121,8 @@ private fun WelcomeScreenContent(
                 }
             }
         }
+        VSpace(24.dp)
 
-        if (showIssuerKeySelection) {
-            VSpace(24.dp)
-            IssuerKeySettingItem(isIacaTrusted = state.isIacaTrusted, onToggle = onIssuerKeyToggle)
-        }
-
-        WSpace()
         PrimaryButton(text = stringResource(R.string.welcome_create_pin), onClick = onContinueClicked)
-    }
-}
-
-@Composable
-private fun IssuerKeySettingItem(isIacaTrusted: Boolean, onToggle: () -> Unit = {}) {
-    Card {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(48.dp)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(
-                    text = "Issuer Signing Key",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = if (isIacaTrusted) "IACA trusted" else "Untrusted",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Switch(
-                checked = isIacaTrusted,
-                onCheckedChange = { onToggle() }
-            )
-        }
     }
 }

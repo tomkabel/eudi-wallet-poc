@@ -33,7 +33,7 @@ this fork; to run this fork, build it from source.
    
    > NB! This verifier service is independent of this project and may not be available or may not be compatible at the
    time of your testing.
-4. Insert the following [certificate](iaca/iaca_root.cer.pem) using the `Configure issuer chain`
+4. Insert the following [certificate](app/src/main/assets/keys/iaca_root.cer.pem) using the `Configure issuer chain`
    menu. [Demo (link to instruction video)](https://github.com/user-attachments/assets/2e0a8cf7-c951-4bd0-8a83-05fc5fce8962)
 5. Select either or both `PID` (supported formats are `vc+sd-jwt` and `mso_mdoc`) and `mDL` credentials to
    verify. [Demo (link to instruction video)](https://github.com/user-attachments/assets/7e757d80-ee34-47e8-9435-db4cdbe86056)
@@ -50,7 +50,7 @@ certificates are trusted by wallet and verifier.
 
 1. The verifier certificate in PEM format must be added to [trusted.pem](/app/src/main/res/raw/trusted.pem).
 2. The APK must be built according to the instructions below.
-3. The wallet [certificate](iaca/iaca_root.cer.pem) must be trusted by the verifier.
+3. The wallet [certificate](app/src/main/assets/keys/iaca_root.cer.pem) must be trusted by the verifier.
 
 For example, you can set up your own verifier using the
 [reference implementation verifier service](https://github.com/eu-digital-identity-wallet/eudi-srv-web-verifier-endpoint-23220-4-kt?tab=readme-ov-file#run-all-verifier-components-together).
