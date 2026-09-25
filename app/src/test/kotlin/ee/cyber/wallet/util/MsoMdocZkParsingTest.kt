@@ -1,10 +1,12 @@
 package ee.cyber.wallet.util
 
 import ee.cyber.wallet.domain.presentation.HolderObligations
+import ee.cyber.wallet.domain.presentation.mergeZkSpecs
 import ee.cyber.wallet.domain.presentation.resolveSchemeId
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import org.multipaz.mdoc.zkp.ZkSystemSpec
 import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -215,6 +217,38 @@ class MsoMdocZkParsingTest {
         val byDocType = zkSpecsByDocTypeFromDcql(query)
         assertEquals("aaa", byDocType["eu.europa.ec.av.1"]!!.single().getParam<String>("circuit_hash"))
         assertEquals("bbb", byDocType["ee.riik.poa.1"]!!.single().getParam<String>("circuit_hash"))
+    }
+
+    @Test
+    fun `DCQL specs apply where the ISO doc request carried no zkRequest`() {
+        // zkSpecsByDocType keys every requested docType, with an empty list when no zkRequest
+        // came with it — the shape of an org-iso-mdoc entry whose companion DCQL query carries
+        // the circuits.
+        val dcql = zkSpecsByDocTypeFromDcql(dcqlQuery(zkEntryJson(circuitHash = "aaa")))
+
+        val merged = mergeZkSpecs(mapOf("eu.europa.ec.av.1" to emptyList()), dcql)
+
+        assertEquals("aaa", merged["eu.europa.ec.av.1"]!!.single().getParam<String>("circuit_hash"))
+    }
+
+    @Test
+    fun `ISO specs win over DCQL on a shared doctype`() {
+        val iso = ZkSystemSpec("iso-id", "longfellow-libzk-v1").apply { addParam("circuit_hash", "iso") }
+        val dcql = zkSpecsByDocTypeFromDcql(dcqlQuery(zkEntryJson(circuitHash = "aaa")))
+
+        val merged = mergeZkSpecs(mapOf("eu.europa.ec.av.1" to listOf(iso)), dcql)
+
+        assertEquals(listOf(iso), merged["eu.europa.ec.av.1"])
+    }
+
+    @Test
+    fun `a doctype only DCQL names is added`() {
+        val dcql = zkSpecsByDocTypeFromDcql(dcqlQuery(zkEntryJson(circuitHash = "aaa")))
+
+        val merged = mergeZkSpecs(mapOf("ee.riik.poa.1" to emptyList()), dcql)
+
+        assertEquals("aaa", merged["eu.europa.ec.av.1"]!!.single().getParam<String>("circuit_hash"))
+        assertTrue(merged["ee.riik.poa.1"]!!.isEmpty())
     }
 
     private fun zkEntryJson(

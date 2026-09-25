@@ -107,3 +107,15 @@ fun resolveSchemeId(
  */
 fun zkSpecsByDocType(docRequests: List<DeviceRequestParser.DocRequest>): Map<String, List<ZkSystemSpec>> =
     docRequests.groupBy { it.docType }.mapValues { it.value.first().zkSystemSpecs }
+
+/**
+ * Plan §8.7: the ISO specs joined with the `mso_mdoc_zk` DCQL specs. [zkSpecsByDocType] keys EVERY
+ * requested docType, with an empty list when its doc request carried no `zkRequest`, so key
+ * presence is not coverage: the ISO specs win only when non-empty, otherwise DCQL's apply. A
+ * companion DCQL query names the same docType the ISO request selects, so keying on presence would
+ * drop its specs and EE-ZKP-051 would never fire on this path.
+ */
+internal fun mergeZkSpecs(
+    iso: Map<String, List<ZkSystemSpec>>,
+    dcql: Map<String, List<ZkSystemSpec>>
+): Map<String, List<ZkSystemSpec>> = iso + dcql.filterKeys { iso[it].isNullOrEmpty() }
