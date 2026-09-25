@@ -1,0 +1,18 @@
+{
+  "generated_by": "tools/build_cbor_fixture.py",
+  "source_fixture": "verifier/go/zk/testdata/step8-7-openid4vp-zk",
+  "source": "multipaz 0.99.0 wallet-generated zkDocument (step 8.7)",
+  "carriers": [
+    "interim-json",
+    "mso-mdoc-zk-cbor"
+  ],
+  "proof_bytes": 360180,
+  "note": "the SAME proof in both carriers; asserted to verify identically over the B.2.6.1 OpenID4VPHandover transcript (verifier/go/oid4vp/carrier_test.go); the CBOR wrap reuses the source zkDocument bytes verbatim",
+  "sha256": {
+    "device_response.json.b64": "0137786051da14b4d37cffa4ed547c1762080893827ef966e4f0fb5927bbecb5",
+    "device_response.cbor.b64": "507ebf7ad0a5c726a54ea42e63c774fb9ab093c480af1cf13712dca05cf523e3",
+    "device_response.cbor": "23978eb511a13d4a38a743260d5ef44a7fd9488d47806c33631fe092adc7c4aa",
+    "device_response_transcript.bin": "544b2287e816c6bdd4cfb9c666672014c7774f18ec09880eabe8f46032a5aaa6",
+    "request.json": "4586ada2b2833fa5f3b20de5d4d2720dacd7ec3a5d1f6944cc5d96e4144b5e83"
+  }
+}
