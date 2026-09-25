@@ -45,16 +45,16 @@ object ZkConformanceConsts {
     fun signedAtNow(): Instant = Instant.fromEpochSeconds(Clock.System.now().epochSeconds, 0)
 }
 
-/** The tree whose `verifier/go/zk/testdata` the fixture tests write into: this repository. */
+/**
+ * The tree whose `verifier/go/zk/testdata` the fixture tests write into: build/fixture-root by
+ * default, this repository with -Dzk.regenerate=true (see build.gradle.kts).
+ */
 object FixtureRoot {
     // Defaults live in build.gradle.kts, the one place that knows the repository root.
     val dir: File
         get() = File(checkNotNull(System.getProperty("zk.fixtureRoot")) { "zk.fixtureRoot is unset; run through Gradle" })
 
-    /** Fails rather than skips: the verifier tree is part of this repository. */
-    fun existing(): File = dir.also {
-        check(File(it, "verifier/go/zk").isDirectory) { "no verifier/go/zk under ${it.absolutePath}" }
-    }
+    fun existing(): File = dir.also { File(it, "verifier/go/zk/testdata").mkdirs() }
 }
 
 /**

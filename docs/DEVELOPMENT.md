@@ -111,6 +111,15 @@ EE_PROVER="$PWD/../longfellow-zk/rust/target/release/examples/ee_poa_demo" tests
 `shellcheck` globs `tests/*.sh` and CI invokes `tests/e2e.sh` by path, so keep both where
 they are.
 
+`./gradlew :zk-conformance:test` writes its fixtures to `zk-conformance/build/fixture-root`,
+so a plain run leaves the committed ones alone. To regenerate the committed fixtures, then
+cross-verify them on the Go side:
+
+```bash
+./gradlew :zk-conformance:test -Dzk.regenerate=true
+(cd verifier/go && EE_BENCH_SKIP=1 go test . ./zk/...)
+```
+
 ## Run the whole stack
 
 Both flows build nothing — run the build first.
