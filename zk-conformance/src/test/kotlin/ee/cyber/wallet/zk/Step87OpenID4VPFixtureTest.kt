@@ -4,6 +4,7 @@ import java.io.File
 import kotlinx.coroutines.test.runTest
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.CborMap
+import org.multipaz.cbor.DataItem
 import org.multipaz.cbor.Simple
 import org.multipaz.cbor.Tstr
 import org.multipaz.cbor.buildCborArray
@@ -130,7 +131,7 @@ class Step87OpenID4VPFixtureTest {
      * `oid4vp.SessionTranscript`:
      * deterministic-length CBOR heads, sha-256 of the handover info bytes.
      */
-    private fun openid4vpSessionTranscript(): org.multipaz.cbor.DataItem {
+    private fun openid4vpSessionTranscript(): DataItem {
         // OpenID4VPHandoverInfo = [clientId, nonce, jwkThumbprint, responseUri],
         // jwkThumbprint null for direct_post.
         val info = buildCborArray {
