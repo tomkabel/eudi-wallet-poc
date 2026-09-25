@@ -484,6 +484,18 @@ func ParseZkDocuments(root *cborsub.Value) ([]*ZkDocument, error) {
 // picks the moment within [session created, receipt] ± SessionTZ; the session
 // TTL is what bounds that choice.
 //
+// F3 (confcomp B-L2): the holder picks the exact moment within the session
+// window and the verifier logs it — 1s granularity, no fractional seconds. The
+// timestamp is therefore a per-presentation correlation surface (two
+// presentations from the same holder carry two timestamps); this is accepted
+// for the pilot. Quantising it (rounding to a coarser window to shrink the
+// surface) is deliberately REJECTED for now: it changes what the proof binds
+// (the circuit's fixed 20-byte Now input), would require regenerating every
+// committed golden fixture, and is an EE-ZKP-042-class change — deferred to
+// the linkability workstream. The mint side already coarsens (issuer
+// ValidityInfo anchors to the issuance day), so the gap is only this ZK-path
+// echo.
+//
 // Only the UTC "Z" form is accepted: it is what multipaz emits and what the
 // Longfellow circuit's fixed 20-byte timestamp slot holds. A numeric offset
 // is valid RFC 3339 but 25 bytes long, so it could never verify anyway.

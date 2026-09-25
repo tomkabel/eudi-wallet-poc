@@ -57,9 +57,15 @@ fn main() {
 
     println!("doctype    : {doc_type}");
     println!("mdoc       : {} bytes", mdoc.len());
-    println!("attributes the issuer signed:");
-    for a in parsed.attrs.iter() {
-        println!("   {:<20} cbor={:02x?}", String::from_utf8_lossy(&a.name), a.cbor_value);
+    // F2 (confcomp B-L3): default-off attribute dump — the demo mdoc is a published
+    // fixture, but against a real credential this loop would enumerate every issuer-
+    // signed attribute (the exact disclosure the ZK path exists to prevent).
+    // ZK_DEMO_DUMP_ATTRS turns it on explicitly; release builds keep the guard.
+    if std::env::var("ZK_DEMO_DUMP_ATTRS").is_ok() {
+        println!("attributes the issuer signed:");
+        for a in parsed.attrs.iter() {
+            println!("   {:<20} cbor={:02x?}", String::from_utf8_lossy(&a.name), a.cbor_value);
+        }
     }
 
     let a = parsed

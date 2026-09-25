@@ -171,6 +171,17 @@ verifier must agree on. The verifier puts `expected_now` in the request object a
 against the value it issued, so the holder cannot pick an instant at which an expired
 attestation would still verify. That parameter is an extension, not part of OpenID4VP.
 
+The holder's own timestamp claim (the CBOR carrier's `documentData.timestamp`) is different:
+the holder picks the exact second within the session window, the verifier logs it
+(`CheckTimestampWindow`, 1s granularity, no fractional seconds). That makes the timestamp a
+per-presentation correlation surface — two presentations from the same holder carry two
+timestamps — and this is **accepted for the pilot**. Quantising it to shrink the surface is
+deliberately rejected for now: it changes what the proof binds (the circuit's fixed 20-byte
+`Now` input), would require regenerating every committed golden fixture, and is an
+EE-ZKP-042-class change; it is deferred to the linkability workstream. The mint side already
+coarsens (issuer `ValidityInfo` anchors to the issuance day), so the gap is only this
+ZK-path echo.
+
 ### The vp_token encoding is interim
 
 ISO/IEC 18013-5 second edition defines a `ZkDocument` inside the `DeviceResponse` (§10.2.7

@@ -5,12 +5,10 @@
       "circuit_hash": "8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121",
       "version": 7,
       "num_attributes": 1,
-      "upstream_tag": "google/longfellow-zk v0.9",
+      "upstream_tag": "google/longfellow-zk v0.9 @ 61a8a735964d1b22bccf79bf14ef6767249cdf92 (verifier/zkverify-ffi/longfellow-rev.txt)",
       "accepted_on": "2026-09-05",
       "audits": [
-        "Trail of Bits, Aug 2025",
-        "ISRG, Oct 2025 (ISRG-01 fixed in v0.8.4)",
-        "Ligero academic panel, Dec 2025"
+        "UNVERIFIED — two independent security reviews in progress; do not ship to production (zk-age-poc/REPRODUCE.md)"
       ],
       "block_enc_hash": 4151,
       "block_enc_sig": 4096

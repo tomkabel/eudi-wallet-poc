@@ -26,15 +26,19 @@ fn main() {
     let (issuer_pk, parsed, now) =
         parse_test_data::<4, CompileNat<4>>(&mdoc_zk_testcases::vectors::TEST_DATA);
 
+    // F2 (confcomp B-L3): the attribute dump is demo-only and now default-off.
     // TEST_DATA is a published fixture, so dumping every attribute it carries —
     // including `nym` — costs nobody anything, and showing what is in the mdoc is
     // the point of the demo. Against a real credential this loop would be a
     // disclosure bug: the whole claim of the ZK path is that the holder reveals one
     // predicate and the verifier learns nothing else. Nothing below discloses these;
-    // only `age_over_18` is ever requested.
-    println!("attributes in test mdoc:");
-    for a in parsed.attrs.iter() {
-        println!("   {:<24} cbor={:02x?}", String::from_utf8_lossy(&a.name), a.cbor_value);
+    // only `age_over_18` is ever requested. Guarded behind ZK_DEMO_DUMP_ATTRS so the
+    // disclosure exists only when explicitly asked for (also works in release builds).
+    if std::env::var("ZK_DEMO_DUMP_ATTRS").is_ok() {
+        println!("attributes in test mdoc:");
+        for a in parsed.attrs.iter() {
+            println!("   {:<24} cbor={:02x?}", String::from_utf8_lossy(&a.name), a.cbor_value);
+        }
     }
 
     let target = b"age_over_18";

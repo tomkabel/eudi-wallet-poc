@@ -139,10 +139,16 @@ Consequences, stated plainly:
 |---|---|
 | `EE-ZKP-003` statement | Recorded above; reading (a) declared; conditional, not asserted |
 | `EE-ZKP-060` inventory | Recorded above; soundness and privacy exposure separated |
-| `ZKP_08` | Shortfall declared (109-bit v7 circuits, conditional reading (a)); pilot-grade |
+| `ZKP_08` | Shortfall declared (109-bit v7 circuits, conditional reading (a)); pilot-grade. Soundness figure: **EE-ZKP-022a** — 109-bit computation soundness against the **125-bit ACM floor** (per spec rev 1.3) |
 | `EE-CNF-007` | Credential keys on the local native WSCD only; no `ZKP_07` claim |
 | Build provenance | Debug-derived only; §8.6 pending |
 | On-device evidence | None; PENDING-DEVICE items in `docs/planning/STEP5-RECORD.md` and `STEP6-RECORD.md` |
+| Device key attestation | Mock WP self-signed; **EE-SEC-004 is SHOULD** (spec:235) — no SHALL mandates attestation on the presentation path; challenge UUID unverified (`AttestationChallenge.kt:9-12`) |
+| issuerAuth on-device validation | E6 status: absent — mdoc credentials load with no issuerAuth chain check (SD-JWT path verifies); row updates when E6 lands |
+| iaca.crl | Removed (E7): expired 2025-05-20, never wired; revocation now fetches from chain distribution points (E4 soft-fail policy) |
+| EE-PRO-010a redirect flow | Documented deviation (B2): `RedirectUri` client-id prefix removed — JAR-signed requests (`x509_san_dns`/`x509_hash`) are the only accepted client identifiers |
+| Status lists | EE-PoA mints none (EE-POA-013: consumed, not revoked; EE-POA-017); AV RP-side status fetch **deferred** — the Go verifier has no plain-mdoc path (all presentations route through ZK carriers that hide the status claim), so there is no post-Select hook to hang the fetch on; fold into the signed-DCAPI/EE-PRO-010a workstream when a plain path exists |
+| B5 `expected_origins` | Resolved as documented deviation, folded here (signed-DCAPI carrier deferred with EE-PRO-010a) |
 
 This note is updated when any row above changes. It is not pushed anywhere and asserts nothing
 beyond what the two repositories' records show.
