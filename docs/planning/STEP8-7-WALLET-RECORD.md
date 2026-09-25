@@ -61,8 +61,10 @@ nothing consumed), rather than being answered with a MAC Longfellow cannot work 
 
 ### 4. Issuer-disclosure consent (EE-ZKP-042)
 
-`DcUiState.issuerDisclosesToVerifier` is set when the request carried ZK specs from either
-source, and `DigitalCredentialsScreen` renders a new line on the consent screen:
+`DcUiState.issuerDisclosesToVerifier` is set when a matched credential's own docType resolved a
+non-empty spec list after the ISO/DCQL merge — scoped to the matched credentials as
+`expectedPlainTier` is, so a request that merely named `mso_mdoc_zk` without a usable
+`zk_system_type` entry, or advertised specs only for a docType nothing matched, shows no line — and `DigitalCredentialsScreen` renders a new line on the consent screen:
 
 > The issuer of this attestation will be visible to the requesting party.
 
