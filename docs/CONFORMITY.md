@@ -84,6 +84,19 @@ What this wallet **cannot claim today**:
   OpenID4VP — so over OpenID4VP this wallet presents plain only. The ZK path runs over the ISO
   Annex C DC API path until a carrier is defined (conformance plan finding S4; the reference
   repository carries the Topic G input).
+  **Carrier status note (25 September 2026):** a *de-facto* OpenID4VP ZK carrier
+  (`mso_mdoc_zk`) is deployed by four implementations and is now profiled, fixture-verified
+  and dual-carrier-tested in this repository — see
+  [`docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md`](profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md)
+  **v1.0 (25 September 2026)** and its committed test vectors
+  [`tests/vectors/carrier-v1/`](../tests/vectors/carrier-v1/). The profile is a citable
+  reference, not a standard: the registration, registry and venue questions it closes in
+  profile scope remain open in every standards body (OpenID DCHP #17 — submission prepared
+  but unfiled, user-gated; ISO/IEC 18013-5 2e — watchlist at
+  [`docs/analysis/ISO-18013-5-2E-BYTE-DIFF-CHECKLIST.md`](analysis/ISO-18013-5-2E-BYTE-DIFF-CHECKLIST.md)).
+  Until one of those venues adopts the carrier, the conformity claim above stands: no
+  standardized DCQL query for ZKP exists, and this document claims conformity to
+  specifications, not to this repository's own profile.
 - **The ISO Annex C ZK path has no on-device evidence.** The reference verifier's
   `/present/dcapi` endpoint and this wallet's proving code both exist and are unit-tested, but
   the end-to-end loop — `navigator.credentials.get` on Chrome/Android with GMS core
