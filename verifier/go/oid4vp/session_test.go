@@ -12,28 +12,20 @@ func testQuery() DCQL {
 	return AgeQuery("proof_of_age", "eu.europa.ec.eudi.poa.1", "eu.europa.ec.eudi.poa.1", "age_over_18")
 }
 
-func TestStoreNewCleansExpiredSessionsBeforeEnforcingLimit(t *testing.T) {
-	st := NewStore(time.Minute)
+// expiredFullStore builds a store holding maxSessions entries whose Created
+// stamps all lie ttl in the past by the fake clock, plus a fake clock that
+// starts at base and is moved by advance.
+func expiredFullStore(ttl time.Duration) (*Store, func(time.Duration)) {
+	base := time.Unix(1_700_000_000, 0)
+	st := NewStore(ttl)
+	st.now = func() time.Time { return base }
 	for i := 0; i < maxSessions; i++ {
 		id := fmt.Sprintf("session-%d", i)
-		st.sessions[id] = &Session{ID: id, Created: time.Now()}
+		st.sessions[id] = &Session{ID: id, Created: base}
 	}
-
-	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); !errors.Is(err, ErrStoreFull) {
-		t.Fatalf("New() error = %v, want %v", err, ErrStoreFull)
-	}
-
-	st.sessions["session-0"].Created = time.Now().Add(-2 * time.Minute)
-	s, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil)
-	if err != nil {
-		t.Fatalf("New() after expiry: %v", err)
-	}
-	if len(st.sessions) != maxSessions {
-		t.Fatalf("session count = %d, want %d", len(st.sessions), maxSessions)
-	}
-	if s.ExpectedNow != s.Created.UTC().Format("2006-01-02T15:04:05Z") {
-		t.Fatalf("ExpectedNow = %q, does not match Created", s.ExpectedNow)
-	}
+	clock := base
+	st.now = func() time.Time { return clock }
+	return st, func(d time.Duration) { clock = clock.Add(d) }
 }
 
 func TestStoreCompleteAndGetConcurrently(t *testing.T) {
@@ -211,33 +203,131 @@ func TestStoreRejectsWrongThumbprintSize(t *testing.T) {
 	}
 }
 
-// TestStoreSweepsOnlyWhenFull: the expiry sweep is a full-store scan, so it
-// must not run on every put — a non-full store accepts without sweeping, and a
-// full one reclaims expired slots before declaring ErrStoreFull.
-func TestStoreSweepsOnlyWhenFull(t *testing.T) {
+// TestStoreJanitorReapsExpiredWithoutPutPenalty: with every one of maxSessions
+// entries expired on a fake clock, the janitor's tick reclaims them all and
+// put stays O(1) — the new session is admitted immediately after the tick,
+// which the old sweep-on-insert behaviour satisfied differently (it swept
+// inside put) but now costs no scan on any insert. The fake clock decides
+// expiry, so no real time passes beyond the janitor's tick interval.
+func TestStoreJanitorReapsExpiredWithoutPutPenalty(t *testing.T) {
+	ttl := 10 * time.Second              // janitor tick = ttl/4 = 2.5s (1s floor no-ops)
+	st, advance := expiredFullStore(ttl) // 10,000 entries, all expired by the fake clock
+	t.Cleanup(st.Stop)
+
+	// Full of expired entries: a put is refused — put does not sweep.
+	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); !errors.Is(err, ErrStoreFull) {
+		t.Fatalf("New() error = %v, want %v", err, ErrStoreFull)
+	}
+
+	// One tick: the janitor reaps every expired entry, under lock.
+	advance(ttl + 1) // the entries' Created lapses (they were built pre-tick)
+	deadline := time.Now().Add(10 * time.Second)
+	for len(st.sessions) != 0 {
+		if time.Now().After(deadline) {
+			t.Fatalf("janitor did not reap the expired entries (%d left)", len(st.sessions))
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	// O(1) insert: the 10,001st session is admitted with no O(n) penalty.
+	s, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil)
+	if err != nil {
+		t.Fatalf("New after janitor reap: %v", err)
+	}
+	if len(st.sessions) != 1 {
+		t.Fatalf("session count = %d, want 1", len(st.sessions))
+	}
+	if s.ExpectedNow != s.Created.UTC().Format("2006-01-02T15:04:05Z") {
+		t.Fatalf("ExpectedNow = %q, does not match Created", s.ExpectedNow)
+	}
+}
+
+// TestStoreStopEndsJanitor: Stop terminates the janitor goroutine and is
+// idempotent; after Stop, a lapsed session is no longer reaped on its own.
+// The session lives on the fake timeline (Created = the fake now), because
+// Session.Expired itself reads the wall clock.
+func TestStoreStopEndsJanitor(t *testing.T) {
+	ttl := time.Second
+	base := time.Unix(1_700_000_000, 0)
+	st := NewStore(ttl)
+	st.now = func() time.Time { return base }
+	st.sessions["s"] = &Session{ID: "s", Created: base}
+	st.Stop()
+	st.Stop() // idempotent
+
+	st.mu.Lock()
+	n := len(st.sessions)
+	st.mu.Unlock()
+	if n != 1 {
+		t.Fatalf("session count = %d, want 1", n)
+	}
+
+	// After Stop the janitor is gone: a lapsed session stays until something
+	// drives the sweep by hand. (One tick's worth of reap, with no goroutine.)
+	st.now = func() time.Time { return base.Add(2 * ttl) }
+	st.sweep()
+	st.mu.Lock()
+	n = len(st.sessions)
+	st.mu.Unlock()
+	if n != 0 {
+		t.Fatal("sweep did not reap the lapsed session")
+	}
+}
+
+// TestStoreFullRefusesUntilJanitorSweeps: insert never ranges the map — the janitor owns
+// expiry — so a full store refuses with ErrStoreFull until the janitor's tick
+// reclaims the expired slots (TestStoreJanitorReaps...), and the only expiry
+// decision put makes is about the session being inserted.
+func TestStoreFullRefusesUntilJanitorSweeps(t *testing.T) {
 	st := NewStore(time.Minute)
+	t.Cleanup(st.Stop)
 	live := &Session{ID: "live", Created: time.Now()}
 	st.sessions["live"] = live
 	st.sessions["stale"] = &Session{ID: "stale", Created: time.Now().Add(-2 * time.Minute)}
 
-	// Not full: put proceeds without the sweep; the stale entry survives.
+	// Not full: the stale entry survives — put does not sweep.
 	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); err != nil {
 		t.Fatalf("New into a non-full store: %v", err)
 	}
 	if _, ok := st.sessions["stale"]; !ok {
-		t.Fatal("non-full put swept expired sessions; sweep must run only when full")
+		t.Fatal("non-full put swept expired sessions; expiry belongs to the janitor")
 	}
 
-	// Full: the sweep reclaims the stale entry and the put succeeds.
+	// Full: put refuses without touching the map, even though a slot is expired.
 	for i := len(st.sessions); i < maxSessions; i++ {
 		id := fmt.Sprintf("session-%d", i)
 		st.sessions[id] = &Session{ID: id, Created: time.Now()}
 	}
+	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); !errors.Is(err, ErrStoreFull) {
+		t.Fatalf("New() error = %v, want %v (put must not sweep)", err, ErrStoreFull)
+	}
+
+	// The janitor's sweep reclaims the expired slot and put succeeds again.
+	st.sweep()
 	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); err != nil {
-		t.Fatalf("New into a full store with an expired slot: %v", err)
+		t.Fatalf("New after janitor sweep: %v", err)
 	}
 	if _, ok := st.sessions["stale"]; ok {
-		t.Fatal("full put did not reclaim the expired slot")
+		t.Fatal("the sweep did not reclaim the expired slot")
+	}
+}
+
+// TestStorePutRefusesAlreadyExpiredSession: the one expiry check put does is
+// on the session being inserted — an already-expired session never enters the
+// store, not even for one janitor tick. The fake clock is pushed a full
+// lifetime AHEAD of the real wall clock, because Session.Expired (which put's
+// check must agree with) compares Created against the real now.
+func TestStorePutRefusesAlreadyExpiredSession(t *testing.T) {
+	st := NewStore(time.Minute)
+	t.Cleanup(st.Stop)
+	base := time.Now().Add(10 * time.Minute)
+	st.now = func() time.Time { return base }
+	s := &Session{ID: "late", Created: base.Add(-2 * time.Minute), Nonce: "n", ClientID: "v", ResponseURI: "https://v/response/late"}
+	if _, err := st.put(s); !errors.Is(err, ErrExpired) {
+		t.Fatalf("put() error = %v, want %v", err, ErrExpired)
+	}
+	if len(st.sessions) != 0 {
+		t.Fatalf("the expired session entered the store (%d entries)", len(st.sessions))
 	}
 }
 
