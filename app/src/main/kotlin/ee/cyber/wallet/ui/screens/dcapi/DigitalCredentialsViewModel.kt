@@ -62,6 +62,7 @@ import id.walt.mdoc.dataretrieval.DeviceResponse
 import id.walt.mdoc.doc.MDoc
 import id.walt.mdoc.docrequest.MDocRequestBuilder
 import id.walt.mdoc.mdocauth.DeviceAuthentication
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -222,6 +223,8 @@ class DigitalCredentialsViewModel @Inject constructor(
                     effectiveSpecsByDocType,
                     readerSubject
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error("Error processing request", e)
                 sendEffect { DcEffect.Error(e.message ?: "Unknown error") }
@@ -627,6 +630,8 @@ class DigitalCredentialsViewModel @Inject constructor(
             }
 
             sendEffect { DcEffect.SendResponse(response) }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Error generating response", e)
             sendEffect { DcEffect.Error(e.message ?: "Error generating response") }
