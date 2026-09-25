@@ -1,0 +1,11 @@
+{
+  "issuers": [
+    {
+      "name": "EE-EUDIW demo issuer",
+      "doc_type": "ee.riik.poa.1",
+      "namespace": "ee.riik.poa.1",
+      "pkx": "0xa2a62ede3223470130fce5133e45cbb2bdf9bcd52439cdc7b70cf3758597a019",
+      "pky": "0x2a2ef0cfeb2e2ff2d4fd3698684c2cb70a9684bc98280f8f85fecc59716c2e88"
+    }
+  ]
+}

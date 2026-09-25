@@ -1,0 +1,1 @@
+GENERATED-BY: verifier/go/oid4vp TestDeviceRequestBuild (plan step 2a item 7) — DeviceRequest("eu.europa.ec.av.1", "eu.europa.ec.av.1", "age_over_18", circuits.json); CBOR built by oid4vp.DeviceRequest, verified by cborsub round-trip; the test compares against this file and rewrites it only under `go test ./oid4vp -run TestDeviceRequestBuild -update`

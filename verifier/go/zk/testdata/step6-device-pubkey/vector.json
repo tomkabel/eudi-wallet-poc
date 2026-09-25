@@ -1,0 +1,17 @@
+{
+  "pkx": "0xcf4e917b06ec724d32116acb0e7e17eaea8f210e1003a82c8b55aec7858a6ccd",
+  "pky": "0xc5c6270df9109ff647e5c4206eec5f58d782c702ce8fae05d0de73df22c7b396",
+  "now": "2026-09-24T00:00:00Z",
+  "doc_type": "ee.riik.poa.1",
+  "namespace": "ee.riik.poa.1",
+  "elements": [
+    "age_over_18",
+    "issuing_country",
+    "issuing_authority",
+    "expiry_date"
+  ],
+  "mdoc": "mdoc.bin",
+  "transcript": "transcript.bin",
+  "index": 0,
+  "batch_size": 1
+}

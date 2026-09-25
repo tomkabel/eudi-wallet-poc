@@ -1,0 +1,4 @@
+GENERATED-BY: docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md step 6 — issuer/mint_ee_poa.py --over 18 --device-public-key <holder P-256 public key, F12>, re-signed with the holder's own private key over transcript.bin, proof by ee_poa_demo (longfellow-zk at LONGFELLOW_REV, circuits.json 7/1)
+command: python3 issuer/mint_ee_poa.py --out <tmp>/cred --over 18 --device-public-key 0x<hex>; ee_poa_demo <tmp>/cred age_over_18
+holder device public key: 0x04471afe493206e006ac9302834dbbad22b0aaecf423a6945542c8c5781f4f48d49b9fbd61b28324d40c0b2666a959402131090f87fa84060cf41155e867f06920 (device_public_key.pem; the private half was generated for the run and never written — that is the point of F12)
+consumed by: verifier/go/zk TestStep6DevicePubKeyFixture

@@ -1,0 +1,4 @@
+# longfellow-zk's own rust/.cargo/config.toml sets -C target-cpu=native, which
+# produces a SIGILL binary on some virtualised hosts. Pin a baseline instead.
+[build]
+rustflags = ["-C", "target-cpu=x86-64-v3"]
