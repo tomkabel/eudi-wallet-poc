@@ -34,7 +34,11 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 class CredentialToDocumentMapper(
-    private val trustAnchors: List<X509Certificate>
+    private val trustAnchors: List<X509Certificate>,
+    // E6: the IACA root(s) issuer mdoc chains must anchor at (the asset
+    // keys/iaca_root.cer.pem in the dev setup). Kept separate from the SD-JWT
+    // x5c anchors so one list can tighten without moving the other.
+    private val issuerAnchors: List<X509Certificate> = trustAnchors
 ) {
 
     private val logger = LoggerFactory.getLogger("CredentialToDocumentMapper")
@@ -53,6 +57,60 @@ class CredentialToDocumentMapper(
         // B4: centralized overload — revocation policy logged at one place; both
         // production call sites flip to enforced together in E4, never one alone.
         CertificateChainValidator.validateCertificateChain(it, trustAnchors)
+    }
+
+    /**
+     * E6 (identity A-M6 part 2): on-device issuerAuth verification for one mdoc.
+     *
+     * Two independent checks, both required for `verified = true`:
+     *  1. Signature: the issuerAuth COSE_Sign1 (the MSO's signature envelope) validates
+     *     with the leaf certificate of the x5chain it carries — the issuer really signed
+     *     this MSO with the key the chain certifies. Verified through org.cose
+     *     Sign1Message.validate over the waltid COSESign1's own CBOR bytes (the
+     *     context string, external-data default and raw-r||s-to-DER conversion are
+     *     handled by the same cose-java build the issuer signed with).
+     *  2. Chain: the x5chain anchors at [issuerAnchors] through the centralized
+     *     [CertificateChainValidator] — same PKIX + E4 CRL soft-fail policy as every
+     *     other trust decision in the wallet.
+     *
+     * Failure semantics: a failed check logs loudly and yields `verified = false` —
+     * the credential still maps (the holder keeps their record and the UI shows the
+     * unverified state); it is never silently passed as verified, and never refused
+     * outright (the convert call sites' `!!` would turn refusal into a crash at
+     * issuance/presentation — the D15 fix class).
+     */
+    private fun MDoc.verifyIssuerAuth(): Boolean {
+        val issuerAuth = issuerSigned.issuerAuth ?: return false.also {
+            logger.error("mdoc carries no issuerAuth — credential cannot be verified (docType=${docType.value})")
+        }
+        val chainBytes = issuerAuth.x5Chain
+        if (chainBytes.isNullOrEmpty()) {
+            logger.error("issuerAuth carries no x5chain — signature has no certified key (docType=${docType.value})")
+            return false
+        }
+        val chain = try {
+            val factory = java.security.cert.CertificateFactory.getInstance("X509")
+            chainBytes.map { factory.generateCertificate(java.io.ByteArrayInputStream(it)) as X509Certificate }
+        } catch (e: Exception) {
+            logger.error("issuerAuth x5chain does not parse as X.509: {}", e.toString())
+            return false
+        }
+        val signatureOk = try {
+            // waltid serializes COSE_Sign1 as the untagged 4-element array; cose-java's
+            // decoder needs the tag supplied explicitly (MessageTag.Sign1 = CBOR tag 18).
+            val message = org.cose.java.Message.DecodeFromBytes(
+                issuerAuth.toCBOR(),
+                org.cose.java.MessageTag.Sign1
+            ) as org.cose.java.Sign1Message
+            message.validate(org.cose.java.OneKey(chain.first().publicKey, null))
+        } catch (e: Exception) {
+            logger.error("issuerAuth signature did not verify with the presented leaf: {}", e.toString())
+            false
+        }
+        if (!signatureOk) return false
+        val chainOk = CertificateChainValidator.validateCertificateChain(chain, issuerAnchors)
+        if (!chainOk) logger.error("issuerAuth x5chain does not anchor at the configured IACA roots (docType=${docType.value})")
+        return chainOk
     }
 
     private suspend fun loadSdJwtCredential(attestation: Attestation): SdJwt<JwtAndClaims>? =
@@ -91,12 +149,26 @@ class CredentialToDocumentMapper(
             }
         }
         val expiresAt = fields.find { it.name == CredentialAttribute.MDOC_PID_1_EXPIRY_DATE.fieldName }?.value?.let { LocalDate.parse(it) }
+        // E6: the MSO's own validity window is authoritative when present — the
+        // expiry_date document field above is issuer-chosen display data, while
+        // validFrom/validUntil is what the issuer actually signed in the MSO. A window
+        // miss folds into `expired` (same semantics as D15's exp handling: an unknown
+        // window stays unexpired, a signed-and-missed window marks the credential dead).
+        val msoWindow = runCatching {
+            val validity = MSO?.validityInfo
+            validity?.let { Triple(it.validFrom.value, it.validUntil.value, it.signed.value) }
+        }.getOrNull()
+        val msoExpired = msoWindow?.let { (from, until, _) ->
+            val now = kotlin.time.Clock.System.now()
+            now < from || now > until
+        } ?: false
         return CredentialDocument.MDocDocument(
             id = attestation.id,
             type = attestation.type.docType(),
             fields = fields.sortedBy { it.asCredentialAttribute(attestation.type.docType()) },
-            expired = expiresAt?.let { LocalDate.now(ZoneOffset.UTC).isAfter(it) } ?: false,
+            expired = (expiresAt?.let { LocalDate.now(ZoneOffset.UTC).isAfter(it) } ?: false) || msoExpired,
             attestation = attestation,
+            verified = verifyIssuerAuth(),
             mDoc = this
         )
     }
@@ -241,6 +313,9 @@ class CredentialToDocumentMapper(
                     type = DocType.PID_SD_JWT,
                     expired = expiresAt?.let { LocalDateTime.now(ZoneOffset.UTC).isAfter(it) } ?: false,
                     attestation = attestation,
+                    // E6: reaching here means the SD-JWT x5c chain already verified through
+                    // the same centralized validator (loadSdJwtCredential is the verify gate).
+                    verified = true,
                     sdJwt = this
                 )
             }

@@ -21,7 +21,15 @@ sealed class CredentialDocument(
     open val type: DocType,
     open val fields: List<DocumentField>,
     open val expired: Boolean,
-    open val attestation: Attestation
+    open val attestation: Attestation,
+    // E6 (identity A-M6 part 2): on-device verification state of the credential's
+    // issuer material. mdoc: issuerAuth COSE_Sign1 signature over the presented leaf
+    // key + x5chain anchoring at the IACA roots (see CredentialToDocumentMapper);
+    // SD-JWT: x5c chain through the same validator (already the load gate, so every
+    // mapped JwtDocument is verified and the default is overridden to true there).
+    // false means the issuer material did not verify — the document still maps (the
+    // holder keeps their record; UI surfaces the badge), never a silent pass.
+    open val verified: Boolean = false
 ) {
     data class MDocDocument(
         override val id: String,
@@ -29,8 +37,9 @@ sealed class CredentialDocument(
         override val fields: List<DocumentField>,
         override val expired: Boolean,
         override val attestation: Attestation,
+        override val verified: Boolean = false,
         val mDoc: MDoc
-    ) : CredentialDocument(id, type, fields, expired, attestation)
+    ) : CredentialDocument(id, type, fields, expired, attestation, verified)
 
     data class JwtDocument(
         override val id: String,
@@ -38,8 +47,9 @@ sealed class CredentialDocument(
         override val fields: List<DocumentField>,
         override val expired: Boolean,
         override val attestation: Attestation,
+        override val verified: Boolean = false,
         val sdJwt: SdJwt<JwtAndClaims>
-    ) : CredentialDocument(id, type, fields, expired, attestation)
+    ) : CredentialDocument(id, type, fields, expired, attestation, verified)
 }
 
 fun CredentialDocument.supportedFormat() = when (this) {
