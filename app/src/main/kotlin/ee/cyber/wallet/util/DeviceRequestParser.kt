@@ -432,8 +432,9 @@ suspend fun DeviceRequest.toPresentationDefinition(): PresentationDefinition {
  * edge the first query governs.
  *
  * @return the specs keyed by `meta.doctype_value`; empty when no credential query is
- *     `mso_mdoc_zk` (an `mso_mdoc` query answers through the plain path) or none carries
- *     `zk_system_type` — which EE-ZKP-042 then reports as "not requested" and no proof is
+ *     `mso_mdoc_zk` (an `mso_mdoc` query answers through the plain path) or none carries a
+ *     `zk_system_type` entry with `system` and `id` — which EE-ZKP-042 then reports as "not
+ *     requested" and no proof is
  *     resolved for (EE-ZKP-023's mirror on this side).
  */
 fun zkSpecsByDocTypeFromDcql(query: JsonObject): Map<String, List<ZkSystemSpec>> {
@@ -445,7 +446,7 @@ fun zkSpecsByDocTypeFromDcql(query: JsonObject): Map<String, List<ZkSystemSpec>>
         val docType = meta["doctype_value"]?.jsonPrimitive?.contentOrNull ?: return@fold acc
         if (docType in acc) return@fold acc
         val zkSystemTypes = meta["zk_system_type"] as? JsonArray ?: return@fold acc
-        acc + (docType to zkSystemTypes.mapNotNull { entry ->
+        val specs = zkSystemTypes.mapNotNull { entry ->
             val zkSystemType = entry as? JsonObject ?: return@mapNotNull null
             val system = zkSystemType["system"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
             val id = zkSystemType["id"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
@@ -471,7 +472,10 @@ fun zkSpecsByDocTypeFromDcql(query: JsonObject): Map<String, List<ZkSystemSpec>>
                     addParam("block_enc_sig", it)
                 }
             }
-        })
+        }
+        // An entry that yields no spec claims nothing, so it cannot shadow a later, well-formed
+        // entry for the same doctype, and the map never holds an empty list.
+        if (specs.isEmpty()) acc else acc + (docType to specs)
     }
 }
 
