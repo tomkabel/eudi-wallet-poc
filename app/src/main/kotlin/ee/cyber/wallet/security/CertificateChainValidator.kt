@@ -72,6 +72,22 @@ object CertificateChainValidator {
      */
     fun isLOTLSynced(): Boolean = lotlCertificates.isNotEmpty()
 
+    /**
+     * Centralized revocation-policy entry point (B4, codesec CS-M5 step 1): both
+     * production call sites validate through this overload so the revocation
+     * decision is made — and logged — in exactly one place. Revocation is
+     * currently DISABLED because no CRL distribution source is wired; it flips
+     * to enforced together at both call sites in E4, never one alone (an
+     * asymmetric flag would silently weaken whichever path stays off).
+     */
+    fun validateCertificateChain(
+        certificateChain: List<X509Certificate>,
+        trustedRootCertificates: List<X509Certificate>
+    ): Boolean {
+        logger.debug("Certificate chain validation: revocation=disabled (no CRL source yet; E4 wires it for both call sites)")
+        return validateCertificateChain(certificateChain, trustedRootCertificates, false)
+    }
+
     fun validateCertificateChain(
         certificateChain: List<X509Certificate>,
         trustedRootCertificates: List<X509Certificate>,
@@ -82,7 +98,10 @@ object CertificateChainValidator {
                 logger.warn("### Trust all validator mode is enabled - skipping certificate chain validation ###")
                 if (certificateChain.isNotEmpty()) {
                     val cert = certificateChain.first()
-                    logger.warn("Trusting certificate - Subject: ${cert.subjectX500Principal}, Issuer: ${cert.issuerX500Principal}, Serial: ${cert.serialNumber}, NotBefore: ${cert.notBefore}, NotAfter: ${cert.notAfter}")
+                    logger.warn(
+                        "Trusting certificate - Subject: ${cert.subjectX500Principal}, Issuer: ${cert.issuerX500Principal}, " +
+                            "Serial: ${cert.serialNumber}, NotBefore: ${cert.notBefore}, NotAfter: ${cert.notAfter}"
+                    )
                 }
                 return true
             }

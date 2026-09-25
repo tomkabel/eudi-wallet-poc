@@ -17,16 +17,15 @@ import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
-import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.CertificateChainValidator
 import ee.cyber.wallet.security.FetchLOTLCertificatesDSS
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.util.JsonSupport
 import ee.cyber.wallet.util.getCertificates
 import eu.europa.ec.eudi.openid4vp.CoseAlgorithm
 import eu.europa.ec.eudi.openid4vp.JarConfiguration
 import eu.europa.ec.eudi.openid4vp.ResponseEncryptionConfiguration
 import eu.europa.ec.eudi.openid4vp.SiopOpenId4VPConfig
-import eu.europa.ec.eudi.openid4vp.SupportedClientIdPrefix
 import eu.europa.ec.eudi.openid4vp.SupportedRequestUriMethods
 import eu.europa.ec.eudi.openid4vp.VPConfiguration
 import eu.europa.ec.eudi.openid4vp.VpFormatsSupported
@@ -61,10 +60,13 @@ object OpenId4VPAndVCModule {
         secureAreaKeyManager: SecureAreaKeyManager
     ): OpenId4VPManager {
         val openId4VPConfig = SiopOpenId4VPConfig(
-            supportedClientIdPrefixes = listOf(
-                SupportedClientIdPrefix.X509SanDns(simpleCertificateChainValidator(context.getCertificates(R.raw.trusted))),
-                SupportedClientIdPrefix.X509Hash(simpleCertificateChainValidator(context.getCertificates(R.raw.trusted))),
-                SupportedClientIdPrefix.RedirectUri
+            // B4 (identity A-M3 / codesec CS-M5): the RedirectUri client-id prefix is
+            // gone. A bare redirect URI carries no cryptographic binding to a
+            // registered client, so accepting it lets any web origin impersonate a
+            // verifier; JAR-signed requests (x509_san_dns / x509_hash) are the only
+            // client identifiers this wallet accepts.
+            supportedClientIdPrefixes = verifiableClientIdPrefixes(
+                simpleCertificateChainValidator(context.getCertificates(R.raw.trusted))
             ),
             jarConfiguration = JarConfiguration(
                 supportedAlgorithms = listOf(
@@ -82,7 +84,7 @@ object OpenId4VPAndVCModule {
                 vpFormatsSupported = VpFormatsSupported(
                     msoMdoc = VpFormatsSupported.MsoMdoc(
                         issuerAuthAlgorithms = listOf(CoseAlgorithm(-7)),
-                        deviceAuthAlgorithms = listOf(CoseAlgorithm(-7)),
+                        deviceAuthAlgorithms = listOf(CoseAlgorithm(-7))
                     ),
                     sdJwtVc = VpFormatsSupported.SdJwtVc.HAIP
                 )
@@ -137,7 +139,12 @@ object OpenId4VPAndVCModule {
 //    )
 
     private fun simpleCertificateChainValidator(trustAnchors: List<X509Certificate>) = X509CertificateTrust {
-        CertificateChainValidator.validateCertificateChain(it, trustAnchors, false)
+        // B4: both production call sites route through the centralized overload with
+        // the revocation policy logged at a single place. Revocation stays OFF until
+        // E4 lands a CRL source (both call sites then flip together, never one).
+        // Policy log (CS-M5 step 1): revocation=disabled — no CRL distribution source
+        // wired yet; see CertificateChainValidator.validateCertificateChain javadoc.
+        CertificateChainValidator.validateCertificateChain(it, trustAnchors)
     }
 
     private val httpLogger = LoggerFactory.getLogger("HTTP")
@@ -171,5 +178,4 @@ object OpenId4VPAndVCModule {
         followRedirects = false
         expectSuccess = false
     }
-
 }

@@ -9,7 +9,6 @@ import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.security.CertificateChainValidator
 import ee.cyber.wallet.ui.screens.documents.asCredentialAttribute
 import ee.cyber.wallet.ui.screens.documents.docType
-
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
 import eu.europa.ec.eudi.sdjwt.Disclosure
 import eu.europa.ec.eudi.sdjwt.JwtAndClaims
@@ -51,7 +50,9 @@ class CredentialToDocumentMapper(
     }
 
     private fun simpleCertificateChainValidator(trustAnchors: List<X509Certificate>) = X509CertificateTrust {
-        CertificateChainValidator.validateCertificateChain(it, trustAnchors, false)
+        // B4: centralized overload — revocation policy logged at one place; both
+        // production call sites flip to enforced together in E4, never one alone.
+        CertificateChainValidator.validateCertificateChain(it, trustAnchors)
     }
 
     private suspend fun loadSdJwtCredential(attestation: Attestation): SdJwt<JwtAndClaims>? =
@@ -203,7 +204,6 @@ class CredentialToDocumentMapper(
 
         return fields
     }
-
 
     private fun SdJwt<JwtAndClaims>.asDocument(attestation: Attestation): CredentialDocument.JwtDocument {
         val jwtClaims = jwt.second

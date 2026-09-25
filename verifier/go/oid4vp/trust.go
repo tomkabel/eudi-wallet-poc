@@ -147,12 +147,9 @@ type signedTrustDoc struct {
 	Sig     string   `json:"sig"`
 }
 
-// trustEntryFreshness carries the optional per-entry validity window. Zero
-// values mean unbounded.
-type trustEntryFreshness struct {
-	NotBefore string `json:"not_before,omitempty"`
-	NotAfter  string `json:"not_after,omitempty"`
-}
+// The per-entry validity window (not_before/not_after) rides on Issuer itself;
+// zero values mean unbounded. Retired issuers keep their line with not_after
+// set — the append-only rule forbids deleting it.
 
 // LoadSignedTrustStore reads a signed trust store and verifies it:
 //

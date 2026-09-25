@@ -185,34 +185,38 @@ func ecdhToCurve() elliptic.Curve { return elliptic.P256() }
 
 // ecdsaPrivFromECDH rebuilds the stdlib signing key from the crypto/ecdh
 // private key: ecdh stores the scalar exactly as a P-256 private key.
+// Reconstruction goes through the non-deprecated SEC 1 raw forms (Bytes /
+// ParseRawPrivateKey / ParseUncompressedPublicKey) — the big.Int fields are
+// deprecated since Go 1.26 and the conversion round-trip keeps the scalar
+// byte-identical.
 func ecdsaPrivFromECDH(priv *ecdh.PrivateKey) (*ecdsa.PrivateKey, error) {
 	b := priv.Bytes()
 	if len(b) != 32 {
 		return nil, fmt.Errorf("%w: ecdh private scalar is %d bytes", ErrUnsupportedAlgorithm, len(b))
 	}
-	d := new(big.Int).SetBytes(b)
+	privEC, err := ecdsa.ParseRawPrivateKey(ecdhToCurve(), b)
+	if err != nil {
+		return nil, fmt.Errorf("%w: ecdh private scalar unusable: %v", ErrUnsupportedAlgorithm, err)
+	}
 	// Recover the public point from the JWK form of the same key.
 	pubB := priv.PublicKey().Bytes()
 	if len(pubB) != 65 || pubB[0] != 0x04 {
 		return nil, fmt.Errorf("%w: ecdh public point is malformed", ErrUnsupportedAlgorithm)
 	}
-	pub := &ecdsa.PublicKey{
-		Curve: ecdhToCurve(),
-		X:     new(big.Int).SetBytes(pubB[1:33]),
-		Y:     new(big.Int).SetBytes(pubB[33:]),
+	pub, err := ecdsa.ParseUncompressedPublicKey(ecdhToCurve(), pubB)
+	if err != nil {
+		return nil, fmt.Errorf("%w: ecdh public point is malformed: %v", ErrUnsupportedAlgorithm, err)
 	}
-	return &ecdsa.PrivateKey{PublicKey: *pub, D: d}, nil
+	privEC.PublicKey = *pub
+	return privEC, nil
 }
 
-// ecdsaPubFromECDH rebuilds a stdlib verifying key from a crypto/ecdh key.
+// ecdsaPubFromECDH rebuilds a stdlib verifying key from a crypto/ecdh key
+// (non-deprecated SEC 1 raw form; see ecdsaPrivFromECDH).
 func ecdsaPubFromECDH(pub *ecdh.PublicKey) (*ecdsa.PublicKey, error) {
 	b := pub.Bytes()
 	if len(b) != 65 || b[0] != 0x04 {
 		return nil, fmt.Errorf("%w: ecdh public point is malformed", ErrUnsupportedAlgorithm)
 	}
-	return &ecdsa.PublicKey{
-		Curve: ecdhToCurve(),
-		X:     new(big.Int).SetBytes(b[1:33]),
-		Y:     new(big.Int).SetBytes(b[33:]),
-	}, nil
+	return ecdsa.ParseUncompressedPublicKey(ecdhToCurve(), b)
 }
