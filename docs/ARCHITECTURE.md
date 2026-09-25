@@ -121,10 +121,12 @@ package `zk` carries the cgo directives (`verifier/go/zk/zk.go`:9-14):
 dependency is a **path dependency** on the Longfellow runtime:
 `mdoc-zk-runtime = { path = "../../../longfellow-zk/rust/applications/mdoc_zk/runtime" }`
 (`Cargo.toml`:12). That is why the two trees must be siblings (`ci.yml`:19-22) and why
-the Longfellow revision is pinned in CI (`LONGFELLOW_REV`,
-`61a8a735964d1b22bccf79bf14ef6767249cdf92`, `ci.yml`:13-15; the same revision in
-`verifier/README.md`:23-25). Build order: `cargo build --release` in `zkverify-ffi`,
-then `go build -o ../zkverify .` (`verifier/README.md`:27-31; `ci.yml`:179-185). The Go
+the Longfellow revision is pinned in a committed file
+(`verifier/zkverify-ffi/longfellow-rev.txt`:
+`61a8a735964d1b22bccf79bf14ef6767249cdf92`, fetched by
+`scripts/bootstrap-longfellow.sh`). Build order: `cargo build --release` in `zkverify-ffi`,
+then `go build -o ../zkverify .` (`make deps` does both; `verifier/README.md` "Building
+the ZK spine"). The Go
 code reads flags only — there is no `os.Getenv` anywhere in `verifier/go`.
 
 **Wallet → Rust: subprocess.** `present.py` takes `--prover` (default: the `EE_PROVER`
@@ -150,13 +152,14 @@ CI and `zkverify-ffi` pin `-C target-cpu=x86-64-v3` instead
   package whose test binary links without the Rust staticlib — `python3 -m compileall`
   (`:70-71`), `ruff check --isolated --select F,E9` (`:73-85`),
   `python3 wallet/test_transcript.py` (`:87-99`), `python3 issuer/test_mint_device_key.py`
-  (`:101-105`), `shellcheck --severity=warning tests/*.sh` (`:107-113`).
-- **`e2e`** (`ci.yml`:115-201): clone longfellow-zk at the pinned revision (`:135-144`),
-  copy `zk-age-poc/*.rs` in and `cargo build --release --examples --features testonly`
-  (`:160-173`), assert the binary exists with `test -x` (`:175-177`) because
+  (`:101-105`), `shellcheck --severity=warning scripts/*.sh tests/*.sh` (`:122-128`).
+- **`e2e`** (`ci.yml`:130-220): bootstrap longfellow-zk at the pinned revision through
+  `scripts/bootstrap-longfellow.sh` (`:150-159`), copy `zk-age-poc/*.rs` in via
+  `scripts/prover-examples-install.sh` and `cargo build --release --examples --features testonly`
+  (`:175-185`), assert the binary exists with `test -x` (`:186-189`) because
   `cargo build --examples` exits 0 without producing it, build the FFI and the verifier
-  (`:179-185`), `go test . ./zk/...` (`:187-194`) — package `main` and `zk`, the two that
-  link it — run `tests/e2e.sh` with `EE_PROVER` (`:196-201`).
+  (`:190-202`), `go test . ./zk/...` (`:203-211`) — package `main` and `zk`, the two that
+  link it — run `tests/e2e.sh` with `EE_PROVER` (`:212-220`).
 
 Both halves of the transcript pin are enforced: the Go vectors by `go test ./oid4vp/...`
 (`verifier/go/oid4vp/transcript_vectors_test.go`:47-77) and the Python half by the fast

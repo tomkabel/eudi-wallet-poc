@@ -44,28 +44,17 @@ checkout; `verifier/` is `zkverify`, a Go HTTP server over a Rust staticlib in
 
 `verifier/zkverify-ffi` path-depends on `../../../longfellow-zk`, so `google/longfellow-zk`
 must sit **next to** this repository (`<parent>/eudi-wallet-poc`, `<parent>/longfellow-zk`). The
-revision is pinned as `LONGFELLOW_REV` at the top of `.github/workflows/ci.yml` — a path
-dependency has no lockfile entry. CI fetches that commit without cloning the history, and
-checks what it got:
-
-```bash
-# run from <parent>
-# LONGFELLOW_REV is pinned in .github/workflows/ci.yml under `env:`
-LONGFELLOW_REV=61a8a735964d1b22bccf79bf14ef6767249cdf92
-git init -q longfellow-zk
-git -C longfellow-zk remote add origin https://github.com/google/longfellow-zk.git
-git -C longfellow-zk fetch -q --depth 1 origin "$LONGFELLOW_REV"
-git -C longfellow-zk checkout -q --detach FETCH_HEAD
-got="$(git -C longfellow-zk rev-parse HEAD)"
-[ "$got" = "$LONGFELLOW_REV" ] || { echo "got $got, want $LONGFELLOW_REV"; exit 1; }
-```
-
-[`../verifier/README.md`](../verifier/README.md) shows the plain clone-and-checkout
-equivalent. Either way the directory name must be `longfellow-zk`.
+revision is pinned in the committed `verifier/zkverify-ffi/longfellow-rev.txt` — a path
+dependency has no lockfile entry, so that file is the single source of truth.
+`make deps` runs `scripts/bootstrap-longfellow.sh`, which fetches that revision shallowly,
+asserts what it got, and builds the prover, the staticlib and the verifier; CI's e2e job
+runs the same script. Either way the directory name must be `longfellow-zk`.
 
 ## Build both
 
-From the repository root:
+`make deps` runs the sequence below (scripts/bootstrap-longfellow.sh +
+scripts/prover-examples-install.sh + the cargo and go builds), so prefer it; the
+expanded form, for reading:
 
 ```bash
 # prover — the zk-age-poc examples, built inside the Longfellow tree
@@ -77,7 +66,7 @@ test -x ../longfellow-zk/rust/target/release/examples/ee_poa_demo
 
 # verifier — the Rust staticlib, then the server binary
 (cd verifier/zkverify-ffi && cargo build --release)
-(cd verifier/go && go build -o ../zkverify .)
+(cd verifier/go && go build -ldflags "-X main.longfellowRev=$(cat ../zkverify-ffi/longfellow-rev.txt)" -o ../zkverify .)
 ```
 
 The `mkdir` is not optional (a fresh checkout has no `examples/`) and the `test -x` is not
@@ -96,8 +85,10 @@ pip install ruff==0.16.6 cbor2 cryptography   # ruff pinned as in ci.yml
 ruff check --isolated --select F,E9 --exclude eudi-arf .
 python3 wallet/test_transcript.py             # the Python half of the transcript pin
 python3 issuer/test_mint_device_key.py
-shellcheck --severity=warning tests/*.sh
+shellcheck --severity=warning scripts/*.sh tests/*.sh
 ```
+
+`make lint` runs the same set.
 
 The `e2e` job runs "Build both" above, then the packages that link the staticlib and the
 end-to-end script:

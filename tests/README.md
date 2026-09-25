@@ -7,7 +7,8 @@ Every test and check in this repository, where it lives, and what it proves.
 Unit tests sit beside the code they test — Go under `verifier/go/`, the
 cross-language transcript check in `wallet/`. This directory holds only the
 end-to-end and load harnesses. Do not move or rename anything here: ci.yml
-invokes `tests/e2e.sh` by path and shellchecks the glob `tests/*.sh`.
+invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh` and
+`tests/*.sh`.
 
 ## Unit tests beside the code
 
@@ -87,10 +88,12 @@ package without linking, covering every package), `go test ./oid4vp/...
 --isolated --select F,E9 --exclude eudi-arf .` (ruff 0.16.6),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
 step installs `cbor2` and `cryptography`, which `present.py` imports),
-and `shellcheck --severity=warning tests/*.sh`.
+and `shellcheck --severity=warning scripts/*.sh tests/*.sh`. `make lint`
+runs the same set.
 
 `e2e` (needs a Rust toolchain): checks out `google/longfellow-zk` as a sibling
-of this repository at `LONGFELLOW_REV` (61a8a735964d1b22bccf79bf14ef6767249cdf92),
+of this repository at the revision committed in `verifier/zkverify-ffi/longfellow-rev.txt`
+(61a8a735964d1b22bccf79bf14ef6767249cdf92, fetched by `scripts/bootstrap-longfellow.sh`),
 builds the prover examples with `RUSTFLAGS=-C target-cpu=x86-64-v3` and asserts
 `ee_poa_demo` exists (`test -x`), builds the verifier
 (`cargo build --release` in `verifier/zkverify-ffi`, then
@@ -116,10 +119,11 @@ pip install ruff==0.16.6
 ruff check --isolated --select F,E9 --exclude eudi-arf .
 pip install cbor2 cryptography          # present.py imports them
 python3 wallet/test_transcript.py
-shellcheck --severity=warning tests/*.sh
+shellcheck --severity=warning scripts/*.sh tests/*.sh
 ```
 
-The `e2e` job — `longfellow-zk` checked out as a sibling at `LONGFELLOW_REV`:
+The `e2e` job — `longfellow-zk` checked out as a sibling at the revision committed in
+`verifier/zkverify-ffi/longfellow-rev.txt`:
 
 ```bash
 export RUSTFLAGS=-C target-cpu=x86-64-v3   # ci.yml sets this on the prover build step
