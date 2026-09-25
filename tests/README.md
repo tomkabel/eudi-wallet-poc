@@ -50,23 +50,32 @@ the `fast` job cannot.
 ## `tests/e2e.sh` — the presentation flow and its negative controls
 
 Drives the whole flow against freshly minted attestations: builds nothing,
-mints an adult credential (`--over 16 18 21`) and a minor one (`--over 16
---under 18 21`), merges both issuer lists into one trust store, starts
+mints an adult credential (`--over 16 18 21`), a minor one (`--over 16
+--under 18 21`) and the second-doctype fixture (`--doctype eu.europa.ec.av.1`,
+W6), merges all three issuer lists into one trust store, starts
 `verifier/zkverify` on a kernel-picked free port, waits for `/healthz`, then
 drives `wallet/present.py` once per case and greps the verifier's answer out
 of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 `EE_VERIFIER` optionally overrides the verifier path; the wallet needs python
-`cbor2` and `cryptography`. Five assertions:
+`cbor2`, `cryptography` and `jwcrypto`. Thirteen assertions:
 
-1. Happy path (:66-72): the adult proves `age_over_18`; output must contain `"valid": true`.
-2. Transcript binding (:74-80): `--tamper-nonce` makes the proof cover a different nonce; the verifier must answer `"valid": false`.
-3. Single use (:82-88): `--replay` posts the same `vp_token` twice; the second post must be refused with `HTTP 410` (the store's `ErrAlreadyUsed` maps to `StatusGone`, `present.go:253-254`); the script greps `replay     : HTTP 410`.
-4. Predicate binding (:90-98): the minor proves `age_over_18 = false` with `--allow-false-predicate`; the verifier must answer `"valid": false` with a detail that words the refusal as "only accepts 0xf5" (`vptoken.go:116`) — refused on the value, not by accident.
-5. The prover's own guard (:100-113): running `ee_poa_demo` for the minor without the override must exit non-zero and name `--allow-false-predicate` — the two defences hold independently.
+1. Happy path, plain mode: the adult proves `age_over_18`; output must contain `"valid": true`.
+2. Transcript binding: `--tamper-nonce` makes the proof cover a different nonce; the verifier must answer `"valid": false`.
+3. Single use: `--replay` posts the same `vp_token` twice; the second post must be refused with `HTTP 410` (the store's `ErrAlreadyUsed` maps to `StatusGone`); the script greps `replay     : HTTP 410`.
+4. Predicate binding: the minor proves `age_over_18 = false` with `--allow-false-predicate`; the verifier must answer `"valid": false` — refused on the value, not by accident.
+5. The prover's own guard: running `ee_poa_demo` for the minor without the override must exit non-zero and name `--allow-false-predicate` — the two defences hold independently.
+6. Encrypted mode (ADR-003): the `direct_post.jwt` request publishes the response key in `client_metadata.jwks`.
+7. Encrypted happy path: an over-18 holder answers with a JWE; `valid: true`.
+8. Ciphertext on the wire: the posted body is a compact JWE, never plaintext.
+9. Tampered JWE fails closed: a flipped byte gets a `400` with nothing parsed from it.
+10. Plain post to an encrypted session: refused with `400`, naming the encrypted requirement.
+11. Default mode: a fresh `/present/new` without flags answers `direct_post.jwt`.
+12. Multi-credential (W6): with `-multi-credentials 2`, one session requests the national PoA and the AV doctype (two issuers); a wallet holding both answers both entries and the verifier answers `valid: true` with `all 2 credentials proved in zero knowledge`.
+13. Multi-credential all-or-error: a response answering only one of two queried credentials fails the session, with the missing credential id named in the detail.
 
-Output is `PASS: 5/5` or `FAIL: n of 5 assertions failed`; exit status is
+Output is `PASS: 13/13` or `FAIL: n of 13 assertions failed`; exit status is
 non-zero when any assertion fails. Note what is absent: there is no
-untrusted-issuer case (the script deliberately trusts both minted issuer keys,
+untrusted-issuer case (the script deliberately trusts all minted issuer keys,
 which is why case 4 fails on the predicate value rather than on trust) and no
 unlisted-circuit POST case; unlisted-circuit rejection is covered only by
 `TestRegistryRejectsUnlisted` above.

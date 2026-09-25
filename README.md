@@ -125,6 +125,12 @@ wallet itself:
   proof-of-age attestation in once-only batches (`WalletProviderBatchAgeIssuer`, validity
   anchored to the issuance day) and consumes one batch entry per presentation, after the
   response is built.
+* **Multi-credential verifier sessions.** One OpenID4VP session may request and verify
+  several ZK credentials (`-max-credentials`, default 4): two doctypes from two issuers in
+  one `vp_token`, all-or-error, one admission slot per credential. The scope is honest:
+  N credentials, one format family (`mso_mdoc_zk`), one proof system (Longfellow) — the
+  registry and allowlist plumbing is exercised per credential. The demo switch is
+  `-multi-credentials`; the two-credential e2e cases are `tests/e2e.sh` 12-13.
 * **On-device measurement harness.** `ZkProofBenchmark` times approval-to-proof-ready and reads
   prover peak memory (`VmHWM`) for the plan §6 device rows; the table and its PENDING-DEVICE
   discipline live in [`docs/MEASUREMENTS.md`](docs/MEASUREMENTS.md).

@@ -80,7 +80,7 @@ retrieval there), issuance, and the ISO 18013-7 Annex C dcapi carrier, which sha
   unfiled pending a user decision) inherits this text as the starting description.
 - Until a registry exists, conformance to this profile means: the identifier is spelled
   exactly `mso_mdoc_zk`, is case-sensitive, and a query naming an unknown format is refused,
-  never approximated (this verifier's `Single()` refuses anything but `mso_mdoc` and
+  never approximated (this verifier's `Validate` refuses anything but `mso_mdoc` and
   `mso_mdoc_zk`; EE-ZKP-051's fail-closed discipline on the wallet side).
 
 ## 3. `meta.zk_system_type`: the parameter registry
@@ -96,7 +96,7 @@ pre-empts one.
 **Profile rule 2.** An `mso_mdoc_zk` credential query MUST carry
 `meta.doctype_value` (a valid ISO/IEC 18013-5 doctype identifier, same rule as `mso_mdoc`)
 and a non-empty `meta.zk_system_type` array. A query that advertises no proving system
-cannot be allowlisted and is malformed, not merely unanswerable (`dcql.go` `Single()`;
+cannot be allowlisted and is malformed, not merely unanswerable (`dcql.go` `Validate`;
 the fork's parser fails closed the same way — `MsoMdocZkParsingTest` case 5).
 
 **Profile rule 3.** Each `zk_system_type` entry carries exactly the fields the two shipping

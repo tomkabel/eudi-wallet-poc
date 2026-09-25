@@ -83,12 +83,21 @@ registered only under `-unsafe-dev-api` and a `404` otherwise (`main.go`:205-206
 264-276); `GET /circuits`, `GET /issuers`, `GET /healthz` expose the accepted circuits,
 the trust store and liveness (`main.go`:291-299).
 
-`presenter.check` (`present.go`:188-248) pulls the single credential query out of the
-session (`dcql.go`:135-178), parses the `vp_token` envelope (`vptoken.go`:36-92), checks
-the presented value against the query's value constraint (`vptoken.go`:97-118,
-`EE-ZKP-021(b)`), then tries each trusted issuer for the doctype in turn and returns on
-the first success (`present.go`:227-242). The negative controls that prove the binding
-holds are `tests/e2e.sh`:66-121 (five assertions) and `wallet/README.md`:50-55.
+`presenter.check` (`present.go`:443-481) validates the session's query list (`dcql.go`
+`Validate`), then either routes the single credential through its carrier's rule chain or,
+for a multi-credential session (`-multi-credentials` demo switch, `-max-credentials` cap),
+verifies every credential under `checkMulti` — one admission slot per credential, all-or-error
+(`present.go`:483-515). The value constraint (`vptoken.go:159-176`, `EE-ZKP-021(b)`) binds the
+presented CBOR to the query's values; verification tries each trusted issuer for the doctype in
+turn (`present.go`:545-566). The negative controls that prove the binding holds are
+`tests/e2e.sh` (thirteen assertions, both response modes, both carriers, two credential
+counts) and `wallet/README.md`:50-55.
+
+Multi-credential scope, stated honestly: one session may request and verify N credentials
+(cap `-max-credentials`, default 4), but they must all be one format family and one proof
+system — `mso_mdoc_zk` queries answered with Longfellow proofs (the interim JSON envelope or
+the de-facto CBOR DeviceResponse carrier). The ISO dcapi path stays single-credential by
+policy: its DeviceRequest carries exactly one docRequest and its fixtures are single-shot.
 
 ## 3. Components
 

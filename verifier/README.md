@@ -139,6 +139,19 @@ default (ADR-003, the same posture HAIP 1.0 and EE-PRO-001 require):
   distinction stays in the log. A plain `vp_token` posted to an encrypted session gets
   a `400` naming the requirement.
 
+### Multi-credential sessions
+
+One session may request and verify several credentials: `-max-credentials` caps the query
+list (default 4), and the `-multi-credentials N` demo switch makes `/present/new` ask for
+the configured doctype plus the `eu.europa.ec.av.1` fixture doctype (minted with
+`issuer/mint_ee_poa.py --doctype eu.europa.ec.av.1`), so one session spans two issuers.
+The scope is honest and narrow: N credentials, one format family (`mso_mdoc_zk` queries,
+answered with either the interim JSON envelope or the de-facto CBOR DeviceResponse
+carrier), one proof system (Longfellow). Admission is priced per credential — a
+2-credential response occupies 2 of `-max-concurrent-verify`'s slots, never 1 — and the
+outcome is all-or-error: any failed or missing credential fails the session, naming the
+credential id, and partial results are never returned.
+
 ### Measured, full flow
 
 | case | result |
