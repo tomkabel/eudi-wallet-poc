@@ -82,6 +82,7 @@ class Step87OpenID4VPFixtureTest {
         dir.mkdirs()
         File(dir, "device_response.cbor").writeBytes(bytes)
         File(dir, "device_response_issuer.json").writeText(trustStoreJson(minted))
+        // attr_cbor_hex f5 is CBOR true, the age_over_18 value MdocMinter mints.
         File(dir, "request.json").writeText(
             """
             {
