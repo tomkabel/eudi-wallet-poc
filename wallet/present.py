@@ -13,6 +13,7 @@ shipped at issuance is a placeholder; the holder replaces it here, which is what
 a real wallet does inside its WSCD.
 """
 import argparse, base64, hashlib, json, os, shutil, subprocess, sys, tempfile
+import urllib.error
 import urllib.request
 import cbor2
 from cryptography.hazmat.primitives import hashes, serialization
@@ -71,10 +72,12 @@ def http_json(url: str, payload=None, method=None):
     req = urllib.request.Request(url, data=data, method=method,
                                  headers={"Content-Type": "application/json"} if data else {})
     try:
-        with urllib.request.urlopen(req) as r:
+        with urllib.request.urlopen(req, timeout=60) as r:
             return r.status, json.load(r)
     except urllib.error.HTTPError as e:
         return e.code, json.load(e)
+    except (urllib.error.URLError, TimeoutError) as e:
+        raise SystemExit(f"verifier unreachable at {url}: {e}") from e
 
 
 def main() -> None:
@@ -135,7 +138,7 @@ def main() -> None:
         open(os.path.join(session_dir, "transcript.bin"), "wb").write(transcript)
         # The verifier fixes `now`; the holder does not get to choose it.
         open(os.path.join(session_dir, "params.txt"), "w").write(
-            "\n".join([params[0], params[1], req["expected_now"], doc_type]) + "\n")
+            "\n".join([params[0], params[1], req["expected_now"], *params[3:5]]) + "\n")
 
         cmd = [args.prover, session_dir, element]
         if args.allow_false_predicate:

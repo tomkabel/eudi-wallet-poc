@@ -46,7 +46,11 @@ fn main() {
     let transcript = fs::read(format!("{dir}/transcript.bin")).expect("transcript.bin");
     let params = fs::read_to_string(format!("{dir}/params.txt")).expect("params.txt");
     let p: Vec<&str> = params.lines().collect();
+    assert!(p.len() >= 4, "params.txt needs pkx, pky, now, doctype [, namespace] lines");
     let (pkx, pky, now, doc_type) = (p[0], p[1], p[2], p[3]);
+    // ISO 18013-5 names the namespace separately from the doctype; EE-PoA uses
+    // the same string for both, so older params.txt files omit the fifth line.
+    let namespace = p.get(4).copied().unwrap_or(doc_type);
 
     let parsed = parse_mdoc::<CompileNat<4>>(&mdoc, &transcript, doc_type)
         .expect("mdoc must parse as an ISO 18013-5 DeviceResponse");
@@ -79,7 +83,7 @@ fn main() {
              pass {ALLOW_FALSE_FLAG} to prove it anyway"
         ),
     };
-    let req: Vec<RequestedAttribute> = vec![req_attr(doc_type, &a.name, claimed)];
+    let req: Vec<RequestedAttribute> = vec![req_attr(namespace, &a.name, claimed)];
     println!("\ndisclosing : {want} — and nothing else");
 
     let t = Instant::now();
@@ -107,7 +111,7 @@ fn main() {
         format!("{dir}/request.json"),
         format!(
             "{{\n  \"version\": 7,\n  \"num_attributes\": 1,\n  \"pkx\": \"{pkx}\",\n  \"pky\": \"{pky}\",\n  \
-\"doc_type\": \"{doc_type}\",\n  \"namespace\": \"{doc_type}\",\n  \"attr_id\": \"{want}\",\n  \
+\"doc_type\": \"{doc_type}\",\n  \"namespace\": \"{namespace}\",\n  \"attr_id\": \"{want}\",\n  \
 \"attr_cbor_hex\": \"{cbor_hex}\",\n  \"now\": \"{now}\",\n  \"transcript\": \"transcript.bin\",\n  \
 \"proof\": \"proof.bin\"\n}}\n"
         ),

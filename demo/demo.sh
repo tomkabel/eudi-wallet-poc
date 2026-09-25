@@ -18,7 +18,12 @@ data="$repo/demo-data"
 # The address the phone dials. Asking the routing table for the source address
 # of the default route picks the LAN interface, not tailscale0 or a docker
 # bridge, which is what listing every global-scope address would have done.
-lan_ip() { ip -4 route get 1.1.1.1 | sed -n 's/.* src \([0-9.]*\).*/\1/p'; }
+lan_ip() {
+	local a
+	a="$(ip -4 route get 1.1.1.1 | sed -n 's/.* src \([0-9.]*\).*/\1/p')"
+	[ -n "$a" ] || { echo "no LAN address found (no default route?)" >&2; exit 1; }
+	echo "$a"
+}
 
 mint() {
 	[ -f "$data/adult/mdoc.bin" ] || python3 "$repo/issuer/mint_ee_poa.py" --out "$data/adult" --over 16 18 21

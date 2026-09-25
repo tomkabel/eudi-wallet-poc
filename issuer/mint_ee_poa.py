@@ -149,15 +149,16 @@ def load_device_public_key(text: str) -> ec.EllipticCurvePublicKey:
     hex_form = stripped[2:] if stripped[:2].lower() == "0x" else stripped
     if re.fullmatch(r"(04)?[0-9a-fA-F]{128}", hex_form):
         coords = bytes.fromhex(hex_form)
-        if len(coords) == 64:                      # two raw 32-byte coordinates
-            pub = ec.EllipticCurvePublicNumbers(
-                int.from_bytes(coords[:32], "big"),
-                int.from_bytes(coords[32:], "big"),
-                ec.SECP256R1()).public_key()
-        else:                                      # SEC1 uncompressed 0x04||x||y
-            pub = ec.EllipticCurvePublicKey.from_encoded_point(
-                ec.SECP256R1(), coords)
-        return pub
+        try:
+            if len(coords) == 64:                  # two raw 32-byte coordinates
+                return ec.EllipticCurvePublicNumbers(
+                    int.from_bytes(coords[:32], "big"),
+                    int.from_bytes(coords[32:], "big"),
+                    ec.SECP256R1()).public_key()
+            # SEC1 uncompressed 0x04||x||y
+            return ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), coords)
+        except ValueError as exc:
+            raise SystemExit(f"--device-public-key: not a point on P-256: {exc}") from exc
     try:
         key = serialization.load_pem_public_key(text.encode())
     except ValueError as exc:
@@ -410,7 +411,7 @@ def main() -> None:
                 if key_fd >= 0:
                     os.close(key_fd)
                 os.chmod(key_path, 0o600)
-        open(p("params.txt"), "w").write("\n".join([pkx, pky, now_s, DOCTYPE]) + "\n")
+        open(p("params.txt"), "w").write("\n".join([pkx, pky, now_s, DOCTYPE, NAMESPACE]) + "\n")
         json.dump({"pkx": pkx, "pky": pky, "now": now_s,
                    "doc_type": DOCTYPE, "namespace": NAMESPACE,
                    "elements": [e for e, _ in elements],

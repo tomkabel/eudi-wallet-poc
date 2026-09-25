@@ -24,6 +24,7 @@ import pathlib
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
@@ -88,8 +89,10 @@ def main() -> int:
         print("set EE_PROVER to the ee_poa_demo binary", file=sys.stderr)
         return 1
 
+    # A fresh private (0700) directory by default: a fixed shared /tmp path
+    # lets another local user pre-plant symlinks the minted key is written through.
     work = pathlib.Path(a.work) if a.work else pathlib.Path(
-        os.environ.get("TMPDIR", "/tmp")) / "ee-load-test"
+        tempfile.mkdtemp(prefix="ee-load-test-"))
     work.mkdir(parents=True, exist_ok=True)
     print(f"preparing a proof in {work} (~15 s the first time)")
     payload = json.dumps(prepare(work, a.prover)).encode()
