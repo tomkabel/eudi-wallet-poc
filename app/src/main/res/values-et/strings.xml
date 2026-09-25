@@ -206,6 +206,7 @@
     <string name="issuer_pid_mdoc">Test Estonian Digital ID Issuer</string>
     <string name="issuer_mdl_mdoc">mDL Issuer</string>
     <string name="issuer_age_verification">Age Verification Issuer</string>
+    <string name="issuer_ee_poa">Eesti vanusekontrolli väljaandja</string>
 
     <string name="cross_tutorial_item1">Leia internetiühendusega arvuti.</string>
     <string name="cross_tutorial_item2">Ava Eesti digitaalse ID väljastaja veebileht https://wallet-issuer.example.com</string>
