@@ -490,10 +490,10 @@ class DigitalCredentialsViewModel @Inject constructor(
             // consume.
             currentState.credentials.firstOrNull { it.attestation.keyAttestation.keyType != KeyType.EC }?.let {
                 logger.error(
-                    "mso_mdoc_zk requires ECDSA device auth; key {} is {}",
+                    "Device auth is ECDSA-only (mso_mdoc_zk requires it); key {} is {}",
                     it.attestation.keyAttestation.keyId, it.attestation.keyAttestation.keyType
                 )
-                throw IllegalStateException("Zero-knowledge presentation requires an EC device key")
+                throw IllegalStateException("Device authentication requires an EC device key")
             }
 
             currentState.credentials.forEach { credential ->
