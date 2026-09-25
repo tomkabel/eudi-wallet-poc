@@ -24,6 +24,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"unsafe"
 
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
@@ -89,7 +90,9 @@ func Verify(r Request) error {
 		return nil
 	}
 
-	msg := C.GoString((*C.char)(unsafe.Pointer(&errBuf[0])))
+	// GoStringN + TrimRight: the read is bounded by the buffer we handed the
+	// FFI, so correctness never depends on the Rust side NUL-terminating.
+	msg := strings.TrimRight(C.GoStringN((*C.char)(unsafe.Pointer(&errBuf[0])), errBufLen), "\x00")
 	var base error
 	switch rc {
 	case C.ZKV_ERR_ARGS:
@@ -115,7 +118,7 @@ func CircuitHash(version, numAttributes uint32) (string, error) {
 	if rc != C.ZKV_OK {
 		return "", fmt.Errorf("%w: version %d / %d attrs", ErrCircuit, version, numAttributes)
 	}
-	return C.GoString((*C.char)(unsafe.Pointer(&buf[0]))), nil
+	return strings.TrimRight(C.GoStringN((*C.char)(unsafe.Pointer(&buf[0])), C.int(len(buf))), "\x00"), nil
 }
 
 // CheckCircuit resolves the circuit for (version, numAttributes) and reports

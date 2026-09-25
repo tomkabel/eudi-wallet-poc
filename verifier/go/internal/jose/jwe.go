@@ -121,25 +121,8 @@ func aesKeyUnwrap(kek, in []byte) ([]byte, error) {
 	return r, nil
 }
 
-// protectedHeader is the only header this package will emit; on decrypt it
-// is the shape every received header is checked against.
-type protectedHeader struct {
-	Alg string          `json:"alg"`
-	Enc string          `json:"enc"`
-	Epk json.RawMessage `json:"epk,omitempty"`
-	Kid string          `json:"kid,omitempty"`
-	// caught members that must not be present; decoded separately below
-}
-
-// headerControl carries the members whose mere presence is a refusal.
-type headerControl struct {
-	Zip  string          `json:"zip"`
-	D    json.RawMessage `json:"d"`
-	Jku  string          `json:"jku"`
-	X5u  string          `json:"x5u"`
-	Jwk  json.RawMessage `json:"jwk"`
-	EpkJ *JWK            `json:"-"`
-}
+// parseHeader decodes and checks the received JOSE header: the only shape this
+// package will emit, with members whose mere presence is a refusal.
 
 func parseHeader(raw []byte) (epk JWK, err error) {
 	var h struct {

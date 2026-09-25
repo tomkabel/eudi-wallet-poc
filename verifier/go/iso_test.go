@@ -38,9 +38,8 @@ const (
 // isoHarness is a presenter wired to a temp trust store and the committed
 // registry, as main() wires it.
 type isoHarness struct {
-	p      *presenter
-	st     *oid4vp.Store
-	regDir string
+	p  *presenter
+	st *oid4vp.Store
 }
 
 func newISOHarness(t *testing.T) *isoHarness {
@@ -69,7 +68,11 @@ func newISOHarness(t *testing.T) *isoHarness {
 	if !ok || pub.Curve != elliptic.P256() {
 		t.Fatal("fixture issuer key is not ECDSA P-256")
 	}
-	uncompressed := elliptic.Marshal(elliptic.P256(), pub.X, pub.Y)
+	ecdhPub, err := pub.ECDH()
+	if err != nil {
+		t.Fatalf("issuer key ECDH encode: %v", err)
+	}
+	uncompressed := ecdhPub.Bytes()
 	pkx := "0x" + hex.EncodeToString(uncompressed[1:33])
 	pky := "0x" + hex.EncodeToString(uncompressed[33:65])
 	trustPath := filepath.Join(regDir, "issuers.json")
@@ -193,6 +196,19 @@ func TestDCAPIPageShowsSessionElement(t *testing.T) {
 	}
 	if !strings.Contains(page, `const SESSION_ID = "`+created.ID+`";`) {
 		t.Fatalf("session id is not a quoted JS string:\n%s", page)
+	}
+	// The page is the browser-facing surface: the security headers must ride
+	// on the 200 (e2e.sh's curl check is unavailable, so this unit assert is
+	// the substitute; the plan's A9).
+	for k, want := range map[string]string{
+		"X-Content-Type-Options":  "nosniff",
+		"Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+		"Referrer-Policy":         "no-referrer",
+		"X-Frame-Options":         "DENY",
+	} {
+		if got := rec.Header().Get(k); got != want {
+			t.Errorf("%s = %q, want %q", k, got, want)
+		}
 	}
 }
 
@@ -326,7 +342,11 @@ func TestStep2aMultipazDeviceResponse(t *testing.T) {
 	if !ok {
 		t.Fatal("issuer leaf key is not ECDSA")
 	}
-	uncompressed := elliptic.Marshal(elliptic.P256(), pub.X, pub.Y)
+	ecdhPub, err := pub.ECDH()
+	if err != nil {
+		t.Fatalf("issuer key ECDH encode: %v", err)
+	}
+	uncompressed := ecdhPub.Bytes()
 	issuer, err := trust.Select(d.DocType,
 		"0x"+hex.EncodeToString(uncompressed[1:33]),
 		"0x"+hex.EncodeToString(uncompressed[33:65]))

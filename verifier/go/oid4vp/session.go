@@ -22,6 +22,11 @@ type Session struct {
 	Created     time.Time `json:"created"`
 	ExpectedNow string    `json:"expected_now"`
 
+	// RequestFetchDone marks the request_uri consumed: one request fetch
+	// per session, ever (B2 request_uri replay hardening). Not in JSON: it
+	// is live process state, like Answered.
+	RequestFetchDone bool `json:"-"`
+
 	// Filled in once a response arrives.
 	Answered bool   `json:"answered"`
 	Valid    bool   `json:"valid"`
@@ -160,17 +165,21 @@ func checkThumbprint(tp []byte) error {
 }
 
 // put installs a built session, applying the shared expiry/size discipline.
+// The expiry sweep runs only when the store is actually full: an O(n) scan on
+// every put made the common path pay for the pathological one.
 func (st *Store) put(s *Session) (*Session, error) {
 	id := s.ID
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	for id, existing := range st.sessions {
-		if existing.Expired(st.ttl) {
-			delete(st.sessions, id)
-		}
-	}
 	if len(st.sessions) >= maxSessions {
-		return nil, ErrStoreFull
+		for id, existing := range st.sessions {
+			if existing.Expired(st.ttl) {
+				delete(st.sessions, id)
+			}
+		}
+		if len(st.sessions) >= maxSessions {
+			return nil, ErrStoreFull
+		}
 	}
 	// New's 96-bit random IDs never collide; a caller-chosen NewWith ID can,
 	// and must not silently replace a live session.
@@ -187,7 +196,35 @@ var (
 	ErrAlreadyUsed = errors.New("oid4vp: session already answered")
 	ErrStoreFull   = errors.New("oid4vp: too many active sessions")
 	ErrIDInUse     = errors.New("oid4vp: session id already in use")
+	// ErrRequestFetched: the request_uri was already consumed (B2).
+	ErrRequestFetched = errors.New("oid4vp: request already fetched")
 )
+
+// ConsumeRequestFetch marks the session's request object as fetched. The
+// first call succeeds; every later call refuses — a leaked request_uri
+// cannot be replayed to re-read the nonce-bearing request (B2).
+func (st *Store) ConsumeRequestFetch(id string) error {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	s, ok := st.sessions[id]
+	if !ok {
+		return ErrNoSession
+	}
+	if s.RequestFetchDone {
+		return ErrRequestFetched
+	}
+	s.RequestFetchDone = true
+	return nil
+}
+
+// delete removes a session under the store lock. It exists so a failed NewISO
+// does not strand a half-built session (its HPKE private key included) in the
+// store: New already published the id, so the caller cannot just "not put" it.
+func (st *Store) delete(id string) {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	delete(st.sessions, id)
+}
 
 func snapshot(s *Session) *Session {
 	copy := *s
@@ -230,11 +267,21 @@ func (st *Store) Claim(id string) (*Session, error) {
 }
 
 // Complete records the result and returns a snapshot of the completed session.
+// It refuses to write a verdict onto a session that was never claimed (the
+// response handler's Claim is what marks it answered) or that has expired —
+// either way the result would attach to a presentation nobody verified.
 func (st *Store) Complete(id string, valid bool, detail string) (*Session, error) {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	s, ok := st.sessions[id]
 	if !ok {
+		return nil, ErrNoSession
+	}
+	if s.Expired(st.ttl) {
+		delete(st.sessions, id)
+		return nil, ErrExpired
+	}
+	if !s.Answered {
 		return nil, ErrNoSession
 	}
 	s.Valid = valid

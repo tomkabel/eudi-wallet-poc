@@ -43,6 +43,13 @@ type presenter struct {
 	responseKey *jose.JWK
 	allowPlain  bool
 
+	// requestKey is the JAR signing key (-request-key-file, EC P-256); nil
+	// keeps the request object unsigned (development). requestKeyPublic is
+	// its published half, embedded as the JWS `jwk` header member so a
+	// wallet can verify without a second fetch (the response-key pattern).
+	requestKey       *jose.JWK
+	requestKeyPublic *jose.JWK
+
 	// dcapiOrigin is the -dcapi-origin value the ISO 18013-7 Annex C handover
 	// binds; empty disables that path. offered is the circuit set the ISO
 	// sessions advertise in their DeviceRequests — the same registry entries
@@ -109,6 +116,43 @@ func (p *presenter) request(s *oid4vp.Session) authorizationRequest {
 	return req
 }
 
+// signedRequest serves the request object as a JAR (RFC 9101) compact JWS
+// when -request-key-file is configured: the request-object JSON becomes the
+// JWS payload, the verifier's public key rides in the `jwk` header member
+// (the same inline pattern client_metadata.jwks uses for the response key),
+// so a wallet holding only the request_uri response can verify the object
+// came from the verifier and was not rewritten in transit.
+func (p *presenter) signedRequest(s *oid4vp.Session) (any, error) {
+	req := p.request(s)
+	if p.requestKey == nil {
+		return req, nil
+	}
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	pub := p.requestKeyPublic
+	if pub == nil {
+		pk := p.requestKey.Public()
+		pub = &pk
+	}
+	if pub.Kid == "" {
+		pub.Kid = jose.ThumbprintB64(pub)
+	}
+	tok, err := jose.SignJWS(*p.requestKey, jose.JWSTypObject, string(body))
+	if err != nil {
+		return nil, err
+	}
+	return signedJAR{JWS: tok, JWK: *pub}, nil
+}
+
+// signedJAR is the request_uri response body for a signed request object:
+// the compact JWS and the verification key, side by side.
+type signedJAR struct {
+	JWS string   `json:"request"`
+	JWK jose.JWK `json:"jwk"`
+}
+
 // handleNew starts a presentation and hands back what a wallet needs to fetch
 // the request.
 func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +200,12 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleRequest serves the authorization request object.
+// handleRequest serves the authorization request object — signed as a JAR
+// when a request key is configured. The fetch is single-use: the first GET
+// consumes the session's request-fetch token, so a leaked request_uri cannot
+// be replayed to re-read the (nonce-bearing) request after the wallet's own
+// fetch. The wallet needs the request only once per session, so this trades
+// nothing; a 410 tells a retrying wallet to start a new session.
 func (p *presenter) handleRequest(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/present/request/")
 	s, err := p.store.Get(id)
@@ -164,7 +213,18 @@ func (p *presenter) handleRequest(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, p.request(s))
+	if err := p.store.ConsumeRequestFetch(s.ID); err != nil {
+		log.Printf("/present/request/%s: replay refused: %v", id, err)
+		writeJSON(w, http.StatusGone, map[string]string{"error": "request already fetched; start a new presentation"})
+		return
+	}
+	signed, err := p.signedRequest(s)
+	if err != nil {
+		log.Printf("/present/request/%s: sign: %v", id, err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "request signing failed"})
+		return
+	}
+	writeJSON(w, http.StatusOK, signed)
 }
 
 // handleResponse consumes the vp_token. This is the direct_post and

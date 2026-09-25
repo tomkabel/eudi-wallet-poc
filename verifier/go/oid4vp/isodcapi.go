@@ -18,13 +18,13 @@ import (
 // path (transcript.go) never decodes CBOR from the holder; this path does,
 // through cborsub (ADR-002).
 
-// Isolated is the base of every error this file and hpke.go return. A caller
+// ErrIsolated is the base of every error this file and hpke.go return. A caller
 // distinguishes "the presentation is wrong" from anything else with errors.Is;
 // the message text is for whoever can act on it.
-var Isolated = errors.New("isodcapi: rejected")
+var ErrIsolated = errors.New("isodcapi: rejected")
 
 func fail(format string, args ...any) error {
-	return fmt.Errorf("%w: %s", Isolated, fmt.Sprintf(format, args...))
+	return fmt.Errorf("%w: %s", ErrIsolated, fmt.Sprintf(format, args...))
 }
 
 // SessionTZ is the slack allowed around the session window when judging the
@@ -468,7 +468,7 @@ func ParseZkDocuments(root *cborsub.Value) ([]*ZkDocument, error) {
 		}
 		d, err := ParseZkDocument(zkd)
 		if err != nil {
-			return nil, fmt.Errorf("Documents[%d]: %w", i, err)
+			return nil, fmt.Errorf("documents[%d]: %w", i, err)
 		}
 		*out = append(*out, d)
 	}

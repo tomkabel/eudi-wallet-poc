@@ -20,6 +20,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -27,10 +28,14 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
@@ -223,10 +228,93 @@ func handleVerify(reg *circuits.Registry, sem, reads limiter) http.HandlerFunc {
 	}
 }
 
+// requestKeyPublicOf returns nil for a nil key, else the public half — a
+// tiny indirection so the presenter literal stays assignment-shaped.
+func requestKeyPublicOf(k *jose.JWK) *jose.JWK {
+	if k == nil {
+		return nil
+	}
+	pk := k.Public()
+	return &pk
+}
+
+// requireTLSBaseURL refuses an externally-reachable -base-url that is not
+// https: the request_uri and response_uri a wallet acts on come from it, and
+// a cleartext base URL lets a network observer rewrite both (JAR signing
+// protects the request object's contents, not the URIs the wallet fetches).
+// Loopback spellings are allowed for development.
+func requireTLSBaseURL(baseURL string) error {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return fmt.Errorf("parse -base-url: %w", err)
+	}
+	switch u.Scheme {
+	case "https":
+		return nil
+	case "http":
+		host := u.Hostname()
+		if host == "127.0.0.1" || host == "::1" || host == "localhost" {
+			return nil
+		}
+		return fmt.Errorf("-base-url %q is http on a non-loopback host; use https", baseURL)
+	default:
+		return fmt.Errorf("-base-url scheme %q is neither http nor https", u.Scheme)
+	}
+}
+
+// requireLoopbackAddr insists an address is loopback-only. The unauthenticated
+// dev API must never end up on a reachable interface — the default -addr :8080
+// binds all of them, which is exactly the mistake this guard refuses.
+func requireLoopbackAddr(addr string) error {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return fmt.Errorf("cannot parse -addr %q: %w", addr, err)
+	}
+	switch host {
+	case "127.0.0.1", "::1", "localhost":
+		return nil
+	default:
+		return fmt.Errorf("requires a loopback -addr (127.0.0.1, ::1 or localhost), got %q", addr)
+	}
+}
+
+// checkLongfellowRev fails startup when the binary was linked against a
+// longfellow-zk that is not the one verifier/zkverify-ffi/longfellow-rev.txt
+// records. The revfile is the contract (make deps pins it); a drifted sibling
+// checkout means the linked runtime no longer matches the published profile
+// the audit chain assumes.
+func checkLongfellowRev(linked, revFile string) error {
+	if linked == "" || revFile == "" {
+		// -version and dev builds without ldflags: nothing to compare.
+		return nil
+	}
+	raw, err := os.ReadFile(revFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("read longfellow rev file: %w", err)
+	}
+	want := strings.TrimSpace(string(raw))
+	if want == "" {
+		return nil
+	}
+	if linked != want {
+		return fmt.Errorf("binary links longfellow-zk %s but %s records %s — rebuild with make deps, or update the rev file",
+			linked, revFile, want)
+	}
+	return nil
+}
+
 func main() {
 	addr := flag.String("addr", ":8080", "listen address")
 	registryPath := flag.String("registry", "circuits.json", "accepted circuit registry (EE-ZKP-030)")
 	trustPath := flag.String("issuers", "issuers.json", "trusted attestation providers")
+	trustRootFile := flag.String("trust-root", "",
+		"PEM file holding the EC P-256 key that signs the trust store (B3); "+
+			"empty disables signature verification (development)")
+	ignoreTrustFreshness := flag.Bool("ignore-trust-freshness", false,
+		"skip the signed trust store's not_before/not_after windows (development)")
 	baseURL := flag.String("base-url", "http://127.0.0.1:8080", "externally reachable base URL")
 	clientID := flag.String("client-id", "x509_san_dns:verifier.example.ee", "OpenID4VP client identifier")
 	docType := flag.String("doctype", "ee.riik.poa.1", "doctype to request")
@@ -236,6 +324,9 @@ func main() {
 	responseKeyFile := flag.String("response-key-file", "",
 		"PEM file holding the EC P-256 response-encryption key (SEC 1 or PKIX); "+
 			"generated fresh at startup when empty — persist one for restart-stable thumbprints")
+	requestKeyFile := flag.String("request-key-file", "",
+		"PEM file holding the EC P-256 request-object signing key (JAR, RFC 9101); "+
+			"empty keeps the request object unsigned (development)")
 	allowUnencrypted := flag.Bool("allow-unencrypted-response", false,
 		"permit -response-mode direct_post; the explicit downgrade switch for the encrypted default (ADR-003)")
 	unsafeDevAPI := flag.Bool("unsafe-dev-api", false,
@@ -262,6 +353,17 @@ func main() {
 
 	if *maxVerify < 1 {
 		log.Fatalf("-max-concurrent-verify must be at least 1, got %d", *maxVerify)
+	}
+	if err := checkLongfellowRev(longfellowRev, "../zkverify-ffi/longfellow-rev.txt"); err != nil {
+		log.Fatalf("%v", err)
+	}
+	if *unsafeDevAPI {
+		if err := requireLoopbackAddr(*addr); err != nil {
+			log.Fatalf("-unsafe-dev-api: %v", err)
+		}
+	}
+	if err := requireTLSBaseURL(*baseURL); err != nil {
+		log.Fatalf("%v", err)
 	}
 	carrierOverride, err := oid4vp.ParseCarrierName(*carrierName)
 	if err != nil {
@@ -308,6 +410,20 @@ func main() {
 				jose.ThumbprintB64(responseKey))
 		}
 	}
+	var requestKey *jose.JWK
+	if *requestKeyFile != "" {
+		pemBytes, err := os.ReadFile(*requestKeyFile)
+		if err != nil {
+			log.Fatalf("request key: %v", err)
+		}
+		requestKey, err = jose.LoadPEMKey(pemBytes)
+		if err != nil {
+			log.Fatalf("request key %s: %v", *requestKeyFile, err)
+		}
+		rkPub := requestKey.Public()
+		log.Printf("request key: loaded %s (thumbprint %s); request objects are signed as JAR",
+			*requestKeyFile, jose.ThumbprintB64(&rkPub))
+	}
 	if *dcapiOrigin == "" {
 		log.Printf("WARNING: -dcapi-origin is not set; the ISO 18013-7 Annex C path (POST /present/dcapi/new) is disabled")
 	}
@@ -316,6 +432,8 @@ func main() {
 	sem := make(limiter, *maxVerify)
 	// Requests reading or decoding a body. Larger than sem so parsing never
 	// starves verification, but bounded so a flood is shed before any body is read.
+	// The overlap with sem is short and load-shed already exists, so the 4x
+	// multiplier is accepted rather than capped (audit GO-I8).
 	reads := make(limiter, 4**maxVerify)
 	log.Printf("verifying at most %d proofs concurrently", *maxVerify)
 
@@ -337,37 +455,67 @@ func main() {
 		}
 		log.Printf("accepting circuit %s (v%d, %d attrs)", c.Hash, c.Version, c.NumAttributes)
 	}
-	trust, err := oid4vp.LoadTrustStore(*trustPath)
-	if err != nil {
-		log.Fatalf("trust store: %v", err)
+	var trust *oid4vp.TrustStore
+	if *trustRootFile != "" {
+		pemBytes, err := os.ReadFile(*trustRootFile)
+		if err != nil {
+			log.Fatalf("trust root: %v", err)
+		}
+		root, err := jose.LoadPEMKey(pemBytes)
+		if err != nil {
+			log.Fatalf("trust root %s: %v", *trustRootFile, err)
+		}
+		rootPub := root.Public()
+		trust, err = oid4vp.LoadSignedTrustStore(*trustPath, &rootPub, nil, time.Now(), *ignoreTrustFreshness)
+		if err != nil {
+			log.Fatalf("trust store: %v", err)
+		}
+		log.Printf("trust store: verified signature under trust root (freshness checks %s)",
+			map[bool]string{true: "skipped", false: "enforced"}[*ignoreTrustFreshness])
+	} else {
+		t, err := oid4vp.LoadTrustStore(*trustPath)
+		if err != nil {
+			log.Fatalf("trust store: %v", err)
+		}
+		trust = t
 	}
 	for _, is := range trust.All() {
 		log.Printf("trusting issuer %q for doctype %s", is.Name, is.DocType)
 	}
 
 	p := &presenter{
-		store:       oid4vp.NewStore(*sessionTTL),
-		trust:       trust,
-		registry:    reg,
-		clientID:    *clientID,
-		baseURL:     strings.TrimSuffix(*baseURL, "/"),
-		docType:     *docType,
-		nsID:        *docType,
-		carrier:     carrierOverride,
-		sem:         sem,
-		reads:       reads,
-		responseKey: responseKey,
-		allowPlain:  *allowUnencrypted,
-		dcapiOrigin: *dcapiOrigin,
-		offered:     reg.Accepted(),
+		store:            oid4vp.NewStore(*sessionTTL),
+		trust:            trust,
+		registry:         reg,
+		clientID:         *clientID,
+		baseURL:          strings.TrimSuffix(*baseURL, "/"),
+		docType:          *docType,
+		nsID:             *docType,
+		carrier:          carrierOverride,
+		sem:              sem,
+		reads:            reads,
+		responseKey:      responseKey,
+		allowPlain:       *allowUnencrypted,
+		requestKey:       requestKey,
+		requestKeyPublic: requestKeyPublicOf(requestKey),
+		dcapiOrigin:      *dcapiOrigin,
+		offered:          reg.Accepted(),
 	}
 
+	srvAddr := *addr
 	mux := http.NewServeMux()
 	// /zkverify takes the issuer key and `now` from the caller, so a caller who
 	// chooses both can mint their own attestation and prove anything. It is a
 	// test harness, not a presentation endpoint, and stays unregistered — and
 	// therefore a 404 — unless it is asked for explicitly.
 	if *unsafeDevAPI {
+		// Defence in depth: the flag was checked against *addr at startup; the
+		// registered interface is the server's actual bind address, so recheck
+		// against it too. Default -addr :8080 binds all interfaces — exactly
+		// the trap this guard closes.
+		if err := requireLoopbackAddr(srvAddr); err != nil {
+			log.Fatalf("-unsafe-dev-api: %v", err)
+		}
 		log.Printf("WARNING: -unsafe-dev-api is set; POST /zkverify is exposed.")
 		log.Printf("WARNING: it is unauthenticated, and it trusts the issuer public key")
 		log.Printf("WARNING: and the `now` timestamp supplied by whoever calls it.")
@@ -405,7 +553,7 @@ func main() {
 		writeJSON(w, http.StatusOK, map[string]any{"issuers": trust.All()})
 	})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "ok")
+		_, _ = fmt.Fprintln(w, "ok")
 	})
 
 	srv := &http.Server{
@@ -414,10 +562,37 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      60 * time.Second,
+		// Keep-alives parked longer than this are closed; a fresh connection
+		// costs far less than the file descriptors of idle browsers piling up.
+		IdleTimeout: 60 * time.Second,
 	}
 	log.Printf("zkverify listening on %s", *addr)
-	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Printf("server: %v", err)
-		os.Exit(1)
+
+	// Graceful shutdown: SIGINT/SIGTERM stops accepting and drains in-flight
+	// requests instead of cutting them off mid-verify. A cgo verification can
+	// hold a request for seconds, so the drain window is ~10s — beyond it the
+	// context closes the connection anyway.
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- srv.ListenAndServe() }()
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	select {
+	case err := <-serveErr:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("server: %v", err)
+			os.Exit(1)
+		}
+	case s := <-sig:
+		log.Printf("zkverify: %v received, draining", s)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("zkverify: drain did not finish in time: %v", err)
+		} else {
+			log.Printf("zkverify: drained cleanly")
+		}
+		// ListenAndServe returns ErrServerClosed once Shutdown completes; the
+		// goroutine's send lands in the buffered channel and is dropped.
+		<-serveErr
 	}
 }

@@ -55,6 +55,7 @@ func (st *Store) NewISO(clientID, responseURIBase string, q DCQL, origin string,
 	}
 	priv, _, infoB64, err := NewHPKEKeyPair()
 	if err != nil {
+		st.delete(s.ID)
 		return nil, err
 	}
 	ext := &ISOExtension{
@@ -66,12 +67,14 @@ func (st *Store) NewISO(clientID, responseURIBase string, q DCQL, origin string,
 	for _, c := range offered {
 		id := c.SpecID()
 		if _, dup := ext.BySpecID[id]; dup {
+			st.delete(s.ID)
 			return nil, fmt.Errorf("oid4vp: duplicate offered spec id %q", id)
 		}
 		ext.BySpecID[id] = c
 		ext.OfferedSpecIDs = append(ext.OfferedSpecIDs, id)
 	}
 	if err := st.AttachISO(s.ID, ext, origin); err != nil {
+		st.delete(s.ID)
 		return nil, err
 	}
 	// Re-read: s is a snapshot from New, so it lacks the extension. The stored

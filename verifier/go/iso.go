@@ -111,7 +111,17 @@ func (p *presenter) handleDCAPIPage(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "session query is unusable"})
 		return
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// The page is the browser-facing surface of the dcapi path: lock down what
+	// it may load, frame into and leak referrers to. script-src and style-src
+	// keep 'unsafe-inline' because the page is a self-contained template with
+	// its own inline script/style (iso.html); everything else is 'none'.
+	h := w.Header()
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Content-Security-Policy",
+		"default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'")
+	h.Set("Referrer-Policy", "no-referrer")
+	h.Set("X-Frame-Options", "DENY")
+	h.Set("Content-Type", "text/html; charset=utf-8")
 	// Raw strings: html/template escapes each value for its own context (the
 	// element in HTML text, the id as a JS string literal).
 	pageData := map[string]string{
@@ -384,8 +394,11 @@ func (p *presenter) selectIssuer(chains [][]byte, docType string) (oid4vp.Issuer
 	if !ok || pub.Curve != elliptic.P256() {
 		return oid4vp.Issuer{}, errors.New("issuer certificate key is not ECDSA P-256")
 	}
-	uncompressed := elliptic.Marshal(elliptic.P256(), pub.X, pub.Y)
-	pkx := "0x" + hex.EncodeToString(uncompressed[1:33])
-	pky := "0x" + hex.EncodeToString(uncompressed[33:65])
+	marshalled, err := pub.ECDH()
+	if err != nil {
+		return oid4vp.Issuer{}, fmt.Errorf("issuer certificate key ECDH encode: %w", err)
+	}
+	pkx := "0x" + hex.EncodeToString(marshalled.Bytes()[1:33])
+	pky := "0x" + hex.EncodeToString(marshalled.Bytes()[33:65])
 	return p.trust.Select(docType, pkx, pky)
 }

@@ -61,19 +61,26 @@ func Open(privateKey *ecdh.PrivateKey, info, ciphertext []byte) ([]byte, error) 
 // SealTo is the sending half, used by tests to exercise Open with a fixed
 // ephemeral key: it returns the single-shot ciphertext enc||ct.
 func SealTo(recipientPublic *ecdh.PublicKey, info, plaintext []byte) ([]byte, error) {
-	seal, err := hpke.Seal(mustHPKEPublicKey(recipientPublic), hpkeKDF, hpkeAEAD, info, plaintext)
+	pk, err := hpkePublicKey(recipientPublic)
+	if err != nil {
+		return nil, fail("hpke seal: %v", err)
+	}
+	seal, err := hpke.Seal(pk, hpkeKDF, hpkeAEAD, info, plaintext)
 	if err != nil {
 		return nil, fail("hpke seal: %v", err)
 	}
 	return seal, nil
 }
 
-func mustHPKEPublicKey(pub *ecdh.PublicKey) hpke.PublicKey {
+// hpkePublicKey converts an ecdh public key to the DHKEM form; a key the KEM
+// rejects is an error, not a panic — SealTo runs on holder-influenced input
+// paths in tests and must never take the process down.
+func hpkePublicKey(pub *ecdh.PublicKey) (hpke.PublicKey, error) {
 	pk, err := hpke.NewDHKEMPublicKey(pub)
 	if err != nil {
-		panic("hpke: " + err.Error())
+		return nil, err
 	}
-	return pk
+	return pk, nil
 }
 
 func hpkeNewRecipient(enc []byte, priv *ecdh.PrivateKey, info []byte) (*hpke.Recipient, error) {

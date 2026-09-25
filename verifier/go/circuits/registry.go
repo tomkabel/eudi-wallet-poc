@@ -22,10 +22,12 @@ import (
 // defeat ZKP_07.
 type Registry struct {
 	mu sync.RWMutex
-	// accepted is keyed by hash (the lookup EE-ZKP-023 names); acceptedList
-	// mirrors the same entries so Lookup can match on (version, numAttributes)
-	// without ever computing a hash for a circuit that is not accepted.
-	accepted     map[string]Circuit
+	// byTuple is keyed by the published (version, numAttributes) tuple — the
+	// lookup callers make (plan defect S11). byHash is keyed by hash (the
+	// lookup EE-ZKP-023 names) and exists to reject duplicate hashes at load;
+	// acceptedList mirrors the live entries so Accepted() keeps file order.
+	byTuple      map[uint64]Circuit
+	byHash       map[string]Circuit
 	acceptedList []Circuit
 }
 
@@ -56,16 +58,41 @@ func (c Circuit) SpecID() string {
 		c.Version, c.NumAttributes, c.BlockEncHash, c.BlockEncSig, c.Hash)
 }
 
+// tupleKey packs (version, numAttributes) into one map key.
+func tupleKey(version, numAttributes uint32) uint64 {
+	return uint64(version)<<32 | uint64(numAttributes)
+}
+
 // NewRegistry builds a registry from a slice of circuits.
-func NewRegistry(circuits []Circuit) *Registry {
-	r := &Registry{accepted: make(map[string]Circuit, len(circuits))}
+//
+// A duplicate live (version, numAttributes) tuple is a load error: two live
+// entries for one tuple make the offer ambiguous — Lookup could not say which
+// circuit a response proves. A duplicate hash is a load error too (it meant a
+// silent overwrite); deprecated entries are exempt from the tuple check
+// because deprecation is the legal v6→v7 transition, but two live twins of one
+// hash still are not.
+func NewRegistry(circuits []Circuit) (*Registry, error) {
+	r := &Registry{
+		byTuple: make(map[uint64]Circuit, len(circuits)),
+		byHash:  make(map[string]Circuit, len(circuits)),
+	}
 	for _, c := range circuits {
 		if c.DeprecatedOn == "" {
-			r.accepted[c.Hash] = c
+			key := tupleKey(c.Version, c.NumAttributes)
+			if prev, dup := r.byTuple[key]; dup {
+				return nil, fmt.Errorf("duplicate live circuit for (version %d, %d attributes): %s and %s both claim it",
+					c.Version, c.NumAttributes, prev.Hash, c.Hash)
+			}
+			if prev, dup := r.byHash[c.Hash]; dup {
+				return nil, fmt.Errorf("duplicate circuit hash %s: entries (%d, %d) and (%d, %d) both claim it",
+					c.Hash, prev.Version, prev.NumAttributes, c.Version, c.NumAttributes)
+			}
+			r.byTuple[key] = c
+			r.byHash[c.Hash] = c
 			r.acceptedList = append(r.acceptedList, c)
 		}
 	}
-	return r
+	return r, nil
 }
 
 // Load reads a registry from a JSON file.
@@ -83,23 +110,17 @@ func Load(path string) (*Registry, error) {
 	if len(doc.Circuits) == 0 {
 		return nil, fmt.Errorf("circuit registry %s lists no circuits", path)
 	}
-	return NewRegistry(doc.Circuits), nil
+	return NewRegistry(doc.Circuits)
 }
 
 // Lookup returns the accepted entry for (version, numAttributes). It matches
 // the published tuple only and computes no hash, so a holder-chosen pair that
-// is not accepted costs a slice scan and nothing more (plan defect S11).
+// is not accepted costs one map probe and nothing more (plan defect S11).
 func (r *Registry) Lookup(version, numAttributes uint32) (Circuit, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var found Circuit
-	ok := false
-	for _, c := range r.acceptedList {
-		if c.Version == version && c.NumAttributes == numAttributes {
-			found, ok = c, true
-		}
-	}
-	return found, ok
+	c, ok := r.byTuple[tupleKey(version, numAttributes)]
+	return c, ok
 }
 
 // Accepted lists the circuits currently accepted.

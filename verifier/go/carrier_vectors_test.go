@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -108,7 +107,11 @@ func TestCarrierVectorsVerifyIdentically(t *testing.T) {
 	if !ok {
 		t.Fatal("issuer leaf key is not ECDSA")
 	}
-	uncompressed := elliptic.Marshal(elliptic.P256(), pub.X, pub.Y)
+	ecdhPub, err := pub.ECDH()
+	if err != nil {
+		t.Fatalf("issuer key ECDH encode: %v", err)
+	}
+	uncompressed := ecdhPub.Bytes()
 	issuer, err := trust.Select(cpCBOR.DocType,
 		"0x"+hex.EncodeToString(uncompressed[1:33]),
 		"0x"+hex.EncodeToString(uncompressed[33:65]))

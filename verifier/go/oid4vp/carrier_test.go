@@ -494,11 +494,9 @@ func TestTranscriptForFlowCoversBothFlows(t *testing.T) {
 }
 
 // --- fixture plumbing shared by this file and the zk-side dual-carrier test ---
-
-const (
-	goldenSpecID    = "longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121"
-	goldenTimestamp = "2026-09-24T14:19:58Z"
-)
+// goldenSpecID/goldenTimestamp were dropped: the A2 lint sweep found no live
+// use (the zk-side dual-carrier test reads its own committed fixtures), and
+// dead golden constants read as contract where none exists.
 
 // carrierFixtureCircuit is the registry's v7/1 entry the golden spec id names.
 var carrierFixtureCircuit = circuits.Circuit{

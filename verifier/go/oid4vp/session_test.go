@@ -210,3 +210,75 @@ func TestStoreRejectsWrongThumbprintSize(t *testing.T) {
 		t.Fatal("NewWith accepted a 31-byte thumbprint")
 	}
 }
+
+// TestStoreSweepsOnlyWhenFull: the expiry sweep is a full-store scan, so it
+// must not run on every put — a non-full store accepts without sweeping, and a
+// full one reclaims expired slots before declaring ErrStoreFull.
+func TestStoreSweepsOnlyWhenFull(t *testing.T) {
+	st := NewStore(time.Minute)
+	live := &Session{ID: "live", Created: time.Now()}
+	st.sessions["live"] = live
+	st.sessions["stale"] = &Session{ID: "stale", Created: time.Now().Add(-2 * time.Minute)}
+
+	// Not full: put proceeds without the sweep; the stale entry survives.
+	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); err != nil {
+		t.Fatalf("New into a non-full store: %v", err)
+	}
+	if _, ok := st.sessions["stale"]; !ok {
+		t.Fatal("non-full put swept expired sessions; sweep must run only when full")
+	}
+
+	// Full: the sweep reclaims the stale entry and the put succeeds.
+	for i := len(st.sessions); i < maxSessions; i++ {
+		id := fmt.Sprintf("session-%d", i)
+		st.sessions[id] = &Session{ID: id, Created: time.Now()}
+	}
+	if _, err := st.New("verifier.example", "https://verifier.example/response", testQuery(), nil); err != nil {
+		t.Fatalf("New into a full store with an expired slot: %v", err)
+	}
+	if _, ok := st.sessions["stale"]; ok {
+		t.Fatal("full put did not reclaim the expired slot")
+	}
+}
+
+// TestCompleteRefusesUnclaimedAndExpired: a verdict may only attach to a
+// session the response handler claimed, and only while it is live.
+func TestCompleteRefusesUnclaimedAndExpired(t *testing.T) {
+	st := NewStore(time.Minute)
+	q := testQuery()
+	claimed, err := st.New("verifier.example", "https://verifier.example/response", q, nil)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, err := st.Claim(claimed.ID); err != nil {
+		t.Fatalf("Claim: %v", err)
+	}
+	if _, err := st.Complete(claimed.ID, true, "ok"); err != nil {
+		t.Fatalf("Complete on a claimed session: %v", err)
+	}
+
+	unclaimed, err := st.New("verifier.example", "https://verifier.example/response", q, nil)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, err := st.Complete(unclaimed.ID, true, "premature"); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("Complete before Claim = %v, want %v", err, ErrNoSession)
+	}
+
+	expired, err := st.New("verifier.example", "https://verifier.example/response", q, nil)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, err := st.Claim(expired.ID); err != nil {
+		t.Fatalf("Claim: %v", err)
+	}
+	st.mu.Lock()
+	st.sessions[expired.ID].Created = time.Now().Add(-2 * st.ttl)
+	st.mu.Unlock()
+	if _, err := st.Complete(expired.ID, true, "late"); !errors.Is(err, ErrExpired) {
+		t.Fatalf("Complete on an expired session = %v, want %v", err, ErrExpired)
+	}
+	if _, ok := st.sessions[expired.ID]; ok {
+		t.Fatal("expired session left in the store after Complete refused it")
+	}
+}

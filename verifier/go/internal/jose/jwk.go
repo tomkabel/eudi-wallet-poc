@@ -200,10 +200,17 @@ func LoadPEMKey(pemBytes []byte) (*JWK, error) {
 	if priv.Curve != elliptic.P256() {
 		return nil, errorsNew("EC key is not P-256")
 	}
+	// priv.D is deprecated (Go 1.26): the raw scalar comes from the crypto/ecdh
+	// conversion instead — for P-256, Bytes() is the same 32-byte big-endian
+	// scalar priv.D held, and the conversion rejects out-of-range keys.
+	ecdhKey, err := priv.ECDH()
+	if err != nil {
+		return nil, errorsNew("EC key is not a usable ECDH private key")
+	}
 	return &JWK{
 		Kty: "EC", Crv: "P-256",
 		X: base64.RawURLEncoding.EncodeToString(priv.X.FillBytes(make([]byte, 32))),
 		Y: base64.RawURLEncoding.EncodeToString(priv.Y.FillBytes(make([]byte, 32))),
-		D: base64.RawURLEncoding.EncodeToString(priv.D.FillBytes(make([]byte, 32))),
+		D: base64.RawURLEncoding.EncodeToString(ecdhKey.Bytes()),
 	}, nil
 }
