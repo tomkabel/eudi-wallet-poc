@@ -29,11 +29,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
-env:
-  # google/longfellow-zk is a path dependency, not a registry one, so the version
-  # lives here rather than in a lockfile. Bump deliberately.
-  LONGFELLOW_REV: 61a8a735964d1b22bccf79bf14ef6767249cdf92
-
 defaults:
   run:
     # zkverify-ffi path-depends on ../../../longfellow-zk, so the two trees must
@@ -130,7 +125,7 @@ jobs:
         # make the job fail when the runner image updates rather than when the
         # scripts change. The remaining info notes here are false positives:
         # cleanup() looks unreachable because `trap` invokes it.
-        run: shellcheck --severity=warning tests/*.sh
+        run: shellcheck --severity=warning scripts/*.sh tests/*.sh
 
   e2e:
     name: e2e (prover + verifier, tests/e2e.sh)
@@ -153,15 +148,14 @@ jobs:
           python-version: '3.12'
 
       - name: clone longfellow-zk at the pinned revision
+        id: longfellow
+        # The revision lives in verifier/zkverify-ffi/longfellow-rev.txt — a path
+        # dependency has no lockfile entry, so that committed file is the single
+        # source of truth. The script is the same one a developer runs (make deps).
         working-directory: ${{ github.workspace }}
         run: |
-          git init -q longfellow-zk
-          git -C longfellow-zk remote add origin https://github.com/google/longfellow-zk.git
-          git -C longfellow-zk fetch -q --depth 1 origin "$LONGFELLOW_REV"
-          git -C longfellow-zk checkout -q --detach FETCH_HEAD
-          got="$(git -C longfellow-zk rev-parse HEAD)"
-          # A shallow fetch of a SHA is only as trustworthy as this check.
-          [ "$got" = "$LONGFELLOW_REV" ] || { echo "got $got, want $LONGFELLOW_REV"; exit 1; }
+          ./scripts/bootstrap-longfellow.sh
+          echo "rev=$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" >> "$GITHUB_OUTPUT"
 
       - name: cache cargo registry and build artefacts
         uses: actions/cache@v4
@@ -171,38 +165,40 @@ jobs:
             ~/.cargo/git
             longfellow-zk/rust/target
             eudi-wallet-poc/verifier/zkverify-ffi/target
-          # The pinned longfellow revision plus the lockfile, the manifests and
-          # the copied-in example sources are what decide what gets built.
-          key: e2e-${{ runner.os }}-lf${{ env.LONGFELLOW_REV }}-${{ hashFiles('eudi-wallet-poc/verifier/zkverify-ffi/Cargo.lock', 'eudi-wallet-poc/verifier/zkverify-ffi/Cargo.toml', 'eudi-wallet-poc/verifier/zkverify-ffi/.cargo/config.toml', 'eudi-wallet-poc/zk-age-poc/*.rs') }}
+          # The pinned longfellow revision (read from the file in this step) plus
+          # the lockfile, the manifests and the copied-in example sources are what
+          # decide what gets built.
+          key: e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-${{ hashFiles('eudi-wallet-poc/verifier/zkverify-ffi/Cargo.lock', 'eudi-wallet-poc/verifier/zkverify-ffi/Cargo.toml', 'eudi-wallet-poc/verifier/zkverify-ffi/.cargo/config.toml', 'eudi-wallet-poc/zk-age-poc/*.rs') }}
           restore-keys: |
-            e2e-${{ runner.os }}-lf${{ env.LONGFELLOW_REV }}-
+            e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-
 
       - name: build the prover
         env:
           # longfellow-zk's own rust/.cargo/config.toml sets target-cpu=native,
-          # which has produced SIGILL binaries on virtualised hosts. Match the
-          # baseline zkverify-ffi pins.
+          # which has produced SIGILL binaries on virtualised hosts. Same pin as
+          # `make deps` — scripts/prover-examples-install.sh is what it runs.
           RUSTFLAGS: -C target-cpu=x86-64-v3
         run: |
-          # A fresh clone has no examples/ directory. Without this mkdir the cp
-          # fails, and `cargo build --examples` then matches no targets, prints a
-          # warning and exits 0 — a green build with no binary.
-          mkdir -p ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples
-          cp zk-age-poc/*.rs ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples/
-          cd ../longfellow-zk/rust/applications/mdoc_zk/runtime
-          cargo build --release --examples --features testonly
+          ./scripts/prover-examples-install.sh
+          cargo build --release --examples --features testonly \
+            --manifest-path ../longfellow-zk/rust/applications/mdoc_zk/runtime/Cargo.toml
 
       - name: the prover binary exists
         # The build above can succeed without producing this. Say so out loud.
         run: test -x ../longfellow-zk/rust/target/release/examples/ee_poa_demo
 
       - name: build the verifier
+        env:
+          # Same pin as the prover examples; zkverify-ffi's .cargo/config.toml
+          # pins its own, and the go build records the linked revision.
+          RUSTFLAGS: -C target-cpu=x86-64-v3
         run: |
           # cd rather than --manifest-path: cargo discovers .cargo/config.toml
           # from the working directory, and zkverify-ffi's is what pins its
           # target-cpu.
           (cd verifier/zkverify-ffi && cargo build --release)
-          cd verifier/go && go build -o ../zkverify .
+          cd verifier/go && go build -o ../zkverify . \
+            -ldflags "-X main.longfellowRev=$(tr -d '[:space:]' < ../zkverify-ffi/longfellow-rev.txt)"
 
       - name: go test (the packages that link the Rust staticlib)
         working-directory: eudi-wallet-poc/verifier/go
