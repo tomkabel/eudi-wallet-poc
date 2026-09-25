@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -232,7 +233,7 @@ func encryptWithHeader(recipientJWK JWK, plaintext []byte, hdr []byte) (string, 
 	if err != nil {
 		return "", fmt.Errorf("jose: ecdh: %w", err)
 	}
-	kek, err := concatKDF(shared, []byte(algHeader), recipientPub.Bytes())
+	kek, err := concatKDF(shared, []byte(algHeader), recipientPub.Bytes(), 256)
 	if err != nil {
 		return "", err
 	}
@@ -340,7 +341,7 @@ func Decrypt(recipient *JWK, token string) ([]byte, error) {
 	}
 	// ConcatKDF's Otherinfo: alg | apu(∅) | apv = recipient's public point.
 	apv := priv.PublicKey().Bytes()
-	kek, err := concatKDF(shared, []byte(algHeader), apv)
+	kek, err := concatKDF(shared, []byte(algHeader), apv, 256)
 	if err != nil {
 		return nil, err
 	}
@@ -373,18 +374,24 @@ func newGCM(key []byte) (cipher.AEAD, error) {
 }
 
 // concatKDF is the NIST SP 800-56A Concat KDF per RFC 7518 §4.6.2 with
-// SHA-256 and a zero-length PartyUInfo (apu): one round covers the 32 bytes
-// a 256-bit KEK needs, but the loop is written generally.
-func concatKDF(z, alg, apv []byte) ([]byte, error) {
-	// Otherinfo = alg || apu (empty) || apv
-	otherinfo := make([]byte, 0, 4+len(alg)+4+len(apv))
-	otherinfo = append(otherinfo, byte(len(alg)>>8), byte(len(alg)))
+// SHA-256. Otherinfo = len(alg) | alg | len(apu)=0 | apu(∅) | len(apv)=0 |
+// apv(∅) | SuppPubInfo = 32-bit key length — every field of §4.6.2 is
+// present, including the key-length round-trip jwcrypto and every
+// conformant JOSE library write.
+func concatKDF(z, alg, apv []byte, keyLenBits int) ([]byte, error) {
+	otherinfo := make([]byte, 0, 4+len(alg)+4+4+4)
+	var u32 [4]byte
+	binary.BigEndian.PutUint32(u32[:], uint32(len(alg)))
+	otherinfo = append(otherinfo, u32[:]...)
 	otherinfo = append(otherinfo, alg...)
-	otherinfo = append(otherinfo, 0, 0) // apu length 0
-	otherinfo = append(otherinfo, byte(len(apv)>>8), byte(len(apv)))
-	otherinfo = append(otherinfo, apv...)
+	binary.BigEndian.PutUint32(u32[:], 0) // apu length: empty
+	otherinfo = append(otherinfo, u32[:]...)
+	binary.BigEndian.PutUint32(u32[:], 0) // apv length: empty
+	otherinfo = append(otherinfo, u32[:]...)
+	binary.BigEndian.PutUint32(u32[:], uint32(keyLenBits)) // SuppPubInfo
+	otherinfo = append(otherinfo, u32[:]...)
 
-	const keyLen = 32
+	keyLen := keyLenBits / 8
 	out := make([]byte, 0, keyLen)
 	for counter := 1; len(out) < keyLen; counter++ {
 		h := sha256.New()
