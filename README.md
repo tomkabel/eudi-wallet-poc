@@ -10,7 +10,9 @@ authority can be held responsible for them.
 Proof of Concept EE Digital Identity Wallet application for Android.
 
 The solution supports remote presentation flows for Personal Identification Data (PID) in SD-JWT and mDOC format and
-Mobile Driving License (mDL) in mDOC format.
+Mobile Driving License (mDL) in mDOC format, plus a zero-knowledge proof-of-age presentation
+(`mso_mdoc_zk` over OpenID4VP and the Android DC API) that discloses whether the holder is over
+18 — and nothing else. See "Wallet-side ZK age-proof integration" below.
 
 The issuance flow is based on
 the [OpenID for Verifiable Credential Issuance Draft 14](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-14.html)
@@ -81,12 +83,92 @@ Assembled APKs can be found here: `build/outputs/apk/`
 > The app uses `local_mocks` as the default build variant. This build variant is used to run the app with all the
 > backend services mocked. This is useful for development and testing purposes.
 
+> The release build restricts ABIs to `arm64-v8a` and `x86_64`: the bundled Longfellow prover
+> (`multipaz-longfellow`) ships `libzkp.so` for those two ABIs only. The wallet still installs
+> on other devices, but those devices get plain mdoc presentations, not ZK ones.
+
+> The ZK spine (issuer, holder, verifier, prover) has its own prerequisites — Go, a Rust
+> toolchain, Python 3.12 with `cbor2` and `cryptography` — documented in
+> [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md). The list above covers only the Android app.
+
+## Wallet-side ZK age-proof integration
+
+Beyond the imported spine, this fork wires zero-knowledge proof of age into the Android
+wallet itself:
+
+* **ZK presentations in the wallet.** The Longfellow prover runs in-app through
+  `multipaz-longfellow` (`ZkPresenter`, proof generation off the main thread). Where the
+  verifier's request carries a ZK age query, the wallet proves `age_over_18` without
+  disclosing the birth date.
+* **Presentation tiers and downgrade resistance.** Every presentation is labelled with a tier
+  (`PresentationTier`, `HolderObligations`): zero-knowledge, plain mdoc, proof-failed or
+  not-requested. On a device capable of proving, a failed proof refuses the presentation
+  instead of silently falling back to the linkable plain mdoc; tier and linkable-row counts
+  surface on the activity log.
+* **DC API path.** Requests arriving through the Android Credential Manager are dispatched on
+  their protocol field (`DcApiProtocol`), the registry registers docTypes only, disclosure is
+  gated behind a settings switch, and the reader-auth certificate subject is shown on the
+  consent screen after its signature is verified.
+* **`mso_mdoc_zk` over OpenID4VP.** `DeviceRequestParser` parses the `mso_mdoc_zk` DCQL format
+  into per-docType ZK system specs (`zk_system_type` id + circuit hash + params, ECDSA-only
+  device auth), and the wallet emits a `vp_token` carrying the Longfellow proof. The carrier
+  is written up field by field in
+  [`docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md`](docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md).
+* **Key management through Android SecureArea.** Device keys live in the multipaz
+  `AndroidKeystoreSecureArea` with a StrongBox/TEE selection policy, per-alias lifecycle
+  (creation, attestation, deletion on wipe) and no private-key accessor; `deviceAuth` is signed
+  by the SecureArea key.
+* **EE-PoA issuance and consumption.** The mock provider issues the `ee.riik.poa.1`
+  proof-of-age attestation in once-only batches (`WalletProviderBatchAgeIssuer`, validity
+  anchored to the issuance day) and consumes one batch entry per presentation, after the
+  response is built.
+* **On-device measurement harness.** `ZkProofBenchmark` times approval-to-proof-ready and reads
+  prover peak memory (`VmHWM`) for the plan §6 device rows; the table and its PENDING-DEVICE
+  discipline live in [`docs/MEASUREMENTS.md`](docs/MEASUREMENTS.md).
+* **ABI restriction** to `arm64-v8a` and `x86_64` (see Quick-Start above) is a consequence of
+  the prover dependency.
+
+Where the wallet stands against the specification, requirement by requirement:
+[`docs/CONFORMITY.md`](docs/CONFORMITY.md).
+
+## Repository layout
+
+| Path | What it is |
+|---|---|
+| `app/` | The Android wallet (this fork's main development surface) |
+| `spec/` | The EE-EUDIW technical specification (`EE-EUDIW-TS-1.0.md`) |
+| `eudi-arf/` | The EUDI ARF checkout the specification's citations are checked against (pinned) |
+| `issuer/`, `wallet/`, `verifier/`, `zk-age-poc/` | The imported ZK spine: Python issuer, Python holder, Go verifier over the Rust Longfellow runtime, Rust prover examples |
+| `zk-conformance/` | JVM fixture tests: the ZK round trip, and the step 0 / 2a / 8-7 cross-checks against the verifier's fixtures |
+| `docs/` | Conformity note, measurements, development guide, architecture, profiles, analyses and plan records — indexed in [`docs/README.md`](docs/README.md) |
+| `demo/` | The Android age-proof demo recording runbook (`demo.sh`) |
+| `tests/` | End-to-end (`e2e.sh`) and load (`load_test.py`) harnesses |
+| `tools/` | Development helpers: `deeplink.sh` (takes the deeplink as an argument), `log-level.sh`, `proxy.sh` |
+| `iaca/`, `statuslists/` | Issuer trust anchor and status-list fixtures (upstream) |
+
+## Checks and CI
+
+`.github/workflows/ci.yml` is the definition of green for the ZK spine: a `fast` job (Python
+lint, Go vet and unit tests — no Rust toolchain) and an `e2e` job that builds the Rust
+staticlib and prover and runs `tests/e2e.sh`. `.github/workflows/app.yml` runs the Android
+app's unit tests (`:app:testLocal_mocksUnitTest`) on app or Gradle changes, kept apart so
+Kotlin-only pushes don't pay for the Rust build. Note: the app job reads GitHub Packages
+registries and needs a `GPR_API_KEY` secret with `read:packages` — fork PRs get no secrets and
+fail that job with a 401. Running everything locally, including the `-Dzk.regenerate=true`
+fixture regeneration flag, is documented in
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md); every test and check is catalogued in
+[`tests/README.md`](tests/README.md).
+
 ## EE-EUDIW specification and ZK age-proof spine
 
 [`spec/EE-EUDIW-TS-1.0.md`](spec/EE-EUDIW-TS-1.0.md) is an independent Estonian EUDIW technical
 specification with a zero-knowledge proof-of-age profile. The Python issuer and holder, the Go
 verifier over the Rust Longfellow runtime, and the prover examples that exercise it live in
 `issuer/`, `wallet/`, `verifier/` and `zk-age-poc/`. All were imported from ee-eudiw at `e368fc1`.
+The Go verifier sheds oversize or over-concurrent requests before reading bodies (a body-read
+admission pool four times the verification limit) and bounds holder input — 20-byte fields,
+cumulative CBOR budgets — before it reaches the prover's fixed-size slots, so hostile input is
+an error rather than a crash.
 
 > **Status: independent draft.** Not issued by RIA, the Ministry of Justice and Digital Affairs, or any
 > Estonian public authority, and not affiliated with them.
