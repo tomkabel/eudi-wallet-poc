@@ -4,7 +4,7 @@ shape: DeviceResponse.Builder(addZkDocument).toDataItem() - the same
   serialization as DigitalCredentialsViewModel.zkDeviceResponse
 files: device_response.cbor (the response), device_response_transcript.bin
   (the session transcript the proof binds)
-command: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew
+command: ANDROID_HOME=/opt/android-sdk ./gradlew
   :zk-conformance:test --tests
-  'ee.cyber.wallet.zk.Step2aDeviceResponseFixtureTest' --offline)
-consumed by: ee-eudiw verifier/go TestStep2aMultipazDeviceResponse
+  'ee.cyber.wallet.zk.Step2aDeviceResponseFixtureTest' --offline
+consumed by: verifier/go TestStep2aMultipazDeviceResponse

@@ -17,7 +17,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Step 8.7 fixture for ee-eudiw's OpenID4VP `mso_mdoc_zk` verifier
+ * Step 8.7 fixture for the Go verifier's OpenID4VP `mso_mdoc_zk` verifier
  * (docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md §8.7): a `DeviceResponse`
  * carrying `zkDocuments` whose proof binds the **B.2.6.1 OpenID4VPHandover**
  * session transcript —
@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
  *     OpenID4VPHandover = ["OpenID4VPHandover", Sha256(OpenID4VPHandoverInfoBytes)]
  *     OpenID4VPHandoverInfoBytes = bstr .cbor [clientId, nonce, jwkThumbprint, responseUri]
  *
- * written exactly as ee-eudiw's oid4vp.SessionTranscript builds it, with the
+ * written exactly as `verifier/go`'s oid4vp.SessionTranscript builds it, with the
  * fixed handover parameters recorded in `request.json` so the Go test can
  * re-derive the bytes from the session rather than trusting the fixture. The
  * step 2a fixture binds a different, synthetic transcript
@@ -34,10 +34,9 @@ import kotlin.test.assertTrue
  * one); a proof bound here must NOT verify over it — that is the second
  * assertion in this test.
  *
- * Run: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew
- * :zk-conformance:test --tests 'ee.cyber.wallet.zk.Step87OpenID4VPFixtureTest' --offline)
- * The ee-eudiw checkout defaults to a sibling directory; override it with
- * `-Dstep0.eeEudiw=...`.
+ * Run: ANDROID_HOME=/opt/android-sdk ./gradlew
+ * :zk-conformance:test --tests 'ee.cyber.wallet.zk.Step87OpenID4VPFixtureTest' --offline
+ * from the repository root; `-Dzk.fixtureRoot=...` writes elsewhere.
  */
 class Step87OpenID4VPFixtureTest {
 
@@ -48,7 +47,7 @@ class Step87OpenID4VPFixtureTest {
 
     @Test
     fun writeOpenID4VPZkFixtureForGoVerifier() = runTest {
-        val eeEudiw = EeEudiw.assumePresent()
+        val root = FixtureRoot.existing()
         val zkSystem = LongfellowZkSystem().apply { addDefaultCircuits() }
 
         val sessionTranscript = openid4vpSessionTranscript()
@@ -79,7 +78,7 @@ class Step87OpenID4VPFixtureTest {
         }.toDataItem()
         val bytes = Cbor.encode(deviceResponse)
 
-        val dir = File(eeEudiw, "verifier/go/zk/testdata/step8-7-openid4vp-zk")
+        val dir = File(root, "verifier/go/zk/testdata/step8-7-openid4vp-zk")
         dir.mkdirs()
         File(dir, "device_response.cbor").writeBytes(bytes)
         File(dir, "device_response_issuer.json").writeText(trustStoreJson(minted))
@@ -110,10 +109,10 @@ class Step87OpenID4VPFixtureTest {
                 "  (jwk_thumbprint null - direct_post, not direct_post.jwt)\n" +
                 "shape: DeviceResponse.Builder(addZkDocument).toDataItem() with zkDocuments\n" +
                 "files: device_response.cbor, device_response_issuer.json, request.json\n" +
-                "command: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew\n" +
+                "command: ANDROID_HOME=/opt/android-sdk ./gradlew\n" +
                 "  :zk-conformance:test --tests\n" +
-                "  'ee.cyber.wallet.zk.Step87OpenID4VPFixtureTest' --offline)\n" +
-                "consumed by: ee-eudiw verifier/go/zk TestStep87OpenID4VPZkVerify\n"
+                "  'ee.cyber.wallet.zk.Step87OpenID4VPFixtureTest' --offline\n" +
+                "consumed by: verifier/go/zk TestStep87OpenID4VPZkVerify\n"
         )
 
         // Sanity: the map carries the top-level zkDocuments key.
@@ -127,7 +126,7 @@ class Step87OpenID4VPFixtureTest {
     }
 
     /**
-     * OpenID4VP 1.0 Appendix B.2.6.1, hand-rolled to byte-match ee-eudiw's
+     * OpenID4VP 1.0 Appendix B.2.6.1, hand-rolled to byte-match `verifier/go`'s
      * `oid4vp.SessionTranscript`:
      * deterministic-length CBOR heads, sha-256 of the handover info bytes.
      */

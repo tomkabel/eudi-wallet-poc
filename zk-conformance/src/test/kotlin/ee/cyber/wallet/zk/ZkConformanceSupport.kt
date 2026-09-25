@@ -1,7 +1,6 @@
 package ee.cyber.wallet.zk
 
 import java.io.File
-import org.junit.Assume.assumeTrue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -46,18 +45,15 @@ object ZkConformanceConsts {
     fun signedAtNow(): Instant = Instant.fromEpochSeconds(Clock.System.now().epochSeconds, 0)
 }
 
-/** The ee-eudiw checkout the fixture tests write into. */
-object EeEudiw {
+/** The tree whose `verifier/go/zk/testdata` the fixture tests write into: this repository. */
+object FixtureRoot {
     // Defaults live in build.gradle.kts, the one place that knows the repository root.
     val dir: File
-        get() = File(checkNotNull(System.getProperty("step0.eeEudiw")) { "step0.eeEudiw is unset; run through Gradle" })
+        get() = File(checkNotNull(System.getProperty("zk.fixtureRoot")) { "zk.fixtureRoot is unset; run through Gradle" })
 
-    /**
-     * Skips the calling test when there is no ee-eudiw checkout; without this,
-     * a fixture test's mkdirs would invent an ee-eudiw tree nobody reads.
-     */
-    fun assumePresent(): File = dir.also {
-        assumeTrue("no ee-eudiw checkout at ${it.absolutePath}", File(it, "verifier/go/zk").isDirectory)
+    /** Fails rather than skips: the verifier tree is part of this repository. */
+    fun existing(): File = dir.also {
+        check(File(it, "verifier/go/zk").isDirectory) { "no verifier/go/zk under ${it.absolutePath}" }
     }
 }
 

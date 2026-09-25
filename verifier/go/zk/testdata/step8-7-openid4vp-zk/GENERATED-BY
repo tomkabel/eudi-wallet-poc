@@ -4,7 +4,7 @@ transcript: B.2.6.1 OpenID4VPHandover over client_id/nonce/response_uri in reque
   (jwk_thumbprint null - direct_post, not direct_post.jwt)
 shape: DeviceResponse.Builder(addZkDocument).toDataItem() with zkDocuments
 files: device_response.cbor, device_response_issuer.json, request.json
-command: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew
+command: ANDROID_HOME=/opt/android-sdk ./gradlew
   :zk-conformance:test --tests
-  'ee.cyber.wallet.zk.Step87OpenID4VPFixtureTest' --offline)
-consumed by: ee-eudiw verifier/go/zk TestStep87OpenID4VPZkVerify
+  'ee.cyber.wallet.zk.Step87OpenID4VPFixtureTest' --offline
+consumed by: verifier/go/zk TestStep87OpenID4VPZkVerify

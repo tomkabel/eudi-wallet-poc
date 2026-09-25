@@ -12,28 +12,27 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * Step 2a fixture for ee-eudiw's ISO 18013-7 Annex C verifier
+ * Step 2a fixture for the Go verifier's ISO 18013-7 Annex C verifier
  * (docs/planning/STEP2A-RECORD.md, PENDING-DEVICE item 4): a complete
  * `DeviceResponse` exactly as the wallet sends it —
  * `buildDeviceResponse(...) { addZkDocument(it) }.toDataItem()`, the same
  * serialization as DigitalCredentialsViewModel.zkDeviceResponse — written raw
- * into ee-eudiw's `verifier/go/zk/testdata/step2a-iso-annex-c/device_response.cbor`.
+ * into `verifier/go/zk/testdata/step2a-iso-annex-c/device_response.cbor`.
  *
  * The embedded ZkDocument is produced by generateProof exactly as in
  * Step0CrossVerifyTest (same minted mdoc, same session-transcript shape) and
  * self-verified before it leaves this test, so the Go side can prove the whole
  * path end to end: ParseZkDocuments -> spec allowlist -> zk.Verify.
  *
- * Run: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew
- * :zk-conformance:test --tests 'ee.cyber.wallet.zk.Step2aDeviceResponseFixtureTest' --offline)
- * The ee-eudiw checkout defaults to a sibling directory; override it with
- * `-Dstep0.eeEudiw=...`.
+ * Run: ANDROID_HOME=/opt/android-sdk ./gradlew
+ * :zk-conformance:test --tests 'ee.cyber.wallet.zk.Step2aDeviceResponseFixtureTest' --offline
+ * from the repository root; `-Dzk.fixtureRoot=...` writes elsewhere.
  */
 class Step2aDeviceResponseFixtureTest {
 
     @Test
     fun writeDeviceResponseFixtureForGoVerifier() = runTest {
-        val eeEudiw = EeEudiw.assumePresent()
+        val root = FixtureRoot.existing()
         val zkSystem = LongfellowZkSystem().apply { addDefaultCircuits() }
 
         val sessionTranscript = SessionTranscripts.forZkConformance()
@@ -55,7 +54,7 @@ class Step2aDeviceResponseFixtureTest {
         }.toDataItem()
         val bytes = Cbor.encode(deviceResponse)
 
-        val dir = File(eeEudiw, "verifier/go/zk/testdata/step2a-iso-annex-c")
+        val dir = File(root, "verifier/go/zk/testdata/step2a-iso-annex-c")
         dir.mkdirs()
         File(dir, "device_response.cbor").writeBytes(bytes)
         File(dir, "device_response_transcript.bin").writeBytes(Cbor.encode(sessionTranscript))
@@ -68,10 +67,10 @@ class Step2aDeviceResponseFixtureTest {
                 "  serialization as DigitalCredentialsViewModel.zkDeviceResponse\n" +
                 "files: device_response.cbor (the response), device_response_transcript.bin\n" +
                 "  (the session transcript the proof binds)\n" +
-                "command: (cd eudi-wallet-poc && ANDROID_HOME=/opt/android-sdk ./gradlew\n" +
+                "command: ANDROID_HOME=/opt/android-sdk ./gradlew\n" +
                 "  :zk-conformance:test --tests\n" +
-                "  'ee.cyber.wallet.zk.Step2aDeviceResponseFixtureTest' --offline)\n" +
-                "consumed by: ee-eudiw verifier/go TestStep2aMultipazDeviceResponse\n"
+                "  'ee.cyber.wallet.zk.Step2aDeviceResponseFixtureTest' --offline\n" +
+                "consumed by: verifier/go TestStep2aMultipazDeviceResponse\n"
         )
 
         // Sanity: the map carries the top-level zkDocuments key (the shape the
