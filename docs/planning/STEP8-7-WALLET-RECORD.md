@@ -107,7 +107,9 @@ get produced (DCQL-carried specs now resolve).
 11. `mergeZkSpecs`: non-empty ISO specs win over DCQL on a shared doctype.
 12. `mergeZkSpecs`: a doctype only DCQL names is added.
 
-Gates after the rebase onto `1830d7a`: `:app:testDebugUnitTest` 102 tests / 0 failures (8 of
+Gates after the code-review fixes: `:app:testDebugUnitTest` 106 tests / 0 failures (12 of them
+`MsoMdocZkParsingTest`), `:zk-conformance:test` 5 / 0. After the rebase onto `1830d7a`, before
+those fixes: `:app:testDebugUnitTest` 102 tests / 0 failures (8 of
 them `MsoMdocZkParsingTest`), `:zk-conformance:test` 5 / 0 (`AgeProofRoundTripTest` proves and
 verifies against the bundled circuits).
 
