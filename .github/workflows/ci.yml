@@ -110,7 +110,7 @@ jobs:
         # runner has neither, and without this install the step fails on the
         # import rather than on the vectors.
         run: |
-          pip install cbor2 cryptography
+          pip install cbor2 cryptography jwcrypto
           python3 wallet/test_transcript.py
 
       - name: the mint's device public key path
@@ -213,5 +213,5 @@ jobs:
         env:
           EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
         run: |
-          pip install cbor2 cryptography
+          pip install cbor2 cryptography jwcrypto
           tests/e2e.sh

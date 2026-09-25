@@ -200,10 +200,14 @@ job's transcript-pin step (`ci.yml`:87-99).
 It must **not** trust: the issuer key from the presentation (`trust.go`:10-24,
 `present.go`:209), any caller-supplied `now` outside the dev harness (`main.go`:265-274),
 or "an answer" as proof of anything the circuit did not assert — the presented CBOR value
-is matched against the query's constraint (`vptoken.go`:97-118). Transport is plain
-`direct_post`, unencrypted, with a null `jwkThumbprint` in the transcript
-(`session.go`:235-239; `verifier/README.md`:96-98, 268-269): the transcript buys binding,
-not confidentiality.
+is matched against the query's constraint (`vptoken.go`:97-118). The response mode is
+`direct_post.jwt` by default (ADR-003): the ~360 KB proof and the holder's answers travel
+as an ECDH-ES+A256KW/A256GCM JWE to the verifier's P-256 response key, whose RFC 7638
+thumbprint is itself inside the transcript (`session.go` `Transcript()`) — so the binding
+and the confidentiality are tied to the same key, and the request's `client_metadata.jwks`
+plus `GET /present/jwks.json` publish it. Plain `direct_post` survives only behind
+`-response-mode direct_post -allow-unencrypted-response`, an explicit operator downgrade;
+there the transcript's third element is null and the response is readable in transit.
 
 ### 4.2 The session transcript
 

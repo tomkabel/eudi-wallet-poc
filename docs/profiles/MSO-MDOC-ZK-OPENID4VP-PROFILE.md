@@ -213,9 +213,18 @@ modes are constrained as follows:
 - **`direct_post.jwt` is the mandatory response mode** for this carrier where the
   ecosystem mandates response encryption (HAIP 1.0, and therefore EE-PRO-001 for the
   Estonian ecosystem: `direct_post.jwt` for redirect-based presentation, ECDH-ES response
-  encryption mandatory). `direct_post` (unencrypted) is tolerated only where the ecosystem
-  permits it — this PoC uses it, which is why the fixture's `jwk_thumbprint` is `null`; a
-  conforming Estonian deployment sets the thumbprint, which changes `h` and hence the
+  encryption mandatory). **Since ADR-003 it is also this verifier's default**, and the
+  mandatory-response-encryption clause is *implemented*, not just stated: the verifier
+  publishes its EC P-256 response key in the request's `client_metadata.jwks` (and at
+  `GET /present/jwks.json`), the wallet answers `response=<compact JWE>` with
+  `alg=ECDH-ES+A256KW`, `enc=A256GCM` (the minimal `internal/jose` profile; jwcrypto on
+  the Python side), and the key's RFC 7638 thumbprint rides the B.2.6.1 handover (§6), so
+  the proof binds to the encryption key itself. A plain `direct_post` response to an
+  encrypted session is refused (`400`), and the unencrypted mode is reachable only through
+  `-response-mode direct_post -allow-unencrypted-response` — an explicit, logged
+  downgrade for environments where the ecosystem permits it. The committed multipaz
+  fixture predates this and rides plain `direct_post` (`jwk_thumbprint` is `null`);
+  a conforming Estonian deployment sets the thumbprint, which changes `h` and hence the
   transcript (§6), so the mode choice is made **before** the request is issued, never
   negotiated after the proof exists.
 - **Front-channel redirect modes are excluded by arithmetic, not policy:** a ~481 kB

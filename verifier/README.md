@@ -73,7 +73,8 @@ and prove anything. It is therefore **only registered under `-unsafe-dev-api`**,
 ```text
 POST /present/new              -> {id, request_uri, wallet_uri, result_uri}
 GET  /present/request/{id}     -> the authorization request, carrying dcql_query
-POST /present/response/{id}    -> vp_token   (direct_post)
+POST /present/response/{id}    -> vp_token (direct_post) or response=<JWE> (direct_post.jwt)
+GET  /present/jwks.json        -> the response-encryption key, as a JWKS (encrypted mode)
 GET  /present/result/{id}      -> the outcome, for the relying party's own page
 GET  /issuers                  -> the trusted attestation providers
 ```
@@ -106,13 +107,37 @@ OpenID4VPHandoverInfo = [clientId, nonce, jwkThumbprint, responseUri]
 ```
 
 `jwkThumbprint` is the RFC 7638 SHA-256 thumbprint of the verifier's response-encryption
-key when the response is encrypted, and **null** otherwise. This PoC uses `direct_post`,
-so it is null.
+key when the response is encrypted, and **null** otherwise. This verifier defaults to
+`direct_post.jwt` (ADR-003), so it is the thumbprint of the key at
+`GET /present/jwks.json` — generated fresh per process unless `-response-key-file` PEM
+persists one. Plain `direct_post` requires `-response-mode direct_post
+-allow-unencrypted-response`, an explicit, logged downgrade.
 
 The holder signs `deviceAuth` over this at presentation time — not at issuance. A proof
 made for a different `client_id`, `response_uri` or `nonce` hashes to a different
 transcript and does not verify. `wallet/present.py` derives the same bytes independently
 in Python, and the two implementations are checked against each other.
+
+### Response encryption (direct_post.jwt)
+
+The response carries a ~360 KB proof and the holder's answers, so it is encrypted by
+default (ADR-003, the same posture HAIP 1.0 and EE-PRO-001 require):
+
+- The verifier holds one **EC P-256 response-encryption key**: generated at startup, or
+  loaded from `-response-key-file` (PEM, SEC 1 or PKCS#8) for restart-stable
+  thumbprints. It is published as a JWKS at `GET /present/jwks.json` **and** inline in
+  every authorization request's `client_metadata.jwks`, so the wallet never needs a
+  second fetch.
+- The wallet answers `response_mode=direct_post.jwt` with a form post
+  `response=<compact JWE>`, `alg=ECDH-ES+A256KW`, `enc=A256GCM` — the minimal profile
+  `internal/jose` implements, pinned to RFC 3394 §4.6 and a jwcrypto cross-language
+  token (`jwe_interop_test.go`).
+- The key's RFC 7638 thumbprint is the third element of the B.2.6.1 handover, so the
+  proof is bound to *this* key: a response encrypted to any other key verifies against
+  a different transcript and fails.
+- A tampered or undecryptable JWE is one clean `400` — no partial parse, and the
+  distinction stays in the log. A plain `vp_token` posted to an encrypted session gets
+  a `400` naming the requirement.
 
 ### Measured, full flow
 
@@ -277,8 +302,10 @@ CT-logged (`EE-GOV-012`).
   certificate (`EE-RP-002`/`EE-RP-003`). A wallet has nothing here to check, so the
   `client_id` is a claim, not a credential — which is why the trust store binds issuers
   rather than verifiers.
-- **`direct_post`, not `direct_post.jwt`.** HAIP 1.0 makes response encryption mandatory.
-  Unencrypted responses are why `jwkThumbprint` is null in the transcript.
+- **`direct_post.jwt` is the default since ADR-003**; HAIP 1.0 makes response encryption
+  mandatory, and the default is now the compliant mode. Running plain `direct_post`
+  needs `-response-mode direct_post -allow-unencrypted-response` — an explicit,
+  logged downgrade that sets a null thumbprint in the transcript.
 - **No OpenID4VP Digital Credentials API path.** The ISO 18013-7 Annex C path
   (`/present/dcapi/*`, `iso.go`) does use the Digital Credentials API; OpenID4VP over it
   does not exist here. No `dc_api.jwt`, no `expected_origins`, and
