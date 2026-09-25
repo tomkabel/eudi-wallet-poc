@@ -29,3 +29,5 @@ graphify-out/
 .claude/cert-ee/
 .claude/plans/
 .claude/settings.json
+.hermes/
+docs/sota-audit-*.md
