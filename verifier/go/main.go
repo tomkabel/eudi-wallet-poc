@@ -78,6 +78,9 @@ type limiter chan struct{}
 // interrupt a call that has entered cgo — a cancelled client just means the
 // verification finishes into a closed connection.
 func (l limiter) tryAcquire() bool {
+	if l == nil {
+		return true // no limit configured
+	}
 	select {
 	case l <- struct{}{}:
 		return true
@@ -86,7 +89,11 @@ func (l limiter) tryAcquire() bool {
 	}
 }
 
-func (l limiter) release() { <-l }
+func (l limiter) release() {
+	if l != nil {
+		<-l
+	}
+}
 
 // busy sets the shed-load headers. The wait is one verification long, because
 // that is when a slot actually frees up.
@@ -110,13 +117,22 @@ func verifyErrorCategory(err error) string {
 	}
 }
 
-func handleVerify(reg *circuits.Registry, sem limiter) http.HandlerFunc {
+func handleVerify(reg *circuits.Registry, sem, reads limiter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			writeJSON(w, http.StatusMethodNotAllowed, verifyResponse{Error: "POST only"})
 			return
 		}
 		start := time.Now()
+
+		// Body reads get their own, larger pool: reading and decoding up to 8 MB
+		// happens before the verification slot is taken, and must be bounded too.
+		if !reads.tryAcquire() {
+			busy(w)
+			writeJSON(w, http.StatusServiceUnavailable, verifyResponse{Error: "verifier busy, retry"})
+			return
+		}
+		defer reads.release()
 
 		var req verifyRequest
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<20)).Decode(&req); err != nil {
@@ -220,6 +236,9 @@ func main() {
 	// Verification is CPU-bound and each call holds an OS thread, so one slot
 	// per core is the useful ceiling; more only queues inside the scheduler.
 	sem := make(limiter, *maxVerify)
+	// Requests reading or decoding a body. Larger than sem so parsing never
+	// starves verification, but bounded so a flood is shed before any body is read.
+	reads := make(limiter, 4**maxVerify)
 	log.Printf("verifying at most %d proofs concurrently", *maxVerify)
 
 	reg, err := circuits.Load(*registryPath)
@@ -257,6 +276,7 @@ func main() {
 		docType:     *docType,
 		nsID:        *docType,
 		sem:         sem,
+		reads:       reads,
 		dcapiOrigin: *dcapiOrigin,
 		offered:     reg.Accepted(),
 	}
@@ -272,7 +292,7 @@ func main() {
 		log.Printf("WARNING: and the `now` timestamp supplied by whoever calls it.")
 		log.Printf("WARNING: anything it reports valid is only valid to that caller.")
 		log.Printf("WARNING: never expose this on a reachable interface.")
-		mux.HandleFunc("/zkverify", handleVerify(reg, sem))
+		mux.HandleFunc("/zkverify", handleVerify(reg, sem, reads))
 	}
 	mux.HandleFunc("/present/new", p.handleNew)
 	mux.HandleFunc("/present/request/", p.handleRequest)

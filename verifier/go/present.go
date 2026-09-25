@@ -26,6 +26,8 @@ type presenter struct {
 	docType  string
 	nsID     string
 	sem      limiter
+	// reads bounds requests that are reading or decoding a body; nil is unlimited.
+	reads limiter
 
 	// dcapiOrigin is the -dcapi-origin value the ISO 18013-7 Annex C handover
 	// binds; empty disables that path. offered is the circuit set the ISO
@@ -123,6 +125,12 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := strings.TrimPrefix(r.URL.Path, "/present/response/")
+	if !p.reads.tryAcquire() {
+		busy(w)
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "verifier busy, retry"})
+		return
+	}
+	defer p.reads.release()
 
 	var token oid4vp.VPToken
 	ct := r.Header.Get("Content-Type")

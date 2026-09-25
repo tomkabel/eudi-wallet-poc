@@ -179,6 +179,12 @@ func (p *presenter) handleDCAPIResponse(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	id := strings.TrimPrefix(r.URL.Path, "/present/dcapi/response/")
+	if !p.reads.tryAcquire() {
+		busy(w)
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "verifier busy, retry"})
+		return
+	}
+	defer p.reads.release()
 	var body dcapiResponseRequest
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<20)).Decode(&body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "malformed JSON: " + err.Error()})
