@@ -17,18 +17,30 @@ build. This links the **Rust** implementation instead, through a small C ABI
 - a natural place to put the checks a relying party actually owes the user —
   starting with the circuit allowlist.
 
-## Build and run
+## Building the ZK spine
+
+`verifier/zkverify-ffi` path-depends on a `longfellow-zk` sibling checkout at the
+revision committed in [`zkverify-ffi/longfellow-rev.txt`](zkverify-ffi/longfellow-rev.txt) —
+a path dependency has no lockfile entry, so that file is the single source of truth
+(CI bootstraps from it too, through the same script). One command fetches the pinned
+revision, installs the prover examples, and builds the prover, the static library and
+the service:
 
 ```bash
-# 1. longfellow-zk must sit next to this repository
-git clone https://github.com/google/longfellow-zk.git ../longfellow-zk
-git -C ../longfellow-zk checkout --detach 61a8a735964d1b22bccf79bf14ef6767249cdf92
+make deps          # from the repository root; ~1 min for the staticlib, more for the prover
+make test-go-fast  # the go tests that do not link the staticlib
+make test-go-zk    # the ones that do (~2 min); needs make deps first, and says so if it is missing
+make e2e           # tests/e2e.sh against the built prover and verifier
+make lint          # gofmt, go vet, ruff, shellcheck — the CI fast job
+```
 
-# 2. static library with the C ABI  (~1 min)
-cd verifier/zkverify-ffi && cargo build --release && cd ..
+`zkverify -version` prints the longfellow-zk revision the linked runtime was built
+from. Cross-check it by hand against the upstream release recorded in `circuits.json`;
+nothing fetches or compares at runtime.
 
-# 3. the service
-cd go && go build -o ../zkverify . && cd ..
+Then run the service:
+
+```bash
 ./zkverify -registry circuits.json -issuers <issued>/issuers.json -addr 127.0.0.1:8080
 ```
 
