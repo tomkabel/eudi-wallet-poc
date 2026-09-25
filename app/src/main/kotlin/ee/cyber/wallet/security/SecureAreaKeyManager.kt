@@ -148,9 +148,24 @@ class SecureAreaKeyManager(
         }
     }
 
-    /** Signs through the SecureArea key; the private key never enters this process's heap. */
-    suspend fun sign(keyId: String, dataToSign: ByteArray): EcSignature = withContext(dispatcher) {
-        secureArea.sign(keyId, dataToSign, Reason.Unspecified)
+    /**
+     * Signs through the SecureArea key; the private key never enters this process's heap.
+     *
+     * D14 (mobile F2, stage 2): [reason] rides the call into
+     * `AndroidKeystoreSecureArea.sign(keyId, data, reason)`. For a locked key with a zero-timeout
+     * auth gate the multipaz `KeyUnlockDataProvider` chain resolves a
+     * `Reason.HumanReadable` through the app's [org.multipaz.prompt.PromptModel] and shows the
+     * system BiometricPrompt/LSKF dialog bound to the keystore Signature CryptoObject — so a
+     * Stage-1 (60s-window) key cannot be exercised without fresh user presence at presentation
+     * time. Batch/mint callers keep [Reason.Unspecified] (no interactive unlock on the issuance
+     * path).
+     */
+    suspend fun sign(
+        keyId: String,
+        dataToSign: ByteArray,
+        reason: Reason = Reason.Unspecified
+    ): EcSignature = withContext(dispatcher) {
+        secureArea.sign(keyId, dataToSign, reason)
     }
 
     suspend fun keyInfo(keyId: String): AndroidKeystoreKeyInfo =

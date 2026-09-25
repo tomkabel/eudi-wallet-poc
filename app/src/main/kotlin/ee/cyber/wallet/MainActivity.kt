@@ -44,6 +44,10 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // D14 (mobile F2, stage 2): the biometric prompt host for presentation-time SecureArea
+        // unlocks — only a RESUMED activity may show the platform prompt.
+        ee.cyber.wallet.ui.prompt.PromptDialogHost.activity = this
+
         var uiState: MainActivityUiState by mutableStateOf(MainActivityUiState.Loading)
 
         lifecycleScope.launch {
@@ -88,6 +92,15 @@ class MainActivity : AppCompatActivity() {
         awaitDispose {
             removeOnNewIntentListener(consumer)
         }
+    }
+
+    override fun onDestroy() {
+        // D14: clear the prompt host so a destroyed activity can never be asked to show a
+        // platform dialog (the unlock path then fails closed with PromptUiNotAvailableException).
+        if (ee.cyber.wallet.ui.prompt.PromptDialogHost.activity === this) {
+            ee.cyber.wallet.ui.prompt.PromptDialogHost.activity = null
+        }
+        super.onDestroy()
     }
 }
 

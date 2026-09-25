@@ -10,6 +10,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.multipaz.crypto.EcSignature
+import org.multipaz.prompt.Reason
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 
@@ -36,7 +37,20 @@ class SecureAreaCOSECryptoProvider(
      * synchronous, so the suspension points are wrapped in runBlocking — on an
      * injected IO dispatcher, never the caller's (possibly Main) pool.
      */
-    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    /**
+     * D14 (mobile F2, stage 2): the multipaz unlock [Reason] for the presentation-time
+     * DeviceAuthentication signature. Default is the D14 presentation reason: with the Stage-1
+     * 60s window expired, `AndroidKeystoreSecureArea.sign` resolves this through the app's
+     * PromptModel and surfaces the system BiometricPrompt/LSKF dialog — user presence is
+     * required before the key signs. A caller minting (no prompt expected) passes
+     * [org.multipaz.prompt.Reason.Unspecified].
+     */
+    private val unlockReason: Reason = Reason.HumanReadable(
+        title = "Unlock your document",
+        subtitle = "Authenticate to share this document",
+        requireConfirmation = false
+    )
 ) : COSECryptoProvider {
 
     private val logger = LoggerFactory.getLogger("SecureAreaCOSECryptoProvider")
@@ -58,8 +72,11 @@ class SecureAreaCOSECryptoProvider(
 
         val protectedHeader = ES256_PROTECTED_HEADER
         val sigStructure = coseSigStructure(protectedHeader, payload)
+        // D14: the unlock Reason flows into AndroidKeystoreSecureArea.sign — on a locked key the
+        // multipaz KeyUnlockDataProvider path renders it as the system BiometricPrompt/LSKF
+        // dialog before the keystore Signature proceeds (stage-2 user-presence gate).
         val rawSignature = runBlocking(dispatcher) {
-            keyManager.sign(keyId, sigStructure)
+            keyManager.sign(keyId, sigStructure, unlockReason)
         }.toCoseEncoded()
 
         // COSE_Sign1 array: [protected, unprotected(empty map), payload, signature]. The payload
