@@ -17,6 +17,7 @@ import ee.cyber.wallet.security.AttestationChallengeSource
 import ee.cyber.wallet.security.DeviceSecureAreaSelection
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
 import ee.cyber.wallet.security.MockAttestationChallengeSource
+import ee.cyber.wallet.security.PinVerifier
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.SecureAreaSelection
 import kotlinx.coroutines.CoroutineDispatcher
@@ -40,6 +41,16 @@ object SecurityModule {
     ) = AndroidEncryptionManager(dispatcher)
 
     /**
+     * The PIN verifier singleton (JVM-H3): Argon2id comparison and
+     * failed-attempt lockout on a process-wide singleton, so the lockout
+     * survives ViewModel recreation. (Process-death persistence would need a
+     * DataStore-backed counter — follow-up.)
+     */
+    @Singleton
+    @Provides
+    fun providesPinVerifier(): PinVerifier = PinVerifier()
+
+    /**
      * The StrongBox/TEE selection for device keys. Step 5 of the conformance plan: StrongBox
      * where the device has FEATURE_STRONGBOX_KEYSTORE, TEE otherwise.
      */
@@ -59,6 +70,12 @@ object SecurityModule {
     /**
      * Initialises the multipaz AndroidKeystoreSecureArea and the key manager over it. The
      * SecureArea's SQLite metadata store is opened lazily on first use (suspend provider).
+     *
+     * D11 (JVM-H4) NOTE: this provider still blocks on first injection — the
+     * deferred-facade design from the plan is NOT implementable against the
+     * current class (private constructor, final, 15 injection sites on the
+     * concrete type). Recorded in the campaign impl-log with the interface-
+     * extraction design as the follow-up.
      */
     @Singleton
     @Provides

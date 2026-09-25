@@ -1,23 +1,20 @@
 package ee.cyber.wallet.security
 
 import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties.BLOCK_MODE_CBC
-import android.security.keystore.KeyProperties.ENCRYPTION_PADDING_PKCS7
+import android.security.keystore.KeyProperties.BLOCK_MODE_GCM
+import android.security.keystore.KeyProperties.ENCRYPTION_PADDING_NONE
 import android.security.keystore.KeyProperties.KEY_ALGORITHM_AES
 import android.security.keystore.KeyProperties.PURPOSE_DECRYPT
 import android.security.keystore.KeyProperties.PURPOSE_ENCRYPT
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
-import javax.crypto.spec.IvParameterSpec
 
 class AndroidEncryptionManager(
     private val dispatcher: CoroutineDispatcher
@@ -26,35 +23,24 @@ class AndroidEncryptionManager(
     private val log = LoggerFactory.getLogger("AndroidEncryptionManager")
 
     suspend fun encrypt(keyAlias: String, rawBytes: ByteArray, output: OutputStream) = withContext(dispatcher) {
-        DataOutputStream(output).use {
-            Cipher.getInstance(TRANSFORMATION).run {
-                init(Cipher.ENCRYPT_MODE, getOrCreateSecretKey(keyAlias))
-                val encryptedBytes = doFinal(rawBytes)
-
-                it.writeInt(iv.size)
-                it.write(iv)
-                it.writeInt(encryptedBytes.size)
-                it.write(encryptedBytes)
-            }
+        output.use {
+            it.write(AesGcmStreamCodec(getOrCreateSecretKey(keyAlias)).encrypt(rawBytes))
         }
     }
 
+    /**
+     * Decrypt the framed stream, or throw. There is deliberately no
+     * swallow-and-return-empty path here: the DataStore serializers translate
+     * a failed decrypt into CorruptionException, which is the DataStore
+     * recovery contract — a corrupt blob must surface, not masquerade as a
+     * freshly-defaulted proto.
+     */
     suspend fun decrypt(keyAlias: String, inputStream: InputStream): ByteArray = withContext(dispatcher) {
-        DataInputStream(inputStream).use {
-            val iv = ByteArray(it.readInt())
-            it.read(iv)
-            val encryptedData = ByteArray(it.readInt())
-            it.read(encryptedData)
-            try {
-                Cipher.getInstance(TRANSFORMATION).run {
-                    init(Cipher.DECRYPT_MODE, getOrCreateSecretKey(keyAlias), IvParameterSpec(iv))
-                    doFinal(encryptedData)
-                }
-            } catch (e: Exception) {
-                log.error("failed to decrypt data", e)
-                byteArrayOf()
-            }
-        }
+        // readBytes() loops to a complete read, which is the guarantee the old
+        // single InputStream.read() calls did not have (short reads truncated
+        // the IV/ciphertext silently).
+        val frame = inputStream.use { it.readBytes() }
+        AesGcmStreamCodec(getOrCreateSecretKey(keyAlias)).decrypt(frame)
     }
 
     private fun keyStore() = KeyStore.getInstance(ANDROID_KEY_STORE).apply {
@@ -87,9 +73,8 @@ class AndroidEncryptionManager(
         private const val ANDROID_KEY_STORE = "AndroidKeyStore"
 
         private const val ALGORITHM = KEY_ALGORITHM_AES
-        private const val BLOCK_MODE = BLOCK_MODE_CBC
-        private const val PADDING = ENCRYPTION_PADDING_PKCS7
-        private const val TRANSFORMATION = "$ALGORITHM/$BLOCK_MODE/$PADDING" // NON-NLS
+        private const val BLOCK_MODE = BLOCK_MODE_GCM
+        private const val PADDING = ENCRYPTION_PADDING_NONE
         private const val KEY_SIZE = 256
     }
 }

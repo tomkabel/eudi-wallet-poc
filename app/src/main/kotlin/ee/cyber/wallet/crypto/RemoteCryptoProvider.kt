@@ -59,7 +59,9 @@ class RemoteCryptoProvider(
         override fun supportedJWSAlgorithms() = mutableSetOf(key.jwsAlgorithm)
 
         override fun sign(header: JWSHeader, signingInput: ByteArray): Base64URL {
-            val signature = runBlocking { sign(key.keyId, signingInput) }
+            // The injected dispatcher (WalletDispatchers.IO) hosts the network
+            // hop; the caller's thread must not block on it directly (JVM-H1/D10).
+            val signature = runBlocking(dispatcher) { sign(key.keyId, signingInput) }
             return Base64URL.encode(signature)
         }
     }

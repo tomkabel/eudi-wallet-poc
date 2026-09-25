@@ -55,7 +55,8 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(project.properties["RELEASE_KEYSTORE_FILE"]!!)
+            storeFile = file(project.properties["RELEASE_KEYSTORE_FILE"]
+                ?: error("RELEASE_KEYSTORE_FILE missing — release signing not configured"))
             storePassword = project.properties["RELEASE_KEYSTORE_PASSWORD"]?.toString()
             keyAlias = project.properties["RELEASE_SIGN_KEY_ALIAS"]?.toString()
             keyPassword = project.properties["RELEASE_SIGN_KEY_PASSWORD"]?.toString()
@@ -142,6 +143,13 @@ android {
     }
 }
 
+// Supply-chain pin (devsecops F5): every configuration gets a gradle.lockfile
+// verified against the committed checksums, so a transitive bump cannot enter
+// the build unnoticed — the resolution fails loudly instead.
+dependencyLocking {
+    lockAllConfigurations()
+}
+
 spotless {
     kotlin {
         target("**/*.kt")
@@ -226,9 +234,8 @@ dependencies {
     implementation(libs.compose.material.icons.extended)
 
     // ProtoBuf
-    runtimeOnly(libs.grpc.okhttp)
-    implementation(libs.grpc.stub)
     implementation(libs.grpc.okhttp)
+    implementation(libs.grpc.stub)
     implementation(libs.grpc.protobuf.lite)
     implementation(libs.grpc.kotlin.stub)
     implementation(libs.protobuf.kotlin.lite)
@@ -458,10 +465,6 @@ fun VariantDimension.boolBuildConfig(name: String, value: Boolean) {
 }
 
 fun VariantDimension.intBuildConfig(name: String, value: Int) {
-    buildConfigField(BuildConfigTypes.INT, name, value.toString())
-}
-
-fun VariantDimension.longBuildConfig(name: String, value: Long) {
     buildConfigField(BuildConfigTypes.INT, name, value.toString())
 }
 

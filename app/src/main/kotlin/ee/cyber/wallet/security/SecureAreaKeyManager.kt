@@ -1,8 +1,8 @@
 package ee.cyber.wallet.security
 
 import android.content.Context
-import ee.cyber.wallet.data.database.dao.KeyAttestationDao
 import ee.cyber.wallet.data.database.KeyAttestationEntity
+import ee.cyber.wallet.data.database.dao.KeyAttestationDao
 import ee.cyber.wallet.domain.provider.wallet.KeyType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -15,11 +15,14 @@ import org.multipaz.prompt.Reason
 import org.multipaz.securearea.AndroidKeystoreCreateKeySettings
 import org.multipaz.securearea.AndroidKeystoreKeyInfo
 import org.multipaz.securearea.AndroidKeystoreSecureArea
+import org.multipaz.securearea.ScreenLockRequiredException
+import org.multipaz.securearea.UserAuthenticationType
 import org.multipaz.storage.android.AndroidStorage
 import org.multipaz.storage.base.BaseStorage
 import org.slf4j.LoggerFactory
 import java.util.UUID
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * EC device-key management through multipaz's [AndroidKeystoreSecureArea] (conformance plan
@@ -60,8 +63,24 @@ class SecureAreaKeyManager(
             .Builder(kotlinx.io.bytestring.ByteString(challenge))
             .setAlgorithm(Algorithm.ESP256)
             .setUseStrongBox(selection.useStrongBox())
+            // D13 (mobile F2, stage 1): presentation keys unlock with a 60s
+            // LSKF-or-biometric window — the device credential unlocks the key,
+            // a Stage-2 prompt (D14) bounds the per-presentation use. The
+            // KeyguardManager pre-check lives in the creation error path below.
+            .setUserAuthenticationRequired(
+                required = true,
+                timeout = PRESENTATION_KEY_AUTH_TIMEOUT,
+                userAuthenticationTypes = AUTH_TYPES
+            )
             .build()
-        val keyInfo = secureArea.createKey(keyId, settings) as AndroidKeystoreKeyInfo
+        val keyInfo = try {
+            secureArea.createKey(keyId, settings) as AndroidKeystoreKeyInfo
+        } catch (e: ScreenLockRequiredException) {
+            throw IllegalStateException(
+                "no secure screen lock: ask the user to set up a screen lock before enrolling",
+                e
+            )
+        }
         val attestationChain = requireNotNull(keyInfo.attestation.certChain) {
             "the SecureArea key has no attestation chain; the wallet provider requires one"
         }
@@ -97,6 +116,13 @@ class SecureAreaKeyManager(
             .Builder(kotlinx.io.bytestring.ByteString(challenge))
             .setAlgorithm(Algorithm.ESP256)
             .setUseStrongBox(selection.useStrongBox())
+            // D13: batch keys keep the Stage-1 gate only — a zero-timeout per-op
+            // gate would surface a system prompt for every EE-PoA key at mint.
+            .setUserAuthenticationRequired(
+                required = true,
+                timeout = PRESENTATION_KEY_AUTH_TIMEOUT,
+                userAuthenticationTypes = AUTH_TYPES
+            )
             .build()
         val created = mutableListOf<String>()
         try {
@@ -169,6 +195,18 @@ class SecureAreaKeyManager(
         const val METADATA_PARTITION = "device_keys"
 
         /**
+         * D13 (mobile F2, stage 1): presentation keys unlock with the device credential
+         * (LSKF) or a biometric within a 60s window of the last successful auth. A
+         * Stage-2 per-presentation prompt (D14) bounds the use itself; this window only
+         * stops a compromised process using the key while the device is unlocked.
+         */
+        val PRESENTATION_KEY_AUTH_TIMEOUT = 60.seconds
+
+        /** LSKF-or-biometric: never key-guard without any user-present factor. */
+        val AUTH_TYPES: Set<UserAuthenticationType> =
+            setOf(UserAuthenticationType.LSKF, UserAuthenticationType.BIOMETRIC)
+
+        /**
          * Opens the multipaz AndroidKeystoreSecureArea on a private SQLite database. Suspend:
          * the metadata table is created lazily on first access. AndroidStorage hands the path
          * straight to SQLiteDatabase.openOrCreateDatabase, so it must be absolute - a bare file
@@ -198,6 +236,18 @@ class SecureAreaKeyManager(
         }
     }
 }
+
+/**
+ * Process-wide readiness gate for the async-created singletons (JVM-H4/H5/D11):
+ * [SecureAreaKeyManager.create] and [SoftwareSecureArea.create] suspend, but
+ * their consumers are injected eagerly by Hilt. The initializer completes the
+ * deferred on the application scope; a consumer that beats initialization gets
+ * a clear error naming the race instead of a deadlocked or blocked main thread.
+ */
+class NotYetInitializedException(what: String) : IllegalStateException(
+    "$what is not initialized yet — DI consumed the singleton before WalletApplication's " +
+        "initializer finished; this is an application-startup race, not a caller bug"
+)
 
 /** Public, non-secret facts about a generated device key. Contains no private key material. */
 data class SecureAreaDeviceKey(

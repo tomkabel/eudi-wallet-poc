@@ -1,16 +1,17 @@
 package ee.cyber.wallet.security
 
-import ee.cyber.wallet.crypto.CryptoProvider
 import id.walt.mdoc.cose.COSECryptoProvider
 import id.walt.mdoc.cose.COSESign1
 import id.walt.mdoc.dataelement.ByteStringElement
 import id.walt.mdoc.dataelement.DataElement
 import id.walt.mdoc.dataelement.MapElement
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.multipaz.crypto.EcSignature
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
-import java.security.cert.CertificateFactory
 
 /**
  * COSE signing for mdoc DeviceAuthentication through the SecureArea key (conformance plan §4
@@ -28,7 +29,14 @@ import java.security.cert.CertificateFactory
  *    so for header-less device signatures both providers emit identical structures.
  */
 class SecureAreaCOSECryptoProvider(
-    private val keyManager: SecureAreaKeyManager
+    private val keyManager: SecureAreaKeyManager,
+    /**
+     * Where the blocking SecureArea waits happen (JVM-H1/D10): callers reach
+     * this provider from coroutine contexts, but the Nimbus/COSE SPIs are
+     * synchronous, so the suspension points are wrapped in runBlocking — on an
+     * injected IO dispatcher, never the caller's (possibly Main) pool.
+     */
+    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : COSECryptoProvider {
 
     private val logger = LoggerFactory.getLogger("SecureAreaCOSECryptoProvider")
@@ -50,7 +58,7 @@ class SecureAreaCOSECryptoProvider(
 
         val protectedHeader = ES256_PROTECTED_HEADER
         val sigStructure = coseSigStructure(protectedHeader, payload)
-        val rawSignature = runBlocking {
+        val rawSignature = runBlocking(dispatcher) {
             keyManager.sign(keyId, sigStructure)
         }.toCoseEncoded()
 
@@ -69,12 +77,12 @@ class SecureAreaCOSECryptoProvider(
     override fun verify1(coseSign1: COSESign1, keyId: String?): Boolean {
         requireNotNull(keyId) { "verification needs the key alias as keyID" }
         return runCatching {
-            val keyInfo = runBlocking { keyManager.keyInfo(keyId) }
+            val keyInfo = runBlocking(dispatcher) { keyManager.keyInfo(keyId) }
             val payload = requireNotNull(coseSign1.payload) { "detached COSE_Sign1 is not a DeviceAuthentication signature" }
             // The signature carried in a COSE_Sign1 is raw r||s - multipaz's EcSignature
             // cose encoding - so it can be fed back for local verification directly.
             val signature = EcSignature.Companion.fromCoseEncoded(coseSign1.signatureOrTag)
-            runBlocking {
+            runBlocking(dispatcher) {
                 org.multipaz.crypto.Crypto.checkSignature(
                     publicKey = keyInfo.publicKey,
                     message = coseSigStructure(coseSign1.protectedHeader, payload),
@@ -83,7 +91,12 @@ class SecureAreaCOSECryptoProvider(
                 )
             }
             true
-        }.onFailure { logger.warn("SecureArea COSE verification failed", it) }
+        }.onFailure {
+            // Cancellation must propagate: swallowing it would turn a cancelled
+            // caller into a spurious `false` verification result (JVM-M1).
+            if (it is CancellationException) throw it
+            logger.warn("SecureArea COSE verification failed", it)
+        }
             .getOrDefault(false)
     }
 
@@ -93,7 +106,9 @@ class SecureAreaCOSECryptoProvider(
         // The attestation chain in the COSE_Sign1 unprotected header, when present, must be the
         // chain the SecureArea recorded for the key.
         val chainBytes = coseSign1.x5Chain ?: return true
-        val recorded = runCatching { runBlocking { keyManager.keyInfo(keyId) }.attestation.certChain }.getOrNull()
+        val recorded = runCatching { runBlocking(dispatcher) { keyManager.keyInfo(keyId) }.attestation.certChain }
+            .onFailure { if (it is CancellationException) throw it }
+            .getOrNull()
             ?: return false
         if (chainBytes.size != recorded.certificates.size) return false
         return chainBytes.zip(recorded.certificates).all { (raw, cert) ->

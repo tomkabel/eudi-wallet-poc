@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import java.io.InputStream
 import java.io.OutputStream
+import java.security.GeneralSecurityException
 import javax.inject.Singleton
 
 @Module
@@ -51,11 +52,17 @@ object UserSessionDataSourceModule {
         override val defaultValue: UserSessionProto = UserSessionProto.getDefaultInstance()
 
         override suspend fun readFrom(input: InputStream): UserSessionProto =
-
             try {
                 UserSessionProto.parseFrom(encryptionManager.decrypt(KEY_ALIAS, input))
             } catch (exception: InvalidProtocolBufferException) {
                 throw CorruptionException("Cannot read proto.", exception)
+            } catch (exception: GeneralSecurityException) {
+                // A failed GCM authentication is corruption, not a default: let
+                // DataStore run its recovery (drop the file) instead of silently
+                // returning an empty session (JVM-H2).
+                throw CorruptionException("Cannot decrypt session blob.", exception)
+            } catch (exception: IllegalArgumentException) {
+                throw CorruptionException("Malformed encrypted session stream.", exception)
             }
 
         override suspend fun writeTo(t: UserSessionProto, output: OutputStream) {

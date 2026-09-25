@@ -17,6 +17,11 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.activity.compose.rememberLauncherForActivityResult
+import ee.cyber.wallet.ui.screens.pin.Input
+import ee.cyber.wallet.ui.screens.pin.PinActivityResultContract
+import ee.cyber.wallet.ui.screens.pin.PinFlow
+import ee.cyber.wallet.ui.screens.pin.Result
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +76,16 @@ private fun Proximity(
     val bluetoothAdvertisePermission = requestPermission(permission = Manifest.permission.BLUETOOTH_ADVERTISE)
     var showProximityRequest by remember { mutableStateOf(false) }
     var showProximityRequestNoMatch by remember { mutableStateOf(false) }
+    // D12 (mobile F8): the share is PIN-gated — the launcher mirrors the remote
+    // path (PresentationRequestScreen) verbatim; a cancelled PIN keeps the BLE
+    // session, so the launcher only acts on Success/Failure.
+    val pinLauncher = rememberLauncherForActivityResult(PinActivityResultContract()) {
+        when (it) {
+            is Result.Success -> viewModel.sendEvent(Event.UserAuthenticated)
+            Result.Cancelled -> Unit
+            Result.Failure -> viewModel.sendEvent(Event.IncorrectPin)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.effect.onEach { effect ->
@@ -79,6 +94,9 @@ private fun Proximity(
                 Effect.ProximityRequestNoMatch -> showProximityRequestNoMatch = true
                 Effect.ProximityResponseSent -> onBack()
                 Effect.ProximityCancel -> onCancel()
+                is Effect.AuthenticateWithPin -> pinLauncher.launch(
+                    Input(flow = PinFlow.CONFIRM_PRESENTATION, party = effect.party)
+                )
             }
         }.collect()
     }

@@ -13,10 +13,11 @@ enum class HardwareBacking {
 /**
  * The StrongBox/TEE policy for device keys, step 5 of the conformance plan: StrongBox where the
  * device advertises `FEATURE_STRONGBOX_KEYSTORE`, TEE otherwise. The Pixel 8 anomaly recorded at
- * AndroidEncryptionManager (wrong decrypt results under StrongBox) concerns AES CBC secret keys,
- * not EC signing keys, so the policy still prefers StrongBox for EC - and the step 5 regression
- * test pins the sign/verify round trip so a device anomaly surfaces as a test failure, not as a
- * silently wrong signature.
+ * AndroidEncryptionManager (wrong decrypt results under StrongBox) concerned AES CBC secret keys
+ * — the CBC codec has since been replaced by the AES/GCM one (AesGcmStreamCodec) — and did not
+ * affect EC signing keys, so the policy still prefers StrongBox for EC - and the step 5
+ * regression test pins the sign/verify round trip so a device anomaly surfaces as a test
+ * failure, not as a silently wrong signature.
  *
  * Pure JVM logic: [hasStrongBoxFeature] is injected so tests can drive both branches without a
  * device (the Android feature lookup itself is PENDING-DEVICE, see docs/planning/STEP5-RECORD.md).

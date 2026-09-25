@@ -8,12 +8,16 @@ import ee.cyber.wallet.domain.credentials.IssuanceAuthorizationState
 import ee.cyber.wallet.util.fromBase64Json
 import ee.cyber.wallet.util.toBase64Json
 import eu.europa.ec.eudi.openid4vci.AuthorizationRequestPrepared
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 
 class AuthorizationStateDataSource(private val dataStore: DataStore<AuthorizationRequestStateProto>) {
 
+    // Every call rethrows CancellationException: runCatching around a suspend
+    // body otherwise swallows coroutine cancellation and the caller keeps
+    // running on a dead job (JVM-M1).
     suspend fun get(state: String) = runCatching {
         dataStore.data
             .mapNotNull { it.statesMap[state] }
@@ -24,7 +28,7 @@ class AuthorizationStateDataSource(private val dataStore: DataStore<Authorizatio
                 )
             }
             .firstOrNull()
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
     suspend fun add(state: String, authorizationState: IssuanceAuthorizationState) = runCatching {
         dataStore.updateData {
@@ -38,7 +42,7 @@ class AuthorizationStateDataSource(private val dataStore: DataStore<Authorizatio
                 )
             }
         }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
     suspend fun remove(state: String) = runCatching {
         dataStore.updateData { proto ->
@@ -46,9 +50,9 @@ class AuthorizationStateDataSource(private val dataStore: DataStore<Authorizatio
                 this.states.remove(state)
             }
         }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
     suspend fun clearAll() = runCatching {
         dataStore.updateData { AuthorizationRequestStateProto.getDefaultInstance() }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 }

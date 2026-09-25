@@ -11,6 +11,7 @@ import ee.cyber.wallet.data.datastore.UserSessionDataSource
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
 import ee.cyber.wallet.security.SecureAreaKeyCleanup
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
 class AccountRepository(
@@ -27,7 +28,12 @@ class AccountRepository(
     private val userPreferencesDataSource: UserPreferencesDataSource
 ) {
     suspend fun deleteAllData() {
-        withContext(dispatcher) {
+        // The wipe is destructive and must complete even if the calling scope
+        // is cancelled mid-flight: a half-wiped wallet is worse than a wiped
+        // one (JVM-M1). NonCancellable guarantees the block runs to completion;
+        // the CancellationException rethrow below keeps normal cancellation
+        // semantics for the caller once the wipe is done.
+        withContext(NonCancellable + dispatcher) {
             // The SecureArea keys must die BEFORE the records that name their aliases: the EC
             // keyAttestation rows are the alias registry, and past this point (and past
             // clearAllTables(), which drops the same table) the aliases would be unreachable

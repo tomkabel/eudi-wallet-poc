@@ -141,7 +141,11 @@ class LocalCryptoProvider(
         override fun getJCAContext(): JCAContext = JCAContext()
         override fun supportedJWSAlgorithms() = mutableSetOf(JWSAlgorithm.ES256)
         override fun sign(header: JWSHeader, signingInput: ByteArray): Base64URL {
-            val der = kotlinx.coroutines.runBlocking { keyManager.sign(keyId, signingInput).toDerEncoded() }
+            // Blocking bridge on the dedicated keystore thread, not the caller's
+            // (JVM-H1/D10) — Nimbus's SPI is synchronous.
+            val der = kotlinx.coroutines.runBlocking(BlockingDispatchers.keystore) {
+                keyManager.sign(keyId, signingInput).toDerEncoded()
+            }
             return Base64URL.encode(der)
         }
     }

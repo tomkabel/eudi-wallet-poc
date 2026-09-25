@@ -8,12 +8,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.data.repository.AccountRepository
-import ee.cyber.wallet.domain.credentials.DigitalCredentialsRegistrar
 import ee.cyber.wallet.domain.AndroidLocaleManager
+import ee.cyber.wallet.domain.credentials.DigitalCredentialsRegistrar
+import ee.cyber.wallet.di.ApplicationScope
 import ee.cyber.wallet.security.CertificateChainValidator
 import ee.cyber.wallet.ui.util.LanguageResource
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -35,7 +34,8 @@ class SettingsViewModel @Inject constructor(
     private val androidLocaleManager: AndroidLocaleManager,
     private val accountRepository: AccountRepository,
     private val userPreferencesDataSource: UserPreferencesDataSource,
-    private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar
+    private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar,
+    @ApplicationScope private val applicationScope: kotlinx.coroutines.CoroutineScope
 ) : ViewModel() {
 
     private val _state = mutableStateOf(
@@ -100,9 +100,15 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
+    /**
+     * Wipes all wallet data on the application scope, not GlobalScope: the wipe
+     * must outlive this ViewModel (the Activity is destroyed right after) but
+     * stay inside the app's supervised, dispatcher-bound scope (JVM-M2).
+     * [AccountRepository.deleteAllData] is NonCancellable internally, so the
+     * destructive part completes even if the app dies mid-wipe.
+     */
     fun deleteAllAndRestart() {
-        GlobalScope.launch {
+        applicationScope.launch {
             accountRepository.deleteAllData()
         }
     }

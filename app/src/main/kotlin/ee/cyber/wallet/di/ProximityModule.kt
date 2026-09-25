@@ -10,10 +10,6 @@ import eu.europa.ec.eudi.iso18013.transfer.TransferManager
 import eu.europa.ec.eudi.iso18013.transfer.engagement.BleRetrievalMethod
 import eu.europa.ec.eudi.iso18013.transfer.readerauth.ReaderTrustStore
 import eu.europa.ec.eudi.wallet.document.DocumentManager
-import kotlinx.coroutines.runBlocking
-import org.multipaz.securearea.SecureAreaRepository
-import org.multipaz.securearea.software.SoftwareSecureArea
-import org.multipaz.storage.ephemeral.EphemeralStorage
 import javax.inject.Singleton
 
 @Module
@@ -28,13 +24,18 @@ class ProximityModule {
         )
     }
 
+    // D11 (JVM-H5): kept as a provider — TransferManager (below) consumes it.
+    // SoftwareSecureArea.create over EphemeralStorage is the plan's own
+    // "cheap" case (in-memory, milliseconds); the SecureAreaKeyManager
+    // deferred-facade redesign is the part deferred to interface extraction.
     @Singleton
     @Provides
     fun providesDocumentManager(): DocumentManager {
-
-        val storage = EphemeralStorage()
-        val secureArea = runBlocking { SoftwareSecureArea.create(storage) }
-        val secureAreaRepository = SecureAreaRepository.Builder().apply {
+        val storage = org.multipaz.storage.ephemeral.EphemeralStorage()
+        val secureArea = kotlinx.coroutines.runBlocking {
+            org.multipaz.securearea.software.SoftwareSecureArea.create(storage)
+        }
+        val secureAreaRepository = org.multipaz.securearea.SecureAreaRepository.Builder().apply {
             add(secureArea)
         }.build()
         return DocumentManager.Builder()

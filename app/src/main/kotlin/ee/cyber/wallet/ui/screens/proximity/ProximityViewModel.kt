@@ -8,7 +8,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ee.cyber.wallet.R
 import ee.cyber.wallet.crypto.CryptoProvider
-import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.crypto.deviceCryptoProvider
 import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.data.repository.DocumentRepository
@@ -19,6 +18,7 @@ import ee.cyber.wallet.domain.presentation.CredentialClaim
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
+import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
 import ee.cyber.wallet.ui.mvi.ViewSideEffect
@@ -57,7 +57,7 @@ class ProximityViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     val documentRepository: DocumentRepository,
     val openId4VPManager: OpenId4VPManager,
-    var transferManager: TransferManager,
+    private val transferManager: TransferManager,
     val cryptoProviderFactory: CryptoProvider.Factory,
     val secureAreaKeyManager: SecureAreaKeyManager,
     private val transactionLogRepository: TransactionLogRepository,
@@ -65,6 +65,10 @@ class ProximityViewModel @Inject constructor(
 ) : MviViewModel<Event, UiState, Effect>() {
 
     private val logger = LoggerFactory.getLogger(ProximityViewModel::class.java)
+
+    // D12 (mobile F8): the share is PIN-gated; the flag flips on the PIN
+    // flow's UserAuthenticated event (same pattern as PresentationRequestViewModel).
+    private val authenticated = kotlinx.coroutines.flow.MutableStateFlow(false)
 
     init {
         viewModelScope.launch {
@@ -74,61 +78,80 @@ class ProximityViewModel @Inject constructor(
             }
         }
     }
-    
+
+    // JVM-M5/D9: the transfer-event listener and the QR engagement are session
+    // state, not per-preference state — registering them on every preference
+    // emission stacked listeners (one event handled N times) and restarted the
+    // engagement mid-session. Registered once, lazily; only setRetrievalMethods
+    // follows the preference, and only when the mode actually changed.
+    private var transferListenersRegistered = false
+    private var lastAppliedPeripheralMode: Boolean? = null
+
     private fun setupTransferManager() {
         val isPeripheralMode = state.value.isPeripheralMode
-        transferManager.setRetrievalMethods(listOf(
-            BleRetrievalMethod(
-                peripheralServerMode = isPeripheralMode,
-                centralClientMode = !isPeripheralMode,
-                clearBleCache = true
-            )))
-        transferManager.addTransferEventListener { event ->
-            when (event) {
-                is TransferEvent.QrEngagementReady -> {
-                    val qrCodeBitmap = event.qrCode.asBitmap(size = 800)
-                    setState { copy(qrCodeBitmap = qrCodeBitmap) }
-                }
-
-                TransferEvent.Connecting -> {
-                    logger.info("Connecting to device...")
-                }
-
-                TransferEvent.Connected -> {
-                    logger.info("Connected to device")
-                }
-
-                is TransferEvent.RequestReceived -> {
-                    logger.info("Request received")
-                    val deviceRequest = event.request as DeviceRequest
-
-                    viewModelScope.launch {
-                        handleRequestObject(deviceRequest)
+        if (!transferListenersRegistered) {
+            transferListenersRegistered = true
+            transferManager.addTransferEventListener { event ->
+                when (event) {
+                    is TransferEvent.QrEngagementReady -> {
+                        val qrCodeBitmap = event.qrCode.asBitmap(size = 800)
+                        setState { copy(qrCodeBitmap = qrCodeBitmap) }
                     }
+
+                    TransferEvent.Connecting -> {
+                        logger.info("Connecting to device...")
+                    }
+
+                    TransferEvent.Connected -> {
+                        logger.info("Connected to device")
+                    }
+
+                    is TransferEvent.RequestReceived -> {
+                        logger.info("Request received")
+                        val deviceRequest = event.request as DeviceRequest
+
+                        viewModelScope.launch {
+                            handleRequestObject(deviceRequest)
+                        }
+                    }
+
+                    TransferEvent.ResponseSent -> {
+                        logger.info("Response sent to the device")
+                        transferManager.stopPresentation(false)
+
+                        sendEffect { Effect.ProximityResponseSent }
+                    }
+
+                    TransferEvent.Disconnected -> {
+                        logger.info("Disconnected from the device")
+                        transferManager.stopPresentation(false)
+                    }
+
+                    is TransferEvent.Error -> {
+                        logger.error("Error occurred: ${event.error}")
+                        transferManager.stopPresentation(false)
+                    }
+
+                    is TransferEvent.Redirect -> TODO()
+                    is TransferEvent.IntentToSend -> TODO()
                 }
-
-                TransferEvent.ResponseSent -> {
-                    logger.info("Response sent to the device")
-                    transferManager.stopPresentation(false)
-
-                    sendEffect { Effect.ProximityResponseSent }
-                }
-
-                TransferEvent.Disconnected -> {
-                    logger.info("Disconnected from the device")
-                    transferManager.stopPresentation(false)
-                }
-
-                is TransferEvent.Error -> {
-                    logger.error("Error occurred: ${event.error}")
-                    transferManager.stopPresentation(false)
-                }
-
-                is TransferEvent.Redirect -> TODO()
-                is TransferEvent.IntentToSend -> TODO()
             }
+            transferManager.startQrEngagement()
         }
-        transferManager.startQrEngagement()
+        // The retrieval method IS per-preference state, but re-setting it on an
+        // unchanged mode tears BLE down for nothing (JVM-M5 rider: distinct).
+        if (lastAppliedPeripheralMode != isPeripheralMode) {
+            lastAppliedPeripheralMode = isPeripheralMode
+            transferManager.setRetrievalMethods(
+                listOf(
+                    BleRetrievalMethod(
+                        peripheralServerMode = isPeripheralMode,
+                        centralClientMode = !isPeripheralMode,
+                        clearBleCache = true
+                    )
+                )
+            )
+        }
     }
 
     private suspend fun handleRequestObject(deviceRequest: DeviceRequest) {
@@ -226,63 +249,7 @@ class ProximityViewModel @Inject constructor(
 
     override suspend fun handleEvents(event: Event) {
         when (event) {
-            is Event.OnShareClicked -> {
-                val responseDocuments = mutableListOf<MDoc>()
-                val documentIds = mutableListOf<String>()
-                state.value.credentials.forEach { credential ->
-                    val mDoc = credential.mDoc
-                    val fields = credential.allCheckedFields.map { it.field }
-                    val optionalFields = credential.optionalFields.map { it.field }
-                    val docType = credential.credentialType.docType().uri
-                    val mDocRequest = MDocRequestBuilder(docType).apply {
-                        fields.forEach {
-                            addDataElementRequest(it.namespace.uri, it.name, true)
-                        }
-                        optionalFields.forEach {
-                            addDataElementRequest(it.namespace.uri, it.name, true)
-                        }
-                    }.build(null)
-                    val cryptoProvider = cryptoProviderFactory.forKeyType(credential.attestation.keyAttestation.keyType)
-                    val keyId = credential.attestation.keyAttestation.keyId
-                    val deviceNameSpaces = EncodedCBORElement(MapElement(mapOf()))
-                    val sessionTranscript = DataElement.fromCBOR<ListElement>(state.value.sessionTranscript!!)
-                    val deviceAuthentication = DeviceAuthentication(sessionTranscript, docType, deviceNameSpaces)
-                    val documentResponse = mDoc.presentWithDeviceSignature(
-                        mDocRequest = mDocRequest,
-                        deviceAuthentication = deviceAuthentication,
-                        // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
-                        cryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId),
-                        keyID = keyId
-                    )
-                    responseDocuments.add(documentResponse)
-                    documentIds.add(credential.id)
-                }
-
-                val response = eu.europa.ec.eudi.iso18013.transfer.response.device.DeviceResponse(
-                    deviceResponseBytes = ee.cyber.wallet.domain.documents.mdoc.DeviceResponse(responseDocuments).toCBOR(),
-                    sessionTranscriptBytes = state.value.sessionTranscript!!,
-                    documentIds = documentIds
-                )
-                transferManager.sendResponse(response)
-
-                // EE-ZKP-053: proximity presentations land in the same log as the online paths.
-                // A proximity reader cannot carry a ZK request either, so the tier is literally
-                // "the reader did not ask for a proof", and the row records what was disclosed.
-                state.value.credentials.forEach { credential ->
-                    val attributes = JsonObject(
-                        credential.allCheckedFields.associate { matchedField ->
-                            matchedField.field.name to JsonPrimitive(matchedField.field.value)
-                        }
-                    )
-                    transactionLogRepository.addTransactionLog(
-                        party = context.getString(R.string.log_entry_proximity_party),
-                        docType = credential.credentialType.docType(),
-                        attributes = attributes,
-                        tier = PresentationTier.PLAIN_NOT_REQUESTED
-                    )
-                }
-            }
-
+            is Event.OnShareClicked -> onShareClicked()
             Event.OnCancelClicked -> {
                 transferManager.stopPresentation(false)
                 sendEffect { Effect.ProximityCancel }
@@ -294,9 +261,92 @@ class ProximityViewModel @Inject constructor(
                 }
                 transferManager.stopPresentation(false)
             }
+            // D12 (mobile F8): the PIN flow resolves through the screen's
+            // launcher; only a confirmed PIN releases the response.
+            Event.UserAuthenticated -> {
+                authenticated.value = true
+                onShareClicked()
+            }
+            Event.IncorrectPin -> {
+                // The BLE session stays alive: the reader is still connected
+                // and may retry or the user may re-enter the PIN (deliberately
+                // NOT the remote path's onCancel() navigation).
+                logger.warn("proximity PIN incorrect — session kept alive")
+            }
+        }
+    }
+
+    /**
+     * D12 (mobile F8): the share is PIN-gated. Without authentication the
+     * first tap only raises [Effect.AuthenticateWithPin] and NOTHING is sent;
+     * after [Event.UserAuthenticated] the response is released. Unlike the
+     * remote path, a cancelled PIN keeps the BLE session (the reader waits).
+     */
+    private suspend fun onShareClicked() {
+        if (!authenticated.value) {
+            sendEffect { Effect.AuthenticateWithPin(party = PROXIMITY_READER_NAME) }
+            return
+        }
+
+        val responseDocuments = mutableListOf<MDoc>()
+        val documentIds = mutableListOf<String>()
+        state.value.credentials.forEach { credential ->
+            val mDoc = credential.mDoc
+            val fields = credential.allCheckedFields.map { it.field }
+            val optionalFields = credential.optionalFields.map { it.field }
+            val docType = credential.credentialType.docType().uri
+            val mDocRequest = MDocRequestBuilder(docType).apply {
+                fields.forEach {
+                    addDataElementRequest(it.namespace.uri, it.name, true)
+                }
+                optionalFields.forEach {
+                    addDataElementRequest(it.namespace.uri, it.name, true)
+                }
+            }.build(null)
+            val cryptoProvider = cryptoProviderFactory.forKeyType(credential.attestation.keyAttestation.keyType)
+            val keyId = credential.attestation.keyAttestation.keyId
+            val deviceNameSpaces = EncodedCBORElement(MapElement(mapOf()))
+            val sessionTranscript = DataElement.fromCBOR<ListElement>(state.value.sessionTranscript!!)
+            val deviceAuthentication = DeviceAuthentication(sessionTranscript, docType, deviceNameSpaces)
+            val documentResponse = mDoc.presentWithDeviceSignature(
+                mDocRequest = mDocRequest,
+                deviceAuthentication = deviceAuthentication,
+                // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
+                cryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId),
+                keyID = keyId
+            )
+            responseDocuments.add(documentResponse)
+            documentIds.add(credential.id)
+        }
+
+        val response = eu.europa.ec.eudi.iso18013.transfer.response.device.DeviceResponse(
+            deviceResponseBytes = ee.cyber.wallet.domain.documents.mdoc.DeviceResponse(responseDocuments).toCBOR(),
+            sessionTranscriptBytes = state.value.sessionTranscript!!,
+            documentIds = documentIds
+        )
+        transferManager.sendResponse(response)
+
+        // EE-ZKP-053: proximity presentations land in the same log as the online paths.
+        // A proximity reader cannot carry a ZK request either, so the tier is literally
+        // "the reader did not ask for a proof", and the row records what was disclosed.
+        state.value.credentials.forEach { credential ->
+            val attributes = JsonObject(
+                credential.allCheckedFields.associate { matchedField ->
+                    matchedField.field.name to JsonPrimitive(matchedField.field.value)
+                }
+            )
+            transactionLogRepository.addTransactionLog(
+                party = context.getString(R.string.log_entry_proximity_party),
+                docType = credential.credentialType.docType(),
+                attributes = attributes,
+                tier = PresentationTier.PLAIN_NOT_REQUESTED
+            )
         }
     }
 }
+
+/** Generic reader name until reader-auth trust work (E5) supplies the reader CN. */
+private const val PROXIMITY_READER_NAME = "Proximity reader"
 
 @Parcelize
 data class Credential(
@@ -330,6 +380,13 @@ sealed class Effect : ViewSideEffect {
 
     data object ProximityResponseSent : Effect()
     data object ProximityCancel : Effect()
+
+    /**
+     * D12 (mobile F8): the proximity share is gated by the same PIN flow as
+     * the remote path. `party` is a generic reader name until the reader-auth
+     * trust work (E5) can supply the actual reader CN.
+     */
+    data class AuthenticateWithPin(val party: String) : Effect()
 }
 
 sealed class Event : ViewEvent {
@@ -337,4 +394,6 @@ sealed class Event : ViewEvent {
     data object OnShareClicked : Event()
     data object OnCancelClicked : Event()
     data object OnBleModeToggle : Event()
+    data object UserAuthenticated : Event()
+    data object IncorrectPin : Event()
 }

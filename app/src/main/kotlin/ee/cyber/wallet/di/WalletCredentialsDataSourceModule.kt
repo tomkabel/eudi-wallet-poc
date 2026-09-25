@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import java.io.InputStream
 import java.io.OutputStream
+import java.security.GeneralSecurityException
 import javax.inject.Singleton
 
 @Module
@@ -55,6 +56,13 @@ object WalletCredentialsDataSourceModule {
                 WalletInstanceCredentialsProto.parseFrom(encryptionManager.decrypt(KEY_ALIAS, input))
             } catch (exception: InvalidProtocolBufferException) {
                 throw CorruptionException("Cannot read proto.", exception)
+            } catch (exception: GeneralSecurityException) {
+                // A failed GCM authentication is corruption, not a default: let
+                // DataStore run its recovery (drop the file) instead of silently
+                // returning empty credentials (JVM-H2).
+                throw CorruptionException("Cannot decrypt credentials blob.", exception)
+            } catch (exception: IllegalArgumentException) {
+                throw CorruptionException("Malformed encrypted credentials stream.", exception)
             }
 
         override suspend fun writeTo(t: WalletInstanceCredentialsProto, output: OutputStream) {

@@ -20,6 +20,7 @@ import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
 import ee.cyber.wallet.domain.provider.mdl.MdlProviderServiceMock
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
+import kotlinx.coroutines.CancellationException
 import ee.cyber.wallet.ui.mvi.ViewSideEffect
 import ee.cyber.wallet.ui.mvi.ViewState
 import io.ktor.http.Url
@@ -149,6 +150,7 @@ class IssuanceViewModel @Inject constructor(
             val credentialDocument = openId4VCIManager.getCredential(Url(uri!!))
             setState { copy(documents = listOf(credentialDocument)) }
         }.onFailure {
+            if (it is CancellationException) throw it
             logger.error("failed: $it", it)
             sendEffect { Effect.ShowError(AppError.ISSUANCE_ERROR) }
         }
@@ -187,6 +189,7 @@ class IssuanceViewModel @Inject constructor(
             }
             documents
         }.onFailure {
+            if (it is CancellationException) throw it
             logger.error("Failed to issue PID with bindingToken: $it", it)
             sendEffect { Effect.ShowError(AppError.ISSUANCE_ERROR) }
         }
@@ -206,6 +209,7 @@ class IssuanceViewModel @Inject constructor(
                 sendEffect { Effect.NavigateToUri(it) }
             }
         }.onFailure {
+            if (it is CancellationException) throw it
             logger.error("Failed to authorize", it)
             sendEffect { Effect.ShowError(AppError.ISSUANCE_AUTHORIZATION_ERROR) }
         }
