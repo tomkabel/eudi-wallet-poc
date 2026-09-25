@@ -278,6 +278,44 @@ test records rather than fails on budget overrun, because a developer laptop or 
 runner is not provisioned for the budget; `EE_BENCH_FAIL=1` re-arms the check where the
 host is known to be quiet.
 
+## Scaling contract: one instance, by design
+
+The verifier is a single process holding its sessions in its own memory
+(`oid4vp.Store`), and that is a deliberate privacy choice, not a missing feature:
+nothing about a presentation persists past the session TTL, so there is no store a
+subpoena, a disk image or a second instance could read. It also fixes the scaling
+model, documented here so nobody "fixes" it by accident:
+
+- **Capacity is cores × 3600 / verify_seconds sessions per hour.** The dominant
+  per-presentation cost is the ~4 s a proof costs the host to verify
+  (`docs/MEASUREMENTS.md`: mean 4.02 s, p95 4.91 s, measured on the i5-8365U
+  host), and `-max-concurrent-verify` defaults to one verification per core, so
+  the measured host sustains roughly 8 × 3600 / 4 ≈ 7,200 sessions/hour. The
+  formula is the contract, not the number: re-measure `verify_seconds` on the
+  deployment host and recompute.
+- **Multi-instance deployment is out of scope, deliberately.** Sharing sessions
+  across replicas requires a shared, durable store — exactly the presentation
+  record-keeping the in-memory store exists to avoid. A deployment that genuinely
+  needs more than one host's cores must first argue why presentation records may
+  exist at all (see the deferral below), not just add replicas.
+- **Restarts are safe on the drain path.** SIGTERM/SIGINT stop new presentations
+  (`503` + `Retry-After` on `/present/new`, `{"draining":true}` on `/healthz` so
+  load balancers stop routing) while `/present/response/*`, `/present/result/*`
+  and the verify endpoints stay live until every in-flight session has answered
+  or its TTL lapsed — whichever comes first, capped by `-drain-timeout` (default
+  twice the session TTL). Rolling deploys use this path;
+  `tests/drain_test.sh` proves a session opened before the signal still verifies
+  after it. A SIGKILL kills in-flight sessions outright — that is the price of
+  keeping no records.
+- **Expiry is bounded by a janitor, not by insert.** A goroutine ticking every
+  TTL/4 reaps expired sessions under the store lock, so no insert ever pays a
+  full-map sweep, and memory is bounded by `maxSessions` (10,000) live sessions;
+  `Store.Stop()` ends the janitor on shutdown.
+- **If a deployment ever needs durable sessions** — a `Store` interface with a
+  SQLite adapter behind `-store=memory|sqlite` — that work is explicitly deferred
+  (YAGNI): nothing in this project's scope has made the case for records that
+  outlive a process, and not having them is the privacy default.
+
 ## The Android wallet that answers this verifier
 
 The holder side is not in this repository. It is the independent fork
@@ -348,7 +386,9 @@ CT-logged (`EE-GOV-012`).
   `mso_mdoc` queries, so no running server creates such a session; only the tests
   (`step8_7_openid4vp_zk_test.go`) do, through `Store.NewWith`.
 - **Sessions are in memory.** Nothing is persisted, deliberately — a verifier that keeps
-  presentation records is a verifier that can be asked for them.
+  presentation records is a verifier that can be asked for them. The consequences for
+  capacity, restarts and the explicitly out-of-scope multi-instance deployment are the
+  scaling contract above.
 - **The trust store is a local JSON file.** `issuers.json` stands in for the Commission's
   List of Trusted Entities and the Art. 22 Trusted List (`EE-GOV-010`). It is read once at
   startup: there is no signature over it, no freshness check and no way to withdraw an

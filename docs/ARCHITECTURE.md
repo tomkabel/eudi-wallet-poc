@@ -244,9 +244,16 @@ and `wallet/present.py`:178-183`). Two limits on what that buys:
   delete a plain-mdoc attestation after one presentation (`spec`:451`) — and
   `wallet/present.py` does not implement that half (`wallet/README.md`:63-67`).
 - Sessions are in memory only and expire after `-session-ttl` (default 3 minutes,
-  `main.go`:204`); `maxSessions` is 10,000 (`session.go`:53`). Nothing is persisted,
+  `main.go`:204`); `maxSessions` is 10,000 (`session.go`:53). Nothing is persisted,
   deliberately: "a verifier that keeps presentation records is a verifier that can be
-  subpoenaed for them" (`session.go`:44-46`).
+  subpoenaed for them" (`session.go`:44-46). A janitor goroutine (tick = TTL/4) reaps
+  expired sessions under the store lock, so insert costs no full-map sweep and memory
+  is bounded by `maxSessions` live entries; `Store.Stop()` ends the janitor on
+  shutdown (`session.go`:70-160). The capacity this buys, why the store is
+  single-instance by design and why multi-instance is out of scope, is the scaling
+  contract in `verifier/README.md` ("Scaling contract: one instance, by design") —
+  capacity = cores × 3600 / verify_seconds, with `verify_seconds` ≈ 4 on the
+  measurement host (`docs/MEASUREMENTS.md`).
 
 ### 4.4 The concurrency bound
 
@@ -260,7 +267,7 @@ before `Claim` and released after `Complete`, so a shed request never burns a se
 whose reply can no longer be sent (`present.go`:153-163`), and one slot covers the whole
 issuer loop in `check` (`present.go`:181-183, 227-242`). `tests/load_test.py` fires 200
 concurrent verifications and asserts 200-or-503, never a dropped connection
-(`load_test.py`:2-11`). The bound is per process (`verifier/README.md`:304-307`).
+(`load_test.py`:2-11`). The bound is per process (`verifier/README.md`:396-399).
 
 ### 4.5 Fail-closed
 
