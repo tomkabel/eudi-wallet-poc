@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -308,13 +309,41 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 	if cq.Format == oid4vp.FormatMsoMdocZk {
 		return p.checkZk(s, cq, token)
 	}
-	pres, proof, err := token.Parse(cq)
+	cp, carrier, err := token.ParseCarrier(cq, p.carrier)
 	if err != nil {
 		// The holder sent this; telling them exactly what was wrong with it is
-		// the whole value of the answer.
+		// the whole value of the answer. A forced carrier that does not match
+		// the bytes is refused here too — an override never falls back.
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+	}
+	pres, proof, err := interimOfChecked(cp, carrier)
+	if err != nil {
 		return false, err.Error(), http.StatusBadRequest
 	}
 	return p.verifyPlain(s, pres, proof)
+}
+
+// interimOfChecked rebuilds the interim envelope the plain path verifies from
+// a carrier-normalized presentation. The interim carrier's fields round-trip
+// as parsed; a CBOR carrier has no envelope fields at all, so the attempt is
+// refused — the plain path verifies interim envelopes only (the zk path runs
+// the CBOR carrier's presentation through checkZk's allowlist).
+func interimOfChecked(cp *oid4vp.CheckedPresentation, carrier oid4vp.Carrier) (*oid4vp.ZKPresentation, []byte, error) {
+	if _, ok := carrier.(oid4vp.InterimJSON); !ok {
+		return nil, nil, fmt.Errorf(
+			"the %s carrier's presentation is not an interim envelope; this session asked for the plain form",
+			carrier.Name())
+	}
+	return &oid4vp.ZKPresentation{
+		ZKSystem:      cp.ZKSystem,
+		Version:       cp.Version,
+		NumAttributes: cp.NumAttributes,
+		DocType:       cp.DocType,
+		Namespace:     cp.Namespace,
+		AttrID:        cp.AttrID,
+		AttrCBORHex:   "f5",
+		ProofB64:      base64.RawStdEncoding.EncodeToString(cp.Proof),
+	}, cp.Proof, nil
 }
 
 // verifyPlain runs the plain-path verification on a parsed interim envelope:
