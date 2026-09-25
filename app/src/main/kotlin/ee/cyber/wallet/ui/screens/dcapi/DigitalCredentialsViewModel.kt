@@ -31,6 +31,7 @@ import ee.cyber.wallet.domain.presentation.LongfellowZkPresenter
 import ee.cyber.wallet.domain.presentation.ZkPresentation
 import ee.cyber.wallet.domain.presentation.ZkPresentationReason
 import ee.cyber.wallet.domain.presentation.ZkPresenter
+import ee.cyber.wallet.domain.presentation.mergeZkSpecs
 import ee.cyber.wallet.domain.presentation.resolveSchemeId
 import ee.cyber.wallet.domain.presentation.zkSpecsByDocType
 import ee.cyber.wallet.util.zkSpecsByDocTypeFromDcql
@@ -188,19 +189,15 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // `dcqlQuery` (provisional wire location; the protocol allow-list above is
                 // unchanged, `openid4vp` stays refused). Its mso_mdoc_zk zk_system_type entries
                 // parse into the same ZkSystemSpec model the ISO path uses and join the
-                // per-docType map — first entry wins per docType, in both sources and across
-                // them, so ISO wins on a shared docType — and the EE-ZKP-051 refusal, the
+                // per-docType map — the ISO specs win where the doc request carried a zkRequest,
+                // DCQL's apply otherwise (mergeZkSpecs) — and the EE-ZKP-051 refusal, the
                 // per-credential resolveSchemeId and the EE-ZKP-042 notice run unchanged over it.
                 val dcqlSpecsByDocType = if (data.has("dcqlQuery")) {
                     zkSpecsByDocTypeFromDcql(Json.parseToJsonElement(data.getString("dcqlQuery")) as JsonObject)
                 } else {
                     emptyMap()
                 }
-                val effectiveSpecsByDocType = zkSpecsByDocType(docRequests).let { isoSpecs ->
-                    dcqlSpecsByDocType.entries.fold(isoSpecs) { acc, (docType, specs) ->
-                        if (docType in acc) acc else acc + (docType to specs)
-                    }
-                }
+                val effectiveSpecsByDocType = mergeZkSpecs(zkSpecsByDocType(docRequests), dcqlSpecsByDocType)
 
                 // EE-RP-003 / plan §4 item 4d (finding F7, review finding 1): the consent screen
                 // names an origin, not a relying party. The readerAuth certificate subject is
@@ -227,7 +224,7 @@ class DigitalCredentialsViewModel @Inject constructor(
                     recipientPublicKey,
                     // Keyed by docType: a ZK request for one document must not change how another
                     // is presented. A repeated docType keeps its first doc request's specs only;
-                    // the DCQL carrier's specs join the same map (ISO wins on a shared docType).
+                    // the DCQL carrier's specs fill the docTypes whose ISO zkRequest is absent.
                     effectiveSpecsByDocType,
                     readerSubject,
                     issuerDisclosureExpected

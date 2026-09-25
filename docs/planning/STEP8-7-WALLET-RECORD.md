@@ -34,9 +34,12 @@ the dependency question closed.
 payload. Master's protocol dispatch is unchanged: only `org-iso-mdoc` is taken and `openid4vp`
 over the DC API is refused (`DcEffect.Refused`), so the DCQL query is only ever read from an
 `org-iso-mdoc` entry's `data`, next to `deviceRequest`/`encryptionInfo`. The parsed specs join
-master's per-docType map (`DcUiState.zkSystemSpecs`, built by `zkSpecsByDocType(docRequests)`):
-a docType the ISO `zkRequest` already keyed keeps the ISO specs, a docType only DCQL names is
-added with DCQL's first entry — first entry wins per docType, in both sources and across them.
+master's per-docType map (`DcUiState.zkSystemSpecs`, built by `zkSpecsByDocType(docRequests)`)
+through `mergeZkSpecs` (`ZkPresenter.kt`): `zkSpecsByDocType` keys every requested docType, with
+an empty list when its doc request carried no `zkRequest`, so the ISO specs win only where that
+list is non-empty and DCQL's first entry applies otherwise. Keying on presence alone would drop
+the DCQL specs for exactly the flow this step serves — the ISO request selects the document and
+the DCQL query carries the circuits — and EE-ZKP-051 would never fire on it.
 From there master's path runs unchanged: `resolveSchemeId` per credential against its own
 docType's specs, `refusePlainWhenSpecsUnsatisfiable` (EE-ZKP-051), proving only for the age
 doctypes, `PRESENTATION_PROOF_FAILED` refusal, the per-credential `expectedPlainTier` notice
@@ -80,7 +83,7 @@ get produced (DCQL-carried specs now resolve).
 
 ## Tests
 
-`MsoMdocZkParsingTest` (8, JVM):
+`MsoMdocZkParsingTest` (11, JVM):
 
 1. `zk_system_type` parses into `ZkSystemSpec` with every param the ISO path names (id verbatim,
    system, circuit_hash, num_attributes, version, block_enc_hash, block_enc_sig).
@@ -96,6 +99,9 @@ get produced (DCQL-carried specs now resolve).
 6. An entry missing `circuit_hash`/`num_attributes` fails closed.
 7. First entry per doctype wins on a duplicate.
 8. Two doctypes key independently.
+9. `mergeZkSpecs`: DCQL specs apply where the ISO doc request carried no `zkRequest` (empty list).
+10. `mergeZkSpecs`: non-empty ISO specs win over DCQL on a shared doctype.
+11. `mergeZkSpecs`: a doctype only DCQL names is added.
 
 Gates after the rebase onto `1830d7a`: `:app:testDebugUnitTest` 102 tests / 0 failures (8 of
 them `MsoMdocZkParsingTest`), `:zk-conformance:test` 5 / 0 (`AgeProofRoundTripTest` proves and
@@ -107,9 +113,9 @@ verifies against the bundled circuits).
   field name) inside the `org-iso-mdoc` entry — provisional, see PENDING-DEVICE 2; the protocol
   allow-list is not widened for it. Chrome's `org-iso-mdoc` entries carry no such field today and
   are unaffected. A request
-  that carries BOTH an ISO `zkRequest` and a DCQL query for the same doctype is governed by the
-  ISO specs (first source wins) — an attacker-shaped duplicate the per-doc-request scoping
-  already treats conservatively.
+  that carries BOTH a non-empty ISO `zkRequest` and a DCQL query for the same doctype is governed
+  by the ISO specs — an attacker-shaped duplicate the per-doc-request scoping already treats
+  conservatively.
 - The ECDSA gate throws rather than degrading: a MAC-based device signature on the ZK path is a
   protocol violation, not a fallback (Longfellow binds the proof to the transcript the EC
   signature covers).
