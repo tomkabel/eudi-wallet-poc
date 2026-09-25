@@ -91,6 +91,7 @@ class ZkPerDocRequestResolutionTest {
                 parsed.readerAuth,
                 parsed.readerCertificateChain,
                 parsed.readerAuthenticated,
+                parsed.readerChainTrusted,
                 specs
             )
         }

@@ -23,7 +23,10 @@ import org.multipaz.cose.Cose
 import org.multipaz.cose.CoseNumberLabel
 import org.multipaz.crypto.Algorithm
 import org.multipaz.crypto.X509CertChain
+import org.multipaz.crypto.javaX509Certificate
 import org.multipaz.mdoc.zkp.ZkSystemSpec
+import ee.cyber.wallet.security.CertificateChainValidator
+import java.security.cert.X509Certificate
 import java.util.UUID
 
 /**
@@ -33,10 +36,18 @@ import java.util.UUID
  *
  * @param encodedDeviceRequest the bytes of the `DeviceRequest` CBOR.
  * @param encodedSessionTranscript the bytes of `SessionTranscript`.
+ * @param trustedReaderRoots the static reader trust anchors (the X.509 root certificates a
+ *   reader chain must chain to for [DeviceRequestParser.DocRequest.readerChainTrusted] to come
+ *   back `true`). Defaults to an empty list, which preserves the pre-E5 behaviour: the chain
+ *   decision is `false` for every request and trust stays the caller's problem. Callers that
+ *   pass anchors get the chain checked with the centralized
+ *   [ee.cyber.wallet.security.CertificateChainValidator] policy (PKIX path building + E4's
+ *   soft-fail CRL revocation) inside [parse].
  */
 class DeviceRequestParser(
     private val encodedDeviceRequest: ByteArray,
     private val encodedSessionTranscript: ByteArray,
+    private val trustedReaderRoots: List<X509Certificate> = emptyList(),
     /**
      * D15 (jvm L2): construction-time immutable flag (was a `var` + setter that made
      * one parser instance's security posture mutable after creation).
@@ -71,7 +82,8 @@ class DeviceRequestParser(
         parse(
             encodedDeviceRequest,
             Cbor.decode(encodedSessionTranscript),
-            skipReaderAuthParseAndCheck
+            skipReaderAuthParseAndCheck,
+            trustedReaderRoots
         )
     }
 
@@ -97,12 +109,14 @@ class DeviceRequestParser(
         internal suspend fun parse(
             encodedDeviceRequest: ByteArray,
             sessionTranscript: DataItem,
-            skipReaderAuthParseAndCheck: Boolean
+            skipReaderAuthParseAndCheck: Boolean,
+            trustedReaderRoots: List<X509Certificate>
         ) {
             val request = Cbor.decode(encodedDeviceRequest)
             version = request["version"].asTstr
             require(version.compareTo("1.0") >= 0) { "Given version '$version' not >= '1.0'" }
             var readerCertChain: X509CertChain? = null
+            var readerChainTrusted = false
             request.getOrNull("docRequests")?.let { docRequests ->
                 val docRequestsDataItems = docRequests.asArray
                 for (docRequestDataItem in docRequestsDataItems) {
@@ -152,6 +166,24 @@ class DeviceRequestParser(
                             // the request would tell the attacker their forgery was detected).
                             false
                         }
+                        readerChainTrusted = try {
+                            // E5 (plan §8.3): the readerAuth SIGNATURE being well-formed says
+                            // nothing about WHO holds the key — the chain decision is a second,
+                            // independent gate. The x5chain (leaf + intermediates) is validated
+                            // against the caller-supplied static roots with the SAME centralized
+                            // entry point every other path uses, so E4's CRL soft-fail revocation
+                            // applies to reader chains too. Exceptions (empty chain, missing
+                            // anchor set) fail closed like any validator refusal; this is a
+                            // computed boolean, never rethrown — a chain the wallet does not
+                            // trust must still parse (the caller decides what readerChainTrusted
+                            // = false means for the request).
+                            CertificateChainValidator.validateCertificateChain(
+                                readerCertChain.certificates.map { it.javaX509Certificate },
+                                trustedReaderRoots
+                            )
+                        } catch (e: Exception) {
+                            false
+                        }
                     }
                     val zkSystemSpecs: MutableList<ZkSystemSpec> = mutableListOf()
                     val requestInfo: MutableMap<String, ByteArray> = HashMap()
@@ -187,6 +219,7 @@ class DeviceRequestParser(
                         encodedReaderAuth,
                         readerCertChain,
                         readerAuthenticated,
+                        readerChainTrusted,
                         zkSystemSpecs
                     )
 
@@ -290,6 +323,22 @@ class DeviceRequestParser(
         val readerAuthenticated: Boolean,
 
         /**
+         * E5 (plan §8.3): whether the reader's certificate chain chains to one of the trust
+         * anchors the parser was constructed with — the second, independent half of the
+         * readerAuth decision. [readerAuthenticated] only says the signature over the
+         * `ItemsRequest` was made by the leaf key of the presented chain; this says the chain
+         * itself was accepted by the centralized
+         * [ee.cyber.wallet.security.CertificateChainValidator] policy (PKIX path building to
+         * the static roots, with E4's CRL soft-fail revocation).
+         *
+         * Always `false` when no anchors were supplied (the parser default), when the request
+         * carried no `readerAuth` at all, or when the chain fails validation. The two fields
+         * are deliberately distinct: a signature-valid chain under a foreign root is
+         * `readerAuthenticated = true, readerChainTrusted = false`.
+         */
+        val readerChainTrusted: Boolean,
+
+        /**
          * The Zk System Specs
          *
          * @return the Zk System Specs
@@ -350,6 +399,7 @@ class DeviceRequestParser(
             encodedReaderAuth: ByteArray?,
             readerCertChain: X509CertChain?,
             readerAuthenticated: Boolean,
+            readerChainTrusted: Boolean = false,
             zkSystemSpecs: List<ZkSystemSpec> = emptyList()
         ) {
             private val result = DocRequest(
@@ -359,6 +409,7 @@ class DeviceRequestParser(
                 encodedReaderAuth,
                 readerCertChain,
                 readerAuthenticated,
+                readerChainTrusted,
                 zkSystemSpecs
             )
 
