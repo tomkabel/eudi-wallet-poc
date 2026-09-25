@@ -165,4 +165,20 @@ class SecureAreaKeyCleanupTest {
         assertEquals(listOf("ec-9"), deleter.deletedAliases)
         assertTrue(dao.rows.isEmpty())
     }
+
+    @Test
+    fun `deleteAll keeps the record of a key that survived deletion`() = runTest {
+        dao.rows.add(entity("ec-gone", KeyType.EC))
+        dao.rows.add(entity("ec-stuck", KeyType.EC))
+        val stuck = object : SecureAreaKeyDeleter {
+            override suspend fun deleteKey(keyId: String) {}
+            override suspend fun keyExists(keyId: String): Boolean = keyId == "ec-stuck"
+            override suspend fun deleteAllKeys() {}
+        }
+
+        val survivors = SecureAreaKeyCleanup(dao, stuck).deleteAll()
+
+        assertEquals(listOf("ec-stuck"), survivors.map { it.id })
+        assertEquals(listOf("ec-stuck"), dao.rows.map { it.id })
+    }
 }

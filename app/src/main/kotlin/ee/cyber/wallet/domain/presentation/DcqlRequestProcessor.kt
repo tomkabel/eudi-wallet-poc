@@ -108,12 +108,13 @@ class DcqlRequestProcessor {
         val claims = credentialQuery.claims
 
         return if (claims.isNullOrEmpty()) {
-            // No specific claims requested - include all available claims as required
-            log.info("No specific claims requested, including all ${document.fields.size} available fields")
+            // OpenID4VP §6.4.1: an absent claims list requests no selectively disclosable
+            // claims. Offer the fields unchecked, so nothing is disclosed unless the holder opts in.
+            log.info("No specific claims requested, offering ${document.fields.size} fields unchecked")
             Credential(
                 credentialType = document.credentialType(),
-                fields = document.fields.map { MatchedField(it, checked = true) },
-                optionalFields = emptyList(),
+                fields = emptyList(),
+                optionalFields = document.fields.map { MatchedField(it, checked = false) },
                 attestation = document.attestation
             )
         } else {
@@ -169,7 +170,8 @@ class DcqlRequestProcessor {
                 val intentToRetain = claimQuery.intentToRetain ?: false
                 val isRequired = intentToRetain || claimQuery.values != null
 
-                val matchedField = MatchedField(matchingField, checked = true)
+                // Optional claims start unchecked, as on the presentation-exchange path.
+                val matchedField = MatchedField(matchingField, checked = isRequired)
 
                 if (isRequired) {
                     requiredFields.add(matchedField)
@@ -224,12 +226,13 @@ class DcqlRequestProcessor {
         val claims = credentialQuery.claims
 
         return if (claims.isNullOrEmpty()) {
-            // No specific claims requested - include all available claims as required
-            log.info("No specific claims requested, including all ${document.fields.size} available fields")
+            // OpenID4VP §6.4.1: an absent claims list requests no selectively disclosable
+            // claims. Offer the fields unchecked, so nothing is disclosed unless the holder opts in.
+            log.info("No specific claims requested, offering ${document.fields.size} fields unchecked")
             Credential(
                 credentialType = document.credentialType(),
-                fields = document.fields.map { MatchedField(it, checked = true) },
-                optionalFields = emptyList(),
+                fields = emptyList(),
+                optionalFields = document.fields.map { MatchedField(it, checked = false) },
                 attestation = document.attestation
             )
         } else {
@@ -301,7 +304,8 @@ class DcqlRequestProcessor {
                 // Determine if required based on presence of values constraint
                 val isRequired = claimQuery.values != null
 
-                val matchedField = MatchedField(matchingField, checked = true)
+                // Optional claims start unchecked, as on the presentation-exchange path.
+                val matchedField = MatchedField(matchingField, checked = isRequired)
 
                 if (isRequired) {
                     requiredFields.add(matchedField)

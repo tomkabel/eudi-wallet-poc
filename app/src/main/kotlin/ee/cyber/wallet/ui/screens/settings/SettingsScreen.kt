@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
+import ee.cyber.wallet.BuildConfig
 import ee.cyber.wallet.R
 import ee.cyber.wallet.ui.components.AppContent
 import ee.cyber.wallet.ui.components.ConfirmationDialog
@@ -109,7 +110,9 @@ private fun SettingsContent(
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             SettingItem(title = stringResource(R.string.settings_language), subtitle = stringResource(state.language.resId), onClick = navigationHandler.navigateToLanguage)
             BleModeSettingItem(isPeripheralMode = state.blePeripheralMode, onToggle = onBleModeToggle)
-            TrustAllValidatorSettingItem(isTrustAll = state.trustAllValidator, onToggle = onTrustAllValidatorToggle)
+            if (BuildConfig.DEBUG) {
+                TrustAllValidatorSettingItem(isTrustAll = state.trustAllValidator, onToggle = onTrustAllValidatorToggle)
+            }
             DcApiDisclosureSettingItem(isEnabled = state.dcApiDisclosureEnabled, onToggle = onDcApiDisclosureToggle)
             if (state.lotlEnabled) {
                 LotlStatusItem(isSynced = state.lotlSynced, certificateCount = state.lotlCertificateCount)

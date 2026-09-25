@@ -10,10 +10,13 @@ import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
 import ee.cyber.wallet.security.SecureAreaKeyDeleter
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -147,6 +150,31 @@ class EePoaConsumptionTest {
         assertEquals(listOf(presented.keyAttestation.keyId), h.deleter.deletedKeys)
         assertFalse(h.attestationDao.rows.value.any { it.attestation.id == "poa-0" })
         assertEquals(2, h.attestationDao.rows.value.size)
+    }
+
+    @Test
+    fun `never the last holds under concurrent presentations`() = runTest {
+        // deleteKey suspends between the sibling count and the row deletion, which is where two
+        // unserialised consumptions would both see two siblings and empty the batch.
+        val yielding = object : SecureAreaKeyDeleter {
+            val deleted = mutableListOf<String>()
+            override suspend fun deleteKey(keyId: String) {
+                yield()
+                deleted.add(keyId)
+            }
+            override suspend fun keyExists(keyId: String) = keyId !in deleted
+            override suspend fun deleteAllKeys() {}
+        }
+        val attestationDao = FakeAttestationDao()
+        repeat(2) { attestationDao.add("poa-$it", "key-poa-$it", CredentialType.EE_POA) }
+        val consumption = EePoaConsumption(attestationDao, FakeKeyAttestationDao(), yielding)
+
+        val results = listOf("poa-0", "poa-1")
+            .map { async { consumption.consumeAfterPresentation(attestation(it), PresentationTier.PLAIN_NOT_REQUESTED) } }
+            .awaitAll()
+
+        assertEquals(1, results.count { it }, "exactly one of the two may be consumed")
+        assertEquals(1, attestationDao.rows.value.size)
     }
 
     @Test

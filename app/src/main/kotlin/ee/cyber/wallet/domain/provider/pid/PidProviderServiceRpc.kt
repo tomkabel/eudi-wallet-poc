@@ -8,7 +8,7 @@ import ee.cyber.pid.provider.issuePidRequest
 import ee.cyber.pid.provider.pIDAttestationRequest
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.provider.Attestation
-import ee.cyber.wallet.util.TrustAllX509TrustManager
+import ee.cyber.wallet.util.useTransportSecurityForBuild
 import io.grpc.Channel
 import io.grpc.ManagedChannel
 import io.grpc.okhttp.OkHttpChannelBuilder
@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.net.URI
 import java.util.UUID
-import javax.net.ssl.SSLContext
 
 class PidProviderServiceRpc(
     private val rpcUrl: String,
@@ -36,13 +35,7 @@ class PidProviderServiceRpc(
             OkHttpChannelBuilder.forAddress(uri.host, uri.port).apply {
                 logger.info("connecting to $uri")
                 if (uri.scheme == "https") {
-                    useTransportSecurity()
-
-                    logger.warn("Using unsafe trust manager for development")
-                    val sslContext = SSLContext.getInstance("TLS").apply {
-                        init(null, arrayOf(TrustAllX509TrustManager()), null)
-                    }
-                    sslSocketFactory(sslContext.socketFactory)
+                    useTransportSecurityForBuild()
                 } else {
                     usePlaintext()
                 }

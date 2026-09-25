@@ -5,7 +5,7 @@ import ee.cyber.pid.provider.PidIssuanceServiceGrpcKt
 import ee.cyber.pid.provider.eePidIssuanceRequest
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
-import ee.cyber.wallet.util.TrustAllX509TrustManager
+import ee.cyber.wallet.util.useTransportSecurityForBuild
 import io.grpc.okhttp.OkHttpChannelBuilder
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.net.URI
 import java.util.UUID
-import javax.net.ssl.SSLContext
 
 class RpcCredentialIssuanceService(
     private val rpcUrl: String,
@@ -51,12 +50,7 @@ class RpcCredentialIssuanceService(
             val builder = OkHttpChannelBuilder.forAddress(uri.host, uri.port)
             logger.info("connecting to $uri")
             if (uri.scheme == "https") {
-                builder.useTransportSecurity()
-                logger.warn("Using unsafe trust manager for development")
-                val sslContext = SSLContext.getInstance("TLS").apply {
-                    init(null, arrayOf(TrustAllX509TrustManager()), null)
-                }
-                builder.sslSocketFactory(sslContext.socketFactory)
+                builder.useTransportSecurityForBuild()
             } else {
                 builder.usePlaintext()
             }

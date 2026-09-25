@@ -11,7 +11,7 @@ import ee.cyber.wallet.provider.deviceData
 import ee.cyber.wallet.provider.generateKeyRequest
 import ee.cyber.wallet.provider.registerWalletInstanceRequest
 import ee.cyber.wallet.provider.signRequest
-import ee.cyber.wallet.util.TrustAllX509TrustManager
+import ee.cyber.wallet.util.useTransportSecurityForBuild
 import ee.cyber.wallet.util.sha256
 import ee.cyber.wallet.util.toBase64String
 import io.grpc.Channel
@@ -24,7 +24,6 @@ import kotlinx.coroutines.asExecutor
 import org.slf4j.LoggerFactory
 import java.io.Closeable
 import java.net.URI
-import javax.net.ssl.SSLContext
 
 class WalletProviderServiceRpc(
     private val rpcUrl: String,
@@ -44,13 +43,7 @@ class WalletProviderServiceRpc(
             OkHttpChannelBuilder.forAddress(uri.host, uri.port).apply {
                 logger.info("connecting to $uri")
                 if (uri.scheme == "https") {
-                    useTransportSecurity()
-
-                    logger.warn("Using unsafe trust manager for development")
-                    val sslContext = SSLContext.getInstance("TLS").apply {
-                        init(null, arrayOf(TrustAllX509TrustManager()), null)
-                    }
-                    sslSocketFactory(sslContext.socketFactory)
+                    useTransportSecurityForBuild()
                 } else {
                     usePlaintext()
                 }

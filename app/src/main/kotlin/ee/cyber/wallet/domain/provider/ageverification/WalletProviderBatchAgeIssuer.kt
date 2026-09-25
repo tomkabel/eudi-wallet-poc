@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory
  * The production [BatchAgeIssuer]: one transaction's keys and mints (conformance plan §4 item 6,
  * EE-POA-003/011).
  *
- * The EE-PoA batch keys are created through [SecureAreaKeyManager.batchCreateKey] — one
- * Android Keystore call for the whole batch, at issuance time; pre-generation off the critical
+ * The EE-PoA batch keys are created through [SecureAreaKeyManager.batchCreateKey] — all of
+ * them before the first mint, rolled back by the manager if creation fails partway; pre-generation off the critical
  * path (EE-POA-011a) stays in plan §8.4 — and each is attested by the (mock) wallet provider and
  * registered in the keyAttestation table exactly like a single generated key, so SecureArea
  * cleanup keeps seeing every alias. The AV attestation gets a single key on the same manager. The
@@ -48,10 +48,9 @@ class WalletProviderBatchAgeIssuer(
         withContext(dispatcher) {
             require(count >= 1) { "an EE-PoA batch has at least one attestation" }
 
-            // One SecureArea call for the whole batch (EE-POA-011a): the keys exist before the
-            // first mint, so a mid-batch mint failure leaves no half-issued TRANSACTION. The key
-            // creation itself is transactional in neither Keystore nor the mock, so a failure in
-            // attest/mint/insert leaves already-created aliases — and the keyAttestation rows
+            // All keys exist before the first mint (EE-POA-011a), so a mid-batch mint failure
+            // leaves no half-issued TRANSACTION; batchCreateKey cleans up its own partial
+            // creation. Past it, a failure in attest/mint/insert leaves already-created aliases — and the keyAttestation rows
             // written for the earlier keys — behind. Roll both back, best-effort, rather than
             // orphan live signing keys or leave rows naming deleted ones (second review, finding
             // 5). A key that survives its deletion keeps its row, so the data wipe still reaches it.

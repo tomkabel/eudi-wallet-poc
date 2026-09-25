@@ -38,11 +38,13 @@ object RepositoriesModule {
         credentialToDocumentMapper: CredentialToDocumentMapper,
         attestationDao: AttestationDao,
         keyAttestationDao: KeyAttestationDao,
+        secureAreaKeyCleanup: SecureAreaKeyCleanup,
         userPreferencesDataSource: UserPreferencesDataSource
     ) = DocumentRepository(
         credentialToDocumentMapper = credentialToDocumentMapper,
         attestationDao = attestationDao,
         keyAttestationDao = keyAttestationDao,
+        secureAreaKeyCleanup = secureAreaKeyCleanup,
         userPreferencesDataSource = userPreferencesDataSource
     )
 
@@ -90,7 +92,6 @@ object RepositoriesModule {
         userPreferencesDataSource: UserPreferencesDataSource,
         authorizationStateDataSource: AuthorizationStateDataSource,
         encryptedKeyStoreManager: EncryptedKeyStoreManager,
-        androidKeyStoreManager: EncryptedKeyStoreManager,
         remoteKeyManager: RemoteCryptoProvider,
         localKeyManager: LocalCryptoProvider,
         secureAreaKeyCleanup: SecureAreaKeyCleanup
@@ -101,7 +102,6 @@ object RepositoriesModule {
         userPreferencesDataSource = userPreferencesDataSource,
         authorizationStateDataSource = authorizationStateDataSource,
         encryptedKeyStoreManager = encryptedKeyStoreManager,
-        androidKeyStoreManager = androidKeyStoreManager,
         attestationDao = attestationDao,
         keyAttestationDao = keyAttestationDao,
         secureAreaKeyCleanup = secureAreaKeyCleanup,

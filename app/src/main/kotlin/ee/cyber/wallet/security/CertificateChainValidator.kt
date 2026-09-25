@@ -1,5 +1,6 @@
 package ee.cyber.wallet.security
 
+import ee.cyber.wallet.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,8 +56,9 @@ object CertificateChainValidator {
         logger.info("Updated trusted root certificates with ${certificates.size} certificates")
     }
 
+    /** Development aid; ignored outside debuggable builds, whatever the stored preference says. */
     fun setTrustAll(enabled: Boolean) {
-        trustAll = enabled
+        trustAll = enabled && BuildConfig.DEBUG
         logger.info("Trust all validator mode: $enabled")
     }
 

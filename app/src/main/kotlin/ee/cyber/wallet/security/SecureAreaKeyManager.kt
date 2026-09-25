@@ -2,9 +2,11 @@ package ee.cyber.wallet.security
 
 import android.content.Context
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
+import ee.cyber.wallet.data.database.KeyAttestationEntity
 import ee.cyber.wallet.domain.provider.wallet.KeyType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import org.multipaz.crypto.Algorithm
 import org.multipaz.crypto.EcPublicKeyDoubleCoordinate
@@ -78,15 +80,15 @@ class SecureAreaKeyManager(
     }
 
     /**
-     * Batch key creation for the EE-PoA batches (conformance plan §4 item 6): one Android
-     * Keystore round trip for [count] keys instead of [count] single generations, called at
-     * issuance time — pre-generation off the critical path (EE-POA-011a) is plan §8.4. Every
-     * key carries the same settings — the provider challenge and the StrongBox/TEE selection of
-     * this device — and is immediately usable as a presentation key.
+     * Batch key creation for the EE-PoA batches (conformance plan §4 item 6), called at issuance
+     * time — pre-generation off the critical path (EE-POA-011a) is plan §8.4. Every key carries
+     * the same settings — the provider challenge and the StrongBox/TEE selection of this device —
+     * and is immediately usable as a presentation key.
      *
-     * multipaz 0.99.0's AndroidKeystoreSecureArea inherits the default [batchCreateKey], which
-     * loops [generateKey]-equivalent creation internally; the win is the shared settings and the
-     * single call site the issuer needs.
+     * multipaz 0.99.0's [AndroidKeystoreSecureArea.batchCreateKey] only loops single creation and
+     * is not atomic: when it throws mid-batch, the aliases it already created are never returned,
+     * so no caller could roll them back. The loop lives here instead, and a failure deletes every
+     * key this call created before rethrowing.
      */
     suspend fun batchCreateKey(count: Int): SecureAreaKeyBatch = withContext(dispatcher) {
         require(count >= 1) { "a batch has at least one key" }
@@ -96,20 +98,28 @@ class SecureAreaKeyManager(
             .setAlgorithm(Algorithm.ESP256)
             .setUseStrongBox(selection.useStrongBox())
             .build()
-        val result = secureArea.batchCreateKey(count, settings)
-        val keys = result.keyInfos.map { keyInfo ->
-            val attestationChain = requireNotNull(keyInfo.attestation.certChain) {
-                "the batch SecureArea key ${keyInfo.alias} has no attestation chain"
+        val created = mutableListOf<String>()
+        try {
+            val keys = List(count) {
+                val keyId = UUID.randomUUID().toString()
+                created += keyId
+                val keyInfo = secureArea.createKey(keyId, settings) as AndroidKeystoreKeyInfo
+                val attestationChain = requireNotNull(keyInfo.attestation.certChain) {
+                    "the batch SecureArea key $keyId has no attestation chain"
+                }
+                SecureAreaDeviceKey(
+                    keyId = keyId,
+                    publicKey = keyInfo.publicKey,
+                    attestationChain = attestationChain,
+                    hardwareBacking = selection.backing()
+                )
             }
-            SecureAreaDeviceKey(
-                keyId = keyInfo.alias,
-                publicKey = keyInfo.publicKey,
-                attestationChain = attestationChain,
-                hardwareBacking = selection.backing()
-            )
+            logger.info("batch-created {} SecureArea keys", keys.size)
+            SecureAreaKeyBatch(keys)
+        } catch (e: Exception) {
+            withContext(NonCancellable) { created.forEach { deleteKey(it) } }
+            throw e
         }
-        logger.info("batch-created {} SecureArea keys", keys.size)
-        SecureAreaKeyBatch(keys)
     }
 
     /** Signs through the SecureArea key; the private key never enters this process's heap. */
@@ -260,14 +270,26 @@ class SecureAreaKeyCleanup(
 
     private val logger = LoggerFactory.getLogger("SecureAreaKeyCleanup")
 
-    suspend fun deleteAll() {
+    /**
+     * Returns the EC rows whose keys survived deletion. They are written back after the wipe, so
+     * the registry keeps naming a live key and the next wipe retries it instead of orphaning it.
+     * A caller that clears the table itself must re-insert them the same way.
+     */
+    suspend fun deleteAll(): List<KeyAttestationEntity> {
         val ecRows = keyAttestationDao.getByType(KeyType.EC.name)
         ecRows.forEach { row ->
             secureAreaKeyDeleter.deleteKey(row.id)
         }
         secureAreaKeyDeleter.deleteAllKeys()
+        val survivors = ecRows.filter { secureAreaKeyDeleter.keyExists(it.id) }
+        survivors.forEach { logger.error("SecureArea key {} survived deletion; keeping its record", it.id) }
         keyAttestationDao.deleteAll()
+        survivors.forEach { keyAttestationDao.insert(it) }
+        return survivors
     }
+
+    /** [deleteKeys] for one key, for deleting a single document's device key. */
+    suspend fun deleteKey(keyId: String) = deleteKeys(listOf(keyId))
 
     /**
      * Rolls back [keyIds]: each key first, then its keyAttestation row (if one was written), and

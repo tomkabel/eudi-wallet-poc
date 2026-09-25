@@ -19,7 +19,6 @@ class AccountRepository(
     private val remoteKeyManager: RemoteCryptoProvider,
     private val localKeyManager: LocalCryptoProvider,
     private val encryptedKeyStoreManager: EncryptedKeyStoreManager,
-    private val androidKeyStoreManager: EncryptedKeyStoreManager,
     private val attestationDao: AttestationDao,
     private val keyAttestationDao: KeyAttestationDao,
     private val secureAreaKeyCleanup: SecureAreaKeyCleanup,
@@ -35,11 +34,10 @@ class AccountRepository(
             // from wallet records while the Android Keystore keys lived on (review finding 5).
             // SecureAreaKeyManager.deleteKey is best-effort (it swallows failures), so one broken
             // alias cannot abort the whole wipe.
-            runCatching { secureAreaKeyCleanup.deleteAll() }
+            val survivingKeys = runCatching { secureAreaKeyCleanup.deleteAll() }.getOrDefault(emptyList())
 
             runCatching { walletDatabase.clearAllTables() }
             runCatching { encryptedKeyStoreManager.clearAll() }
-            runCatching { androidKeyStoreManager.clearAll() }
 
             remoteKeyManager.clearAll()
             localKeyManager.clearAll()
@@ -48,6 +46,8 @@ class AccountRepository(
             authorizationStateDataSource.clearAll()
             userSessionDataSource.clearAll()
             userPreferencesDataSource.clearAll()
+            // Keys the platform refused to delete stay named, so the next wipe retries them.
+            survivingKeys.forEach { runCatching { keyAttestationDao.insert(it) } }
         }
     }
 }

@@ -6,6 +6,8 @@ import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.security.SecureAreaKeyDeleter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 
 /**
@@ -34,6 +36,10 @@ class EePoaConsumption(
 
     private val logger = LoggerFactory.getLogger("EePoaConsumption")
 
+    // Never-the-last is a read-then-delete: two concurrent presentations could both count two
+    // siblings and consume the batch to zero. One consumption at a time (this is a singleton).
+    private val mutex = Mutex()
+
     /**
      * Consumes one presented attestation when the rules ask for it. Returns true when the
      * attestation was consumed.
@@ -43,16 +49,16 @@ class EePoaConsumption(
      *   response makes every row linkable, so the escalation is the caller's duty — pass the
      *   escalated tier, and this helper consumes on any non-ZK tier)
      */
-    suspend fun consumeAfterPresentation(attestation: Attestation, tier: PresentationTier): Boolean {
-        if (attestation.type != CredentialType.EE_POA) return false
+    suspend fun consumeAfterPresentation(attestation: Attestation, tier: PresentationTier): Boolean = mutex.withLock {
+        if (attestation.type != CredentialType.EE_POA) return@withLock false
         // EE-ZKP-025: a ZK presentation consumes nothing.
-        if (tier == PresentationTier.ZERO_KNOWLEDGE) return false
+        if (tier == PresentationTier.ZERO_KNOWLEDGE) return@withLock false
 
         val siblings = attestationDao.getAll().first().filter { it.attestation.type == CredentialType.EE_POA }
         // EE-POA-013: never the last — Method A degrades to Method B on an exhausted batch.
         if (siblings.size <= 1) {
             logger.info("EE-PoA {} not consumed: last remaining attestation in the batch", attestation.id)
-            return false
+            return@withLock false
         }
 
         // WIAM_21: the key material goes first — SecureAreaKeyCleanup's ordering, for the same
@@ -65,11 +71,11 @@ class EePoaConsumption(
         // A key that was never there (already consumed by another path) counts as removed.
         if (secureAreaKeyDeleter.keyExists(keyId)) {
             logger.error("EE-PoA {} not consumed: SecureArea key {} still exists after delete", attestation.id, keyId)
-            return false
+            return@withLock false
         }
         attestationDao.deleteById(attestation.id)
         keyAttestationDao.deleteById(keyId)
         logger.info("EE-PoA {} consumed after a plain presentation ({} left)", attestation.id, siblings.size - 1)
-        return true
+        true
     }
 }
