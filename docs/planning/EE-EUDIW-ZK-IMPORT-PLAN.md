@@ -27,7 +27,7 @@ ee-eudiw's own `.gitignore` excludes them.
 
 | Question | Your pick |
 |---|---|
-| Base branch | Integration branch: `step8-7-wallet-side` plus the three fixture branches |
+| Base branch | Integration branch: `step8-7-wallet-side` plus the three fixture branches. All four have since merged into `master` (fork PRs #1–#13), so the base is `master` at `edafc46` |
 | Docs beyond the spec | ZK-relevant docs only (list in step 3) |
 | Submodules | `eudi-arf` only, pinned at `6373eee`. `ui-mock-bilt-me` stays out |
 | CI | Port the ZK `fast` and `e2e` jobs. No Gradle job |
@@ -48,12 +48,10 @@ ee-eudiw's own `.gitignore` excludes them.
 
 ## Findings that shape the steps
 
-1. **The fixture generators are not on `step8-7-wallet-side`.** `verifier/go/zk/testdata/*/GENERATED-BY`
-   points at `:zk-conformance` tests that live on side branches:
-   `Step0CrossVerifyTest` + `Step2aDeviceResponseFixtureTest` + `ZkConformanceSupport` on
-   `fixture-device-response` (which already contains `step0-cross-verify`), and
-   `Step87OpenID4VPFixtureTest` on `step8-7-fixture`. A trial `git merge-tree` of all three
-   onto `step8-7-wallet-side` is conflict-free.
+1. **The fixture generators are on `master`.** `verifier/go/zk/testdata/*/GENERATED-BY`
+   points at `:zk-conformance` tests: `Step0CrossVerifyTest`, `Step2aDeviceResponseFixtureTest`,
+   `ZkConformanceSupport` and `Step87OpenID4VPFixtureTest`, all on `master` since fork PRs #3,
+   #4 and #12 merged.
 2. **`docs/planning/STEP6-RECORD.md` exists in both repos.** The wallet branch has the
    wallet-side step 6 record and ee-eudiw has the verifier-side one. The ee-eudiw file
    becomes `STEP6-VERIFIER-RECORD.md`, which matches the existing `STEP8-7-WALLET-RECORD.md`
@@ -81,15 +79,10 @@ One commit per step, on `ee-eudiw-zk-import`, pushed to `fork`.
 
 ### 0. Integration base
 
-```bash
-git -C ~/Documents/eudi-wallet-poc merge --no-ff fixture-device-response
-git -C ~/Documents/eudi-wallet-poc merge --no-ff step8-7-fixture
-```
+Nothing to merge: the branch sits on `master`, which already carries the wallet and fixture work.
 
 Check: `./gradlew :zk-conformance:test` passes (AgeProofRoundTrip, Step0CrossVerify,
-Step2aDeviceResponseFixture, Step87OpenID4VPFixture). Also check that
-`zk-conformance/build.gradle.kts` contains each of the three branches' 5-line additions
-exactly once.
+Step2aDeviceResponseFixture, Step87OpenID4VPFixture), with none skipped.
 
 ### 1. Spec + ARF submodule
 
@@ -188,7 +181,7 @@ passing locally is the stand-in.
 - `./gradlew :zk-conformance:test`, the step 2 block, the step 3 link check and both CI
   jobs are green.
 - `cmp` confirms the spec matches the source byte for byte.
-- `git diff --stat step8-7-wallet-side` shows the source set plus the edits listed here and
+- `git diff --stat edafc46` shows the source set plus the edits listed here and
   nothing else.
 
 ## Out of scope
