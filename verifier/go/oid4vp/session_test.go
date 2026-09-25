@@ -203,6 +203,14 @@ func TestStoreRejectsWrongThumbprintSize(t *testing.T) {
 	}
 }
 
+// storeLen reads the session count under the lock: the janitor sweeps
+// concurrently, so tests must never read the map bare (-race catches it).
+func storeLen(st *Store) int {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	return len(st.sessions)
+}
+
 // TestStoreJanitorReapsExpiredWithoutPutPenalty: with every one of maxSessions
 // entries expired on a fake clock, the janitor's tick reclaims them all and
 // put stays O(1) — the new session is admitted immediately after the tick,
@@ -222,9 +230,9 @@ func TestStoreJanitorReapsExpiredWithoutPutPenalty(t *testing.T) {
 	// One tick: the janitor reaps every expired entry, under lock.
 	advance(ttl + 1) // the entries' Created lapses (they were built pre-tick)
 	deadline := time.Now().Add(10 * time.Second)
-	for len(st.sessions) != 0 {
+	for storeLen(st) != 0 {
 		if time.Now().After(deadline) {
-			t.Fatalf("janitor did not reap the expired entries (%d left)", len(st.sessions))
+			t.Fatalf("janitor did not reap the expired entries (%d left)", storeLen(st))
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
@@ -234,8 +242,8 @@ func TestStoreJanitorReapsExpiredWithoutPutPenalty(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New after janitor reap: %v", err)
 	}
-	if len(st.sessions) != 1 {
-		t.Fatalf("session count = %d, want 1", len(st.sessions))
+	if n := storeLen(st); n != 1 {
+		t.Fatalf("session count = %d, want 1", n)
 	}
 	if s.ExpectedNow != s.Created.UTC().Format("2006-01-02T15:04:05Z") {
 		t.Fatalf("ExpectedNow = %q, does not match Created", s.ExpectedNow)
@@ -294,7 +302,7 @@ func TestStoreFullRefusesUntilJanitorSweeps(t *testing.T) {
 	}
 
 	// Full: put refuses without touching the map, even though a slot is expired.
-	for i := len(st.sessions); i < maxSessions; i++ {
+	for i := storeLen(st); i < maxSessions; i++ {
 		id := fmt.Sprintf("session-%d", i)
 		st.sessions[id] = &Session{ID: id, Created: time.Now()}
 	}
@@ -326,8 +334,8 @@ func TestStorePutRefusesAlreadyExpiredSession(t *testing.T) {
 	if _, err := st.put(s); !errors.Is(err, ErrExpired) {
 		t.Fatalf("put() error = %v, want %v", err, ErrExpired)
 	}
-	if len(st.sessions) != 0 {
-		t.Fatalf("the expired session entered the store (%d entries)", len(st.sessions))
+	if n := storeLen(st); n != 0 {
+		t.Fatalf("the expired session entered the store (%d entries)", n)
 	}
 }
 
