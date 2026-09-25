@@ -9,6 +9,11 @@ import eu.europa.ec.eudi.prex.InputDescriptor
 import eu.europa.ec.eudi.prex.InputDescriptorId
 import eu.europa.ec.eudi.prex.JsonPath
 import eu.europa.ec.eudi.prex.PresentationDefinition
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import org.multipaz.cbor.Bstr
 import org.multipaz.cbor.Cbor
 import org.multipaz.cbor.DataItem
@@ -19,11 +24,6 @@ import org.multipaz.cose.CoseNumberLabel
 import org.multipaz.crypto.Algorithm
 import org.multipaz.crypto.X509CertChain
 import org.multipaz.mdoc.zkp.ZkSystemSpec
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.longOrNull
 import java.util.UUID
 
 /**
@@ -36,29 +36,18 @@ import java.util.UUID
  */
 class DeviceRequestParser(
     private val encodedDeviceRequest: ByteArray,
-    private val encodedSessionTranscript: ByteArray
-) {
-    private var skipReaderAuthParseAndCheck = false
-
+    private val encodedSessionTranscript: ByteArray,
     /**
-     * Sets a flag to skip force skip parsing the reader auth structure.
+     * D15 (jvm L2): construction-time immutable flag (was a `var` + setter that made
+     * one parser instance's security posture mutable after creation).
      *
-     * This flag is useful when the user knows that:
-     * - they will ignore the reader auth result (optional in 18013-5)
-     * - and explicitly don't want to parse it
-     *
-     * For example, if this code is to be used in production and there is uncertainty about which
-     * devices will have which security providers, and there is concern about running into parsing
-     * / validating issues.
-     *
-     * By default this value is set to false.
-     *
-     * @param skipReaderAuthParseAndCheck a flag to skip force skip parsing the reader auth structure.
-     * @return the `DeviceRequestParser`.
+     * Set to true to skip parsing the reader auth structure entirely. Useful when the
+     * caller knows reader auth will be ignored (optional in 18013-5) or explicitly does
+     * not want it parsed — e.g. production builds uncertain about which security
+     * providers are present. Default: false.
      */
-    fun setSkipReaderAuthParseAndCheck(skipReaderAuthParseAndCheck: Boolean) = apply {
-        this.skipReaderAuthParseAndCheck = skipReaderAuthParseAndCheck
-    }
+    private val skipReaderAuthParseAndCheck: Boolean = false
+) {
 
     /**
      * Parses the device request.
@@ -123,7 +112,7 @@ class DeviceRequestParser(
                     var encodedReaderAuth: ByteArray? = null
                     var readerAuthenticated = false
                     if (!skipReaderAuthParseAndCheck && readerAuth != null) {
-                        coseSign1CheckNoDuplicateHeaderParams(readerAuth);
+                        coseSign1CheckNoDuplicateHeaderParams(readerAuth)
 
                         encodedReaderAuth = Cbor.encode(readerAuth)
                         val readerAuthCoseSign1 = readerAuth.asCoseSign1
@@ -153,7 +142,14 @@ class DeviceRequestParser(
                                 signatureAlgorithm
                             )
                             true
-                        } catch (_: Throwable) {
+                        } catch (e: Exception) {
+                            // D15 (jvm L2): was catch(Throwable) — silently converting even OOM /
+                            // LinkageError into "reader not authenticated". Signature verification
+                            // legitimately fails with ordinary exceptions (bad key material, CBOR
+                            // shape, unsupported alg); anything beyond Exception must not be eaten.
+                            // readerAuthenticated=false is the *correct* outcome for a bad
+                            // signature — never rethrown (18013-5 readerAuth is optional; failing
+                            // the request would tell the attacker their forgery was detected).
                             false
                         }
                     }
@@ -302,8 +298,12 @@ class DeviceRequestParser(
 
     ) {
 
-        internal val requestMap = mutableMapOf<String, MutableMap<String, Boolean>>()
-
+        // D15 (jvm L2): the parsed request is security-relevant state — expose it read-only.
+        // The Builder populates it via [namespacesBuilder]; after build() nothing may mutate
+        // which elements a reader asked for.
+        private val requestMap = mutableMapOf<String, MutableMap<String, Boolean>>()
+        val namespacesByRequest: Map<String, Map<String, Boolean>>
+            get() = requestMap.mapValues { (_, inner) -> inner.toMap() }
 
         /**
          * Gets the names of namespaces that the reader requested.
@@ -344,7 +344,8 @@ class DeviceRequestParser(
         }
 
         internal class Builder(
-            docType: String, encodedItemsRequest: ByteArray,
+            docType: String,
+            encodedItemsRequest: ByteArray,
             requestInfo: Map<String, ByteArray>,
             encodedReaderAuth: ByteArray?,
             readerCertChain: X509CertChain?,
@@ -484,7 +485,7 @@ const val FORMAT_MSO_MDOC_ZK = "mso_mdoc_zk"
 
 internal fun toPresentationDefinition(docRequests: List<DeviceRequestParser.DocRequest>): PresentationDefinition {
     val inputDescriptors = docRequests
-        .map { requestedDocument -> requestedDocument.docType to requestedDocument.requestMap }
+        .map { requestedDocument -> requestedDocument.docType to requestedDocument.namespacesByRequest }
         .flatMap { (docType, requestMap) ->
             requestMap.map { d ->
                 val fieldConstraints = d.value

@@ -27,7 +27,6 @@ import io.ktor.http.Url
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
-import java.net.URLDecoder
 import java.util.UUID
 import javax.inject.Inject
 
@@ -71,7 +70,15 @@ class IssuanceViewModel @Inject constructor(
     private val credentialType: CredentialType? = CredentialType.entries.find { it.name == savedStateHandle["type"] }
     private val intent: Intent? = savedStateHandle[NavController.KEY_DEEP_LINK_INTENT]
     private val deepLinked: Boolean = intent?.data?.toString()?.startsWith(AppConfig.deepLinkSchema) == true
-    private val uri = intent?.data?.let { URLDecoder.decode(it.toString(), "UTF-8") }
+
+    // D15 (jvm L15): the deep link is used AS RECEIVED — no whole-URI URLDecoder.decode.
+    // URLDecoder speaks application/x-www-form-urlencoded: it maps `+` to space and decodes
+    // `%XX` everywhere, including delimiters, so an encoded `%26`/`%3F` became a real
+    // `&`/`?` (query smuggling into the issuance redirect) and a `+` inside a code/state
+    // value was silently corrupted. The only legitimate decode is per query-parameter
+    // value, which Ktor's `Url.parameters` performs exactly once when getCredential reads
+    // `state`/`code`; decoding the string first double-decodes.
+    private val uri: String? = intent?.data?.toString()
 
     private val authenticated = MutableStateFlow(false)
 
@@ -147,7 +154,11 @@ class IssuanceViewModel @Inject constructor(
     private suspend fun issueMdl() {
         setLoading(true)
         runCatching {
-            val credentialDocument = openId4VCIManager.getCredential(Url(uri!!))
+            // D15 (jvm L15): explicit parse failure instead of uri!! — a deep-linked screen
+            // can in principle reach this path with a null intent data; that is an
+            // issuance-configuration error, not a crash.
+            val deepLink = requireNotNull(uri) { "Issuance deep link carried no data" }
+            val credentialDocument = openId4VCIManager.getCredential(Url(deepLink))
             setState { copy(documents = listOf(credentialDocument)) }
         }.onFailure {
             if (it is CancellationException) throw it

@@ -55,11 +55,14 @@ import javax.inject.Inject
 @HiltViewModel
 class ProximityViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    val documentRepository: DocumentRepository,
-    val openId4VPManager: OpenId4VPManager,
+    // D15 (jvm L-batch): the injected collaborators are implementation detail — only the
+    // MVI surface (state/effect/event) is public to the screen. (transferManager was
+    // already made private in a parallel session.)
+    private val documentRepository: DocumentRepository,
+    private val openId4VPManager: OpenId4VPManager,
     private val transferManager: TransferManager,
-    val cryptoProviderFactory: CryptoProvider.Factory,
-    val secureAreaKeyManager: SecureAreaKeyManager,
+    private val cryptoProviderFactory: CryptoProvider.Factory,
+    private val secureAreaKeyManager: SecureAreaKeyManager,
     private val transactionLogRepository: TransactionLogRepository,
     private val userPreferencesDataSource: UserPreferencesDataSource
 ) : MviViewModel<Event, UiState, Effect>() {
@@ -288,6 +291,17 @@ class ProximityViewModel @Inject constructor(
             return
         }
 
+        // D15 (jvm L6): the transcript is session state set by the engagement — reaching the
+        // send path without it means the BLE session never completed the engagement step.
+        // Fail the send with a logged error instead of a KotlinNullPointerException from
+        // `!!`; the reader sees a cancelled transfer either way.
+        val sessionTranscriptBytes = state.value.sessionTranscript
+        if (sessionTranscriptBytes == null) {
+            logger.error("proximity send without an engagement session transcript — refusing to respond")
+            sendEffect { Effect.ProximityCancel }
+            return
+        }
+
         val responseDocuments = mutableListOf<MDoc>()
         val documentIds = mutableListOf<String>()
         state.value.credentials.forEach { credential ->
@@ -306,7 +320,7 @@ class ProximityViewModel @Inject constructor(
             val cryptoProvider = cryptoProviderFactory.forKeyType(credential.attestation.keyAttestation.keyType)
             val keyId = credential.attestation.keyAttestation.keyId
             val deviceNameSpaces = EncodedCBORElement(MapElement(mapOf()))
-            val sessionTranscript = DataElement.fromCBOR<ListElement>(state.value.sessionTranscript!!)
+            val sessionTranscript = DataElement.fromCBOR<ListElement>(sessionTranscriptBytes)
             val deviceAuthentication = DeviceAuthentication(sessionTranscript, docType, deviceNameSpaces)
             val documentResponse = mDoc.presentWithDeviceSignature(
                 mDocRequest = mDocRequest,
@@ -321,7 +335,7 @@ class ProximityViewModel @Inject constructor(
 
         val response = eu.europa.ec.eudi.iso18013.transfer.response.device.DeviceResponse(
             deviceResponseBytes = ee.cyber.wallet.domain.documents.mdoc.DeviceResponse(responseDocuments).toCBOR(),
-            sessionTranscriptBytes = state.value.sessionTranscript!!,
+            sessionTranscriptBytes = sessionTranscriptBytes,
             documentIds = documentIds
         )
         transferManager.sendResponse(response)

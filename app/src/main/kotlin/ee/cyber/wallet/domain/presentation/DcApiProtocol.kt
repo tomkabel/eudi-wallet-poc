@@ -50,11 +50,15 @@ object DcApiRequestDispatch {
     fun dispatch(protocolNames: List<String?>): Decision = when {
         protocolNames.isEmpty() -> Decision.Empty
         else -> {
-            val firstSupported = protocolNames.withIndex().firstOrNull { (index, _) ->
-                DcApiProtocol.fromWireName(protocolNames[index]) != null
-            }
+            // D15 (jvm L3): resolve once per entry and keep the protocol — was a
+            // firstOrNull { fromWireName(...) != null } probe followed by a second
+            // fromWireName(...) lookup for the same entry.
+            val firstSupported = protocolNames.asSequence()
+                .mapIndexed { index, name -> index to DcApiProtocol.fromWireName(name) }
+                .firstOrNull { (_, protocol) -> protocol != null }
             if (firstSupported != null) {
-                Decision.Take(firstSupported.index, DcApiProtocol.fromWireName(protocolNames[firstSupported.index])!!)
+                val (index, protocol) = firstSupported
+                Decision.Take(index, protocol!!)
             } else {
                 Decision.Unsupported(protocolNames.firstOrNull())
             }

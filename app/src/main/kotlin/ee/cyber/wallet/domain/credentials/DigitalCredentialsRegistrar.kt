@@ -79,7 +79,7 @@ class DigitalCredentialsRegistrar @Inject constructor(
                     matcher = matcher,
                     type = "com.credman.IdentityCredential",
                     requestType = "",
-                    protocolTypes = emptyList(),
+                    protocolTypes = emptyList()
                 )
             ).addOnSuccessListener {
                 log.info("IdentityCredential registration succeeded")
@@ -93,7 +93,7 @@ class DigitalCredentialsRegistrar @Inject constructor(
                     matcher = matcher,
                     type = DigitalCredential.TYPE_DIGITAL_CREDENTIAL,
                     requestType = "",
-                    protocolTypes = emptyList(),
+                    protocolTypes = emptyList()
                 )
             ).addOnSuccessListener {
                 log.info("Digital Credential registration succeeded")
@@ -124,24 +124,30 @@ class DigitalCredentialsRegistrar @Inject constructor(
     private fun List<RegistryDocType>.toCBORBytes(): ByteArray {
         val docsBuilder = CBORObject.NewArray()
         forEach { registryEntry ->
-            docsBuilder.Add(CBORObject.NewMap().apply {
-                Add("title", "Title")
-                Add("subtitle", "Subtitle")
-                Add("bitmap", byteArrayOf(0))
-                Add("mdoc", CBORObject.NewMap().apply {
-                    Add("id", registryEntry.id)
-                    Add("docType", registryEntry.docType)
-                })
-            })
+            docsBuilder.Add(
+                CBORObject.NewMap().apply {
+                    Add("title", "Title")
+                    Add("subtitle", "Subtitle")
+                    Add("bitmap", byteArrayOf(0))
+                    Add(
+                        "mdoc",
+                        CBORObject.NewMap().apply {
+                            Add("id", registryEntry.id)
+                            Add("docType", registryEntry.docType)
+                        }
+                    )
+                }
+            )
         }
         return docsBuilder.EncodeToBytes()
     }
 
     private fun Context.getMatcher(): ByteArray {
+        // D15 (jvm L4): assets are a stream, not a random-access file — available() is a hint
+        // for the currently-buffered bytes, not the asset length, so a large matcher asset
+        // was silently truncated to whatever the first buffer held. Read to EOF instead.
         return this.assets.open("dcapi/identitycredentialmatcher.wasm").use { stream ->
-            ByteArray(stream.available()).apply {
-                stream.read(this)
-            }
+            stream.readBytes()
         }
     }
 }

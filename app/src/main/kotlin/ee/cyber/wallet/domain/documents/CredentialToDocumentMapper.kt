@@ -80,7 +80,12 @@ class CredentialToDocumentMapper(
                     DocumentField(
                         namespace = namespace,
                         name = it.key,
-                        value = it.value!!.toString()
+                        // D15 (jvm L5): `it` is a Map.Entry whose value came from
+                        // DataElement.value() — null for element shapes this mapper does not
+                        // model (it.value!! crashed the whole conversion). Render the mapped
+                        // form when present, else the raw CBOR element's toString, so the
+                        // field stays visible instead of killing the document load.
+                        value = (it.value ?: it.toString()).toString()
                     )
                 }
             }
@@ -220,7 +225,13 @@ class CredentialToDocumentMapper(
         val sdOnlyClaims = extractSelectivelyDisclosableClaims(reconstructedClaims, disclosuresPerPath)
         val fields = flattenJsonObject(sdOnlyClaims)
 
-        val expiresAt = LocalDateTime.ofInstant(Instant.ofEpochSecond(jwtClaims["exp"]!!.toLong()), ZoneOffset.UTC)
+        // D15 (jvm L5): exp!! killed the whole document load when an SD-JWT lacked the
+        // standard `exp` claim (the SD-JWT VC spec makes it OPTIONAL — registered claims
+        // live in the -disclosed- set only if the issuer chose to include them). A missing
+        // or unparseable exp means "expiry unknown", not "credential dead".
+        val expiresAt = jwtClaims["exp"]?.toLongOrNull()?.let {
+            LocalDateTime.ofInstant(Instant.ofEpochSecond(it), ZoneOffset.UTC)
+        }
 
         return when (val vct = jwtClaims["vct"]) {
             DocType.PID_SD_JWT.uri -> {
@@ -228,7 +239,7 @@ class CredentialToDocumentMapper(
                     id = attestation.id,
                     fields = fields.sortedBy { it.asCredentialAttribute(DocType.PID_SD_JWT) },
                     type = DocType.PID_SD_JWT,
-                    expired = LocalDateTime.now(ZoneOffset.UTC).isAfter(expiresAt),
+                    expired = expiresAt?.let { LocalDateTime.now(ZoneOffset.UTC).isAfter(it) } ?: false,
                     attestation = attestation,
                     sdJwt = this
                 )

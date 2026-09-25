@@ -2,7 +2,6 @@ package ee.cyber.wallet.util
 
 import org.multipaz.crypto.X509Cert
 import org.multipaz.crypto.X509CertChain
-import org.multipaz.mdoc.zkp.ZkSystemSpec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

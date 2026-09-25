@@ -26,7 +26,16 @@ abstract class MviViewModel<Event : ViewEvent, UiState : ViewState, Effect : Vie
 
     private val _event: MutableSharedFlow<Event> = MutableSharedFlow()
 
-    private val _effect: Channel<Effect> = Channel()
+    // D15 (jvm L12): RENDEZVOUS (the default) makes sendEffect() suspend until a collector
+    // is actively receiving — for one-shot navigation/UI effects that is a lost-effect trap:
+    // a `sendEffect` racing the screen's (re)subscription (rotation, process restore, a
+    // collectAsState that lands a frame late) parks the viewModelScope coroutine, and an
+    // effect emitted while nobody is subscribed is dropped the moment the channel hits its
+    // zero buffer. A small buffer (16) absorbs a burst of effects across one UI frame —
+    // trySend would be the alternative but silently discards; we prefer bounded buffering
+    // over loss. Effects are consumed promptly by the single screen collector, so the
+    // default BUFFERED capacity (64) is far above anything these flows emit in practice.
+    private val _effect: Channel<Effect> = Channel(capacity = Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
     init {

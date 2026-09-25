@@ -34,6 +34,7 @@ class DcApiRequestDispatchTest {
         val unsupported = assertIs<DcApiRequestDispatch.Decision.Unsupported>(decision)
         assertEquals("openid4vp", unsupported.protocolName)
     }
+
     @Test
     fun `refuses an unknown protocol with the name preserved for the error`() {
         val decision = DcApiRequestDispatch.dispatch(listOf("com.example.third-protocol"))
