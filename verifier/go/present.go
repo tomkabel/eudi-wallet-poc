@@ -27,7 +27,11 @@ type presenter struct {
 	baseURL  string
 	docType  string
 	nsID     string
-	sem      limiter
+	// carrier forces one vp_token carrier for every session (-carrier flag,
+	// for tests); nil dispatches per query format, sniffing the entry bytes
+	// (oid4vp.CarrierForBytes).
+	carrier oid4vp.Carrier
+	sem     limiter
 	// reads bounds requests that are reading or decoding a body; nil is unlimited.
 	reads limiter
 
@@ -310,6 +314,13 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 		// the whole value of the answer.
 		return false, err.Error(), http.StatusBadRequest
 	}
+	return p.verifyPlain(s, pres, proof)
+}
+
+// verifyPlain runs the plain-path verification on a parsed interim envelope:
+// trust store, circuit allowlist, transcript, zk.Verify over every trusted
+// issuer for the doctype.
+func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, proof []byte) (bool, string, int) {
 	if s.ExpectedNow == "" {
 		return false, "session has no expected_now", http.StatusInternalServerError
 	}
@@ -378,7 +389,7 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 		return false, "circuit is not in the accepted set", http.StatusForbidden
 	}
 
-	cp, _, err := token.ParseCarrier(cq, nil)
+	cp, _, err := token.ParseCarrier(cq, p.carrier)
 	if err != nil {
 		if errors.Is(err, oid4vp.ErrNoZkDocument) {
 			// The wallet answered with no provable document. That is an

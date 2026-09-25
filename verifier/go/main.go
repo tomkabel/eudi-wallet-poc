@@ -240,6 +240,9 @@ func main() {
 		"permit -response-mode direct_post; the explicit downgrade switch for the encrypted default (ADR-003)")
 	unsafeDevAPI := flag.Bool("unsafe-dev-api", false,
 		"expose POST /zkverify, the unauthenticated low-level API (development only)")
+	carrierName := flag.String("carrier", "",
+		"force the vp_token carrier for every session: interim-json, mso-mdoc-zk-cbor, "+
+			"or empty (the default) to dispatch per query format, sniffing the entry bytes")
 	maxVerify := flag.Int("max-concurrent-verify", runtime.NumCPU(),
 		"verifications allowed in flight at once; excess requests get 503")
 	dcapiOrigin := flag.String("dcapi-origin", "",
@@ -259,6 +262,10 @@ func main() {
 
 	if *maxVerify < 1 {
 		log.Fatalf("-max-concurrent-verify must be at least 1, got %d", *maxVerify)
+	}
+	carrierOverride, err := oid4vp.ParseCarrierName(*carrierName)
+	if err != nil {
+		log.Fatalf("%v", err)
 	}
 	switch *responseMode {
 	case "direct_post.jwt":
@@ -346,6 +353,7 @@ func main() {
 		baseURL:     strings.TrimSuffix(*baseURL, "/"),
 		docType:     *docType,
 		nsID:        *docType,
+		carrier:     carrierOverride,
 		sem:         sem,
 		reads:       reads,
 		responseKey: responseKey,
