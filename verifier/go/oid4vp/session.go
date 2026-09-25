@@ -316,6 +316,38 @@ func snapshot(s *Session) *Session {
 	return &copy
 }
 
+// LiveSessions reports how many unexpired sessions the store holds. O(n),
+// and deliberately not on any request path.
+func (st *Store) LiveSessions() int {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	n := 0
+	for _, s := range st.sessions {
+		if !s.Expired(st.ttl) {
+			n++
+		}
+	}
+	return n
+}
+
+// InFlight reports how many live sessions have not been answered yet —
+// presentations whose response could still arrive at /present/response/<id>.
+// The drain loop in main polls it to hold the listener open while wallets
+// finish; it is an O(n) scan, run only on the drain path, never per request.
+// A claimed-but-unwritten session is already mid-HTTP-request, so it is the
+// server Shutdown wait that covers it, not this count.
+func (st *Store) InFlight() int {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	n := 0
+	for _, s := range st.sessions {
+		if !s.Answered && !s.Expired(st.ttl) {
+			n++
+		}
+	}
+	return n
+}
+
 // Get returns a snapshot of a live session.
 func (st *Store) Get(id string) (*Session, error) {
 	st.mu.Lock()

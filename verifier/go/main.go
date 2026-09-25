@@ -35,6 +35,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -117,6 +118,67 @@ func (l limiter) release() {
 // that is when a slot actually frees up.
 func busy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", "3")
+}
+
+// drainGate closes new presentations during drain. SIGTERM flips it: every
+// /present/new after that gets 503 + Retry-After (the LB must stop routing
+// new sessions here, the wallet polling /present/result/<id> gets its final
+// 410/200 either way), while /present/response/* and the verify endpoints
+// stay live so a presentation that already started can finish.
+type drainGate struct {
+	mu    sync.Mutex
+	open  bool
+	store *oid4vp.Store
+}
+
+func newDrainGate(store *oid4vp.Store) *drainGate {
+	return &drainGate{open: true, store: store}
+}
+
+// close stops admitting new sessions. Idempotent.
+func (g *drainGate) close() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.open = false
+}
+
+// newHandler wraps a /present/new handler with the drain check. nil means
+// the endpoint has nothing to gate (no presenter behind it).
+func (g *drainGate) newHandler(next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	if next == nil {
+		return nil
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		g.mu.Lock()
+		open := g.open
+		g.mu.Unlock()
+		if !open {
+			w.Header().Set("Retry-After", "3")
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{
+				"error": "verifier is draining; retry on another instance",
+			})
+			return
+		}
+		next(w, r)
+	}
+}
+
+// wait blocks until no live session is waiting for its presentation, the
+// store's TTL lapses them all, or timeout elapses — whichever comes first.
+// Polling the store's InFlight count is exact enough at 100 ms: a session is
+// no longer in flight the moment its response handler claims it, and from
+// there srv.Shutdown's active-request wait is what actually covers it.
+func (g *drainGate) wait(timeout time.Duration) {
+	deadline := time.Now().Add(timeout)
+	for {
+		if g.store.InFlight() == 0 {
+			return
+		}
+		if !time.Now().Before(deadline) {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 // verifyErrorCategory maps a verification failure to a stable, non-leaky
@@ -319,6 +381,9 @@ func main() {
 	clientID := flag.String("client-id", "x509_san_dns:verifier.example.ee", "OpenID4VP client identifier")
 	docType := flag.String("doctype", "ee.riik.poa.1", "doctype to request")
 	sessionTTL := flag.Duration("session-ttl", 3*time.Minute, "presentation request lifetime")
+	drainTimeout := flag.Duration("drain-timeout", 0,
+		"how long SIGTERM keeps serving in-flight presentations before exit; "+
+			"default is twice the session TTL")
 	responseMode := flag.String("response-mode", "direct_post.jwt",
 		"response mode: direct_post.jwt (encrypted, default) or direct_post (plain)")
 	responseKeyFile := flag.String("response-key-file", "",
@@ -488,8 +553,10 @@ func main() {
 		log.Printf("trusting issuer %q for doctype %s", is.Name, is.DocType)
 	}
 
+	store := oid4vp.NewStore(*sessionTTL)
+	defer store.Stop() // end the janitor on ANY exit path (log.Fatalf too)
 	p := &presenter{
-		store:            oid4vp.NewStore(*sessionTTL),
+		store:            store,
 		trust:            trust,
 		registry:         reg,
 		clientID:         *clientID,
@@ -512,6 +579,10 @@ func main() {
 	}
 
 	srvAddr := *addr
+	// The drain gate. Only the two session-creating endpoints are gated: every
+	// other route — response, result, request, verify, jwks, circuits,
+	// issuers — must keep working while in-flight presentations land.
+	gate := newDrainGate(store)
 	mux := http.NewServeMux()
 	// /zkverify takes the issuer key and `now` from the caller, so a caller who
 	// chooses both can mint their own attestation and prove anything. It is a
@@ -532,7 +603,7 @@ func main() {
 		log.Printf("WARNING: never expose this on a reachable interface.")
 		mux.HandleFunc("/zkverify", handleVerify(reg, sem, reads))
 	}
-	mux.HandleFunc("/present/new", p.handleNew)
+	mux.HandleFunc("/present/new", gate.newHandler(p.handleNew))
 	mux.HandleFunc("/present/request/", p.handleRequest)
 	mux.HandleFunc("/present/response/", p.handleResponse)
 	mux.HandleFunc("/present/result/", p.handleResult)
@@ -549,7 +620,7 @@ func main() {
 	// without one the handover has nothing to bind and every session it could
 	// start would be unverifiable by construction.
 	if *dcapiOrigin != "" {
-		mux.HandleFunc("/present/dcapi/new", p.handleDCAPINew)
+		mux.HandleFunc("/present/dcapi/new", gate.newHandler(p.handleDCAPINew))
 		mux.HandleFunc("/present/dcapi/request/", p.handleDCAPIRequest)
 		mux.HandleFunc("/present/dcapi/response/", p.handleDCAPIResponse)
 		mux.HandleFunc("/present/dcapi/result/", p.handleDCAPIResult)
@@ -562,6 +633,17 @@ func main() {
 		writeJSON(w, http.StatusOK, map[string]any{"issuers": trust.All()})
 	})
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		// draining=true tells the load balancer to stop routing new sessions
+		// here; this instance keeps answering until its presentations land.
+		gate.mu.Lock()
+		draining := !gate.open
+		gate.mu.Unlock()
+		if draining {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]bool{"draining": true})
+			return
+		}
 		_, _ = fmt.Fprintln(w, "ok")
 	})
 
@@ -577,10 +659,22 @@ func main() {
 	}
 	log.Printf("zkverify listening on %s", *addr)
 
-	// Graceful shutdown: SIGINT/SIGTERM stops accepting and drains in-flight
-	// requests instead of cutting them off mid-verify. A cgo verification can
-	// hold a request for seconds, so the drain window is ~10s — beyond it the
-	// context closes the connection anyway.
+	// The drain budget. Default 2x TTL: a session that can still complete
+	// lapses at TTL, so twice that covers one answer and one retry.
+	drainFor := *drainTimeout
+	if drainFor <= 0 {
+		drainFor = 2 * *sessionTTL
+	}
+
+	// Graceful drain: SIGINT/SIGTERM stops NEW presentations (503 +
+	// Retry-After on /present/new, draining=true on /healthz so the load
+	// balancer stops routing) but keeps the listener open — /present/response/*,
+	// /present/result/* and the verify endpoints stay live — until every
+	// in-flight session has answered or its TTL lapsed, capped by the drain
+	// budget. Only then the server shuts down, which also waits out the cgo
+	// verifications already inside a response handler. Rolling deploys are
+	// covered by this path; a SIGKILL kills in-flight sessions, and since the
+	// store is in memory only, nothing outlives the process either way.
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- srv.ListenAndServe() }()
 	sig := make(chan os.Signal, 1)
@@ -592,7 +686,9 @@ func main() {
 			os.Exit(1)
 		}
 	case s := <-sig:
-		log.Printf("zkverify: %v received, draining", s)
+		log.Printf("zkverify: %v received, draining (budget %s)", s, drainFor)
+		gate.close()
+		gate.wait(drainFor)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
