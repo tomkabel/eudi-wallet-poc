@@ -104,7 +104,7 @@ Full suite at the step's HEAD, rebased onto the review fixes: 60 unit tests, 0 f
 4. Verification that Android Keystore key deletion (`deleteKey`) returns the slot (WIAM_21).
 5. Registry re-registration after consumption so the platform does not offer consumed attestations.
 
-## Repository side (ee-eudiw) — recorded in its own STEP6-RECORD.md
+## Repository side (ee-eudiw) — recorded in [STEP6-VERIFIER-RECORD.md](STEP6-VERIFIER-RECORD.md)
 
 `mint_ee_poa.py --device-public-key` (F12), `--over` default `[18]` (S10), mock issuer public key
 in the verifier trust store for both doctypes, and a Go test proving the verifier accepts a ZK

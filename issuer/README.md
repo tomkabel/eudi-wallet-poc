@@ -110,8 +110,8 @@ independent fork [`tomkabel/eudi-wallet-poc`](https://github.com/tomkabel/eudi-w
 `step8-measurement-harness @ 2396245` (branch chain `step1-fork-identity` →
 `step3-holder-obligations` → `step5-hardware-keys` → `step4-protocol-hygiene` →
 `step6-issuance-consumption` → `step7-conformity-note` → `step8-measurement-harness`, by commit as
-recorded in `../docs/planning/STEP7-RECORD.md` and `../docs/planning/STEP8-RECORD.md`); see [`docs/ARCHITECTURE.md` §6](../docs/ARCHITECTURE.md) and the
-fork's `docs/CONFORMITY.md`. The device work (batch of ≥ 30, key-generation timing, slot
+recorded in `../docs/planning/STEP7-RECORD.md` and `../docs/planning/STEP8-RECORD.md`); see [`docs/ARCHITECTURE.md` §6](../docs/ARCHITECTURE.md) and
+[`docs/CONFORMITY.md`](../docs/CONFORMITY.md). The device work (batch of ≥ 30, key-generation timing, slot
 capacity — spec §23 item 26) is pending.
 
 ## Note on `-C target-cpu=native`

@@ -240,7 +240,7 @@ recorded in `../docs/planning/STEP7-RECORD.md` and `../docs/planning/STEP8-RECOR
 ISO 18013-7 Annex C DC API path (step 0 cross-verified the two Longfellow halves; see
 [`docs/planning/STEP0-CROSS-VERIFY-RECORD.md`](../docs/planning/STEP0-CROSS-VERIFY-RECORD.md)).
 The on-device presentation against this verifier's Annex C endpoint is still pending —
-see [`docs/ARCHITECTURE.md` §6](../docs/ARCHITECTURE.md) and the fork's `docs/CONFORMITY.md`.
+see [`docs/ARCHITECTURE.md` §6](../docs/ARCHITECTURE.md) and [`docs/CONFORMITY.md`](../docs/CONFORMITY.md).
 
 ## The circuit registry
 

@@ -73,5 +73,5 @@ The real-holder work this directory deliberately is not — an Android wallet ho
 `step8-measurement-harness @ 2396245` (branch chain `step1-fork-identity` →
 `step3-holder-obligations` → `step5-hardware-keys` → `step4-protocol-hygiene` →
 `step6-issuance-consumption` → `step7-conformity-note` → `step8-measurement-harness`, by commit as
-recorded in `../docs/planning/STEP7-RECORD.md` and `../docs/planning/STEP8-RECORD.md`); see [`docs/ARCHITECTURE.md` §6](../docs/ARCHITECTURE.md) and the
-fork's `docs/CONFORMITY.md`. The device-side acceptance items of plan §6 remain pending.
+recorded in `../docs/planning/STEP7-RECORD.md` and `../docs/planning/STEP8-RECORD.md`); see [`docs/ARCHITECTURE.md` §6](../docs/ARCHITECTURE.md) and
+[`docs/CONFORMITY.md`](../docs/CONFORMITY.md). The device-side acceptance items of plan §6 remain pending.

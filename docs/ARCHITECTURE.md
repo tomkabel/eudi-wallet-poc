@@ -6,6 +6,12 @@ derived at `6d25b66` and revised since, with every `file:line` citation re-check
 that date. Where a README and the code disagree, this document notes the disagreement
 rather than resolving it silently; each claim names the file it was read from.
 
+> **Imported from ee-eudiw at `e368fc1`.** This describes that repository. Its `README.md`,
+> `AGENTS.md` and `.gitmodules` citations are ee-eudiw's files, and `ui-mock-bilt-me` was not
+> imported. The Android holder that §"The Android holder, outside this tree" places in a
+> separate fork is `app/` in this repository. The verifier's Go module is now
+> `github.com/tomkabel/eudi-wallet-poc/verifier/go`.
+
 ## 1. What is in the tree, and the decision that shapes it
 
 One repository holds two things on purpose (`AGENTS.md`:12-14):
@@ -92,7 +98,7 @@ holds are `tests/e2e.sh`:66-121 (five assertions) and `wallet/README.md`:50-55.
 | `issuer/mint_ee_poa.py` | Python 3 (`cbor2`, `cryptography`) | CLI, `python3 mint_ee_poa.py` | mints EE-PoA `DeviceResponse`s, singly or as a batch; writes the verifier's trust-store entry | files on disk: `mdoc.bin`, `device_key.pem`, `params.txt`, `issuers.json` |
 | `wallet/present.py` | Python 3 (`cbor2`, `cryptography`, `urllib`) | CLI, `python3 present.py` | fetches the request, derives the transcript, re-signs `deviceAuth`, invokes the prover, posts the `vp_token` | HTTP to the verifier; **subprocess** to the Rust proving binary |
 | `zk-age-poc/*.rs` | Rust | copied into longfellow-zk and built there | the `ee_poa_demo` proving example; `REPRODUCE.md` holds the standalone measurements | built binary invoked as a subprocess by the wallet |
-| `verifier/go` | Go 1.26 (module `github.com/tomkabel/ee-eudiw/verifier/go`) | `go build -o ../zkverify .` | the relying-party HTTP service: OpenID4VP 1.0, DCQL, trust store, circuit allowlist; the ISO 18013-7 Annex C (dcapi) endpoints and page (`iso.go`, `iso.html`, off unless `-dcapi-origin` is set) | **cgo staticlib** into `zkverify-ffi` |
+| `verifier/go` | Go 1.26 (module `github.com/tomkabel/eudi-wallet-poc/verifier/go`) | `go build -o ../zkverify .` | the relying-party HTTP service: OpenID4VP 1.0, DCQL, trust store, circuit allowlist; the ISO 18013-7 Annex C (dcapi) endpoints and page (`iso.go`, `iso.html`, off unless `-dcapi-origin` is set) | **cgo staticlib** into `zkverify-ffi` |
 | `verifier/zkverify-ffi` | Rust, `crate-type = ["staticlib", "rlib"]` | `cargo build --release` | C ABI (`zkv_verify`, `zkv_circuit_hash`) over the Longfellow Rust runtime | statically linked into the Go binary |
 | `verifier/go/oid4vp` | Go package | — | sessions, DCQL, session transcript, trust store, `vp_token` parsing; for ISO 18013-7 Annex C (dcapi) the DeviceRequest, EncryptionInfo, HPKE and ZkDocument parsing (`isodcapi.go`, `hpke.go`, `session_iso.go`, `zkdocument.go`) | in-process from `present.go` / `iso.go` / `main.go` |
 | `verifier/go/internal/cborsub` | Go package | — | the strict CBOR subset decoder for the holder-supplied DeviceResponse (ADR-002) | in-process from `oid4vp` |
@@ -340,7 +346,7 @@ Scope, drawn from the components' own statements and the spec's scope section
   for this project. The spec's preferred remote flow
   (`EE-PRO-010`, `EE-PRO-010a`) therefore has no counterpart here, and the `wallet_uri`
   string `present.go` returns is consumed by nothing in this repository. The gap is
-  analysed in [`analysis/CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md`](analysis/CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md).
+  analysed in ee-eudiw's `docs/analysis/CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md`.
 - **No PID issuance, no EU AV Profile attestation.** The only thing minted is
   `ee.riik.poa.1` as an mdoc (`mint_ee_poa.py`:48`). The spec defines interop with
   `eu.europa.ec.av.1` (`spec`:387; `EE-POA-003`, `spec`:411`) but the issuer has no such
@@ -374,7 +380,7 @@ Scope, drawn from the components' own statements and the spec's scope section
 ### The Android holder, outside this tree
 
 The holder side of the conformance plan
-([`planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md`](planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md) §4)
+(ee-eudiw's `docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md` §4)
 is implemented in a separate fork, not here:
 [`tomkabel/eudi-wallet-poc`](https://github.com/tomkabel/eudi-wallet-poc), an independent fork of
 [`open-eid/eudi-wallet-poc`](https://github.com/open-eid/eudi-wallet-poc), at revision

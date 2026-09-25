@@ -2,7 +2,7 @@
 
 Every test and check in this repository, where it lives, and what it proves.
 `.github/workflows/ci.yml` is the definition of green; the conventions note is
-[`AGENTS.md`](../AGENTS.md) ("Running the checks locally").
+[`docs/DEVELOPMENT.md`](../docs/DEVELOPMENT.md) ("Running the checks locally").
 
 Unit tests sit beside the code they test — Go under `verifier/go/`, the
 cross-language transcript check in `wallet/`. This directory holds only the
@@ -84,7 +84,7 @@ signal — `gofmt -l` exits 0 either way), `go vet ./...` (type-checks the cgo
 package without linking, covering every package), `go test ./oid4vp/...
 ./internal/... ./circuits/...`,
 `python3 -m compileall -q issuer verifier wallet tests`, `ruff check
---isolated --select F,E9 --exclude eudi-arf,ui-mock-bilt-me .` (ruff 0.16.6),
+--isolated --select F,E9 --exclude eudi-arf .` (ruff 0.16.6),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
 step installs `cbor2` and `cryptography`, which `present.py` imports),
 and `shellcheck --severity=warning tests/*.sh`.
@@ -113,7 +113,7 @@ go test ./oid4vp/... ./internal/... ./circuits/...
 cd ../..
 python3 -m compileall -q issuer verifier wallet tests
 pip install ruff==0.16.6
-ruff check --isolated --select F,E9 --exclude eudi-arf,ui-mock-bilt-me .
+ruff check --isolated --select F,E9 --exclude eudi-arf .
 pip install cbor2 cryptography          # present.py imports them
 python3 wallet/test_transcript.py
 shellcheck --severity=warning tests/*.sh

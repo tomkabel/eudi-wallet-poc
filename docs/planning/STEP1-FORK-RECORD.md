@@ -1,6 +1,6 @@
 # Step 1 record: the fork, and making it unmistakably not RIA's app
 
-**Date:** 23 September 2026. **Plan:** [`EUDI-WALLET-POC-CONFORMANCE-PLAN.md`](EUDI-WALLET-POC-CONFORMANCE-PLAN.md)
+**Date:** 23 September 2026. **Plan:** ee-eudiw's `docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md`
 §4 step 1 and §10 D1. **Executed:** the same day, from the local checkout
 `~/Documents/eudi-wallet-poc` (`master` five commits ahead of `origin/master` at v0.6.6, `0866e94`).
 
