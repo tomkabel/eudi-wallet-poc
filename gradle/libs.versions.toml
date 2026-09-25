@@ -39,7 +39,6 @@ eudi-document-manager = "0.13.0"
 # lowest multipaz that publishes multipaz-longfellow; eudi-iso18013-data-transfer pins 0.94.0, so
 # every multipaz artifact is constrained to this version to keep core and -android in step
 multipaz = "0.99.0"
-androidxSecurityCrypto = "1.1.0-alpha07"
 dependencyCheck = "1.32.0"
 spotless = "7.0.3"
 ktlint = "0.50.0"
@@ -83,7 +82,6 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraVersion" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraVersion" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraVersion" }
-androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurityCrypto" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor-client" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor-client" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor-client" }
