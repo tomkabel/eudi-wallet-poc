@@ -11,6 +11,12 @@
 // POST /zkverify checks one proof directly, with the caller supplying the issuer
 // key and `now`. That is a development harness, so it is only registered under
 // -unsafe-dev-api and 404s otherwise.
+//
+// -version prints the longfellow-zk revision the FFI links, injected at build
+// time via -ldflags "-X main.longfellowRev=$(cat
+// verifier/zkverify-ffi/longfellow-rev.txt)" (make deps does this). The
+// cross-check against circuits.json's recorded upstream release stays a human
+// step: nothing fetches or compares at runtime.
 package main
 
 import (
@@ -31,6 +37,12 @@ import (
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
+
+// longfellowRev is set at build time by -ldflags -X; -version prints it. It
+// records which longfellow-zk the linked Rust runtime was built from — the
+// hash in verifier/zkverify-ffi/longfellow-rev.txt, not whatever the sibling
+// checkout happens to be at now.
+var longfellowRev string
 
 type verifyRequest struct {
 	Version       uint32 `json:"version"`
@@ -225,7 +237,17 @@ func main() {
 	dcapiOrigin := flag.String("dcapi-origin", "",
 		"browser origin the Digital Credentials API (ISO 18013-7 Annex C) handover binds; "+
 			"required for /present/dcapi/*, never taken from request headers")
+	version := flag.Bool("version", false, "print the linked longfellow-zk revision and exit")
 	flag.Parse()
+
+	if *version {
+		if longfellowRev == "" {
+			fmt.Println("zkverify: longfellow revision not recorded (binary built without -ldflags -X main.longfellowRev)")
+		} else {
+			fmt.Println("zkverify longfellow-zk", longfellowRev)
+		}
+		return
+	}
 
 	if *maxVerify < 1 {
 		log.Fatalf("-max-concurrent-verify must be at least 1, got %d", *maxVerify)
