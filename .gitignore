@@ -22,3 +22,10 @@ __pycache__/
 *.pyc
 .ruff_cache/
 .pytest_cache/
+
+# Local agent state (generated or private)
+graphify-out/
+.decisions.log
+.claude/cert-ee/
+.claude/plans/
+.claude/settings.json
