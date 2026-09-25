@@ -6,7 +6,6 @@ pluginManagement {
     repositories {
         google()
         mavenCentral()
-        mavenLocal()
         gradlePluginPortal()
     }
 }
@@ -14,7 +13,13 @@ dependencyResolutionManagement {
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
     repositories {
         maven("https://maven.waltid.dev/releases")
-        maven("https://maven.waltid.dev/snapshots")
+        maven("https://maven.waltid.dev/snapshots") {
+            // C8: cose-java 1.1.1-WALT-SNAPSHOT resolves exclusively from the
+            // committed mirror below — upstream republishing the snapshot must
+            // never change the bytes we build against. The mirror pins both the
+            // artifacts and the maven-metadata.xml by sha256.
+            mavenContent { excludeGroup("org.cose") }
+        }
         google()
         mavenCentral()
         maven {
@@ -27,7 +32,12 @@ dependencyResolutionManagement {
         // by .github/maven-mirror/manifest.json. Static HTTPS, no credentials — fork
         // PRs build without secrets.
         maven {
-            url = uri("https://tomkabel.github.io/eudi-wallet-poc/maven")
+            // -PmirrorLocalDir=<dir> serves the mirror from the committed site/
+            // tree (used to verify mirror republishes before the gh-pages push);
+            // the default stays the published gh-pages URL.
+            url = uri(providers.gradleProperty("mirrorLocalDir").getOrElse(
+                "https://tomkabel.github.io/eudi-wallet-poc/maven"
+            ))
             content {
                 includeGroup("com.signerry")
                 includeGroup("com.signerry.dss-android")
@@ -35,6 +45,9 @@ dependencyResolutionManagement {
                 includeGroup("org.glassfish.jaxb")
                 includeGroup("com.sun.xml.bind")
                 includeGroup("com.sun.xml.bind.mvn")
+                // C8: the vendored cose-java snapshot (1.1.1-WALT-20250317.122639-2)
+                // is served only from here; waltid snapshots is excluded for the group.
+                includeGroup("org.cose")
             }
         }
     }

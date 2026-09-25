@@ -29,6 +29,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default (devsecops F1): the workflow reads the repo and runs
+# tests; no job needs write scopes. Individual checkouts drop the embedded
+# credentials too (persist-credentials: false) — GITHUB_TOKEN stays available
+# as an env var for the gradle/actions caches.
+permissions:
+  contents: read
+
 defaults:
   run:
     # zkverify-ffi path-depends on ../../../longfellow-zk, so the two trees must
@@ -45,6 +52,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: eudi-wallet-poc
+          persist-credentials: false
 
       - uses: actions/setup-go@v5
         with:
@@ -125,7 +133,7 @@ jobs:
         # make the job fail when the runner image updates rather than when the
         # scripts change. The remaining info notes here are false positives:
         # cleanup() looks unreachable because `trap` invokes it.
-        run: shellcheck --severity=warning scripts/*.sh tests/*.sh
+        run: shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
 
   e2e:
     name: e2e (prover + verifier, tests/e2e.sh)
@@ -137,6 +145,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: eudi-wallet-poc
+          persist-credentials: false
 
       - uses: actions/setup-go@v5
         with:

@@ -28,7 +28,7 @@ lint:
 		echo "not gofmt-clean:"; echo "$$unformatted"; exit 1; fi
 	cd verifier/go && go vet ./...
 	ruff check --isolated --select F,E9 --exclude eudi-arf .
-	shellcheck --severity=warning scripts/*.sh tests/*.sh
+	shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
 
 test-go-fast:
 	cd verifier/go && go test ./oid4vp/... ./internal/... ./circuits/...

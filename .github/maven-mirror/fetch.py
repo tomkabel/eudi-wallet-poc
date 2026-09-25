@@ -27,6 +27,7 @@ SITE_DIR = os.environ.get('MIRROR_SITE_DIR',
 MAVEN_ROOT = os.path.join(SITE_DIR, 'maven')
 
 CENTRAL = 'https://repo1.maven.org/maven2'
+WALTID_SNAPSHOTS = 'https://maven.waltid.dev/snapshots'
 TOKEN = os.environ.get('GITHUB_TOKEN', '')
 
 
@@ -57,6 +58,8 @@ def fetch(url, auth):
 def source_url(name, path):
     if name == 'central':
         return CENTRAL + '/' + path, False
+    if name == 'waltid':
+        return WALTID_SNAPSHOTS + '/' + path, False
     if name.startswith('gpr:'):
         return f'https://maven.pkg.github.com/{name[4:]}/{path}', True
     raise ValueError(f'unknown source {name!r}')
