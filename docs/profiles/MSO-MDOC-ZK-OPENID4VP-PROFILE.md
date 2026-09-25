@@ -1,12 +1,35 @@
 # `mso_mdoc_zk` for OpenID4VP — a profile of the de-facto ZK carrier
 
-**Date:** 24 September 2026. **Status:** proposal. Nothing in this document is normative
-anywhere yet: the carrier is in no specification (OpenID4VP 1.0 Final and the 1.1 editor's
-draft have no ZK text; HAIP has none), DCHP issue
-[#17 "ZKP Support"](https://github.com/openid/dchp/issues/17) is still in the parking lot,
-and `draft-google-cfrg-libzk` is an unadopted individual draft. This profile pins down what
+**Version:** 1.0 — 25 September 2026. **Status:** published profile of this repository
+(the citable reference implementation for the de-facto carrier). Nothing in this document
+is normative in any standards body yet: the carrier is in no specification (OpenID4VP 1.0
+Final and the 1.1 editor's draft have no ZK text; HAIP has none), DCHP issue
+[#17 "ZKP Support"](https://github.com/openid/dchp/issues/17) is still in the parking lot
+— this repository's submission to it is **prepared but unfiled, pending a user decision**
+(see [`DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md`](DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md)) — and
+`draft-google-cfrg-libzk` is an unadopted individual draft. This profile pins down what
 the shipping implementations actually agree on, so that a standardisation venue has a
 tested target to converge on rather than a blank page.
+
+**Changelog:**
+
+- **1.0 (25 September 2026).** First versioned publication. Closes the three open items
+  the carrier analysis §5 named for this profile's scope: the format identifier's
+  registration posture (§2), the `zk_system_type` parameter registry (§3), and
+  `meta.verifier_message` semantics (§4 — now `MUST be ignored if unparsed + echoed in
+  the audit log`). Adds the committed dual-carrier test vectors
+  [`tests/vectors/carrier-v1/`](../../tests/vectors/carrier-v1/) (§7) and the carrier
+  interface contract (§1, `oid4vp/carrier.go`). Items 4–7 of analysis §5 (freshness
+  rules, circuit distribution, response sizing, BBS/JWP coexistence) were already
+  profile rules 7–15; they are unchanged in substance.
+- **unversioned (24 September 2026).** Initial proposal draft.
+
+**Reference implementation note:** as of this version the verifier speaks every current
+carrier behind one interface (`verifier/go/oid4vp/carrier.go`): the interim JSON envelope
+and the de-facto CBOR `DeviceResponse` normalize to one `CheckedPresentation`, asserted
+to verify identically over the same Longfellow proof
+(`tests/vectors/carrier-v1/`, Go tests `TestCarrierTableBothCarriers`,
+`TestGoldenProofNormalizesIdentically`, `TestCarrierVectorsVerifyIdentically`).
 
 **Inputs:** [`docs/analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md`](../analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md)
 (the wire shape as multipaz 0.99.0 serialises it),
@@ -44,19 +67,31 @@ retrieval there), issuance, and the ISO 18013-7 Annex C dcapi carrier, which sha
   `DeviceRequestParser.FORMAT_MSO_MDOC_ZK`). The sibling ISO/IEC 18013-5 second-edition
   mechanism — `zkRequest.systemSpecs` inside a `DeviceRequest` — uses **no** DCQL format at
   all; only this OpenID4VP carrier needs an identifier.
-- **There is no registry to put it in yet.** OpenID4VP 1.0 Final (9 July 2025) names exactly
-  three credential formats (`mso_mdoc`, `dc+sd-jwt`, `jwt_vc_json` — checked against the
-  Final text on 24 September 2026) and its IANA Considerations (Appendix E) registers only
-  `vp_token` response types: 1.0 created **no** credential-format registry, so there is no
-  IANA or Designated-Experts home for `mso_mdoc_zk` to be filed into. Registration is one of
-  the things DCHP #17 would have to create (see
-  [`DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md`](DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md)).
+- **There is no registry to put it in yet, and this profile does not invent one.** OpenID4VP
+  1.0 Final (9 July 2025) names exactly three credential formats (`mso_mdoc`, `dc+sd-jwt`,
+  `jwt_vc_json` — checked against the Final text on 24 September 2026) and its IANA
+  Considerations (Appendix E) registers only `vp_token` response types: 1.0 created **no**
+  credential-format registry, so there is no IANA or Designated-Experts home for
+  `mso_mdoc_zk` to be filed into. **v1.0 registration posture:** this profile is the
+  format identifier's registration of record until a standards venue creates a real
+  registry — it fixes the spelling, the case-sensitivity and the refusal rule below, and
+  the venue that adopts the format (DCHP #17 is the leading candidate, see
+  [`DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md`](DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md), prepared but
+  unfiled pending a user decision) inherits this text as the starting description.
 - Until a registry exists, conformance to this profile means: the identifier is spelled
   exactly `mso_mdoc_zk`, is case-sensitive, and a query naming an unknown format is refused,
   never approximated (this verifier's `Single()` refuses anything but `mso_mdoc` and
   `mso_mdoc_zk`; EE-ZKP-051's fail-closed discipline on the wallet side).
 
 ## 3. `meta.zk_system_type`: the parameter registry
+
+**v1.0 registry statement:** the registry for these parameters is, until a standards venue
+creates one, **the Estonian ZK Circuit Registry (EE-ZKP-030) as implemented in
+`verifier/go/circuits/`**, with this profile as its published description of record: the
+field set below is closed (new fields require a profile revision), entries are matched on
+all fields (rule 5), and the `system` label space currently holds exactly the two values
+rule 4 names. A future IANA-style registry inherits this field set; nothing here
+pre-empts one.
 
 **Profile rule 2.** An `mso_mdoc_zk` credential query MUST carry
 `meta.doctype_value` (a valid ISO/IEC 18013-5 doctype identifier, same rule as `mso_mdoc`)
@@ -111,18 +146,23 @@ published entries only, and no holder-supplied number ever reaches the FFI hash 
 
 ## 4. `meta.verifier_message`
 
-**Profile rule 6.** `meta.verifier_message` is an OPTIONAL text field whose semantics are
-**undefined**. It appears in Google's example request; no document defines what a wallet
-should do with it. Both halves of this project carry it and never act on it: the Go side
-parses it into `Meta.VerifierMessage` and ignores it; the fork does not parse it at all
-(a verifier-sent instruction is not a rule the wallet obeys from the wire).
+**Profile rule 6 (v1.0 semantics — closed here; proposed to DCHP #17).**
+`meta.verifier_message` is an OPTIONAL text field whose semantics this profile now fixes
+rather than leaves open, because shipped implementations must interop before any WG acts:
 
-This profile registers the field as **reserved**: receivers MUST ignore it, and its
-semantics — a display string for the holder? a policy hint? nothing? — are explicitly
-tabled for DCHP #17. Until defined there, any wallet behaviour triggered by the field is a
-profile violation, because an unauthenticated verifier instruction that changes wallet
-behaviour is a downgrade surface (the same reasoning the EE-PRO-013 origin check applies to
-platform-asserted origins).
+- **Receivers MUST ignore it if unparsed.** It is an unauthenticated verifier instruction;
+  a wallet behaviour triggered by it is a downgrade surface (the reasoning EE-PRO-013
+  applies to platform-asserted origins). Both halves of this project already do this: the
+  Go side parses it into `Meta.VerifierMessage` and never acts on it; the fork does not
+  parse it at all.
+- **Receivers MUST echo it in the audit log** when present: the field is part of the
+  request the presentation answers, so a relying party's audit trail records what the
+  verifier asked, verbatim and unchanged — but MUST NOT otherwise act on it. (This
+  repository's sessions log the parsed request; the field rides the stored session JSON.)
+- Any future semantics (display string for the holder? policy hint?) require an
+  authenticated channel or an explicit profile revision; display-only is the ceiling this
+  profile would accept without authentication. Until a WG defines it, the field stays
+  **reserved-to-be-defined**, and the two rules above are the whole contract.
 
 ## 5. Freshness: `ZkDocumentData.timestamp`
 
@@ -199,6 +239,20 @@ Zero zkDocuments is a *legal empty answer* ("presented nothing provable", served
 (`vptoken.go` `ParseZkVPToken` / `MatchQueryZkDocument`). Holder-controlled bytes keep the
 strict-CBOR discipline (ADR-002): every shape deviation is a refusal, never a fallback.
 
+**Test vectors (v1.0).** [`tests/vectors/carrier-v1/`](../../tests/vectors/carrier-v1/)
+holds the committed dual-carrier golden vectors: the **same** multipaz 0.99.0 Longfellow
+proof (360,180 B, v7/1-attribute) wrapped (a) in the interim JSON envelope
+(`device_response.json.b64`) and (b) in this de-facto CBOR carrier
+(`device_response.cbor`/`.cbor.b64`, built by
+[`tools/build_cbor_fixture.py`](../../tools/build_cbor_fixture.py) around the source
+fixture's verbatim zkDocument bytes), plus the B.2.6.1 transcript the proof binds
+(`device_response_transcript.bin`), the handover parameters (`request.json`) and a
+`manifest.json`. The Go suite asserts the two wraps parse to identical normalized
+presentations and verify identically over the real Rust runtime
+(`TestCarrierVectorsVerifyIdentically`), and that the committed bytes match the builder
+exactly (`TestCarrierVectorsMatchTheBuilder`). The vector set is normative for this
+profile: a conforming implementation must accept both carriers for the one proof.
+
 **Sizes (measured, committed fixture, 24 September 2026):**
 
 | Quantity | Bytes |
@@ -274,6 +328,10 @@ is one more reason EE-ZKP-011 keeps Track B on the roadmap.
 - **Real-device interop** (a real Google Wallet/Multipaz wallet against this verifier over
   HTTP, transcript bytes diffed): PENDING-DEVICE. Everything above is host-verified against
   multipaz 0.99.0.
+- **DCHP #17 submission:** the issue text is drafted
+  ([`DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md`](DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md)) but **unfiled
+  — external submission is user-gated** and stays so until the repository owner decides.
+  When filed, record the URL here and in the draft's header.
 - **The DC API transport's request field** carrying the DCQL query on real Chrome/Google
   Wallet requests: the fork reads `dcqlQuery`, which matches the OpenID4VP request-object
   field name, but no device capture exists — PENDING-DEVICE (fork record item 2).
@@ -308,9 +366,15 @@ is one more reason EE-ZKP-011 keeps Track B on the roadmap.
   — wallet side: DCQL parsing into `ZkSystemSpec`, ECDSA-only device auth, consent line.
 - Fixture: `verifier/go/zk/testdata/step8-7-openid4vp-zk/` (`GENERATED-BY` names the
   generating test; `request.json` the handover parameters).
-- Code: `verifier/go/oid4vp/dcql.go` (format, meta, allowlist), `vptoken.go` (response
-  parse), `transcript.go` (B.2.6.1), `isodcapi.go` (`ZkDocument`, `CheckTimestampWindow`),
-  `verifier/go/circuits/registry.go` (circuit registry), `verifier/go/present.go` (`checkZk`).
+- Code: `verifier/go/oid4vp/carrier.go` (the Carrier interface: InterimJSON and
+  MsoMdocZkCBOR behind one `Parse`, sniff/format/flag dispatch, `CheckedPresentation`),
+  `verifier/go/oid4vp/dcql.go` (format, meta, allowlist), `vptoken.go` (vp_token entry
+  selection, `ParseCarrier`), `transcript.go` (B.2.6.1 + `TranscriptForFlow` flow
+  registry), `isodcapi.go` (`ZkDocument`, `ISOTranscript`, `CheckTimestampWindow`),
+  `verifier/go/circuits/registry.go` (circuit registry), `verifier/go/present.go`
+  (`checkZk`).
+- Vectors: `tests/vectors/carrier-v1/` (dual-carrier golden set, §7), builder
+  `tools/build_cbor_fixture.py`.
 - Specification hooks: EE-ZKP-004, -011, -020, -021, -022a, -023, -030, -032, -042, -045,
   -051; EE-PRO-001, -002, -003, -010a, -013; EE-ZKP-044 budget and §23 items 24–25.
 - Venue: OpenID DCHP issue [#17 "ZKP Support"](https://github.com/openid/dchp/issues/17)
