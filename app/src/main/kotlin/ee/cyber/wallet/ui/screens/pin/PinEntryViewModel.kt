@@ -202,8 +202,9 @@ class PinEntryViewModel @AssistedInject constructor(
         }.onFailure {
             if (it is kotlinx.coroutines.CancellationException) throw it
             logger.error("instance registration failed!", it)
-            setPinState("")
-            sendEffect { Effect.Result.Failure }
+            // Stay on the PIN screen with an error: the Welcome launcher ignores the result, so
+            // finishing here dropped the user back to the start with no explanation.
+            setState { copy(pinData = PinData.CreatePin("", false), error = PinError.UnknownError) }
         }
     }
 
