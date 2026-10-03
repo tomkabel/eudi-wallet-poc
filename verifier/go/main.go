@@ -290,16 +290,6 @@ func handleVerify(reg *circuits.Registry, sem, reads limiter) http.HandlerFunc {
 	}
 }
 
-// requestKeyPublicOf returns nil for a nil key, else the public half — a
-// tiny indirection so the presenter literal stays assignment-shaped.
-func requestKeyPublicOf(k *jose.JWK) *jose.JWK {
-	if k == nil {
-		return nil
-	}
-	pk := k.Public()
-	return &pk
-}
-
 // requireTLSBaseURL refuses an externally-reachable -base-url that is not
 // https: the request_uri and response_uri a wallet acts on come from it, and
 // a cleartext base URL lets a network observer rewrite both (JAR signing
@@ -353,6 +343,9 @@ func checkLongfellowRev(linked, revFile string) error {
 	raw, err := os.ReadFile(revFile)
 	if err != nil {
 		if os.IsNotExist(err) {
+			// Deployed away from the source tree there is nothing to compare
+			// against — but say so, or a wrong cwd silently disables the check.
+			log.Printf("longfellow rev check skipped: %s not found (set -longfellow-rev-file)", revFile)
 			return nil
 		}
 		return fmt.Errorf("read longfellow rev file: %w", err)
@@ -372,6 +365,8 @@ func main() {
 	addr := flag.String("addr", ":8080", "listen address")
 	registryPath := flag.String("registry", "circuits.json", "accepted circuit registry (EE-ZKP-030)")
 	trustPath := flag.String("issuers", "issuers.json", "trusted attestation providers")
+	longfellowRevFile := flag.String("longfellow-rev-file", "../zkverify-ffi/longfellow-rev.txt",
+		"pinned longfellow-zk revision the linked runtime must match; relative to the working directory")
 	trustRootFile := flag.String("trust-root", "",
 		"PEM file holding the EC P-256 key that signs the trust store (B3); "+
 			"empty disables signature verification (development)")
@@ -424,7 +419,7 @@ func main() {
 	if *maxVerify < 1 {
 		log.Fatalf("-max-concurrent-verify must be at least 1, got %d", *maxVerify)
 	}
-	if err := checkLongfellowRev(longfellowRev, "../zkverify-ffi/longfellow-rev.txt"); err != nil {
+	if err := checkLongfellowRev(longfellowRev, *longfellowRevFile); err != nil {
 		log.Fatalf("%v", err)
 	}
 	if *unsafeDevAPI {
@@ -490,6 +485,13 @@ func main() {
 		if err != nil {
 			log.Fatalf("request key %s: %v", *requestKeyFile, err)
 		}
+		// The kid is fixed once here, on the signing key itself, so the JWS
+		// header kid and the served jwk's kid always agree and no request
+		// handler ever writes to shared key state.
+		if requestKey.Kid == "" {
+			pk := requestKey.Public()
+			requestKey.Kid = jose.ThumbprintB64(&pk)
+		}
 		rkPub := requestKey.Public()
 		log.Printf("request key: loaded %s (thumbprint %s); request objects are signed as JAR",
 			*requestKeyFile, jose.ThumbprintB64(&rkPub))
@@ -536,7 +538,7 @@ func main() {
 			log.Fatalf("trust root %s: %v", *trustRootFile, err)
 		}
 		rootPub := root.Public()
-		trust, err = oid4vp.LoadSignedTrustStore(*trustPath, &rootPub, nil, time.Now(), *ignoreTrustFreshness)
+		trust, err = oid4vp.LoadSignedTrustStore(*trustPath, &rootPub, nil, time.Now, *ignoreTrustFreshness)
 		if err != nil {
 			log.Fatalf("trust store: %v", err)
 		}
@@ -556,22 +558,21 @@ func main() {
 	store := oid4vp.NewStore(*sessionTTL)
 	defer store.Stop() // end the janitor on ANY exit path (log.Fatalf too)
 	p := &presenter{
-		store:            store,
-		trust:            trust,
-		registry:         reg,
-		clientID:         *clientID,
-		baseURL:          strings.TrimSuffix(*baseURL, "/"),
-		docType:          *docType,
-		nsID:             *docType,
-		carrier:          carrierOverride,
-		sem:              sem,
-		reads:            reads,
-		responseKey:      responseKey,
-		allowPlain:       *allowUnencrypted,
-		requestKey:       requestKey,
-		requestKeyPublic: requestKeyPublicOf(requestKey),
-		dcapiOrigin:      *dcapiOrigin,
-		offered:          reg.Accepted(),
+		store:       store,
+		trust:       trust,
+		registry:    reg,
+		clientID:    *clientID,
+		baseURL:     strings.TrimSuffix(*baseURL, "/"),
+		docType:     *docType,
+		nsID:        *docType,
+		carrier:     carrierOverride,
+		sem:         sem,
+		reads:       reads,
+		responseKey: responseKey,
+		allowPlain:  *allowUnencrypted,
+		requestKey:  requestKey,
+		dcapiOrigin: *dcapiOrigin,
+		offered:     reg.Accepted(),
 
 		maxCredentials: *maxCreds,
 

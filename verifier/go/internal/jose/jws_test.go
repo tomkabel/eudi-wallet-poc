@@ -30,7 +30,7 @@ func TestJWSSignVerifyRoundTrip(t *testing.T) {
 	if strings.Count(tok, ".") != 2 {
 		t.Fatalf("token is not compact: %q", tok)
 	}
-	got, err := VerifyJWSWithKey(tok, k.Public())
+	got, err := VerifyJWSWithKey(tok, k.Public(), jwsTypObject)
 	if err != nil {
 		t.Fatalf("VerifyJWSWithKey: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestJWSTamperedPayloadFails(t *testing.T) {
 	parts := strings.Split(tok, ".")
 	// Flip payload to a different valid base64url body.
 	mutated := parts[0] + "." + parts[1][:len(parts[1])-2] + "AA" + "." + parts[2]
-	if _, err := VerifyJWSWithKey(mutated, k.Public()); err == nil {
+	if _, err := VerifyJWSWithKey(mutated, k.Public(), jwsTypObject); err == nil {
 		t.Fatal("a tampered payload verified")
 	}
 }
@@ -62,7 +62,7 @@ func TestJWSWrongAlgRefused(t *testing.T) {
 	parts := strings.Split(tok, ".")
 	forged := `{"alg":"ES384","typ":"JWT"}`
 	header := base64urlEncode([]byte(forged))
-	if _, err := VerifyJWSWithKey(header+"."+parts[1]+"."+parts[2], k.Public()); err == nil {
+	if _, err := VerifyJWSWithKey(header+"."+parts[1]+"."+parts[2], k.Public(), jwsTypObject); err == nil {
 		t.Fatal("an ES384 header was accepted")
 	}
 }
@@ -74,7 +74,7 @@ func TestJWSUntrustedKeyFails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SignJWS: %v", err)
 	}
-	if _, err := VerifyJWSWithKey(tok, other.Public()); err == nil {
+	if _, err := VerifyJWSWithKey(tok, other.Public(), jwsTypObject); err == nil {
 		t.Fatal("a signature from another key verified")
 	} else if !strings.Contains(err.Error(), "signature") {
 		t.Fatalf("unexpected error shape: %v", err)
@@ -100,5 +100,21 @@ func TestJWSRefusesWrongTypAndMissingPrivateKey(t *testing.T) {
 	}
 	if _, err := SignJWS(k.Public(), jwsTypObject, `{}`); err == nil {
 		t.Fatal("a public-only key was accepted for signing")
+	}
+}
+
+// TestVerifyJWSWithKeyPinsTyp: a request object cannot pass as a trust store
+// under the same key.
+func TestVerifyJWSWithKeyPinsTyp(t *testing.T) {
+	k, err := GenerateKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, err := SignJWS(k, jwsTypObject, `{"a":1}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := VerifyJWSWithKey(tok, k.Public(), jwsTypTrustStore); err == nil {
+		t.Fatal("a JWT-typ token verified as a trust store")
 	}
 }

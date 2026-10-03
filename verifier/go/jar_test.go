@@ -19,9 +19,8 @@ func jarHarness(t *testing.T) (*presenter, *oid4vp.Session) {
 	if err != nil {
 		t.Fatalf("GenerateKey: %v", err)
 	}
+	k.Kid = "test-kid"
 	h.p.requestKey = &k
-	pk := k.Public()
-	h.p.requestKeyPublic = &pk
 	s := h.newISOSession(t)
 	return h.p, s
 }
@@ -36,9 +35,12 @@ func TestSignedJARRoundTrip(t *testing.T) {
 	if !ok {
 		t.Fatalf("signedRequest returned %T, want signedJAR", out)
 	}
-	payload, err := jose.VerifyJWSWithKey(jar.JWS, jar.JWK)
+	payload, err := jose.VerifyJWSWithKey(jar.JWS, jar.JWK, jose.JWSTypObject)
 	if err != nil {
 		t.Fatalf("published jwk does not verify the JWS: %v", err)
+	}
+	if jar.JWK.Kid != p.requestKey.Kid {
+		t.Fatalf("served jwk kid %q differs from the signing key's %q", jar.JWK.Kid, p.requestKey.Kid)
 	}
 	var req authorizationRequest
 	if err := json.Unmarshal(payload, &req); err != nil {
@@ -64,7 +66,7 @@ func TestSignedJARUntrustedKeyFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := jose.VerifyJWSWithKey(jar.JWS, other); err == nil {
+	if _, err := jose.VerifyJWSWithKey(jar.JWS, other, jose.JWSTypObject); err == nil {
 		t.Fatal("a JAR signed by the verifier verified under a foreign key")
 	}
 }

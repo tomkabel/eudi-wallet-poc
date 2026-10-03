@@ -6,6 +6,7 @@ import (
 	"crypto/ecdh"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -113,10 +114,9 @@ func aesKeyUnwrap(kek, in []byte) ([]byte, error) {
 			copy(r[(i-1)*8:i*8], buf[8:])
 		}
 	}
-	for _, b := range a {
-		if b != 0xA6 {
-			return nil, errors.New("jose: key unwrap integrity check failed")
-		}
+	// Constant-time: the integrity register is a MAC-like check (RFC 3394 §2.2.3).
+	if subtle.ConstantTimeCompare(a, []byte{0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6, 0xA6}) != 1 {
+		return nil, errors.New("jose: key unwrap integrity check failed")
 	}
 	return r, nil
 }
@@ -211,12 +211,13 @@ func encryptWithHeader(recipientJWK JWK, plaintext []byte, hdr []byte) (string, 
 		Y: b64(eph.PublicKey().Bytes()[33:65]),
 	}
 
-	// ECDH-ES: the KEK for the wrap is ConcatKDF(sha256, Z, alg, epk, apu=∅)
+	// ECDH-ES: the KEK for the wrap is ConcatKDF(sha256, Z, alg, apu=∅, apv=∅) — the
+	// header carries neither member, so RFC 7518 §4.6.2 makes both empty.
 	shared, err := eph.ECDH(recipientPub)
 	if err != nil {
 		return "", fmt.Errorf("jose: ecdh: %w", err)
 	}
-	kek, err := concatKDF(shared, []byte(algHeader), recipientPub.Bytes(), 256)
+	kek, err := concatKDF(shared, []byte(algHeader), 256)
 	if err != nil {
 		return "", err
 	}
@@ -322,9 +323,8 @@ func Decrypt(recipient *JWK, token string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: ecdh: %v", ErrDecrypt, err)
 	}
-	// ConcatKDF's Otherinfo: alg | apu(∅) | apv = recipient's public point.
-	apv := priv.PublicKey().Bytes()
-	kek, err := concatKDF(shared, []byte(algHeader), apv, 256)
+	// ConcatKDF's Otherinfo: alg | apu(∅) | apv(∅) — neither member is in the header.
+	kek, err := concatKDF(shared, []byte(algHeader), 256)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func newGCM(key []byte) (cipher.AEAD, error) {
 // apv(∅) | SuppPubInfo = 32-bit key length — every field of §4.6.2 is
 // present, including the key-length round-trip jwcrypto and every
 // conformant JOSE library write.
-func concatKDF(z, alg, apv []byte, keyLenBits int) ([]byte, error) {
+func concatKDF(z, alg []byte, keyLenBits int) ([]byte, error) {
 	otherinfo := make([]byte, 0, 4+len(alg)+4+4+4)
 	var u32 [4]byte
 	binary.BigEndian.PutUint32(u32[:], uint32(len(alg)))

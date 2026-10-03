@@ -44,11 +44,10 @@ type presenter struct {
 	allowPlain  bool
 
 	// requestKey is the JAR signing key (-request-key-file, EC P-256); nil
-	// keeps the request object unsigned (development). requestKeyPublic is
-	// its published half, embedded as the JWS `jwk` header member so a
-	// wallet can verify without a second fetch (the response-key pattern).
-	requestKey       *jose.JWK
-	requestKeyPublic *jose.JWK
+	// keeps the request object unsigned (development). Its public half is
+	// served beside the JWS so a wallet can verify without a second fetch
+	// (the response-key pattern).
+	requestKey *jose.JWK
 
 	// dcapiOrigin is the -dcapi-origin value the ISO 18013-7 Annex C handover
 	// binds; empty disables that path. offered is the circuit set the ISO
@@ -144,19 +143,13 @@ func (p *presenter) signedRequest(s *oid4vp.Session) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	pub := p.requestKeyPublic
-	if pub == nil {
-		pk := p.requestKey.Public()
-		pub = &pk
-	}
-	if pub.Kid == "" {
-		pub.Kid = jose.ThumbprintB64(pub)
-	}
+	// Read-only: main sets the kid on the key before any request is served.
+	pub := p.requestKey.Public()
 	tok, err := jose.SignJWS(*p.requestKey, jose.JWSTypObject, string(body))
 	if err != nil {
 		return nil, err
 	}
-	return signedJAR{JWS: tok, JWK: *pub}, nil
+	return signedJAR{JWS: tok, JWK: pub}, nil
 }
 
 // signedJAR is the request_uri response body for a signed request object:
@@ -441,7 +434,7 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 // results are never returned, so "learn whether the holder presented" is all
 // the outcome ever reveals.
 func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string, int) {
-	qs, err := s.Query.Validate(0)
+	qs, err := s.Query.Validate(p.maxCredentials)
 	if err != nil {
 		// The session's own stored query; a validation failure here is a
 		// construction bug, not holder input.

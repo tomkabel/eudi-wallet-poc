@@ -92,13 +92,19 @@ func SignJWS(k JWK, typ, payload string) (string, error) {
 // member is accepted only as an unverified hint (key selection is the
 // caller's, the same rule the JWE half applies to its headers).
 func VerifyJWS(token string) (payload []byte, err error) {
+	payload, _, err = parseJWS(token)
+	return payload, err
+}
+
+// parseJWS is VerifyJWS that also returns the header typ.
+func parseJWS(token string) (payload []byte, typ string, err error) {
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		return nil, fmt.Errorf("%w: compact JWS is %d parts, want 3", ErrParse, len(parts))
+		return nil, "", fmt.Errorf("%w: compact JWS is %d parts, want 3", ErrParse, len(parts))
 	}
 	headerRaw, err := base64.RawURLEncoding.DecodeString(parts[0])
 	if err != nil {
-		return nil, fmt.Errorf("%w: header is not base64url: %v", ErrParse, err)
+		return nil, "", fmt.Errorf("%w: header is not base64url: %v", ErrParse, err)
 	}
 	var h struct {
 		Alg string `json:"alg"`
@@ -106,38 +112,44 @@ func VerifyJWS(token string) (payload []byte, err error) {
 		Kid string `json:"kid,omitempty"`
 	}
 	if err := json.Unmarshal(headerRaw, &h); err != nil {
-		return nil, fmt.Errorf("%w: header is not valid JSON: %v", ErrParse, err)
+		return nil, "", fmt.Errorf("%w: header is not valid JSON: %v", ErrParse, err)
 	}
 	if h.Alg != jwsAlg {
-		return nil, fmt.Errorf("%w: alg %q, want ES256", ErrUnsupportedAlgorithm, h.Alg)
+		return nil, "", fmt.Errorf("%w: alg %q, want ES256", ErrUnsupportedAlgorithm, h.Alg)
 	}
 	if h.Typ != jwsTypObject && h.Typ != jwsTypTrustStore {
-		return nil, fmt.Errorf("%w: typ %q is not a profile typ", ErrUnsupportedAlgorithm, h.Typ)
+		return nil, "", fmt.Errorf("%w: typ %q is not a profile typ", ErrUnsupportedAlgorithm, h.Typ)
 	}
 	sig, err := base64.RawURLEncoding.DecodeString(parts[2])
 	if err != nil {
-		return nil, fmt.Errorf("%w: signature is not base64url: %v", ErrSig, err)
+		return nil, "", fmt.Errorf("%w: signature is not base64url: %v", ErrSig, err)
 	}
 	if _, _, err := parseRS(sig); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrSig, err)
+		return nil, "", fmt.Errorf("%w: %v", ErrSig, err)
 	}
 	payloadRaw, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return nil, fmt.Errorf("%w: payload is not base64url: %v", ErrParse, err)
+		return nil, "", fmt.Errorf("%w: payload is not base64url: %v", ErrParse, err)
 	}
 	// Structure-only: the signature bytes must decode, but cryptographic
 	// verification needs the signer's key — that is VerifyJWSWithKey. A
 	// caller that only needs the payload (e.g. to route on typ) gets it
 	// here; nothing trusts the payload as verified until WithKey passes.
-	return payloadRaw, nil
+	return payloadRaw, h.Typ, nil
 }
 
-// VerifyJWSWithKey additionally pins the signing key: the signature must
-// verify under pub. Returns the payload on success.structural.
-func VerifyJWSWithKey(token string, pub JWK) ([]byte, error) {
-	payload, err := VerifyJWS(token)
+// VerifyJWSWithKey additionally pins the signing key and the typ: the
+// signature must verify under pub and the header typ must be exactly typ, so
+// a token signed for one purpose (a request object) can never pass as
+// another (a trust store) even if the two ever share a key. Returns the
+// payload on success.
+func VerifyJWSWithKey(token string, pub JWK, typ string) ([]byte, error) {
+	payload, gotTyp, err := parseJWS(token)
 	if err != nil {
 		return nil, err
+	}
+	if gotTyp != typ {
+		return nil, fmt.Errorf("%w: typ %q, want %q", ErrUnsupportedAlgorithm, gotTyp, typ)
 	}
 	pk, err := pub.ECDHKey()
 	if err != nil {

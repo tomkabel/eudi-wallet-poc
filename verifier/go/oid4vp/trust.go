@@ -35,6 +35,10 @@ type Issuer struct {
 // TrustStore maps a doctype to the issuers accepted for it.
 type TrustStore struct {
 	byDocType map[string][]Issuer
+	// now, when set, enforces each issuer's not_before/not_after on every
+	// lookup — so a long-running verifier stops trusting an issuer the moment
+	// it expires, and a retired issuer stays listed but unusable.
+	now func() time.Time
 }
 
 // maxIssuersPerDocType caps how many issuer keys one doctype may carry. Each
@@ -101,11 +105,54 @@ func buildTrustStore(issuers []Issuer) (*TrustStore, error) {
 
 // For returns the issuers accepted for a doctype.
 func (ts *TrustStore) For(docType string) ([]Issuer, error) {
-	is, ok := ts.byDocType[docType]
-	if !ok || len(is) == 0 {
+	is := ts.byDocType[docType]
+	if ts.now != nil {
+		now := ts.now()
+		var live []Issuer
+		for _, cand := range is {
+			if cand.validAt(now) {
+				live = append(live, cand)
+			}
+		}
+		is = live
+	}
+	if len(is) == 0 {
 		return nil, fmt.Errorf("no trusted issuer for doctype %q", docType)
 	}
 	return is, nil
+}
+
+// validAt reports whether now falls inside the issuer's window. The bounds
+// were parsed once at load (checkWindow), so a parse failure here cannot
+// happen; it is treated as outside the window regardless.
+func (is Issuer) validAt(now time.Time) bool {
+	if is.NotBefore != "" {
+		nb, err := time.Parse(time.RFC3339, is.NotBefore)
+		if err != nil || now.Before(nb) {
+			return false
+		}
+	}
+	if is.NotAfter != "" {
+		na, err := time.Parse(time.RFC3339, is.NotAfter)
+		if err != nil || now.After(na) {
+			return false
+		}
+	}
+	return true
+}
+
+func (is Issuer) checkWindow() error {
+	if is.NotBefore != "" {
+		if _, err := time.Parse(time.RFC3339, is.NotBefore); err != nil {
+			return fmt.Errorf("issuer %q has unparsable not_before %q", is.Name, is.NotBefore)
+		}
+	}
+	if is.NotAfter != "" {
+		if _, err := time.Parse(time.RFC3339, is.NotAfter); err != nil {
+			return fmt.Errorf("issuer %q has unparsable not_after %q", is.Name, is.NotAfter)
+		}
+	}
+	return nil
 }
 
 // Select chooses the trusted issuer key matching an mso_mdoc presentation. The
@@ -159,13 +206,16 @@ type signedTrustDoc struct {
 //     in prior must appear in the new array (removed entry = load error —
 //     the circuit-registry deprecation doctrine; retire an issuer by adding
 //     not_after, never by deleting the line);
-//   - per-entry not_before/not_after, when present, must bracket now, unless
-//     ignoreFreshness (the -ignore-trust-freshness dev escape) is set.
+//   - per-entry not_before/not_after, when present, must parse; they are
+//     enforced on every lookup against now (not once at load), unless
+//     ignoreFreshness (the -ignore-trust-freshness dev escape) is set. An
+//     entry outside its window is skipped, never a load error — retiring an
+//     issuer with not_after must not stop the verifier from starting.
 //
 // The verified issuers are returned as a plain TrustStore; nothing downstream
 // changes. Issuer keys still come only from this store; x5chain selects,
 // never adds.
-func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, now time.Time, ignoreFreshness bool) (*TrustStore, error) {
+func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, now func() time.Time, ignoreFreshness bool) (*TrustStore, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read trust store: %w", err)
@@ -177,7 +227,7 @@ func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, n
 	if doc.Sig == "" {
 		return nil, fmt.Errorf("trust store %s carries no signature; a bare issuers.json must be loaded with LoadTrustStore", path)
 	}
-	payload, err := jose.VerifyJWSWithKey(doc.Sig, *trustRoot)
+	payload, err := jose.VerifyJWSWithKey(doc.Sig, *trustRoot, jose.JWSTypTrustStore)
 	if err != nil {
 		return nil, fmt.Errorf("trust store %s: signature does not verify under the trust root: %w", path, err)
 	}
@@ -198,11 +248,12 @@ func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, n
 			return nil, fmt.Errorf("trust store %s: issuer %d differs from the signed payload", path, i)
 		}
 	}
-	// Append-only: everything in prior must still be here.
+	// Append-only: everything in prior must still be here. prior's keys are
+	// lowercased by buildTrustStore, so compare lowercased.
 	if prior != nil {
 		kept := map[string]bool{}
 		for _, is := range doc.Issuers {
-			kept[is.DocType+"\x00"+is.PKx+"\x00"+is.PKy] = true
+			kept[is.DocType+"\x00"+strings.ToLower(is.PKx)+"\x00"+strings.ToLower(is.PKy)] = true
 		}
 		for _, was := range prior.All() {
 			if !kept[was.DocType+"\x00"+was.PKx+"\x00"+was.PKy] {
@@ -210,29 +261,17 @@ func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, n
 			}
 		}
 	}
-	// Freshness windows.
 	for _, is := range doc.Issuers {
-		if ignoreFreshness {
-			break
-		}
-		if is.NotBefore != "" {
-			nb, err := time.Parse(time.RFC3339, is.NotBefore)
-			if err != nil {
-				return nil, fmt.Errorf("trust store %s: issuer %q has unparsable not_before %q", path, is.Name, is.NotBefore)
-			}
-			if now.Before(nb) {
-				return nil, fmt.Errorf("trust store %s: issuer %q is not valid before %s", path, is.Name, is.NotBefore)
-			}
-		}
-		if is.NotAfter != "" {
-			na, err := time.Parse(time.RFC3339, is.NotAfter)
-			if err != nil {
-				return nil, fmt.Errorf("trust store %s: issuer %q has unparsable not_after %q", path, is.Name, is.NotAfter)
-			}
-			if now.After(na) {
-				return nil, fmt.Errorf("trust store %s: issuer %q expired %s", path, is.Name, is.NotAfter)
-			}
+		if err := is.checkWindow(); err != nil {
+			return nil, fmt.Errorf("trust store %s: %w", path, err)
 		}
 	}
-	return buildTrustStore(doc.Issuers)
+	ts, err := buildTrustStore(doc.Issuers)
+	if err != nil {
+		return nil, err
+	}
+	if !ignoreFreshness {
+		ts.now = now
+	}
+	return ts, nil
 }

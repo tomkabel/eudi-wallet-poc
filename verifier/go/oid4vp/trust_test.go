@@ -271,7 +271,7 @@ func batteryIssuers() []Issuer {
 func TestSignedTrustStoreGoodSignatureLoads(t *testing.T) {
 	k := signedKey(t)
 	issuers := batteryIssuers()
-	ts, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, issuers), k, nil, time.Now(), false)
+	ts, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, issuers), k, nil, time.Now, false)
 	if err != nil {
 		t.Fatalf("LoadSignedTrustStore: %v", err)
 	}
@@ -297,7 +297,7 @@ func TestSignedTrustStoreTamperedArrayFails(t *testing.T) {
 	if err := os.WriteFile(path, []byte(tampered), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := LoadSignedTrustStore(path, k, nil, time.Now(), false); err == nil {
+	if _, err := LoadSignedTrustStore(path, k, nil, time.Now, false); err == nil {
 		t.Fatal("a spliced issuer array loaded")
 	}
 }
@@ -308,7 +308,7 @@ func TestSignedTrustStoreForeignSignatureFails(t *testing.T) {
 	k := signedKey(t)
 	other := signedKey(t)
 	path := writeSignedTrustStore(t, other, batteryIssuers())
-	if _, err := LoadSignedTrustStore(path, k, nil, time.Now(), false); err == nil {
+	if _, err := LoadSignedTrustStore(path, k, nil, time.Now, false); err == nil {
 		t.Fatal("a store signed by a foreign key loaded")
 	}
 }
@@ -321,12 +321,12 @@ func TestSignedTrustStoreRemovedEntryFails(t *testing.T) {
 	full := batteryIssuers()
 	full = append(full, Issuer{Name: "battery-issuer-2", DocType: "d2", Namespace: "d2",
 		PKx: "0x" + strings.Repeat("cc", 32), PKy: "0x" + strings.Repeat("dd", 32)})
-	prior, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, full), k, nil, time.Now(), false)
+	prior, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, full), k, nil, time.Now, false)
 	if err != nil {
 		t.Fatalf("prior load: %v", err)
 	}
 	path := writeSignedTrustStore(t, k, full[:len(full)-1])
-	_, err = LoadSignedTrustStore(path, k, prior, time.Now(), false)
+	_, err = LoadSignedTrustStore(path, k, prior, time.Now, false)
 	if err == nil {
 		t.Fatal("a store that removed a prior issuer loaded")
 	}
@@ -334,35 +334,82 @@ func TestSignedTrustStoreRemovedEntryFails(t *testing.T) {
 		t.Errorf("error %q does not name the removed issuer", err)
 	}
 	// The same store without a prior is fine: append-only is relative.
-	if _, err := LoadSignedTrustStore(path, k, nil, time.Now(), false); err != nil {
+	if _, err := LoadSignedTrustStore(path, k, nil, time.Now, false); err != nil {
 		t.Errorf("fresh (prior=nil) load of the shorter store failed: %v", err)
 	}
 }
 
-// TestSignedTrustStoreStaleNotAfter: an expired entry is refused at load —
-// and the -ignore-trust-freshness dev escape is the only way past it.
+// TestSignedTrustStoreStaleNotAfter: an entry outside its window loads (so
+// retiring an issuer with not_after cannot stop the verifier) but is not
+// selectable — and the window is checked per lookup, so an issuer that
+// expires while the verifier runs stops being trusted.
 func TestSignedTrustStoreStaleNotAfter(t *testing.T) {
 	k := signedKey(t)
 	now := time.Now()
+	clock := func() time.Time { return now }
 	stale := batteryIssuers()
 	stale[0].NotAfter = now.Add(-time.Hour).Format(time.RFC3339)
 	path := writeSignedTrustStore(t, k, stale)
-	if _, err := LoadSignedTrustStore(path, k, nil, now, false); err == nil {
-		t.Fatal("a stale not_after loaded with freshness enforced")
-	}
-	ts, err := LoadSignedTrustStore(path, k, nil, now, true)
+	ts, err := LoadSignedTrustStore(path, k, nil, clock, false)
 	if err != nil {
-		t.Fatalf("ignore-trust-freshness did not admit the stale entry: %v", err)
+		t.Fatalf("a retired (not_after past) entry must not fail the load: %v", err)
+	}
+	if _, err := ts.Select("d", stale[0].PKx, stale[0].PKy); err == nil {
+		t.Fatal("a stale issuer was selectable with freshness enforced")
+	}
+	ts, err = LoadSignedTrustStore(path, k, nil, clock, true)
+	if err != nil {
+		t.Fatalf("ignore-trust-freshness load: %v", err)
 	}
 	if _, err := ts.Select("d", stale[0].PKx, stale[0].PKy); err != nil {
-		t.Errorf("stale store admitted but issuer not selectable: %v", err)
+		t.Errorf("ignore-trust-freshness: issuer not selectable: %v", err)
 	}
 	// A not-yet-valid entry is the mirror case.
 	future := batteryIssuers()
 	future[0].NotBefore = now.Add(time.Hour).Format(time.RFC3339)
-	fpath := writeSignedTrustStore(t, k, future)
-	if _, err := LoadSignedTrustStore(fpath, k, nil, now, false); err == nil {
-		t.Fatal("a not-yet-valid entry loaded with freshness enforced")
+	ts, err = LoadSignedTrustStore(writeSignedTrustStore(t, k, future), k, nil, clock, false)
+	if err != nil {
+		t.Fatalf("not-yet-valid load: %v", err)
+	}
+	if _, err := ts.Select("d", future[0].PKx, future[0].PKy); err == nil {
+		t.Fatal("a not-yet-valid issuer was selectable")
+	}
+	// Expiry while running: valid now, gone once the clock passes not_after.
+	live := batteryIssuers()
+	live[0].NotAfter = now.Add(time.Hour).Format(time.RFC3339)
+	ts, err = LoadSignedTrustStore(writeSignedTrustStore(t, k, live), k, nil, clock, false)
+	if err != nil {
+		t.Fatalf("live load: %v", err)
+	}
+	if _, err := ts.Select("d", live[0].PKx, live[0].PKy); err != nil {
+		t.Fatalf("a currently valid issuer was not selectable: %v", err)
+	}
+	now = now.Add(2 * time.Hour)
+	if _, err := ts.Select("d", live[0].PKx, live[0].PKy); err == nil {
+		t.Fatal("an issuer that expired after load is still trusted")
+	}
+	// An unparsable bound is still a load error.
+	bad := batteryIssuers()
+	bad[0].NotAfter = "tomorrow"
+	if _, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, bad), k, nil, clock, false); err == nil {
+		t.Fatal("an unparsable not_after loaded")
+	}
+}
+
+// TestSignedTrustStoreAppendOnlyCaseInsensitive: prior keys are stored
+// lowercased; a new store written in uppercase hex still keeps them.
+func TestSignedTrustStoreAppendOnlyCaseInsensitive(t *testing.T) {
+	k := signedKey(t)
+	upper := batteryIssuers()
+	upper[0].PKx = "0x" + strings.ToUpper(strings.TrimPrefix(upper[0].PKx, "0x"))
+	upper[0].PKy = "0x" + strings.ToUpper(strings.TrimPrefix(upper[0].PKy, "0x"))
+	path := writeSignedTrustStore(t, k, upper)
+	prior, err := LoadSignedTrustStore(path, k, nil, time.Now, false)
+	if err != nil {
+		t.Fatalf("prior load: %v", err)
+	}
+	if _, err := LoadSignedTrustStore(path, k, prior, time.Now, false); err != nil {
+		t.Fatalf("reloading the same uppercase store reported a removal: %v", err)
 	}
 }
 
@@ -370,7 +417,7 @@ func TestSignedTrustStoreStaleNotAfter(t *testing.T) {
 // snuck through the signed loader — the unsigned loader exists for that.
 func TestSignedTrustStoreRefusesBareFile(t *testing.T) {
 	if _, err := LoadSignedTrustStore(writeIssuers(t, `{"issuers":[`+issuerJSON("n", "d", "0x"+strings.Repeat("aa", 32), "0x"+strings.Repeat("bb", 32))+`]}`),
-		signedKey(t), nil, time.Now(), false); err == nil {
+		signedKey(t), nil, time.Now, false); err == nil {
 		t.Fatal("an unsigned file loaded through the signed path")
 	}
 }

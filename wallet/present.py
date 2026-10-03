@@ -111,6 +111,40 @@ def encrypt_vp_token(vp_token: dict, jwks_json: dict) -> str:
     return jwe.serialize(compact=True)
 
 
+def b64u_decode(s: str) -> bytes:
+    return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+
+
+def verify_jar(signed: dict, pinned_pem) -> dict:
+    """Verify a signed request object ({"request": compact JWS, "jwk": key}) and
+    return its payload. ES256 and typ JWT only; with a pinned key the served
+    jwk must be that key, otherwise the check proves integrity, not origin."""
+    header_b64, payload_b64, sig_b64 = signed["request"].split(".")
+    header = json.loads(b64u_decode(header_b64))
+    if header.get("alg") != "ES256" or header.get("typ") != "JWT":
+        sys.exit(f"request object header {header} is not the ES256/JWT profile")
+    jwk = signed["jwk"]
+    key = ec.EllipticCurvePublicNumbers(
+        int.from_bytes(b64u_decode(jwk["x"]), "big"),
+        int.from_bytes(b64u_decode(jwk["y"]), "big"),
+        ec.SECP256R1()).public_key()
+    if pinned_pem:
+        pinned = serialization.load_pem_public_key(open(pinned_pem, "rb").read())
+        if pinned.public_numbers() != key.public_numbers():
+            sys.exit("the request object is signed by a key other than --request-key")
+    else:
+        print("warning    : request signature checked against the served key only (no --request-key)")
+    sig = b64u_decode(sig_b64)
+    if len(sig) != 64:
+        sys.exit("request object signature is not 64-byte r||s")
+    der = asym_utils.encode_dss_signature(int.from_bytes(sig[:32], "big"), int.from_bytes(sig[32:], "big"))
+    try:
+        key.verify(der, f"{header_b64}.{payload_b64}".encode(), ec.ECDSA(hashes.SHA256()))
+    except Exception:
+        sys.exit("request object signature does not verify")
+    return json.loads(b64u_decode(payload_b64))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -139,6 +173,10 @@ def main() -> None:
                     help="prove a predicate the attestation says is false, to show the "
                          "verifier refuses it on its own")
     ap.add_argument("--keep", action="store_true", help="keep the temporary session directory")
+    ap.add_argument("--request-key", dest="request_key", default=None, metavar="PEM",
+                    help="the verifier's request-signing public key (PEM). A signed request "
+                         "object must verify under it; without it the key served beside the "
+                         "JWS is used, which proves integrity only, not who signed")
     args = ap.parse_args()
 
     if not os.path.exists(args.prover):
@@ -151,6 +189,8 @@ def main() -> None:
     status, req = http_json(started["request_uri"])
     if status != 200:
         sys.exit(f"could not fetch the request object: {status} {req}")
+    if "request" in req:
+        req = verify_jar(req, args.request_key)
     queries = req["dcql_query"]["credentials"]
     print(f"request    : {len(queries)} credential(s): "
           + ", ".join(c["id"] + "=" + c["meta"]["doctype_value"] for c in queries))
