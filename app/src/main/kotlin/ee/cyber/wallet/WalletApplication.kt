@@ -31,9 +31,11 @@ class WalletApplication : Application() {
     lateinit var applicationScope: CoroutineScope
 
     override fun onCreate() {
-        super.onCreate()
+        // Before super.onCreate(): Hilt injects there, and the injected graph already builds the
+        // multipaz AndroidKeystoreSecureArea, which reads the multipaz application context.
         setupBouncyCastle()
         initializeApplication(this)
+        super.onCreate()
         setupPromptModel()
         initializeLOTL()
         initializeDigitalCredentialsRegistry()

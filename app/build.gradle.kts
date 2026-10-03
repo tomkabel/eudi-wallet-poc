@@ -227,6 +227,14 @@ androidComponents {
     }
 }
 
+// cose-java (also reached through waltid-mdoc-credentials-jvm, where per-dependency excludes
+// do not follow the KMP redirect) drags in BouncyCastle lts8on, which duplicates jdk18on's classes.
+configurations.configureEach {
+    exclude(group = "org.bouncycastle", module = "bcprov-lts8on")
+    exclude(group = "org.bouncycastle", module = "bcpkix-lts8on")
+    exclude(group = "org.bouncycastle", module = "bcutil-lts8on")
+}
+
 dependencies {
     // Bouncy Castle
     implementation(libs.bcprov.jdk18on)
@@ -270,14 +278,8 @@ dependencies {
     implementation(libs.play.services.identity.credentials)
     implementation(libs.androidx.registry.provider.play.services)
 
-    implementation(libs.cose.java) {
-        exclude(group = "org.bouncycastle", module = "bcpkix-lts8on")
-        exclude(group = "org.bouncycastle", module = "bcprov-lts8on")
-    }
-    implementation(libs.waltid.mdoc.credentials) {
-        exclude(group = "org.bouncycastle", module = "bcpkix-lts8on")
-        exclude(group = "org.bouncycastle", module = "bcprov-lts8on")
-    }
+    implementation(libs.cose.java)
+    implementation(libs.waltid.mdoc.credentials)
 
     // Ktor
     implementation(libs.ktor.client.core)
