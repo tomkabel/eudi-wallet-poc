@@ -107,3 +107,39 @@ Persists `AuthorizationRequestPrepared` (incl. PKCE verifier/state, via `util/Se
 1. Fix items 1-3 before merging the current branch — they're in actively-edited code and two are outright regressions against the file's own documented invariants.
 2. Items 4-7 (High) are pre-existing but real: PIN lockout bypass, partial-wipe data leakage, unencrypted PKCE state, and the Go `max-credentials` wiring bug.
 3. Medium/Low items are tracked soft-fail controls (revocation, reader trust) and crypto hygiene (constant-time compare, dead KDF parameter) — worth scheduling, none are urgent regressions.
+
+---
+
+## Addendum — second pass (2026-10-04)
+
+Five more parallel read-only reviews (app core, app UI, verifier/issuer/wallet, build/CI, tests/docs). Not yet manually verified. Findings already above (registrar namespace leak = #1, partial wipe = #5) are not repeated.
+
+### High
+- **`app/.../data/datastore/UserSessionDataSource.kt:17-23`** — `updatePin(pin: String)` stores the PIN in plaintext, while `PinVerifier` hashes it with Argon2. If anything still calls it, the plaintext copy defeats the hashing.
+- **`verifier/go/oid4vp/trust.go:212-236`** — one issuer with a past `not_after` (or a future `not_before`) makes the whole signed trust store fail to load, so the verifier won't start. The documented way to retire an issuer is to add `not_after`, so following that rule breaks the verifier.
+- **`verifier/go/present.go:138-167`** — the signed request object is served together with its own verification key, and nothing ties that key to `client_id` (`x509_san_dns`). Anyone who can rewrite the response can re-sign it.
+
+### Medium
+- **`verifier/go/main.go:539`** — issuer validity windows are checked only at startup, so a long-running verifier keeps trusting expired issuers. `LoadSignedTrustStore(prior=nil)` means the append-only check never runs. Once that is fixed, `trust.go:192-200` compares lowercased keys against raw hex, so a store written in uppercase hex would show every issuer as removed.
+- **`verifier/go/present.go:152-157`** — the verifier writes the kid onto the shared `requestKeyPublic` on every request with no lock, which is a data race. The kid is also never set on the signing key, so the JWS header kid can be empty while the attached jwk carries one.
+- **`app/.../domain/presentation/DcqlRequestProcessor.kt:170`** — in the mdoc path, `isRequired = intentToRetain || values != null` treats "verifier will keep this" as "claim is required". The SD-JWT path (L305) doesn't, so the two disagree. Missing claims are only logged as a warning, and `values` constraints are never compared against the actual value.
+- **`app/.../data/repository/AccountRepository.kt:45-46`** — the `runCatching` results of `clearAllTables()` and `encryptedKeyStoreManager.clearAll()` are discarded, so the wipe reports success even if either fails.
+- **`AndroidManifest.xml` + `ui/navigation/app/WalletApp.kt:91`** — any app can trigger the 8 unverified custom-scheme deep links, and `navigate(deeplink)` opens any destination they name. Only https uses `autoVerify`.
+- **`ui/screens/dcapi/DigitalCredentialsActivity.kt:38`** — `LaunchedEffect(Unit) { processRequest(intent) }` reruns when the activity is recreated (e.g. rotation), so the request is processed again mid-flow.
+- **`ui/prompt/PromptDialogHost.kt:61-73`** — each `launch()` adds a `dialogState` collector on `lifecycleScope` that is never cancelled, which could show the biometric prompt twice.
+- **`WalletApplication.kt:84-92`** (uncommitted) — the prompt host is only cleared when the activity is destroyed, not when it is paused, so a prompt can launch against a backgrounded activity.
+- **`.gitignore` / `gradle.properties:33-36`** — nothing ignores `*.jks` or `*.keystore`, and release signing points at an in-repo `release.keystore` in a public repo, so a plain `git add` would commit a real release key. The committed value also means the `RELEASE_KEYSTORE_FILE missing` guard in `app/build.gradle.kts:68` can never fire.
+- **`.github/workflows/mirror.yml`** — `contents: write` applies to the whole workflow, the checkout keeps its credentials (no `persist-credentials: false`) while `fetch.py` runs, and `peaceiris/actions-gh-pages@v4` is pinned by tag. That action pushes the Maven mirror the app build trusts.
+- **`.github/workflows/ci.yml:7-23`** — the path filters skip `scripts/**`, `tools/**` and `Makefile`, so changes there never run shellcheck or e2e.
+- **Dead doc links** — `docs/CONFORMITY.md:10` and `docs/ARCHITECTURE.md:406` point to a missing `EUDI-WALLET-POC-CONFORMANCE-PLAN.md`. `docs/ARCHITECTURE.md:372` points to a missing `CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md`. `docs/MEASUREMENTS.md:306` points to a nonexistent `androidTest` runner.
+- **Placeholder tests** — `IssuanceTest.kt:34` is `@Ignore`d and its body is commented out. `SampleTest.kt` says there are two ignored tests; there is one.
+
+### Low
+- `DigitalCredentialsRegistrar.kt:98-117`: registration failures log only at info level, and L100 is missing a separator (`"failed$it"`). `toRegistryDocTypes()`/`toCBORBytes()` are now dead code.
+- `security/LOTLInitializer.kt:122`: any LOTL setup failure is swallowed and the wallet silently falls back to static trust anchors.
+- `values-ru/strings.xml`: 4 of 213 strings translated.
+- `tests/README.md:164`: says `zkverify-ffi` has no tests, but `lib.rs:197` has `#[cfg(test)]`. The line refs at L41/L43 are stale.
+- `wallet/present.py:150-158`: crashes with `KeyError` when signed requests are on, and never checks the JAR signature.
+- `jose/jws.go:94-130`: `VerifyJWSWithKey` accepts either `typ` (`JWT` or `trust-store+json`), so a request object could pass as a trust store if the two keys were ever shared.
+- `tools/proxy.sh`, `tools/log-level.sh`: no `set -e`. `Makefile:23` reads the Longfellow rev without stripping whitespace (CI strips it), and `make e2e` doesn't install the Python packages it needs.
+- Workflow `actions/*` steps are pinned by tag, not SHA.
