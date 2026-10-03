@@ -15,11 +15,8 @@ import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
 import ee.cyber.wallet.ui.mvi.ViewSideEffect
 import ee.cyber.wallet.ui.mvi.ViewState
-import ee.cyber.wallet.security.PinVerifier
 import ee.cyber.wallet.security.PinPolicy
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import org.slf4j.LoggerFactory
@@ -70,8 +67,7 @@ sealed class Event : ViewEvent
 class PinEntryViewModel @AssistedInject constructor(
     @Assisted val data: PinData,
     private val userSessionDataSource: UserSessionDataSource,
-    private val walletCredentialsRepository: WalletCredentialsRepository,
-    private val pinVerifier: PinVerifier
+    private val walletCredentialsRepository: WalletCredentialsRepository
 ) : MviViewModel<Event, PinViewState, Effect>() {
 
     @AssistedFactory
@@ -86,11 +82,6 @@ class PinEntryViewModel @AssistedInject constructor(
     override fun initialState(): PinViewState = PinViewState(pinData = data)
 
     override suspend fun handleEvents(event: Event) {}
-
-    private val storedPin = userSessionDataSource.userSession.map { it.pin }
-
-    private suspend fun updatePin(pin: String) =
-        userSessionDataSource.updatePin(pin)
 
     fun onNumPadAction(action: NumPadAction) {
         when (action) {
@@ -140,19 +131,15 @@ class PinEntryViewModel @AssistedInject constructor(
             delay(1000)
             when (val pinData = state.value.pinData) {
                 is PinData.ConfirmPin -> {
-                    // Hardened verification (JVM-H3): Argon2id comparison through
-                    // PinVerifier with persistent failed-attempt lockout — the
-                    // plaintext session pin is no longer part of the check.
+                    // Hardened verification (JVM-H3): Argon2id against the stored hash, with the
+                    // lockout counters persisted before the answer comes back.
                     val entered = pinData.pin.toCharArray()
-                    val ok = if (pinVerifier.isLocked()) {
-                        false
-                    } else {
-                        pinVerifier.setPin(storedPin.first().toCharArray())
-                        pinVerifier.verify(entered)
-                    }
+                    val ok = runCatching { userSessionDataSource.verifyPin(entered) }
+                        .onFailure { if (it is kotlinx.coroutines.CancellationException) throw it }
+                        .onFailure { logger.error("PIN verification failed", it) }
+                        .getOrDefault(false)
                     entered.fill('\u0000')
                     if (ok) {
-                        pinVerifier.reset()
                         onSuccessConfirm()
                     } else {
                         onFailedAttempt()
@@ -190,13 +177,9 @@ class PinEntryViewModel @AssistedInject constructor(
         runCatching {
             walletCredentialsRepository.registerInstance().also {
                 logger.info("instance registered!")
-                updatePin(state.value.pinData.pin)
-                // The activation reference for PinVerifier is captured from the
-                // just-created PIN; the plaintext is wiped immediately after.
+                // Only the Argon2id hash is stored; the char copy is wiped right after.
                 val pin = state.value.pinData.pin.toCharArray()
-                pinVerifier.setPin(pin)
-                pin.fill('\u0000')
-                pinVerifier.reset()
+                userSessionDataSource.setPin(pin).also { pin.fill('\u0000') }.getOrThrow()
                 sendEffect { Effect.Result.Success(state.value.pinData.pin) }
             }
         }.onFailure {

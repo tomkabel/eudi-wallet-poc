@@ -6,7 +6,6 @@ import androidx.credentials.ExperimentalDigitalCredentialApi
 import com.google.android.gms.identitycredentials.ClearRegistryRequest
 import com.google.android.gms.identitycredentials.IdentityCredentialManager
 import com.google.android.gms.identitycredentials.RegistrationRequest
-import com.upokecenter.cbor.CBORObject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.domain.documents.CredentialDocument
@@ -84,7 +83,7 @@ class DigitalCredentialsRegistrar @Inject constructor(
             ).addOnSuccessListener {
                 log.info("IdentityCredential registration succeeded")
             }.addOnFailureListener {
-                log.info("IdentityCredential registration failed$it")
+                log.error("IdentityCredential registration failed", it)
             }
 
             client.registerCredentials(
@@ -98,7 +97,7 @@ class DigitalCredentialsRegistrar @Inject constructor(
             ).addOnSuccessListener {
                 log.info("Digital Credential registration succeeded")
             }.addOnFailureListener {
-                log.info("Digital Credential  registration failed $it")
+                log.error("Digital Credential registration failed", it)
             }
         }
     }
@@ -115,32 +114,6 @@ class DigitalCredentialsRegistrar @Inject constructor(
      */
     fun List<CredentialDocument.MDocDocument>.toRegistryDocTypes(): List<RegistryDocType> =
         map { RegistryDocType(id = it.id, docType = it.type.uri) }
-
-    /**
-     * Converts the [RegistryDocType] list to a CBOR byte array in the structure
-     * identitycredentialmatcher.wasm requires: an array of `{title, subtitle, bitmap, mdoc:
-     * {id, docType}}` maps, with the mdoc entry holding NO `namespaces` member.
-     */
-    private fun List<RegistryDocType>.toCBORBytes(): ByteArray {
-        val docsBuilder = CBORObject.NewArray()
-        forEach { registryEntry ->
-            docsBuilder.Add(
-                CBORObject.NewMap().apply {
-                    Add("title", "Title")
-                    Add("subtitle", "Subtitle")
-                    Add("bitmap", byteArrayOf(0))
-                    Add(
-                        "mdoc",
-                        CBORObject.NewMap().apply {
-                            Add("id", registryEntry.id)
-                            Add("docType", registryEntry.docType)
-                        }
-                    )
-                }
-            )
-        }
-        return docsBuilder.EncodeToBytes()
-    }
 
     private fun Context.getMatcher(): ByteArray {
         // D15 (jvm L4): assets are a stream, not a random-access file — available() is a hint

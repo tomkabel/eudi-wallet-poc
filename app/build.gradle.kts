@@ -65,8 +65,9 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(project.properties["RELEASE_KEYSTORE_FILE"]
-                ?: error("RELEASE_KEYSTORE_FILE missing — release signing not configured"))
+            // Supplied from ~/.gradle/gradle.properties or -P, never from the repo. Unset, the
+            // release config stays incomplete and AGP refuses to sign with it.
+            storeFile = project.properties["RELEASE_KEYSTORE_FILE"]?.let { file(it) }
             storePassword = project.properties["RELEASE_KEYSTORE_PASSWORD"]?.toString()
             keyAlias = project.properties["RELEASE_SIGN_KEY_ALIAS"]?.toString()
             keyPassword = project.properties["RELEASE_SIGN_KEY_PASSWORD"]?.toString()

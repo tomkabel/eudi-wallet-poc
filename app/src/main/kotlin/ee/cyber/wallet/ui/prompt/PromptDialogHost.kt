@@ -7,6 +7,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -41,9 +42,12 @@ object PromptDialogHost {
 
     private val logger = LoggerFactory.getLogger("PromptDialogHost")
 
-    /** The resumed activity that can host the platform prompt; set from MainActivity lifecycle. */
+    /** The resumed activity that can host the platform prompt; set from WalletApplication's activity lifecycle callbacks. */
     @Volatile
     var activity: FragmentActivity? = null
+
+    /** The one live dialogState collector; a new launch replaces it so a prompt never shows twice. */
+    private var binding: Job? = null
 
     /**
      * The [org.multipaz.prompt.AndroidPromptModel.Builder] `uiLauncher`.
@@ -58,7 +62,8 @@ object PromptDialogHost {
         // ("bound") as soon as it returns, and only then emits DialogShownState and waits on its
         // result channel. So subscribe before returning (UNDISPATCHED) and stay bound for the
         // activity's lifetime; a destroyed activity unbinds and the next prompt relaunches.
-        hostActivity.lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
+        binding?.cancel()
+        binding = hostActivity.lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
             dialogModel.dialogState.collect { state ->
                 if (state !is PromptDialogModel.DialogShownState) return@collect
                 val parameters = state.parameters

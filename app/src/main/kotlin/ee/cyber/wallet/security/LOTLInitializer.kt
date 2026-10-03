@@ -119,6 +119,8 @@ class LOTLInitializer @Inject constructor(
                     logger.info("LOTL certificates cached and ready for use")
                 }
             )
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Unexpected error during LOTL initialization", e)
         }

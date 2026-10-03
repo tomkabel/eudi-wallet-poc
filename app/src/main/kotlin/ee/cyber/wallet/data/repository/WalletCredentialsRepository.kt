@@ -13,6 +13,7 @@ class WalletCredentialsRepository(
     val credentials = walletInstanceCredentialsDataSource.credentials
 
     suspend fun registerInstance() = walletProviderService.registerWalletInstance(DeviceData(Build.MODEL)).also {
-        walletInstanceCredentialsDataSource.updateCredentials(it.instanceId, it.instancePassword)
+        // A registered instance whose credentials were not persisted is unusable: fail loudly.
+        walletInstanceCredentialsDataSource.updateCredentials(it.instanceId, it.instancePassword).getOrThrow()
     }
 }

@@ -153,10 +153,8 @@ class LocalCryptoProvider(
     override fun supports(keyType: KeyType): Boolean = keyType == KeyType.EC || keyType == KeyType.RSA
 
     override suspend fun clearAll() {
-        runCatching {
-            keyStoreManager.clearAll()
-            keyAttestationDao.deleteAll()
-        }
+        keyStoreManager.clearAll()
+        keyAttestationDao.deleteAll()
     }
 
     private suspend fun createKeyAttestation(keyType: KeyType, keyId: String): KeyAttestation =

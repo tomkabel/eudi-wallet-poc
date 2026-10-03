@@ -1,5 +1,7 @@
 package ee.cyber.wallet.domain.credentials
 
+import com.upokecenter.cbor.CBORObject
+
 /**
  * ARF OIA_08e registration payload: docType only, never attribute names or values.
  *
@@ -18,3 +20,30 @@ data class RegistryDocType(
     val id: String,
     val docType: String
 )
+
+/**
+ * Encodes the registry payload in the structure identitycredentialmatcher.wasm requires: an array
+ * of `{title, subtitle, bitmap, mdoc: {id, docType, namespaces}}` maps. The matcher dereferences
+ * `namespaces`, so it must be present — but it is always empty: no namespace URI or element name
+ * reaches the platform.
+ */
+internal fun List<RegistryDocType>.toCBORBytes(): ByteArray =
+    CBORObject.NewArray().apply {
+        this@toCBORBytes.forEach { entry ->
+            Add(
+                CBORObject.NewMap().apply {
+                    Add("title", "Title")
+                    Add("subtitle", "Subtitle")
+                    Add("bitmap", byteArrayOf(0))
+                    Add(
+                        "mdoc",
+                        CBORObject.NewMap().apply {
+                            Add("id", entry.id)
+                            Add("docType", entry.docType)
+                            Add("namespaces", CBORObject.NewMap())
+                        }
+                    )
+                }
+            )
+        }
+    }.EncodeToBytes()

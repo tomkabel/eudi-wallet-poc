@@ -31,68 +31,48 @@ class PinVerifierTest {
     }
 
     @Test
-    fun `correct pin verifies after activation`() {
-        val clock = FakeClock()
-        val v = verifier(clock)
-        v.setPin("654321".toCharArray())
-        assertTrue(v.verify("654321".toCharArray()))
+    fun `correct pin verifies and the stored record holds no plaintext`() {
+        val v = verifier(FakeClock())
+        val record = v.create("654321".toCharArray())
+        assertFalse(record.hash.contentEquals("654321".toByteArray()))
+        assertTrue(v.verify("654321".toCharArray(), record).first)
     }
 
     @Test
     fun `wrong pin is refused and counted`() {
-        val clock = FakeClock()
-        val v = verifier(clock)
-        v.setPin("654321".toCharArray())
-        assertFalse(v.verify("000000".toCharArray()))
-        assertFalse(v.isLocked(), "a single failure must not lock")
+        val v = verifier(FakeClock())
+        val (ok, record) = v.verify("000000".toCharArray(), v.create("654321".toCharArray()))
+        assertFalse(ok)
+        assertEquals(1, record.failedAttempts)
+        assertFalse(v.isLocked(record), "a single failure must not lock")
     }
 
     @Test
-    fun `lockout engages after max attempts and expires`() {
+    fun `lockout engages after max attempts, survives in the record and expires`() {
         val clock = FakeClock()
         val v = verifier(clock)
-        v.setPin("654321".toCharArray())
-        repeat(PinVerifier.MAX_ATTEMPTS) { assertFalse(v.verify("000000".toCharArray())) }
-        assertTrue(v.isLocked(), "lockout must be engaged after $PinVerifier.MAX_ATTEMPTS failures")
-        // Even the CORRECT pin is refused while locked.
-        assertFalse(v.verify("654321".toCharArray()), "correct pin must be refused during lockout")
+        var record = v.create("654321".toCharArray())
+        repeat(PinVerifier.MAX_ATTEMPTS) {
+            val (ok, next) = v.verify("000000".toCharArray(), record)
+            assertFalse(ok)
+            record = next
+        }
+        // A fresh verifier (process restart) over the persisted record is still locked.
+        val restarted = verifier(clock)
+        assertTrue(restarted.isLocked(record), "lockout must survive a restart")
+        assertFalse(restarted.verify("654321".toCharArray(), record).first, "correct pin must be refused during lockout")
         clock.advance(PinVerifier.LOCK_DURATION_MS + 1)
-        assertFalse(v.isLocked(), "lockout must expire")
-        assertTrue(v.verify("654321".toCharArray()), "correct pin works again after expiry")
+        assertFalse(restarted.isLocked(record), "lockout must expire")
+        assertTrue(restarted.verify("654321".toCharArray(), record).first, "correct pin works again after expiry")
     }
 
     @Test
     fun `success clears the attempt counter`() {
-        val clock = FakeClock()
-        val v = verifier(clock)
-        v.setPin("654321".toCharArray())
-        repeat(PinVerifier.MAX_ATTEMPTS - 1) { assertFalse(v.verify("000000".toCharArray())) }
-        assertTrue(v.verify("654321".toCharArray()))
-        repeat(PinVerifier.MAX_ATTEMPTS - 1) { assertFalse(v.verify("000000".toCharArray())) }
-        // Counter was cleared by the success: one more failure must not lock.
-        assertFalse(v.isLocked())
-    }
-
-    @Test
-    fun `verify without an activation reference is refused`() {
-        val clock = FakeClock()
-        val v = verifier(clock)
-        assertFalse(v.verify("654321".toCharArray()), "no reference set — nothing can match")
-    }
-
-    @Test
-    fun `reset wipes the reference hash`() {
-        val clock = FakeClock()
-        val v = verifier(clock)
-        v.setPin("654321".toCharArray())
-        assertTrue(v.verify("654321".toCharArray()))
-        v.reset()
-        // The activation reference must not linger after a reset: reflectively
-        // check the field is nulled/zeroed (the module's wipe contract).
-        val field = PinVerifier::class.java.getDeclaredField("referenceHash")
-        field.isAccessible = true
-        val remaining = field.get(v) as ByteArray?
-        assertTrue(remaining == null || remaining.all { it.toInt() == 0 }, "reference hash must be wiped on reset")
-        assertFalse(v.verify("654321".toCharArray()), "after a reset there is no reference to verify against")
+        val v = verifier(FakeClock())
+        var record = v.create("654321".toCharArray())
+        repeat(PinVerifier.MAX_ATTEMPTS - 1) { record = v.verify("000000".toCharArray(), record).second }
+        val (ok, cleared) = v.verify("654321".toCharArray(), record)
+        assertTrue(ok)
+        assertEquals(0, cleared.failedAttempts)
     }
 }

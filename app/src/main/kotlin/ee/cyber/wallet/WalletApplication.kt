@@ -1,6 +1,9 @@
 package ee.cyber.wallet
 
+import android.app.Activity
 import android.app.Application
+import android.os.Bundle
+import androidx.fragment.app.FragmentActivity
 import dagger.hilt.android.HiltAndroidApp
 import ee.cyber.wallet.di.ApplicationScope
 import ee.cyber.wallet.domain.credentials.DigitalCredentialsRegistrar
@@ -69,10 +72,36 @@ class WalletApplication : Application() {
     private fun setupPromptModel() {
         val promptModel = AndroidPromptModel.Builder(
             uiLauncher = { dialogModel ->
-                ee.cyber.wallet.ui.prompt.PromptDialogHost.launch(dialogModel)
+                PromptDialogHost.launch(dialogModel)
             }
         ).addCommonDialogs().build()
         PromptModel.Companion.setGlobal(promptModel)
+
+        // The prompt host is whichever FragmentActivity is resumed — MainActivity, or
+        // DigitalCredentialsActivity when Credential Manager launches the wallet into the
+        // browser's task. Binding it per activity left the DC API path without a host, so every
+        // locked-key signature there failed with PromptUiNotAvailableException.
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityResumed(activity: Activity) {
+                if (activity is FragmentActivity) PromptDialogHost.activity = activity
+            }
+
+            // Stopped, not paused: the biometric overlay itself may pause the host between two
+            // signs of one presentation, but a backgrounded or destroyed activity must never be
+            // asked to show a platform dialog.
+            override fun onActivityStopped(activity: Activity) {
+                if (PromptDialogHost.activity === activity) PromptDialogHost.activity = null
+            }
+
+            override fun onActivityDestroyed(activity: Activity) {
+                if (PromptDialogHost.activity === activity) PromptDialogHost.activity = null
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+        })
     }
 
     private fun initializeLOTL() {

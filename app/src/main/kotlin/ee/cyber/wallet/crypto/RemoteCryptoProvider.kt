@@ -69,9 +69,7 @@ class RemoteCryptoProvider(
     override fun supports(keyType: KeyType): Boolean = walletProviderService.supportsKey(keyType)
 
     override suspend fun clearAll() {
-        runCatching {
-            walletInstanceCredentialsDataSource.clearAll()
-            keyAttestationDao.deleteAll()
-        }
+        walletInstanceCredentialsDataSource.clearAll().getOrThrow()
+        keyAttestationDao.deleteAll()
     }
 }

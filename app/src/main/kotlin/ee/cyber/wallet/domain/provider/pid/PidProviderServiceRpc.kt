@@ -8,7 +8,7 @@ import ee.cyber.pid.provider.issuePidRequest
 import ee.cyber.pid.provider.pIDAttestationRequest
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.provider.Attestation
-import ee.cyber.wallet.util.useTransportSecurityForBuild
+import ee.cyber.wallet.util.useTransportFor
 import io.grpc.Channel
 import io.grpc.ManagedChannel
 import io.grpc.okhttp.OkHttpChannelBuilder
@@ -34,11 +34,7 @@ class PidProviderServiceRpc(
             val uri = URI.create(rpcUrl)
             OkHttpChannelBuilder.forAddress(uri.host, uri.port).apply {
                 logger.info("connecting to $uri")
-                if (uri.scheme == "https") {
-                    useTransportSecurityForBuild()
-                } else {
-                    usePlaintext()
-                }
+                useTransportFor(uri)
                 executor(dispatcher.asExecutor())
             }.build()
         }

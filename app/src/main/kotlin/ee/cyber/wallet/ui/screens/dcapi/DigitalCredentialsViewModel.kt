@@ -120,8 +120,13 @@ class DigitalCredentialsViewModel @Inject constructor(
 
     override fun initialState(): DcUiState = DcUiState()
 
+    /** The ViewModel outlives activity recreation; the request is processed once per ViewModel. */
+    private var requestProcessed = false
+
     @OptIn(ExperimentalDigitalCredentialApi::class)
     fun processRequest(intent: Intent) {
+        if (requestProcessed) return
+        requestProcessed = true
         setState { copy(isLoading = true) }
         viewModelScope.launch {
             try {
@@ -516,13 +521,18 @@ class DigitalCredentialsViewModel @Inject constructor(
                 val deviceNameSpaces = EncodedCBORElement(MapElement(mapOf()))
                 val deviceAuthentication = DeviceAuthentication(sessionTranscript, docType, deviceNameSpaces)
 
-                val documentResponse = mDoc.presentWithDeviceSignature(
-                    mDocRequest = mDocRequest,
-                    deviceAuthentication = deviceAuthentication,
-                    // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
-                    cryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId),
-                    keyID = keyId
-                )
+                val deviceCryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId)
+                // Off the main thread: the SecureArea sign blocks until the biometric prompt
+                // answers, and that prompt needs the main thread — signing on it deadlocks.
+                val documentResponse = withContext(defaultDispatcher) {
+                    mDoc.presentWithDeviceSignature(
+                        mDocRequest = mDocRequest,
+                        deviceAuthentication = deviceAuthentication,
+                        // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
+                        cryptoProvider = deviceCryptoProvider,
+                        keyID = keyId
+                    )
+                }
 
                 // Proving is seconds of blocking native work, and the first match also forces the
                 // lazy circuit load. Both stay off the main thread or the share screen freezes

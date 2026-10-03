@@ -16,6 +16,7 @@ import ee.cyber.wallet.ui.util.LanguageResource
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
 data class UiState(
@@ -109,7 +110,9 @@ class SettingsViewModel @Inject constructor(
      */
     fun deleteAllAndRestart() {
         applicationScope.launch {
-            accountRepository.deleteAllData()
+            // Every wipe step has already run; this only records which ones failed.
+            runCatching { accountRepository.deleteAllData() }
+                .onFailure { LoggerFactory.getLogger(SettingsViewModel::class.java).error("Wallet wipe incomplete", it) }
         }
     }
 }

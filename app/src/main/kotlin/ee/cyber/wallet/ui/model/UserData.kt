@@ -5,5 +5,5 @@ data class UserData(
     val session: UserSession
 ) {
     val isPinCreated
-        get() = session.pin.isNotEmpty()
+        get() = session.isPinCreated
 }

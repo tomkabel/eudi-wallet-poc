@@ -42,18 +42,27 @@ class AccountRepository(
             // alias cannot abort the whole wipe.
             val survivingKeys = runCatching { secureAreaKeyCleanup.deleteAll() }.getOrDefault(emptyList())
 
-            runCatching { walletDatabase.clearAllTables() }
-            runCatching { encryptedKeyStoreManager.clearAll() }
-
-            remoteKeyManager.clearAll()
-            localKeyManager.clearAll()
-            attestationDao.deleteAll()
-            keyAttestationDao.deleteAll()
-            authorizationStateDataSource.clearAll()
-            userSessionDataSource.clearAll()
-            userPreferencesDataSource.clearAll()
+            // Every step runs even if an earlier one fails — an aborted wipe would leave the PIN
+            // and session behind. Failures are collected and reported once the wipe is done.
+            val failures = listOf(
+                suspend { walletDatabase.clearAllTables() },
+                suspend { encryptedKeyStoreManager.clearAll() },
+                suspend { remoteKeyManager.clearAll() },
+                suspend { localKeyManager.clearAll() },
+                suspend { attestationDao.deleteAll() },
+                suspend { keyAttestationDao.deleteAll() },
+                suspend { authorizationStateDataSource.clearAll().getOrThrow() },
+                suspend { userSessionDataSource.clearAll().getOrThrow() },
+                suspend { userPreferencesDataSource.clearAll().getOrThrow() }
+            ).mapNotNull { step -> runCatching { step() }.exceptionOrNull() }
             // Keys the platform refused to delete stay named, so the next wipe retries them.
             survivingKeys.forEach { runCatching { keyAttestationDao.insert(it) } }
+
+            if (failures.isNotEmpty()) {
+                throw IllegalStateException("Wallet wipe incomplete: ${failures.size} step(s) failed").apply {
+                    failures.forEach(::addSuppressed)
+                }
+            }
         }
     }
 }

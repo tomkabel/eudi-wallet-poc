@@ -9,6 +9,7 @@ import ee.cyber.wallet.copy
 import ee.cyber.wallet.ui.model.DarkThemeConfig
 import ee.cyber.wallet.ui.model.IssuerKeyType
 import ee.cyber.wallet.ui.model.UserPreferences
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
@@ -16,72 +17,64 @@ class UserPreferencesDataSource(
     private val dataStore: DataStore<UserPreferencesProto>
 ) {
 
+    // Every write returns its Result and rethrows CancellationException: runCatching around a
+    // suspend body otherwise swallows coroutine cancellation (JVM-M1).
     val userPreferences = dataStore.data.map { it.toModel() }.distinctUntilChanged()
 
-    suspend fun setDarkThemeConfig(darkThemeConfig: DarkThemeConfig) {
-        runCatching {
-            dataStore.updateData {
-                it.copy {
-                    this.darkThemeConfig = when (darkThemeConfig) {
-                        DarkThemeConfig.DARK -> DarkThemeConfigProto.DARK_THEME_CONFIG_DARK
-                        DarkThemeConfig.FOLLOW_SYSTEM -> DarkThemeConfigProto.DARK_THEME_CONFIG_FOLLOW_SYSTEM
-                        DarkThemeConfig.LIGHT -> DarkThemeConfigProto.DARK_THEME_CONFIG_LIGHT
-                    }
+    suspend fun setDarkThemeConfig(darkThemeConfig: DarkThemeConfig) = runCatching {
+        dataStore.updateData {
+            it.copy {
+                this.darkThemeConfig = when (darkThemeConfig) {
+                    DarkThemeConfig.DARK -> DarkThemeConfigProto.DARK_THEME_CONFIG_DARK
+                    DarkThemeConfig.FOLLOW_SYSTEM -> DarkThemeConfigProto.DARK_THEME_CONFIG_FOLLOW_SYSTEM
+                    DarkThemeConfig.LIGHT -> DarkThemeConfigProto.DARK_THEME_CONFIG_LIGHT
                 }
             }
         }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
-    suspend fun setBlePeripheralMode(isPeripheralMode: Boolean) {
-        runCatching {
-            dataStore.updateData {
-                it.copy {
-                    this.bleMode = if (isPeripheralMode) {
-                        BlePeripheralModeProto.BLE_PERIPHERAL_MODE_PERIPHERAL
-                    } else {
-                        BlePeripheralModeProto.BLE_PERIPHERAL_MODE_CENTRAL
-                    }
+    suspend fun setBlePeripheralMode(isPeripheralMode: Boolean) = runCatching {
+        dataStore.updateData {
+            it.copy {
+                this.bleMode = if (isPeripheralMode) {
+                    BlePeripheralModeProto.BLE_PERIPHERAL_MODE_PERIPHERAL
+                } else {
+                    BlePeripheralModeProto.BLE_PERIPHERAL_MODE_CENTRAL
                 }
             }
         }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
-    suspend fun setIssuerKeyType(issuerKeyType: IssuerKeyType) {
-        runCatching {
-            dataStore.updateData {
-                it.copy {
-                    this.issuerKeyType = when (issuerKeyType) {
-                        IssuerKeyType.IACA_TRUSTED -> IssuerKeyTypeProto.ISSUER_KEY_TYPE_IACA_TRUSTED
-                        IssuerKeyType.UNTRUSTED -> IssuerKeyTypeProto.ISSUER_KEY_TYPE_UNTRUSTED
-                    }
+    suspend fun setIssuerKeyType(issuerKeyType: IssuerKeyType) = runCatching {
+        dataStore.updateData {
+            it.copy {
+                this.issuerKeyType = when (issuerKeyType) {
+                    IssuerKeyType.IACA_TRUSTED -> IssuerKeyTypeProto.ISSUER_KEY_TYPE_IACA_TRUSTED
+                    IssuerKeyType.UNTRUSTED -> IssuerKeyTypeProto.ISSUER_KEY_TYPE_UNTRUSTED
                 }
             }
         }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
-    suspend fun setTrustAllValidator(trustAll: Boolean) {
-        runCatching {
-            dataStore.updateData {
-                it.copy {
-                    this.trustAllValidator = trustAll
-                }
+    suspend fun setTrustAllValidator(trustAll: Boolean) = runCatching {
+        dataStore.updateData {
+            it.copy {
+                this.trustAllValidator = trustAll
             }
         }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
     /**
      * ARF OIA_08f: the global user setting to disable the disclosure of stored attestations to
      * the Digital Credentials API framework. Default is enabled (OIA_08e's "by default").
      */
-    suspend fun setDcApiDisclosureEnabled(enabled: Boolean) {
-        runCatching {
-            dataStore.updateData {
-                it.copy {
-                    this.dcApiDisclosureDisabled = !enabled
-                }
+    suspend fun setDcApiDisclosureEnabled(enabled: Boolean) = runCatching {
+        dataStore.updateData {
+            it.copy {
+                this.dcApiDisclosureDisabled = !enabled
             }
         }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 
     private fun UserPreferencesProto.toModel(): UserPreferences {
         return UserPreferences(
@@ -106,5 +99,5 @@ class UserPreferencesDataSource(
 
     suspend fun clearAll() = runCatching {
         dataStore.updateData { UserPreferencesProto.getDefaultInstance() }
-    }
+    }.onFailure { if (it is CancellationException) throw it }
 }

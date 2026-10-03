@@ -31,3 +31,8 @@ graphify-out/
 .claude/settings.json
 .hermes/
 docs/sota-audit-*.md
+
+# Signing keys: only the throwaway debug keystore is committed
+*.jks
+*.keystore
+!app/debug.keystore

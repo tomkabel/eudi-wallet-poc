@@ -43,8 +43,13 @@ import id.walt.mdoc.dataelement.MapElement
 import id.walt.mdoc.doc.MDoc
 import id.walt.mdoc.docrequest.MDocRequestBuilder
 import id.walt.mdoc.mdocauth.DeviceAuthentication
+import ee.cyber.wallet.di.Dispatcher
+import ee.cyber.wallet.di.WalletDispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import kotlinx.parcelize.RawValue
 import kotlinx.serialization.json.JsonObject
@@ -64,7 +69,8 @@ class ProximityViewModel @Inject constructor(
     private val cryptoProviderFactory: CryptoProvider.Factory,
     private val secureAreaKeyManager: SecureAreaKeyManager,
     private val transactionLogRepository: TransactionLogRepository,
-    private val userPreferencesDataSource: UserPreferencesDataSource
+    private val userPreferencesDataSource: UserPreferencesDataSource,
+    @Dispatcher(WalletDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher
 ) : MviViewModel<Event, UiState, Effect>() {
 
     private val logger = LoggerFactory.getLogger(ProximityViewModel::class.java)
@@ -114,7 +120,15 @@ class ProximityViewModel @Inject constructor(
                         val deviceRequest = event.request as DeviceRequest
 
                         viewModelScope.launch {
-                            handleRequestObject(deviceRequest)
+                            try {
+                                handleRequestObject(deviceRequest)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                logger.error("proximity request could not be processed", e)
+                                transferManager.stopPresentation(true)
+                                sendEffect { Effect.ProximityRequestNoMatch }
+                            }
                         }
                     }
 
@@ -302,39 +316,55 @@ class ProximityViewModel @Inject constructor(
             return
         }
 
-        val responseDocuments = mutableListOf<MDoc>()
-        val documentIds = mutableListOf<String>()
-        state.value.credentials.forEach { credential ->
-            val mDoc = credential.mDoc
-            val fields = credential.allCheckedFields.map { it.field }
-            val docType = credential.credentialType.docType().uri
-            val mDocRequest = MDocRequestBuilder(docType).apply {
-                fields.forEach {
-                    addDataElementRequest(it.namespace.uri, it.name, true)
+        // A cancelled or failed biometric prompt surfaces as KeyLockedException from the sign
+        // below; any failure ends the transfer rather than leaving the reader waiting.
+        try {
+            val responseDocuments = mutableListOf<MDoc>()
+            val documentIds = mutableListOf<String>()
+            state.value.credentials.forEach { credential ->
+                val mDoc = credential.mDoc
+                val fields = credential.allCheckedFields.map { it.field }
+                val docType = credential.credentialType.docType().uri
+                val mDocRequest = MDocRequestBuilder(docType).apply {
+                    fields.forEach {
+                        addDataElementRequest(it.namespace.uri, it.name, true)
+                    }
+                }.build(null)
+                val cryptoProvider = cryptoProviderFactory.forKeyType(credential.attestation.keyAttestation.keyType)
+                val keyId = credential.attestation.keyAttestation.keyId
+                val deviceNameSpaces = EncodedCBORElement(MapElement(mapOf()))
+                val sessionTranscript = DataElement.fromCBOR<ListElement>(sessionTranscriptBytes)
+                val deviceAuthentication = DeviceAuthentication(sessionTranscript, docType, deviceNameSpaces)
+                val deviceCryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId)
+                // Off the main thread: the SecureArea sign blocks until the biometric prompt
+                // answers, and that prompt needs the main thread — signing on it deadlocks.
+                val documentResponse = withContext(defaultDispatcher) {
+                    mDoc.presentWithDeviceSignature(
+                        mDocRequest = mDocRequest,
+                        deviceAuthentication = deviceAuthentication,
+                        // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
+                        cryptoProvider = deviceCryptoProvider,
+                        keyID = keyId
+                    )
                 }
-            }.build(null)
-            val cryptoProvider = cryptoProviderFactory.forKeyType(credential.attestation.keyAttestation.keyType)
-            val keyId = credential.attestation.keyAttestation.keyId
-            val deviceNameSpaces = EncodedCBORElement(MapElement(mapOf()))
-            val sessionTranscript = DataElement.fromCBOR<ListElement>(sessionTranscriptBytes)
-            val deviceAuthentication = DeviceAuthentication(sessionTranscript, docType, deviceNameSpaces)
-            val documentResponse = mDoc.presentWithDeviceSignature(
-                mDocRequest = mDocRequest,
-                deviceAuthentication = deviceAuthentication,
-                // Step 5: the DeviceAuthentication signature is made inside the SecureArea key.
-                cryptoProvider = cryptoProvider.deviceCryptoProvider(secureAreaKeyManager, keyId),
-                keyID = keyId
-            )
-            responseDocuments.add(documentResponse)
-            documentIds.add(credential.id)
-        }
+                responseDocuments.add(documentResponse)
+                documentIds.add(credential.id)
+            }
 
-        val response = eu.europa.ec.eudi.iso18013.transfer.response.device.DeviceResponse(
-            deviceResponseBytes = ee.cyber.wallet.domain.documents.mdoc.DeviceResponse(responseDocuments).toCBOR(),
-            sessionTranscriptBytes = sessionTranscriptBytes,
-            documentIds = documentIds
-        )
-        transferManager.sendResponse(response)
+            val response = eu.europa.ec.eudi.iso18013.transfer.response.device.DeviceResponse(
+                deviceResponseBytes = ee.cyber.wallet.domain.documents.mdoc.DeviceResponse(responseDocuments).toCBOR(),
+                sessionTranscriptBytes = sessionTranscriptBytes,
+                documentIds = documentIds
+            )
+            transferManager.sendResponse(response)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error("proximity response failed — cancelling the transfer", e)
+            transferManager.stopPresentation(false)
+            sendEffect { Effect.ProximityCancel }
+            return
+        }
 
         // EE-ZKP-053: proximity presentations land in the same log as the online paths.
         // A proximity reader cannot carry a ZK request either, so the tier is literally

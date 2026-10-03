@@ -41,10 +41,8 @@ object SecurityModule {
     ) = AndroidEncryptionManager(dispatcher)
 
     /**
-     * The PIN verifier singleton (JVM-H3): Argon2id comparison and
-     * failed-attempt lockout on a process-wide singleton, so the lockout
-     * survives ViewModel recreation. (Process-death persistence would need a
-     * DataStore-backed counter — follow-up.)
+     * The PIN verifier (JVM-H3): stateless Argon2id hashing and lockout policy; the record it
+     * produces is persisted by UserSessionDataSource, so the lockout survives process death.
      */
     @Singleton
     @Provides
