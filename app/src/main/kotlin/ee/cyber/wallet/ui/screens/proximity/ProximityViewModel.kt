@@ -307,13 +307,9 @@ class ProximityViewModel @Inject constructor(
         state.value.credentials.forEach { credential ->
             val mDoc = credential.mDoc
             val fields = credential.allCheckedFields.map { it.field }
-            val optionalFields = credential.optionalFields.map { it.field }
             val docType = credential.credentialType.docType().uri
             val mDocRequest = MDocRequestBuilder(docType).apply {
                 fields.forEach {
-                    addDataElementRequest(it.namespace.uri, it.name, true)
-                }
-                optionalFields.forEach {
                     addDataElementRequest(it.namespace.uri, it.name, true)
                 }
             }.build(null)
