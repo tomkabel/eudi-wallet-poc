@@ -4,8 +4,10 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.multipaz.prompt.BiometricPromptDialogModel
@@ -47,24 +49,26 @@ object PromptDialogHost {
      * The [org.multipaz.prompt.AndroidPromptModel.Builder] `uiLauncher`.
      */
     suspend fun launch(dialogModel: PromptDialogModel<*, *>) {
-        when (dialogModel) {
-            is BiometricPromptDialogModel -> {
-                val state = dialogModel.dialogState.first()
-                val parameters = (state as? PromptDialogModel.DialogShownState<*, *>)
-                    ?.parameters as? BiometricPromptDialogModel.BiometricPromptState
-                if (parameters == null) {
-                    throw PromptUiNotAvailableException()
-                }
-                showForUnlock(
+        if (dialogModel !is BiometricPromptDialogModel) {
+            logger.warn("no interactive host for this prompt kind: {}", dialogModel::class.simpleName)
+            throw PromptUiNotAvailableException()
+        }
+        val hostActivity = activity ?: throw PromptUiNotAvailableException()
+        // multipaz's displayPrompt calls this launcher, re-checks that dialogState has a collector
+        // ("bound") as soon as it returns, and only then emits DialogShownState and waits on its
+        // result channel. So subscribe before returning (UNDISPATCHED) and stay bound for the
+        // activity's lifetime; a destroyed activity unbinds and the next prompt relaunches.
+        hostActivity.lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            dialogModel.dialogState.collect { state ->
+                if (state !is PromptDialogModel.DialogShownState) return@collect
+                val parameters = state.parameters
+                val authenticated = showForUnlock(
                     cryptoObject = parameters.cryptoObject,
                     title = parameters.reason.toPromptText().first,
                     subtitle = parameters.reason.toPromptText().second,
                     userAuthenticationTypes = parameters.userAuthenticationTypes
                 )
-            }
-            else -> {
-                logger.warn("no interactive host for this prompt kind: {}", dialogModel::class.simpleName)
-                throw PromptUiNotAvailableException()
+                state.resultChannel.send(authenticated)
             }
         }
     }
