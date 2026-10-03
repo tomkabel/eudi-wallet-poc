@@ -84,7 +84,9 @@ class CredentialIssuanceServiceMock(
         val sdJwtSpec = sdJwt {
             claim(RFC7519.ISSUER, "https://eudi-issuer.dev.riaint.ee")
             claim(RFC7519.ISSUED_AT, 1740045600)
-            claim(RFC7519.EXPIRATION_TIME, 1771581600)
+            // Same validUntil as the mock mdoc PID; the old 2026-02-20 exp made every mock SD-JWT
+            // PID fail verification ("Expired JWT") and get dropped at issuance.
+            claim(RFC7519.EXPIRATION_TIME, 2095329603)
             claim(SdJwtVcSpec.VCT, DocType.PID_SD_JWT.uri)
             objClaim("status") {
                 objClaim("status_list") {
