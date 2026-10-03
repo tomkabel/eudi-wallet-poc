@@ -209,8 +209,8 @@ jobs:
           # from the working directory, and zkverify-ffi's is what pins its
           # target-cpu.
           (cd verifier/zkverify-ffi && cargo build --release)
-          cd verifier/go && go build -o ../zkverify . \
-            -ldflags "-X main.longfellowRev=$(tr -d '[:space:]' < ../zkverify-ffi/longfellow-rev.txt)"
+          cd verifier/go && go build -o ../zkverify \
+            -ldflags "-X main.longfellowRev=$(tr -d '[:space:]' < ../zkverify-ffi/longfellow-rev.txt)" .
 
       - name: assert the built longfellow matches the pinned revision
         # Belt to the bootstrap step (B-M2): bootstrap-longfellow.sh checks out
