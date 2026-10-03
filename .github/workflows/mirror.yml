@@ -28,20 +28,24 @@ on:
     - cron: '23 4 * * 1' # weekly, Mondays 04:23 UTC
 
 permissions:
-  contents: write # gh-pages publication; fetch itself needs only read
+  contents: read
 
 concurrency:
   group: maven-mirror
   cancel-in-progress: false
 
 jobs:
-  publish:
+  # fetch.py runs with a read-only token; only the publish job, which runs no
+  # repository code, can write to gh-pages.
+  fetch:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
 
@@ -50,11 +54,30 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 .github/maven-mirror/fetch.py
 
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maven-mirror-site
+          path: .github/maven-mirror/site
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: fetch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # gh-pages publication
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: maven-mirror-site
+          path: site
+
       - name: Publish to gh-pages under maven/
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ github.token }}
           publish_branch: gh-pages
-          publish_dir: .github/maven-mirror/site
+          publish_dir: site
           keep_files: false
           commit_message: 'Publish Maven mirror from ${{ github.sha }}'

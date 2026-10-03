@@ -20,7 +20,7 @@ deps:
 	# The staticlib can exist without being linkable; make the failure loud here
 	# rather than in a linker error (cgo links it before any Go code can run).
 	test -f verifier/zkverify-ffi/target/release/libzkverify.a
-	rev="$$(cat verifier/zkverify-ffi/longfellow-rev.txt)" && \
+	rev="$$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" && \
 		cd verifier/go && go build -ldflags "-X main.longfellowRev=$$rev" -o ../zkverify .
 
 lint:
@@ -44,5 +44,7 @@ test-go-zk:
 	cd verifier/go && go test . ./zk/...
 
 e2e: deps
+	@python3 -c 'import cbor2, cryptography, jwcrypto' 2>/dev/null || { \
+		echo "make e2e: Python dependencies missing — pip install -r tests/requirements-ci.txt" >&2; exit 1; }
 	EE_PROVER="$$(pwd)/../longfellow-zk/rust/target/release/examples/ee_poa_demo" \
 		EE_VERIFIER="$$(pwd)/verifier/zkverify" tests/e2e.sh

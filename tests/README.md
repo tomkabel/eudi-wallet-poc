@@ -38,9 +38,9 @@ Run by the `fast` CI job as `go test ./oid4vp/...`.
 its test binary cannot be linked without a Rust build. The `e2e` job runs it;
 the `fast` job cannot.
 
-- `TestCircuitHashKnown` (:5): `CircuitHash(7, 1)` equals the pinned hash `8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121`.
-- `TestCircuitHashUnknown` (:16): `CircuitHash(99, 1)` returns an error.
-- `TestRegistryRejectsUnlisted` (:22): a registry listing only hash `deadbeef` rejects `Check(7, 1)` — an unlisted circuit cannot pass the accepted-circuit allowlist (EE-ZKP-023).
+- `TestCircuitHashKnown` (:12): `CircuitHash(7, 1)` equals the pinned hash `8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121`.
+- `TestCircuitHashUnknown` (:23): `CircuitHash(99, 1)` returns an error.
+- `TestRegistryRejectsUnlisted` (:29): a registry listing only hash `deadbeef` rejects `Check(7, 1)` — an unlisted circuit cannot pass the accepted-circuit allowlist (EE-ZKP-023).
 
 ### `wallet/test_transcript.py` — cross-language vectors, the Python side
 
@@ -161,6 +161,6 @@ builds anything — build the prover and `verifier/zkverify` first.
 - Issuer trust: `oid4vp/trust.go` loads and validates a trust store, but no automated test asserts that a presentation from an issuer absent from it is rejected (`verifier/README.md`'s measured table records a manual case: issuer not in the trust store → `200` `valid:false`).
 - The verifier's HTTP surface (`main.go`, `present.go`: `/present/new`, `/present/response`, `/present/result`, `/healthz`, `/zkverify`): no unit tests; exercised only indirectly by `tests/e2e.sh` and `tests/load_test.py`.
 - `issuer/mint_ee_poa.py` and the wallet's presentation logic beyond the transcript: no unit tests; `compileall` only checks that they parse.
-- Rust: neither `verifier/zkverify-ffi/` nor `zk-age-poc/` contains `#[cfg(test)]`, and ci.yml runs no `cargo test`; the Rust side is covered only by building and by e2e.sh case 5.
+- Rust: `verifier/zkverify-ffi/src/lib.rs` has one `#[cfg(test)]` unit test (`oversize_inputs_are_rejected_not_aborted`), but ci.yml runs no `cargo test`, so it only runs by hand; `zk-age-poc/` has none. In CI the Rust side is covered only by building and by e2e.sh case 5.
 - `tests/load_test.py` is not invoked by ci.yml — run it by hand. (Only `tests/e2e.sh` runs in CI; the root `README.md` says so.)
 - No coverage measurement anywhere.

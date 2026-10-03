@@ -7,7 +7,8 @@ This file states where the wallet stands against
 `EE-ZKP-003` conformity statement the specification requires a wallet's documentation to carry,
 plus the inventory `EE-ZKP-060` asks for and the build-provenance statement an assessor will ask
 for first. Nothing here is a certification claim. "The conformance plan" and "plan §x" below
-mean `docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md` in the same repository.
+mean `docs/planning/EUDI-WALLET-POC-CONFORMANCE-PLAN.md` in the private ee-eudiw repository; it is
+not mirrored into this public fork.
 
 ## 1. The ZKP_08 position, stated conditionally (EE-ZKP-003)
 

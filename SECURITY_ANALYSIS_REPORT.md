@@ -143,3 +143,42 @@ Five more parallel read-only reviews (app core, app UI, verifier/issuer/wallet, 
 - `jose/jws.go:94-130`: `VerifyJWSWithKey` accepts either `typ` (`JWT` or `trust-store+json`), so a request object could pass as a trust store if the two keys were ever shared.
 - `tools/proxy.sh`, `tools/log-level.sh`: no `set -e`. `Makefile:23` reads the Longfellow rev without stripping whitespace (CI strips it), and `make e2e` doesn't install the Python packages it needs.
 - Workflow `actions/*` steps are pinned by tag, not SHA.
+
+---
+
+## Resolution (2026-10-04)
+
+### Fixed
+| # | Fix |
+|---|---|
+| 1 | Registrar back on `toRegistryDocTypes().toCBORBytes()`; `namespaces` is present but always empty. Encoder moved to `RegistryDocType.kt` so `RegistryDocTypeTest` exercises production code, not its own copy (the copy is how the leak went unnoticed). Registration failures log at error. |
+| 2 | `ProximityViewModel`: share path and request handling catch failures (incl. `KeyLockedException`), stop the transfer and emit `ProximityCancel`/`ProximityRequestNoMatch`. `MviViewModel` adds a last-resort boundary so no screen's event loop can die. |
+| 3 | All `UserPreferencesDataSource` / `WalletInstanceCredentialsDataSource` writes return their `Result` and rethrow `CancellationException`; `registerInstance` fails if credentials were not persisted. `LOTLInitializer` also rethrows cancellation. |
+| 4 | PIN stored only as Argon2id hash + salt in the encrypted session store, with failed-attempt and lockout counters persisted in the same write as the attempt — a restart no longer resets the lockout. `PinVerifier` is stateless over a `PinRecord`. A plaintext PIN left by an older build is hashed and cleared on first verification. (Also closes addendum High: `updatePin` plaintext.) |
+| 5 | `deleteAllData` runs every step regardless of earlier failures and throws one aggregated error afterwards; crypto-provider `clearAll` no longer swallows. (Also closes addendum Medium: discarded results.) |
+| 6 | Authorization (PKCE) state DataStore encrypted with `AndroidEncryptionManager`; unreadable/legacy plaintext state is dropped (issuance restarts). |
+| 7 | `presenter.check` validates with `p.maxCredentials`. |
+| 11 | Malformed/unknown log id yields an empty flow, not a crash. |
+| 12 | `useTransportFor(uri)`: plaintext gRPC only for a debug build on a loopback host; otherwise refused. |
+| 13 | `aesKeyUnwrap` integrity check uses `subtle.ConstantTimeCompare`. |
+| 14 | Dead `apv` parameter removed from `concatKDF`; comments now state apu/apv are empty because the header carries neither (RFC 7518 §4.6.2). Wire format unchanged. |
+| Add. High | Trust-store windows are validated at load but enforced per lookup: a retired issuer no longer stops startup, and an issuer that expires while the verifier runs stops being trusted. Append-only check compares lowercased keys. |
+| Add. Medium | Request-key kid set once in `main`, on the signing key — no per-request write (race gone), and header kid = served jwk kid. |
+| Add. Medium | DCQL: `intent_to_retain` no longer makes a claim required (mdoc and SD-JWT agree); a `values` constraint is enforced — a non-matching value means no match. |
+| Add. Medium | DC API request processed once per ViewModel (rotation no longer reprocesses). |
+| Add. Medium | `PromptDialogHost` keeps one `dialogState` collector; the host is cleared on `onActivityStopped` (not paused — the biometric overlay can pause the host between two signs). |
+| Add. Medium | `*.jks`/`*.keystore` ignored (except `app/debug.keystore`); release signing props removed from `gradle.properties` and read only from user-level properties. |
+| Add. Medium | `mirror.yml` split: `fetch` (read-only token, no persisted credentials) → artifact → `publish` (only job with `contents: write`, runs no repo code). |
+| Add. Medium | `ci.yml` path filters include `scripts/**`, `tools/**`, `Makefile`. |
+| Add. Medium | Placeholder `IssuanceTest` removed; `SampleTest` note corrected. `CONFORMITY.md` says the plan lives in private ee-eudiw. |
+| Add. Low | `present.py` verifies signed request objects (ES256/JWT; optional `--request-key` pin). `VerifyJWSWithKey` pins the expected `typ`. Rev check takes `-longfellow-rev-file` and logs when skipped. `tools/*.sh` `set -eu`; Makefile strips rev whitespace; `make e2e` fails fast on missing Python deps. All workflow actions pinned by SHA. `tests/README.md` corrected. |
+
+### Not changed, with reason
+- **9** — the mock `.p12` keys are only in the `local_mocks` source set; no other variant ships them.
+- **Deep links** — `navigate(Uri)` only reaches destinations that declare a `navDeepLink` (OpenID4VP request, state-checked OAuth redirect, PID binding). Custom schemes such as `openid4vp://` are required by OpenID4VP same-device flow and cannot be `autoVerify`d.
+- **Dead links** to `EUDI-WALLET-POC-CONFORMANCE-PLAN.md` / `CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md` point into private ee-eudiw (named as such); the missing `androidTest` runner is a listed follow-up, not a broken link. Importing those docs would publish them.
+- **JAR key not tied to `client_id`** — needs an x509 relying-party certificate (`x5c`, SAN = client_id) and wallet-side chain validation; that is the EE-RP-002/003 work the code already names. The wallet can now pin the key (`--request-key`) meanwhile.
+- **8, 10** (revocation soft-fail, empty reader trust store) — documented PoC-stage decisions needing real CRL/reader-CA infrastructure.
+- **Initial prior for append-only check** — needs a persisted last-accepted store; out of scope until the verifier reloads stores at runtime.
+- **`eudi-arf/docker/Dockerfile`** — upstream EU submodule, not this repo.
+- **Low, intentional/cosmetic**: BKS per-entry empty passwords (outer AES-GCM wrapper is the control), `local_mocks` default, `cargo-deny` `continue-on-error`, partial `values-ru`.
