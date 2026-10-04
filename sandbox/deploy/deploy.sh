@@ -4,6 +4,7 @@
 #
 #   CF_API_TOKEN=… sandbox/deploy/deploy.sh [ssh-target]      # default tomkabel@asus
 #   BUILD_ONLY=1 sandbox/deploy/deploy.sh                     # just the image, to test locally
+#   CF_API_TOKEN=… sandbox/deploy/deploy.sh local                # run it on this machine instead
 #
 # Needs: a `make deps` build (prover + zkverify), docker or podman here, docker
 # compose on the host, and a Cloudflare token with Tunnel:Edit on the account
@@ -44,7 +45,7 @@ docker build "${fmt[@]}" --build-arg CIRCUITS_DIR="$circuits" -t zk-sandbox:late
 
 # 2. Tunnel, ingress and DNS, through the API. Prints the connector token.
 token="$(python3 - "$hostname" "$zone" "$tunnel_name" <<'PY'
-import json, os, secrets, sys, urllib.request, urllib.error
+import base64, json, os, secrets, sys, urllib.request, urllib.error
 hostname, zone, name = sys.argv[1:]
 API = "https://api.cloudflare.com/client/v4"
 def cf(method, path, body=None):
@@ -63,7 +64,7 @@ z = cf("GET", f"/zones?name={zone}")[0]
 acc, zid = z["account"]["id"], z["id"]
 found = cf("GET", f"/accounts/{acc}/cfd_tunnel?name={name}&is_deleted=false")
 tid = found[0]["id"] if found else cf("POST", f"/accounts/{acc}/cfd_tunnel",
-    {"name": name, "config_src": "cloudflare", "tunnel_secret": secrets.token_urlsafe(32)})["id"]
+    {"name": name, "config_src": "cloudflare", "tunnel_secret": base64.b64encode(secrets.token_bytes(32)).decode()})["id"]
 cf("PUT", f"/accounts/{acc}/cfd_tunnel/{tid}/configurations", {"config": {"ingress": [
     {"hostname": hostname, "service": "http://sandbox:8000"},
     {"service": "http_status:404"}]}})
@@ -78,12 +79,16 @@ print(cf("GET", f"/accounts/{acc}/cfd_tunnel/{tid}/token"))
 PY
 )"
 
-# 3. Ship and start. The token travels on stdin, never in argv or the repo.
-# podman names it localhost/zk-sandbox; retag to what compose.yml expects.
-loaded="$(docker save zk-sandbox:latest | gzip -1 | ssh "$target" 'gunzip | docker load' | awk '/Loaded image/ {print $NF}')"
-ssh "$target" "docker tag $loaded zk-sandbox:latest"
-ssh "$target" "mkdir -p $remote_dir"
-scp -q "$repo/sandbox/deploy/compose.yml" "$target:$remote_dir/compose.yml"
-printf 'TUNNEL_TOKEN=%s\n' "$token" | ssh "$target" "umask 077 && cat > $remote_dir/.env"
-ssh "$target" "cd $remote_dir && docker compose up -d --force-recreate && docker compose ps"
+# 3. Ship and start, in ~/zk-sandbox on the target. The token travels on
+# stdin, never in argv or the repo.
+on() { if [ "$target" = local ]; then (cd ~ && bash -c "$1"); else ssh "$target" "$1"; fi; }
+if [ "$target" != local ]; then
+	# podman names it localhost/zk-sandbox; retag to what compose.yml expects.
+	loaded="$(docker save zk-sandbox:latest | gzip -1 | ssh "$target" 'gunzip | docker load' | awk '/Loaded image/ {print $NF}')"
+	on "docker tag $loaded zk-sandbox:latest"
+fi
+on "mkdir -p $remote_dir"
+on "cat > $remote_dir/compose.yml" < "$repo/sandbox/deploy/compose.yml"
+printf 'TUNNEL_TOKEN=%s\n' "$token" | on "umask 077 && cat > $remote_dir/.env"
+on "cd $remote_dir && docker compose up -d --force-recreate && docker compose ps"
 echo "deployed: https://$hostname"

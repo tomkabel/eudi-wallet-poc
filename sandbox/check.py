@@ -10,6 +10,10 @@ Takes about a minute: every case is a real proof.
 import json, sys, urllib.request
 
 base = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
+# Cloudflare's browser integrity check refuses the default Python-urllib agent.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-Agent", "zk-sandbox-check/1 (+https://github.com/tomkabel/eudi-wallet-poc)")]
+urllib.request.install_opener(opener)
 
 
 def post(path, body):
