@@ -1,0 +1,34 @@
+# zk.proksiabel.ee: the sandbox, reachable only through a Cloudflare tunnel.
+# No host port is published; cloudflared dials out and Cloudflare routes the
+# hostname to http://sandbox:8000 (the ingress rule lives in the tunnel's
+# remote config, set by deploy.sh). TUNNEL_TOKEN comes from .env beside this
+# file, which deploy.sh writes on the host and never commits.
+services:
+  sandbox:
+    image: zk-sandbox:latest
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=512m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    # Proving takes every core it is given; leave one for the host's other services.
+    cpus: 3
+    mem_limit: 3g
+    pids_limit: 256
+    networks: [zk]
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on: [sandbox]
+    networks: [zk]
+
+networks:
+  zk: {}

@@ -140,6 +140,28 @@ wallet itself:
 Where the wallet stands against the specification, requirement by requirement:
 [`docs/CONFORMITY.md`](docs/CONFORMITY.md).
 
+## Guided sandbox (zk.proksiabel.ee)
+
+`sandbox/` is a browser walk-through of the whole flow, in Estonian and English, styled
+after ria.ee in the TEDI design system. You register a test person, the issuer mints an
+`ee.riik.poa.1` credential, a test shop asks whether you are over 18, and the page streams
+the real proof as the Longfellow prover and the Go verifier produce it. Then it runs three
+real attacks (replay, wrong nonce, a minor forcing a false predicate) and shows each one
+refused. Nothing on the page is pre-recorded.
+
+```bash
+make deps                                  # prover + verifier, once
+make sandbox                               # http://127.0.0.1:8000
+python3 sandbox/check.py http://127.0.0.1:8000   # the four outcomes, end to end (~1 min)
+```
+
+`sandbox/deploy/` is the public deployment: a `debian:trixie-slim` image (read-only, no
+capabilities, rate-limited per client, one proof at a time with a bounded queue) behind a
+Cloudflare tunnel. `CF_API_TOKEN=… sandbox/deploy/deploy.sh tomkabel@asus` builds, ships
+and routes it; `BUILD_ONLY=1` builds the image alone. The sandbox's shortcuts are listed on
+the page itself: the register believes the typed birth date, device keys are files on
+the server, and proving runs there rather than on a phone.
+
 ## Repository layout
 
 | Path | What it is |
@@ -152,6 +174,7 @@ Where the wallet stands against the specification, requirement by requirement:
 | `docs/` | Conformity note, measurements, development guide, architecture, profiles, analyses and plan records — indexed in [`docs/README.md`](docs/README.md) |
 | `demo/` | The Android age-proof demo recording runbook (`demo.sh`) |
 | `tests/` | End-to-end (`e2e.sh`) and load (`load_test.py`) harnesses |
+| `sandbox/` | The guided browser sandbox and its deployment (see "Guided sandbox" above) |
 | `tools/` | Development helpers: `deeplink.sh` (takes the deeplink as an argument), `log-level.sh`, `proxy.sh` |
 | `iaca/`, `statuslists/` | Issuer trust anchor and status-list fixtures (upstream) |
 

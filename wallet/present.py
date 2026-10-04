@@ -177,18 +177,27 @@ def main() -> None:
                     help="the verifier's request-signing public key (PEM). A signed request "
                          "object must verify under it; without it the key served beside the "
                          "JWS is used, which proves integrity only, not who signed")
+    ap.add_argument("--request-file", dest="request_file", default=None, metavar="JSON",
+                    help="answer a request object the wallet already fetched from its "
+                         "request_uri (the body as served; request_uri is single-fetch) "
+                         "instead of starting one at --verifier/present/new")
     args = ap.parse_args()
 
     if not os.path.exists(args.prover):
         sys.exit(f"prover not found at {args.prover}; pass --prover or set EE_PROVER")
 
-    # 1. Ask the verifier for a presentation request.
-    status, started = http_json(f"{args.verifier}/present/new", {"element": args.element})
-    if status != 201:
-        sys.exit(f"could not start a presentation: {status} {started}")
-    status, req = http_json(started["request_uri"])
-    if status != 200:
-        sys.exit(f"could not fetch the request object: {status} {req}")
+    # 1. Ask the verifier for a presentation request, unless the wallet already
+    # fetched one (a consent screen shows it before anything is proved).
+    if args.request_file:
+        with open(args.request_file) as f:
+            req = json.load(f)
+    else:
+        status, started = http_json(f"{args.verifier}/present/new", {"element": args.element})
+        if status != 201:
+            sys.exit(f"could not start a presentation: {status} {started}")
+        status, req = http_json(started["request_uri"])
+        if status != 200:
+            sys.exit(f"could not fetch the request object: {status} {req}")
     if "request" in req:
         req = verify_jar(req, args.request_key)
     queries = req["dcql_query"]["credentials"]

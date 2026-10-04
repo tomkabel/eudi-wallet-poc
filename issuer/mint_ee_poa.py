@@ -249,6 +249,10 @@ def main() -> None:
                          "(0x04||x||y or x||y) or PEM. The minted "
                          "deviceSignature is a placeholder the wallet re-signs "
                          "at presentation; no device_key.pem is written")
+    ap.add_argument("--issuer-key", metavar="PEM",
+                    help="sign with this issuer key (PKCS#8 PEM) so separate runs share one "
+                         "trust-store entry; generated and written there when the file is "
+                         "missing (default: a fresh key per run)")
     args = ap.parse_args()
 
     if args.batch < 1:
@@ -276,7 +280,19 @@ def main() -> None:
     now = dt.datetime.now(dt.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     valid_until = now + dt.timedelta(days=args.validity_days)
 
-    issuer_key = ec.generate_private_key(ec.SECP256R1())
+    if args.issuer_key and os.path.exists(args.issuer_key):
+        with open(args.issuer_key, "rb") as f:
+            issuer_key = serialization.load_pem_private_key(f.read(), password=None)
+        if not isinstance(issuer_key, ec.EllipticCurvePrivateKey) or issuer_key.curve.name != "secp256r1":
+            ap.error("--issuer-key must hold a P-256 private key")
+    else:
+        issuer_key = ec.generate_private_key(ec.SECP256R1())
+        if args.issuer_key:
+            fd = os.open(args.issuer_key, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "wb") as f:
+                f.write(issuer_key.private_bytes(serialization.Encoding.PEM,
+                                                 serialization.PrivateFormat.PKCS8,
+                                                 serialization.NoEncryption()))
     dsc = self_signed_dsc(issuer_key, now)
     dsc_der = dsc.public_bytes(serialization.Encoding.DER)
 

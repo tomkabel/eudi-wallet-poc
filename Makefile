@@ -1,4 +1,4 @@
-.PHONY: deps lint test-go-fast test-go-zk e2e
+.PHONY: deps lint test-go-fast test-go-zk e2e sandbox
 
 SHELL := /bin/bash
 
@@ -48,3 +48,7 @@ e2e: deps
 		echo "make e2e: Python dependencies missing — pip install -r tests/requirements-ci.txt" >&2; exit 1; }
 	EE_PROVER="$$(pwd)/../longfellow-zk/rust/target/release/examples/ee_poa_demo" \
 		EE_VERIFIER="$$(pwd)/verifier/zkverify" tests/e2e.sh
+
+sandbox:
+	EE_PROVER="$$(pwd)/../longfellow-zk/rust/target/release/examples/ee_poa_demo" \
+		EE_VERIFIER="$$(pwd)/verifier/zkverify" python3 sandbox/server.py

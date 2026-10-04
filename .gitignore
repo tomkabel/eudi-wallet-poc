@@ -36,3 +36,8 @@ docs/sota-audit-*.md
 *.jks
 *.keystore
 !app/debug.keystore
+
+# Impeccable review captures and browser-automation scratch
+.impeccable/review/
+.impeccable/mocks/
+.playwright-mcp/

@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "oversized-h1",
+        "value": "*",
+        "files": [
+          "brag-output/work/video.html"
+        ],
+        "createdAt": "2026-10-03T23:35:18.543Z",
+        "reason": "assistant: 1920x1080 video frames; display-size headlines are the design, not a web hero"
+      },
+      {
+        "rule": "clipped-overflow-container",
+        "value": "*",
+        "files": [
+          "brag-output/work/video.html"
+        ],
+        "createdAt": "2026-10-03T23:35:18.569Z",
+        "reason": "assistant: phone screen and button ripple clip on purpose"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "brag-output/work/video.html"
+        ],
+        "createdAt": "2026-10-03T23:35:18.589Z",
+        "reason": "assistant: small status pills in a rendered video, checked visually in the stills"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          "sandbox/static/app.css"
+        ],
+        "createdAt": "2026-10-04T13:26:12.217Z",
+        "reason": "assistant: Roboto is TEDI's mandated face; user pinned the TEDI/ria.ee world"
+      },
+      {
+        "rule": "overused-font",
+        "value": "*",
+        "files": [
+          "sandbox/static/index.html"
+        ],
+        "createdAt": "2026-10-04T13:26:12.226Z",
+        "reason": "assistant: Roboto is TEDI's mandated face; user pinned the TEDI/ria.ee world"
+      }
+    ]
+  }
+}
