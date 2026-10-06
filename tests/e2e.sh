@@ -2,9 +2,9 @@
 # End-to-end check of the OpenID4VP presentation flow against a freshly minted
 # attestation: the happy path in BOTH response modes (plain direct_post and
 # encrypted direct_post.jwt, ADR-003), the two binding defences (transcript,
-# single-use nonce), the predicate-value binding on both sides of it, and the
-# response-encryption negatives (tampered JWE, plain post to an encrypted
-# session).
+# single-use nonce), the predicate-value binding on both sides of it, the
+# attestation-expiry negatives (EE-ZKP-021(d)), and the response-encryption
+# negatives (tampered JWE, plain post to an encrypted session).
 #
 #   EE_PROVER=.../target/release/examples/ee_poa_demo tests/e2e.sh
 #
@@ -42,9 +42,14 @@ fail() { printf '  FAIL  %s\n' "$1"; failures=$((failures + 1)); }
 python3 "$repo/issuer/mint_ee_poa.py" --out "$work/adult" --over 16 18 21 >"$work/mint-adult.log"
 python3 "$repo/issuer/mint_ee_poa.py" --out "$work/minor" --over 16 --under 18 21 >"$work/mint-minor.log"
 python3 "$repo/issuer/mint_ee_poa.py" --out "$work/av" --doctype eu.europa.ec.av.1 --over 16 18 21 >"$work/mint-av.log"
+# ...and an over-18 attestation that expired ten days ago: signed 100 days back
+# with the 90-day default lifetime. Its issuer is trusted like the others, so
+# the only thing wrong with it is the clock (EE-ZKP-021(d)).
+expired_signed_at="$(python3 -c 'import datetime as d; print((d.datetime.now(d.timezone.utc)-d.timedelta(days=100)).strftime("%Y-%m-%d"))')"
+python3 "$repo/issuer/mint_ee_poa.py" --out "$work/expired" --signed-at "$expired_signed_at" --over 16 18 21 >"$work/mint-expired.log"
 
-# All three were minted by different issuer keys, so the trust store holds all.
-python3 - "$work/adult/issuers.json" "$work/minor/issuers.json" "$work/av/issuers.json" "$work/issuers.json" <<'PY'
+# All four were minted by different issuer keys, so the trust store holds all.
+python3 - "$work/adult/issuers.json" "$work/minor/issuers.json" "$work/av/issuers.json" "$work/expired/issuers.json" "$work/issuers.json" <<'PY'
 import json, sys
 out = {"issuers": []}
 for path in sys.argv[1:-1]:
@@ -129,6 +134,40 @@ elif grep -q -- '--allow-false-predicate' "$work/5.log"; then
 	pass "the prover exited non-zero, naming the attribute and its actual value"
 else
 	fail "the prover failed, but not on the predicate value"; tail -20 "$work/5.log"
+fi
+
+# EE-ZKP-021(d): the proof must establish the attestation is within validity.
+# Nothing in the Go verifier reads validUntil; the circuit is relied on for it.
+# Two holders of the expired attestation try, and neither may get valid:true.
+#
+# (a) An honest wallet proves at the verifier's expected_now. Either the
+# prover cannot make the proof (the circuit's validity constraint is
+# unsatisfiable) or the verifier refuses it; both are a pass, valid:true is not.
+echo "14. expiry: an expired over-18 attestation, proved at the verifier's now"
+present "$work/14.log" "$work/expired"
+if grep -q '"valid": true' "$work/14.log"; then
+	fail "an attestation that expired ten days ago verified as age_over_18"; tail -20 "$work/14.log"
+elif grep -q 'proving failed' "$work/14.log"; then
+	pass "the prover could not prove an expired attestation at the current time"
+elif grep -q '"valid": false' "$work/14.log"; then
+	pass "verifier answered valid:false"
+else
+	fail "neither a refusal nor an answer"; tail -20 "$work/14.log"
+fi
+
+# (b) A dishonest wallet proves at a time when the attestation was still
+# valid (one hour after signing), then posts to the live session. The proof is
+# sound for THAT now; the verifier verifies under its own ExpectedNow, so the
+# proof must not verify. This is the 83-minutes case: the credential is
+# expired, every signature is real, and only the clock says no.
+echo "15. expiry: the same attestation, proved at a time when it was still valid"
+present "$work/15.log" "$work/expired" --prove-at "${expired_signed_at}T01:00:00Z"
+if grep -q '"valid": true' "$work/15.log"; then
+	fail "a proof made at a backdated now verified against the session's ExpectedNow"; tail -20 "$work/15.log"
+elif grep -q '"valid": false' "$work/15.log"; then
+	pass "verifier answered valid:false"
+else
+	fail "neither a refusal nor an answer"; tail -20 "$work/15.log"
 fi
 
 stop_verifier
@@ -402,8 +441,8 @@ stop_verifier
 
 echo
 if [ "$failures" -eq 0 ]; then
-	echo "PASS: 13/13"
+	echo "PASS: 15/15"
 else
-	echo "FAIL: $failures of 13 assertions failed"
+	echo "FAIL: $failures of 15 assertions failed"
 fi
 exit "$((failures > 0))"

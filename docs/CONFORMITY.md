@@ -75,7 +75,7 @@ What this wallet **can claim today**:
   in the reference repository, 23 September 2026).
 - Over OpenID4VP the spine now runs the de-facto `mso_mdoc_zk` carrier (profile v1.0 above)
   with `direct_post.jwt` response encryption on by default (ADR-003), e2e-verified end to end
-  in `tests/e2e.sh` (13 assertions, both response modes, both carriers, one- and
+  in `tests/e2e.sh` (15 assertions, both response modes, both carriers, one- and
   two-credential sessions). The relying-party verify budget is honestly re-derived rather than
   met: host verification is ~95% Longfellow sumcheck arithmetic, p95 3.2–4.9 s across rounds on
   an i5-8365U-class host, and the 1.0 s p95 figure is now recorded as the device-side prover

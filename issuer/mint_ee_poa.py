@@ -234,6 +234,12 @@ def main() -> None:
                     help="mint N single-use attestations into out/000 .. (EE-POA-010/011)")
     ap.add_argument("--validity-days", type=int, default=90,
                     help="attestation lifetime; EE-POA-016 caps this at 3 months")
+    ap.add_argument("--signed-at", metavar="YYYY-MM-DD", default=None,
+                    help="issuance day for the MSO's ValidityInfo (default: today, UTC). "
+                         "A past date mints an attestation whose validUntil has already "
+                         "passed: the e2e expiry negative (EE-ZKP-021(d)). The issuer "
+                         "certificate is dated from the real clock either way, so an "
+                         "expired MSO is the only thing wrong with the fixture")
     ap.add_argument("--over", type=int, nargs="*", default=[18],
                     help="age thresholds to attest (default: 18; §9.2 omits "
                          "age_over_16/21 in v1 — spec finding S10)")
@@ -255,6 +261,16 @@ def main() -> None:
         ap.error("--batch must be at least 1")
     if not 1 <= args.validity_days <= 90:
         ap.error("--validity-days must be between 1 and 90")
+    real_now = dt.datetime.now(dt.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    if args.signed_at is None:
+        signed_at = real_now
+    else:
+        try:
+            signed_at = dt.datetime.strptime(args.signed_at, "%Y-%m-%d").replace(tzinfo=dt.timezone.utc)
+        except ValueError:
+            ap.error("--signed-at must be YYYY-MM-DD")
+        if signed_at > real_now:
+            ap.error("--signed-at must not be in the future")
     if len(args.over) != len(set(args.over)):
         ap.error("--over thresholds must not contain duplicates")
     if len(args.under) != len(set(args.under)):
@@ -273,11 +289,13 @@ def main() -> None:
 
     # Coarsened per EE-POA-012: every attestation in a batch shares these to the
     # second, so timestamps cannot be used to correlate presentations.
-    now = dt.datetime.now(dt.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    now = signed_at
     valid_until = now + dt.timedelta(days=args.validity_days)
 
     issuer_key = ec.generate_private_key(ec.SECP256R1())
-    dsc = self_signed_dsc(issuer_key, now)
+    # The DSC follows the real clock, not --signed-at: a backdated mint must
+    # produce an attestation that is expired and nothing else.
+    dsc = self_signed_dsc(issuer_key, real_now)
     dsc_der = dsc.public_bytes(serialization.Encoding.DER)
 
     elements = ([(f"age_over_{n}", True) for n in sorted(args.over)] +

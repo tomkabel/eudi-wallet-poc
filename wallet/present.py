@@ -138,6 +138,11 @@ def main() -> None:
     ap.add_argument("--allow-false-predicate", action="store_true",
                     help="prove a predicate the attestation says is false, to show the "
                          "verifier refuses it on its own")
+    ap.add_argument("--prove-at", metavar="TIMESTAMP", default=None,
+                    help="feed the prover this `now` (yyyy-MM-ddTHH:mm:ssZ) instead of the "
+                         "verifier's expected_now: a dishonest holder proving an expired "
+                         "attestation at a time when it was still valid. The verifier must "
+                         "still refuse it (EE-ZKP-021(d) e2e negative)")
     ap.add_argument("--keep", action="store_true", help="keep the temporary session directory")
     args = ap.parse_args()
 
@@ -218,8 +223,11 @@ def main() -> None:
             open(os.path.join(session_dir, "mdoc.bin"), "wb").write(mdoc)
             open(os.path.join(session_dir, "transcript.bin"), "wb").write(transcript)
             # The verifier fixes `now`; the holder does not get to choose it.
+            # --prove-at is the holder choosing it anyway, to show the verifier
+            # does not care what the holder chose.
+            prove_now = args.prove_at or req["expected_now"]
             open(os.path.join(session_dir, "params.txt"), "w").write(
-                "\n".join([params[0], params[1], req["expected_now"], *params[3:5]]) + "\n")
+                "\n".join([params[0], params[1], prove_now, *params[3:5]]) + "\n")
 
             cmd = [args.prover, session_dir, element]
             if args.allow_false_predicate:

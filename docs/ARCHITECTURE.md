@@ -90,7 +90,7 @@ verifies every credential under `checkMulti` — one admission slot per credenti
 (`present.go`:483-515). The value constraint (`vptoken.go:159-176`, `EE-ZKP-021(b)`) binds the
 presented CBOR to the query's values; verification tries each trusted issuer for the doctype in
 turn (`present.go`:545-566). The negative controls that prove the binding holds are
-`tests/e2e.sh` (thirteen assertions, both response modes, both carriers, two credential
+`tests/e2e.sh` (fifteen assertions, both response modes, both carriers, two credential
 counts) and `wallet/README.md`:50-55.
 
 Multi-credential scope, stated honestly: one session may request and verify N credentials

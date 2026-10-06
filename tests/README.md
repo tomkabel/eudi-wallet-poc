@@ -57,7 +57,7 @@ W6), merges all three issuer lists into one trust store, starts
 drives `wallet/present.py` once per case and greps the verifier's answer out
 of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 `EE_VERIFIER` optionally overrides the verifier path; the wallet needs python
-`cbor2`, `cryptography` and `jwcrypto`. Thirteen assertions:
+`cbor2`, `cryptography` and `jwcrypto`. Fifteen assertions:
 
 1. Happy path, plain mode: the adult proves `age_over_18`; output must contain `"valid": true`.
 2. Transcript binding: `--tamper-nonce` makes the proof cover a different nonce; the verifier must answer `"valid": false`.
@@ -72,8 +72,10 @@ of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 11. Default mode: a fresh `/present/new` without flags answers `direct_post.jwt`.
 12. Multi-credential (W6): with `-multi-credentials 2`, one session requests the national PoA and the AV doctype (two issuers); a wallet holding both answers both entries and the verifier answers `valid: true` with `all 2 credentials proved in zero knowledge`.
 13. Multi-credential all-or-error: a response answering only one of two queried credentials fails the session, with the missing credential id named in the detail.
+14. Expiry, honest holder (EE-ZKP-021(d)): an over-18 attestation minted with `--signed-at` 100 days back (expired ten days ago, issuer trusted) is proved at the verifier's `expected_now`. Pass if the prover cannot make the proof or the verifier answers `"valid": false`; `"valid": true` fails.
+15. Expiry, dishonest holder: the same attestation proved with `--prove-at` set to an hour after signing, when it was still valid, and posted to the live session. The verifier must answer `"valid": false`: an expired credential with every signature real, refused by the clock alone.
 
-Output is `PASS: 13/13` or `FAIL: n of 13 assertions failed`; exit status is
+Output is `PASS: 15/15` or `FAIL: n of 15 assertions failed`; exit status is
 non-zero when any assertion fails. Note what is absent: there is no
 untrusted-issuer case (the script deliberately trusts all minted issuer keys,
 which is why case 4 fails on the predicate value rather than on trust) and no
