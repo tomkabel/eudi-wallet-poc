@@ -11,11 +11,11 @@ import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialType
+import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.documents.DocumentField
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
-import ee.cyber.wallet.domain.presentation.HaipResponsePolicy
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
@@ -29,6 +29,8 @@ import eu.europa.ec.eudi.openid4vp.Consensus
 import eu.europa.ec.eudi.openid4vp.DispatchOutcome
 import eu.europa.ec.eudi.openid4vp.Resolution
 import eu.europa.ec.eudi.openid4vp.ResolvedRequestObject
+import eu.europa.ec.eudi.openid4vp.dcql.metaMsoMdoc
+import eu.europa.ec.eudi.openid4vp.dcql.metaSdJwtVc
 import eu.europa.ec.eudi.openid4vp.legalName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -88,6 +90,7 @@ sealed class Error(
     data object VerificationError : Error(AppError.PRESENTATION_FETCH_REQUEST_ERROR)
     data object VerifierError : Error(AppError.PRESENTATION_VERIFIER_REJECTED_ERROR)
     data object UnsupportedRequestType : Error(AppError.PRESENTATION_UNSUPPORTED_REQUEST_ERROR)
+    data object UnencryptedRequest : Error(AppError.PRESENTATION_UNENCRYPTED_REQUEST)
     data object MatchError : Error(AppError.PRESENTATION_MATCH_ERROR)
 }
 
@@ -112,6 +115,15 @@ sealed class Event : ViewEvent {
 }
 
 private const val STATE_KEY = "state"
+
+/**
+ * EE-PRO-010: whether the request came from the wallet's own QR scanner. Only the scanner passes
+ * the request as [MainRoute.ARG_URI]; deep links fill `clientId`/`requestUri` instead. Not
+ * `intent == null`: Navigation attaches a deep-link intent to route navigation too, so that test
+ * never fires.
+ */
+internal fun cameFromScanner(savedStateHandle: SavedStateHandle): Boolean =
+    savedStateHandle.get<String>(MainRoute.ARG_URI) != null
 private const val REQUEST_KEY = "request"
 
 @HiltViewModel
@@ -311,11 +323,11 @@ class PresentationRequestViewModel @Inject constructor(
         when (requestObject) {
             is ResolvedRequestObject.OpenId4VPAuthorization -> {
                 // EE-PRO-001: refuse before matching, so a verifier asking for a cleartext
-                // response never sees a consent screen, let alone documents.
-                HaipResponsePolicy.refusal(requestObject.responseMode, requestObject.responseEncryptionSpecification)?.let { reason ->
+                // response never gets a consent screen, let alone documents.
+                openId4VPManager.haipRefusal(requestObject)?.let { reason ->
                     log.error("Refusing request: $reason")
-                    logTransaction(error = AppError.PRESENTATION_UNSUPPORTED_REQUEST_ERROR)
-                    showError(Error.UnsupportedRequestType)
+                    refuseRequest(requestObject, AppError.PRESENTATION_UNENCRYPTED_REQUEST)
+                    showError(Error.UnencryptedRequest)
                     return
                 }
                 resolvedRequest.value = requestObject
@@ -342,7 +354,7 @@ class PresentationRequestViewModel @Inject constructor(
                 setState {
                     copy(
                         verifier = requestObject.verifierName().toString(),
-                        scanned = intent == null,
+                        scanned = cameFromScanner(savedStateHandle),
                         credentials = credentials
                     )
                 }
@@ -357,6 +369,27 @@ class PresentationRequestViewModel @Inject constructor(
     }
 
     private fun ResolvedRequestObject.verifierName() = client.legalName() ?: client.id
+
+    /**
+     * A request refused before consent still leaves a trace: one activity-log row per requested
+     * document type the wallet recognises, under the verifier's name, and a negative answer to
+     * the verifier so its session ends instead of timing out.
+     */
+    private suspend fun refuseRequest(requestObject: ResolvedRequestObject.OpenId4VPAuthorization, error: AppError) {
+        val verifier = requestObject.verifierName().toString()
+        setState { copy(verifier = verifier) }
+        requestObject.requestedDocTypes().forEach { docType ->
+            transactionLogRepository.addTransactionLog(party = verifier, docType = docType, error = error)
+        }
+        openId4VPManager.refuse(requestObject)
+    }
+
+    private fun ResolvedRequestObject.OpenId4VPAuthorization.requestedDocTypes(): List<DocType> =
+        query.credentials.value.mapNotNull { credentialQuery ->
+            val typeIds = credentialQuery.metaMsoMdoc?.doctypeValue?.value?.let(::listOf)
+                ?: credentialQuery.metaSdJwtVc?.vctValues.orEmpty()
+            typeIds.firstNotNullOfOrNull { id -> DocType.entries.find { it.uri == id } }
+        }.distinct()
 
     private fun updateState(reducer: UiState.() -> UiState) {
         setState {

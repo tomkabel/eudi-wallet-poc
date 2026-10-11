@@ -105,6 +105,9 @@
     <string name="error_presentation_unsupported_request_type">Unsupported request type!</string>
     <string name="error_issuance_authorization_error">Authorization failure</string>
     <string name="error_issuance_common_error">Failed to issue document(s)</string>
+    <string name="error_presentation_unencrypted_request">This service asked for your data without encryption. Nothing was shared.</string>
+    <string name="error_issuance_unbound_credential">The issuer offered a document not bound to this phone, which anyone with a copy could use. It was not saved.</string>
+    <string name="error_issuance_deferred_unsupported">The issuer can only deliver this document later, which this wallet does not support yet.</string>
 
     <!-- Attributes -->
     <string name="attr_identification_nr">Personal identification code</string>

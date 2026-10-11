@@ -24,6 +24,9 @@ interface CryptoProvider {
     suspend fun sign(keyId: String, dataToSign: ByteArray): ByteArray
     fun supports(keyType: KeyType): Boolean
     suspend fun clearAll()
+
+    /** Deletes one key and its attestation record; a no-op for an unknown key. */
+    suspend fun deleteKey(keyId: String)
     suspend fun jwsSigner(keyId: String): JWSSigner
 
     class Factory(private val cryptoProviders: List<CryptoProvider>) {

@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.domain.AppError
+import ee.cyber.wallet.domain.credentials.IssuanceRefused
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DigitalCredentialsRegistrar
 import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
@@ -163,7 +164,10 @@ class IssuanceViewModel @Inject constructor(
         }.onFailure {
             if (it is CancellationException) throw it
             logger.error("failed: $it", it)
-            sendEffect { Effect.ShowError(AppError.ISSUANCE_ERROR) }
+            // A deliberate refusal (unbound credential, deferred issuance) says why; anything
+            // else stays the generic issuance error.
+            val error = (it as? IssuanceRefused)?.appError ?: AppError.ISSUANCE_ERROR
+            sendEffect { Effect.ShowError(error) }
         }
         setLoading(false)
     }

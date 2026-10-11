@@ -37,6 +37,7 @@ class EePoaIssuanceTest {
         override suspend fun sign(keyId: String, dataToSign: ByteArray): ByteArray = byteArrayOf()
         override fun supports(keyType: KeyType): Boolean = keyType == KeyType.EC
         override suspend fun clearAll() {}
+        override suspend fun deleteKey(keyId: String) {}
         override suspend fun jwsSigner(keyId: String) = throw UnsupportedOperationException()
 
         private fun keyAttestation(keyId: String) = KeyAttestation(

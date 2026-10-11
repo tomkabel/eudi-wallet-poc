@@ -105,6 +105,9 @@
     <string name="error_presentation_unsupported_request_type">Päringu tüüp ei ole toetatud!</string>
     <string name="error_issuance_authorization_error">Autoriseerimine ebaõnnestus.</string>
     <string name="error_issuance_common_error">Dokumendi väljastamine ebaõnnestus.</string>
+    <string name="error_presentation_unencrypted_request">See teenus küsis sinu andmeid krüpteerimata kujul. Andmeid ei jagatud.</string>
+    <string name="error_issuance_unbound_credential">Väljastaja pakkus dokumenti, mis ei ole selle telefoniga seotud ja mida saaks kasutada igaüks, kellel on selle koopia. Dokumenti ei salvestatud.</string>
+    <string name="error_issuance_deferred_unsupported">Väljastaja saab selle dokumendi väljastada alles hiljem, mida see rakendus veel ei toeta.</string>
 
     <!-- Attributes -->
     <string name="attr_identification_nr">Isikukood</string>

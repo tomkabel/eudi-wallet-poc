@@ -157,6 +157,16 @@ class LocalCryptoProvider(
         keyAttestationDao.deleteAll()
     }
 
+    override suspend fun deleteKey(keyId: String) {
+        val keyType = runCatching { getKeyAttestation(keyId).keyType }.getOrNull()
+        when (keyType) {
+            KeyType.EC -> secureAreaKeyManager.deleteKey(keyId)
+            KeyType.RSA -> keyStoreManager.deleteKey(keyId)
+            null -> Unit
+        }
+        keyAttestationDao.deleteById(keyId)
+    }
+
     private suspend fun createKeyAttestation(keyType: KeyType, keyId: String): KeyAttestation =
         walletProviderService.attestKey(keyId, keyType, loadJwkFromKeyStore(keyId).toPublicJWK(), credentials.first())
 

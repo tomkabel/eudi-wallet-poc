@@ -5,9 +5,11 @@ import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.crypto.popSigner
 import ee.cyber.wallet.data.datastore.AuthorizationStateDataSource
+import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.provider.Attestation
+import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
 import eu.europa.ec.eudi.openid4vci.AuthorizationCode
 import eu.europa.ec.eudi.openid4vci.AuthorizedRequest
@@ -23,6 +25,8 @@ import eu.europa.ec.eudi.openid4vci.KtorHttpClientFactory
 import eu.europa.ec.eudi.openid4vci.OpenId4VCIConfig
 import eu.europa.ec.eudi.openid4vci.SubmissionOutcome
 import io.ktor.http.Url
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.util.UUID
@@ -89,6 +93,26 @@ class OpenId4VCIManager(
         val prepareAuthorizationCodeRequest = stateOrNull ?: throw IllegalStateException("Authorization request has not been prepared yet")
         val keyAttestation = remoteKeyManager.getKeyAttestation(prepareAuthorizationCodeRequest.keyId)
 
+        // A failed issuance leaves a key no credential will ever use. EC keys are WSCD slots, a
+        // bounded resource (EE-POA-011b), so give it back instead of orphaning it.
+        return try {
+            issueBound(state, code, prepareAuthorizationCodeRequest, keyAttestation)
+        } catch (e: Exception) {
+            withContext(NonCancellable) {
+                runCatching { remoteKeyManager.deleteKey(keyAttestation.keyId) }
+                    .onFailure { logger.error("Could not delete key of failed issuance", it) }
+                authorizationStateDataSource.remove(state)
+            }
+            throw e
+        }
+    }
+
+    private suspend fun issueBound(
+        state: String,
+        code: String,
+        prepareAuthorizationCodeRequest: IssuanceAuthorizationState,
+        keyAttestation: KeyAttestation
+    ): CredentialDocument {
         val credentialIssuerId = CredentialIssuerId(issuerUrl).getOrThrow()
         val (issuerMetadata, authorizationServersMetadata) = httpClientFactory().use { client ->
             Issuer.metaData(client, credentialIssuerId)
@@ -116,12 +140,14 @@ class OpenId4VCIManager(
 
             credentialOffer.credentialConfigurationIdentifiers.first().let { credentialIdentifier ->
                 val outcome = when (authorizedRequest) {
-                    // EE-PRO-024: a credential issued without a proof of possession is bound to no
-                    // key this wallet holds — a bearer credential anyone holding a copy can
-                    // present. The document would still be stored against keyAttestation, so the
-                    // wallet would claim a binding that does not exist. Refuse instead.
-                    is AuthorizedRequest.NoProofRequired ->
-                        throw IllegalStateException("Issuer requires no proof of possession; refusing an unbound credential")
+                    // EE-PRO-024: this path issues the mDL, an 18013-5 attestation, for which ARF §6
+                    // makes device binding mandatory. Without a proof of possession it is bound to
+                    // no key this wallet holds, yet would be stored against keyAttestation as if it
+                    // were. Refuse instead.
+                    is AuthorizedRequest.NoProofRequired -> throw IssuanceRefused(
+                        AppError.ISSUANCE_UNBOUND_CREDENTIAL,
+                        "Issuer requires no proof of possession; refusing an unbound credential"
+                    )
                     is AuthorizedRequest.ProofRequired -> submitProvidingProofs(issuer, authorizedRequest, credentialIdentifier, keyAttestation.keyId)
                 }
                 val attestation = Attestation(
@@ -154,7 +180,10 @@ class OpenId4VCIManager(
                 }
                 // Deferred issuance is not implemented; fail with a reason instead of TODO()'s
                 // NotImplementedError crashing the issuance coroutine.
-                is SubmissionOutcome.Deferred -> throw IllegalStateException("Deferred credential issuance is not supported")
+                is SubmissionOutcome.Deferred -> throw IssuanceRefused(
+                    AppError.ISSUANCE_DEFERRED_UNSUPPORTED,
+                    "Deferred credential issuance is not supported"
+                )
             }
         }
     }
@@ -174,3 +203,6 @@ class OpenId4VCIManager(
 //        }
 //    }
 }
+
+/** An issuance the wallet refuses on purpose, carrying the reason the user is shown. */
+class IssuanceRefused(val appError: AppError, message: String) : IllegalStateException(message)

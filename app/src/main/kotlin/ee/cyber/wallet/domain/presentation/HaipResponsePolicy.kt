@@ -16,6 +16,11 @@ import eu.europa.ec.eudi.openid4vp.ResponseMode
  * cleartext to whatever sits on its response path. Signed `*.jwt` modes other than
  * `direct_post.jwt` are refused too: HAIP profiles redirect presentation on `direct_post.jwt`
  * alone, and `fragment.jwt` / `query.jwt` put the response in a URL the browser history keeps.
+ *
+ * What is new here and what is belt-and-braces: for `*.jwt` modes the library already picks
+ * `alg` and `enc` only from the lists this wallet advertises, and accepts only EC keys for
+ * ECDH-ES. The checks that the library does not make are the refusal of cleartext modes and
+ * the P-256 curve; the `alg`/`enc` checks stay so a library upgrade cannot widen them silently.
  */
 object HaipResponsePolicy {
 
