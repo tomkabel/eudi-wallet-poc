@@ -18,6 +18,11 @@ The issuance flow is based on
 the [OpenID for Verifiable Credential Issuance Draft 14](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-14.html)
 and the presentation flow is based on the
 [OpenID for Verifiable Presentations Draft 22](https://openid.net/specs/openid-4-verifiable-presentations-1_0-22.html).
+That was upstream's baseline. In this fork, the presentation path runs on `eudi-lib-jvm-siop-openid4vp-kt`
+0.11.1, which resolves DCQL only (no Presentation Exchange on the wire). The wallet answers only
+`direct_post.jwt` responses encrypted per HAIP 1.0, and refuses SIOPv2 and unbound issuance. Where
+this stands against OpenID4VP 1.0 and HAIP 1.0, requirement by requirement, is in
+[`docs/CONFORMITY.md`](docs/CONFORMITY.md).
 
 ## Testing using pre-built package
 
