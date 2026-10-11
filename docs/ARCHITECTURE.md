@@ -20,7 +20,7 @@ One repository holds two things on purpose (`AGENTS.md`:12-14):
 - `spec/EE-EUDIW-TS-1.0.md` — **the deliverable**: an independent Estonian EUDIW
   technical specification, 193 normative `EE-<AREA>-<nnn>` requirements, traceable to an
   ARF high-level requirement, an implementing act or Estonian statute, with Annex E carrying the
-  matrix as an extract (105 of the 193); content revision 1.5 (`README.md`:32; `AGENTS.md`:16; `spec/EE-EUDIW-TS-1.0.md`:7).
+  matrix as an extract (106 of the 193); content revision 1.5 (`README.md`:32; `AGENTS.md`:16; `spec/EE-EUDIW-TS-1.0.md`:7).
 - `issuer/`, `wallet/`, `verifier/`, `zk-age-poc/` — **the reference implementation**:
   Python mints and presents, Go verifies over the Rust Longfellow runtime, and
   `zk-age-poc/` is the standalone measured PoC (`AGENTS.md`:14).
