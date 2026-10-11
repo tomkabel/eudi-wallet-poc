@@ -18,6 +18,7 @@ import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
+import ee.cyber.wallet.domain.presentation.ResponseRefused
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -299,8 +300,14 @@ class PresentationRequestViewModel @Inject constructor(
                                 }
                             }.onFailure {
                                 log.error("Error sending Auth Response", it)
-                                logTransaction(error = AppError.CONNECTION_ERROR)
-                                sendEffect { Effect.ShowError(Error.ConnectionError(true)) }
+                                if (it is ResponseRefused) {
+                                    // Not a network problem, and retrying cannot change the answer.
+                                    logTransaction(error = AppError.PRESENTATION_UNENCRYPTED_REQUEST)
+                                    showError(Error.UnencryptedRequest)
+                                } else {
+                                    logTransaction(error = AppError.CONNECTION_ERROR)
+                                    sendEffect { Effect.ShowError(Error.ConnectionError(true)) }
+                                }
                             }
                     }
 
@@ -326,8 +333,8 @@ class PresentationRequestViewModel @Inject constructor(
                 // response never gets a consent screen, let alone documents.
                 openId4VPManager.haipRefusal(requestObject)?.let { reason ->
                     log.error("Refusing request: $reason")
-                    refuseRequest(requestObject, AppError.PRESENTATION_UNENCRYPTED_REQUEST)
                     showError(Error.UnencryptedRequest)
+                    refuseRequest(requestObject, AppError.PRESENTATION_UNENCRYPTED_REQUEST)
                     return
                 }
                 resolvedRequest.value = requestObject
@@ -372,8 +379,12 @@ class PresentationRequestViewModel @Inject constructor(
 
     /**
      * A request refused before consent still leaves a trace: one activity-log row per requested
-     * document type the wallet recognises, under the verifier's name, and a negative answer to
-     * the verifier so its session ends instead of timing out.
+     * document type the wallet recognises, under the verifier's name. A request naming only
+     * document types the wallet does not know is not logged: the log's doc-type column has no
+     * value for "unknown", and filing it under a real type would misname what was asked for.
+     *
+     * The verifier is then sent a negative answer in the background, so a slow or dead
+     * `response_uri` — likely, for a misconfigured verifier — cannot hold the spinner.
      */
     private suspend fun refuseRequest(requestObject: ResolvedRequestObject.OpenId4VPAuthorization, error: AppError) {
         val verifier = requestObject.verifierName().toString()
@@ -381,7 +392,7 @@ class PresentationRequestViewModel @Inject constructor(
         requestObject.requestedDocTypes().forEach { docType ->
             transactionLogRepository.addTransactionLog(party = verifier, docType = docType, error = error)
         }
-        openId4VPManager.refuse(requestObject)
+        viewModelScope.launch { openId4VPManager.refuse(requestObject) }
     }
 
     private fun ResolvedRequestObject.OpenId4VPAuthorization.requestedDocTypes(): List<DocType> =

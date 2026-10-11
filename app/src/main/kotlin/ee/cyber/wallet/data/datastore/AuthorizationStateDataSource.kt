@@ -52,6 +52,11 @@ class AuthorizationStateDataSource(private val dataStore: DataStore<Authorizatio
         }
     }.onFailure { if (it is CancellationException) throw it }
 
+    /** The key ids of every stored authorization state, for cleanup before [clearAll]. */
+    suspend fun keyIds(): List<String> = runCatching {
+        dataStore.data.firstOrNull()?.statesMap?.values?.map { it.keyId }.orEmpty()
+    }.onFailure { if (it is CancellationException) throw it }.getOrDefault(emptyList())
+
     suspend fun clearAll() = runCatching {
         dataStore.updateData { AuthorizationRequestStateProto.getDefaultInstance() }
     }.onFailure { if (it is CancellationException) throw it }

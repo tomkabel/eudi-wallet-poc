@@ -34,6 +34,7 @@ import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.sdjwt.vc.ClaimPathElement
 import id.walt.mdoc.docrequest.MDocRequestBuilder
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
@@ -99,7 +100,7 @@ class OpenId4VPManager(
         // EE-PRO-001: checked here as well as before consent, so no caller can send documents
         // to a verifier that asked for them unencrypted.
         if (consensus is Consensus.PositiveConsensus) {
-            haipRefusal(requestObject)?.let { reason -> throw IllegalStateException("Refusing to send a response: $reason") }
+            haipRefusal(requestObject)?.let { reason -> throw ResponseRefused("Refusing to send a response: $reason") }
         }
         dispatch(requestObject, consensus)
     }
@@ -114,11 +115,18 @@ class OpenId4VPManager(
     /**
      * Tells the verifier the request was refused, so its session ends instead of timing out. A
      * negative consensus carries no claims, so it is safe on the cleartext modes the HAIP policy
-     * refuses for documents. Best effort: a verifier that cannot receive it is only logged.
+     * refuses for documents. Only the `direct_post` modes are POSTed by the library; for fragment
+     * and query modes it builds a redirect, which is not followed — the wallet does not open a
+     * URL chosen by a verifier it just refused. Best effort: a failure is only logged.
      */
-    suspend fun refuse(requestObject: ResolvedRequestObject) = withContext(dispatcher) {
-        runCatching { dispatch(requestObject, Consensus.NegativeConsensus) }
-            .onFailure { logger.warn("Could not deliver the refusal to the verifier", it) }
+    suspend fun refuse(requestObject: ResolvedRequestObject) {
+        try {
+            withContext(dispatcher) { dispatch(requestObject, Consensus.NegativeConsensus) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn("Could not deliver the refusal to the verifier", e)
+        }
     }
 
     private suspend fun dispatch(requestObject: ResolvedRequestObject, consensus: Consensus) =
@@ -351,3 +359,6 @@ class OpenId4VPManager(
         return presentationSdJwt.serializeWithKeyBinding(buildKbJwt).getOrThrow()
     }
 }
+
+/** A response the wallet refuses to send on policy grounds; retrying cannot change the outcome. */
+class ResponseRefused(message: String) : IllegalStateException(message)

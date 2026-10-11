@@ -11,6 +11,7 @@ import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.R
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.data.datastore.AuthorizationStateDataSource
+import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
@@ -41,6 +42,7 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.first
 import org.slf4j.LoggerFactory
 import java.security.cert.X509Certificate
 import java.time.Clock
@@ -104,14 +106,16 @@ object OpenId4VPAndVCModule {
     fun provideOpenId4VCIManager(
         authorizationStateDataSource: AuthorizationStateDataSource,
         credentialToDocumentMapper: CredentialToDocumentMapper,
-        cryptoProviderFactory: CryptoProvider.Factory
+        cryptoProviderFactory: CryptoProvider.Factory,
+        documentRepository: DocumentRepository
     ): OpenId4VCIManager {
         return OpenId4VCIManager(
             httpClientFactory = { createHttpClient() },
             issuerUrl = AppConfig.issuerUrl,
             credentialToDocumentMapper = credentialToDocumentMapper,
             authorizationStateDataSource = authorizationStateDataSource,
-            cryptoProviderFactory = cryptoProviderFactory
+            cryptoProviderFactory = cryptoProviderFactory,
+            keyInUse = { keyId -> documentRepository.documents.first().any { it.attestation.keyAttestation.keyId == keyId } }
         )
     }
 

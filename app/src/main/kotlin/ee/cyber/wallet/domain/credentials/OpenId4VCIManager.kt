@@ -36,7 +36,10 @@ class OpenId4VCIManager(
     private val httpClientFactory: KtorHttpClientFactory,
     private val authorizationStateDataSource: AuthorizationStateDataSource,
     private val issuerUrl: String,
-    cryptoProviderFactory: CryptoProvider.Factory
+    cryptoProviderFactory: CryptoProvider.Factory,
+    // Whether a stored document is bound to the key. Cleanup never deletes such a key: a state
+    // left over from a successful issuance names the key its credential still uses.
+    private val keyInUse: suspend (keyId: String) -> Boolean
 ) {
 
     private val remoteKeyManager = cryptoProviderFactory.forKeyType(KeyType.EC)
@@ -56,9 +59,20 @@ class OpenId4VCIManager(
     }
 
     suspend fun prepareAuthorizationRequest(): String {
+        // An issuance the user abandoned in the browser left a key behind; release it with its state.
+        authorizationStateDataSource.keyIds().forEach { releaseKey(it) }
         authorizationStateDataSource.clearAll()
 
         val key = remoteKeyManager.generateKey(KeyType.EC)
+        return try {
+            prepareWithKey(key.keyId)
+        } catch (e: Exception) {
+            withContext(NonCancellable) { releaseKey(key.keyId) }
+            throw e
+        }
+    }
+
+    private suspend fun prepareWithKey(keyId: String): String {
         val credentialIssuerId = CredentialIssuerId(issuerUrl).getOrThrow()
         val (issuerMetadata, authorizationServersMetadata) = httpClientFactory().use { client ->
             Issuer.metaData(client, credentialIssuerId)
@@ -74,14 +88,14 @@ class OpenId4VCIManager(
         )
 
         val issuer = Issuer.make(
-            config = createConfig(key.keyId),
+            config = createConfig(keyId),
             ktorHttpClientFactory = httpClientFactory,
             credentialOffer = credentialOffer
         ).getOrThrow()
 
         return issuer.prepareAuthorizationRequest().getOrThrow()
             .also {
-                authorizationStateDataSource.add(it.state, IssuanceAuthorizationState(it, key.keyId))
+                authorizationStateDataSource.add(it.state, IssuanceAuthorizationState(it, keyId)).getOrThrow()
             }.authorizationCodeURL.value.toString()
     }
 
@@ -93,18 +107,28 @@ class OpenId4VCIManager(
         val prepareAuthorizationCodeRequest = stateOrNull ?: throw IllegalStateException("Authorization request has not been prepared yet")
         val keyAttestation = remoteKeyManager.getKeyAttestation(prepareAuthorizationCodeRequest.keyId)
 
+        // The state is single-use whatever happens: a replayed redirect must find nothing, or
+        // its failure would release the key a stored credential is bound to.
         // A failed issuance leaves a key no credential will ever use. EC keys are WSCD slots, a
-        // bounded resource (EE-POA-011b), so give it back instead of orphaning it.
+        // bounded resource (EE-POA-011b), so give it back. Cancellation counts as failure on
+        // purpose: the authorization code is single-use, so the key can never be used again.
         return try {
             issueBound(state, code, prepareAuthorizationCodeRequest, keyAttestation)
         } catch (e: Exception) {
-            withContext(NonCancellable) {
-                runCatching { remoteKeyManager.deleteKey(keyAttestation.keyId) }
-                    .onFailure { logger.error("Could not delete key of failed issuance", it) }
-                authorizationStateDataSource.remove(state)
-            }
+            withContext(NonCancellable) { releaseKey(keyAttestation.keyId) }
             throw e
+        } finally {
+            withContext(NonCancellable) {
+                authorizationStateDataSource.remove(state)
+                    .onFailure { logger.warn("Could not remove authorization state", it) }
+            }
         }
+    }
+
+    /** Deletes a key no stored document is bound to; never throws. */
+    private suspend fun releaseKey(keyId: String) {
+        runCatching { if (!keyInUse(keyId)) remoteKeyManager.deleteKey(keyId) }
+            .onFailure { logger.error("Could not release key $keyId", it) }
     }
 
     private suspend fun issueBound(
