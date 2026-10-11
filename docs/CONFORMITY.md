@@ -2,7 +2,8 @@
 
 This file states where the wallet stands against
 [`EE-EUDIW-TS-1.0`](../spec/EE-EUDIW-TS-1.0.md)
-(content revision 1.5, ee-eudiw 9f5778a; the copy in `spec/` is that text byte for byte) as of
+(content revision 1.6, 12 October 2026, edited in this repository; revision 1.5 was the ee-eudiw
+9f5778a text byte for byte) as of
 `step6-issuance-consumption` (910ddc4) plus the branch this file lands on. It is the
 `EE-ZKP-003` conformity statement the specification requires a wallet's documentation to carry,
 plus the inventory `EE-ZKP-060` asks for and the build-provenance statement an assessor will ask
@@ -151,14 +152,14 @@ Consequences, stated plainly:
 |---|---|
 | `EE-ZKP-003` statement | Recorded above; reading (a) declared; conditional, not asserted |
 | `EE-ZKP-060` inventory | Recorded above; soundness and privacy exposure separated |
-| `ZKP_08` | Shortfall declared (109-bit v7 circuits, conditional reading (a)); pilot-grade. Soundness figure: **EE-ZKP-022a** — 109-bit computation soundness against the **125-bit ACM floor** (per spec rev 1.3) |
+| `ZKP_08` | Shortfall declared (109-bit v7 circuits, conditional reading (a)); pilot-grade. Soundness figure: **EE-ZKP-022a** — 109-bit computation soundness against the **125-bit ACM recommended level** (per spec rev 1.3) |
 | `EE-CNF-007` | Credential keys on the local native WSCD only; no `ZKP_07` claim |
 | Build provenance | Debug-derived only; §8.6 pending |
 | On-device evidence | None; PENDING-DEVICE items in `docs/planning/STEP5-RECORD.md` and `STEP6-RECORD.md` |
-| Device key attestation | Mock WP self-signed; **EE-SEC-004 is SHOULD** (spec:235) — no SHALL mandates attestation on the presentation path; challenge UUID unverified (`AttestationChallenge.kt:9-12`) |
+| Device key attestation | Mock WP self-signed; **EE-SEC-004 is SHOULD** (spec:243 in rev 1.6; 236 in rev 1.5) — no SHALL mandates attestation on the presentation path; challenge UUID unverified (`AttestationChallenge.kt:9-12`) |
 | issuerAuth on-device validation | E6 status: absent — mdoc credentials load with no issuerAuth chain check (SD-JWT path verifies); row updates when E6 lands |
 | iaca.crl | Removed (E7): expired 2025-05-20, never wired; revocation now fetches from chain distribution points (E4 soft-fail policy) |
-| EE-PRO-010a redirect flow | Documented deviation (B2): `RedirectUri` client-id prefix removed — JAR-signed requests (`x509_san_dns`/`x509_hash`) are the only accepted client identifiers |
+| EE-PRO-010a redirect flow | Documented deviation (B2): `RedirectUri` client-id prefix removed — JAR-signed requests (`x509_san_dns`/`x509_hash`) are the only accepted client identifiers. Note: EE-PRO-003 as of rev 1.5 no longer permits `x509_san_dns`; see the EE-PRO-003 row |
 | EE-PRO-003 client identifier prefix | **Not met in two respects.** (1) Spec rev 1.5 corrects EE-PRO-003 to HAIP 1.0 §5: `x509_hash` for every signed request. The wallet accepts it, and still also accepts `x509_san_dns` (`ClientIdPrefixPolicy.kt`), which the in-repo Go verifier defaults to (`verifier/go/main.go`, `-client-id`) and which pre-HAIP test verifiers used **[UNVERIFIED for verifier.eudiw.dev]**; dropping it is a one-line change. (2) The wallet does not check that `response_uri` matches a `dNSName` SAN of the access certificate, which rev 1.5 requires where the certificate profile carries one — conditional, open per spec §23 item 31 |
 | Status lists | EE-PoA mints none (EE-POA-013: consumed, not revoked; EE-POA-017); AV RP-side status fetch **deferred** — the Go verifier has no plain-mdoc path (all presentations route through ZK carriers that hide the status claim), so there is no post-Select hook to hang the fetch on; fold into the signed-DCAPI/EE-PRO-010a workstream when a plain path exists |
 | B5 `expected_origins` | Resolved as documented deviation, folded here (signed-DCAPI carrier deferred with EE-PRO-010a) |
@@ -172,6 +173,29 @@ Consequences, stated plainly:
 | EE-PRO-024 key binding | **Partially met.** The OpenID4VCI path (mDL) refuses `NoProofRequired` rather than store an unbound credential. Its authorization state is single-use, so a replayed redirect finds nothing; a failed or abandoned issuance releases its key, as does an mDL the user is shown and leaves without accepting; no key a stored attestation row names is ever released (checked in the database, not through the document mapper). Not met: PID issuance (gRPC) and the EE-PoA/AV mock issuers do not go through OpenID4VCI; no path checks that the issued credential's key (`cnf.jwk`, `deviceKeyInfo`) is the key the wallet proved; and the unbound SD-JWT VC label and the `require_cryptographic_holder_binding` check (`DcqlRequestProcessor`) are not implemented. Deferred issuance fails with a stated reason; both refusals show the user why |
 | EE-POA-011c refill timing | **Not met, no scheduler.** The mock provider issues a batch when the user asks; there is no low-water refill to defer. The requirement binds the first automatic refill |
 | EE-REV-006 status index | Not applicable: EE-PoA carries no status reference (EE-POA-017), and the mock PID/mDL issuers are upstream test fixtures |
+| Spec rev 1.6 rows | Added 12 October 2026. The code has not changed since rev 1.5; every status below is against the code as it stands |
+| EE-POA-013 last attestation (rev 1.6) | **Not met.** `EePoaConsumption.consumeAfterPresentation` never consumes the last attestation, but nothing prefers Tier 2 for it, shows the linkable-across-relying-parties notice, asks for approval, crosses the low-water mark or schedules a refill |
+| EE-POA-025 re-issuance 14 days before expiry | **Not met, no scheduler** (as EE-POA-011c) |
+| EE-POA-026 7-day `ValidityInfo` epoch | **Not met** in the mock issuer: `validFrom` is the issuance day at midnight UTC and `validUntil` the day plus the maximum validity (`CredentialIssuanceServiceMock`, `AgeVerificationProviderServiceMock`); binds the Provider |
+| EE-POA-027/028 predicate timing, incomplete dates of birth | Not applicable (binds the Provider). The mock reads a mock-user flag, not a date of birth; `sandbox/server.py` uses the host's local date. Neither applies Europe/Tallinn or the 29 February rule (spec §23 item 36) |
+| EE-POA-029 birthday refresh | Provider half met incidentally (mock `validUntil` is not birthday-derived). Wallet half **not met**: no scheduler |
+| EE-POA-030 one predicate per presentation | **Not met.** No check limits a presentation to one `age_over_NN` or treats a claim-less query as `age_over_18` only |
+| EE-POA-031 `false` predicates withheld | **Not met.** The mock 17-year-old user is issued `age_over_18 = false`; no code withholds it or answers "no matching credential" |
+| EE-POA-032 one Wallet Unit; delete on revocation | **Not met.** No previous-unit disclosure, no EE-PoA deletion on Wallet Unit revocation |
+| EE-POA-003 rules applied to `eu.europa.ec.av.1` | **Not met.** The AV attestation is issued as a single document, not a batch, and is not consumed (`AgeVerificationProviderServiceMock.issueEePoaBatch`) |
+| EE-POA-024 AV preference for every relying party | **Not met.** No credential-preference logic between the two doctypes |
+| EE-ZKP-045a budget does not override EE-ZKP-055 | Not applicable today: no proximity Tier 2 path and no recorded pair measurement. Binds the first proximity ZK code |
+| EE-ZKP-055a unauthenticated requests | **Not met.** `HolderObligations.refusePlainFallback` keys on the request (`proofRequested`), not on a registration certificate, and an unauthenticated request that asks for no proof gets the plain path |
+| EE-ZKP-062 relying-party clock | Not assessed: no wallet-side expiry gate was found on the presentation path; the RP-side check is the verifier's |
+| EE-PRO-025 `readerAuth` | **Partially met.** `DeviceRequestParser` checks the `readerAuth` signature and the consent screen shows the subject only on a pass; the chain is not validated to the Estonian ACA or a trusted list, and an unauthenticated `org-iso-mdoc` request is not labelled as such or refused |
+| EE-PRO-026 `request_uri` lifetime | Reference verifier: 3-minute default session TTL (`verifier/go/main.go`, `-session-ttl`). Single-use and the wallet's "not answered" notice not assessed |
+| EE-SEC-001 (rev 1.6) | Met for the default: local native only; the remote-HSM path is a mock and stays out of any certified deployment until EE-SEC-001's condition is met |
+| EE-WUA-007 no stable WUA identifier | Not assessed: the mock wallet provider's WIA/KA content was not reviewed against it |
+| EE-WUA-008 AVSUA-equivalent | **Not met.** No AV attestation provider integration |
+| EE-REV-002 (RP clause), EE-REV-007 | Not applicable (bind relying parties); the Go verifier fetches no status list today |
+| EE-PID-009, EE-ONB-011 | Not applicable (bind the PID Provider and the Rulebook) |
+| EE-PRO-023 (rev 1.6), EE-GOV-032 (rev 1.6) | Not applicable (bind issuers using pre-authorized offers, and TARA/GovSSO as relying parties) |
+| `[REC]` requirements (spec §0.1, Annex E) | Not applicable to the wallet by definition: recommendations to authorities |
 | Reference verifier response encryption | **Deviation, recorded.** The Go verifier encrypts `direct_post.jwt` with `ECDH-ES+A256KW`/A256GCM (`verifier/go/internal/jose/jwe.go`), and its JWK carries no `alg`. HAIP 1.0 and EE-PRO-001 name direct `ECDH-ES`, which is all the wallet accepts, so the Android redirect path cannot answer this verifier (its unsigned request objects were already refused). The Python holder and the e2e tests are unaffected. It also defaults its client identifier to `x509_san_dns:verifier.example.ee` (`main.go`, `-client-id`), which EE-PRO-003 rev 1.5 no longer permits |
 
 This note is updated when any row above changes. It is not pushed anywhere and asserts nothing
