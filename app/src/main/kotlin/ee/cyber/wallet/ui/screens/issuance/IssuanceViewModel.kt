@@ -7,6 +7,7 @@ import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.data.repository.DocumentRepository
+import ee.cyber.wallet.di.ApplicationScope
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.IssuanceRefused
 import ee.cyber.wallet.domain.credentials.CredentialType
@@ -26,6 +27,7 @@ import ee.cyber.wallet.ui.mvi.ViewSideEffect
 import ee.cyber.wallet.ui.mvi.ViewState
 import io.ktor.http.Url
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -59,8 +61,13 @@ class IssuanceViewModel @Inject constructor(
     private val ageVerificationProviderServiceMock: AgeVerificationProviderServiceMock,
     private val eePoaBatchIssuer: BatchAgeIssuer,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
-    private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar
+    private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar,
+    @ApplicationScope private val applicationScope: CoroutineScope
 ) : MviViewModel<Event, UiState, Effect>() {
+
+    // EE-POA-011b: the key of an mDL fetched over OpenID4VCI that the user leaves without
+    // accepting. Released when the screen goes away; cleared on accept.
+    private var unacceptedKeyId: String? = null
 
     private val logger = LoggerFactory.getLogger("IssuanceViewModel")
 
@@ -160,6 +167,7 @@ class IssuanceViewModel @Inject constructor(
             // issuance-configuration error, not a crash.
             val deepLink = requireNotNull(uri) { "Issuance deep link carried no data" }
             val credentialDocument = openId4VCIManager.getCredential(Url(deepLink))
+            unacceptedKeyId = credentialDocument.attestation.keyAttestation.keyId
             setState { copy(documents = listOf(credentialDocument)) }
         }.onFailure {
             if (it is CancellationException) throw it
@@ -180,6 +188,7 @@ class IssuanceViewModel @Inject constructor(
                 state.value.documents.forEach {
                     documentRepository.addDocument(it)
                 }
+                unacceptedKeyId = null
                 digitalCredentialsRegistrar.registerCredentials()
                 sendEffect { Effect.Complete }
             }
@@ -232,4 +241,10 @@ class IssuanceViewModel @Inject constructor(
     }
 
     private fun setLoading(loading: Boolean) = setState { copy(isLoading = loading) }
+
+    override fun onCleared() {
+        // The view model scope is gone by now; the release must outlive it.
+        unacceptedKeyId?.let { keyId -> applicationScope.launch { openId4VCIManager.releaseUnacceptedKey(keyId) } }
+        super.onCleared()
+    }
 }

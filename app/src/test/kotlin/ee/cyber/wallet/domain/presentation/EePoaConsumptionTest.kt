@@ -50,6 +50,9 @@ class EePoaConsumptionTest {
             rows.value = emptyList()
         }
 
+        override suspend fun isKeyInUse(keyId: String): Boolean =
+            rows.value.any { it.attestation.keyAttestationId == keyId }
+
         fun add(id: String, keyId: String, type: CredentialType) {
             rows.value = rows.value + AttestationAttestationKey(
                 AttestationEntity(id = id, credential = "{}", type = type, keyAttestationId = keyId),

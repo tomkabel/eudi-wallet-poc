@@ -62,6 +62,7 @@ class OpenId4VCIManager(
         // An issuance the user abandoned in the browser left a key behind; release it with its state.
         authorizationStateDataSource.keyIds().forEach { releaseKey(it) }
         authorizationStateDataSource.clearAll()
+            .onFailure { logger.warn("Could not clear authorization states", it) }
 
         val key = remoteKeyManager.generateKey(KeyType.EC)
         return try {
@@ -105,7 +106,7 @@ class OpenId4VCIManager(
 
         val stateOrNull = authorizationStateDataSource.get(state).getOrNull()
         val prepareAuthorizationCodeRequest = stateOrNull ?: throw IllegalStateException("Authorization request has not been prepared yet")
-        val keyAttestation = remoteKeyManager.getKeyAttestation(prepareAuthorizationCodeRequest.keyId)
+        val keyId = prepareAuthorizationCodeRequest.keyId
 
         // The state is single-use whatever happens: a replayed redirect must find nothing, or
         // its failure would release the key a stored credential is bound to.
@@ -113,9 +114,9 @@ class OpenId4VCIManager(
         // bounded resource (EE-POA-011b), so give it back. Cancellation counts as failure on
         // purpose: the authorization code is single-use, so the key can never be used again.
         return try {
-            issueBound(state, code, prepareAuthorizationCodeRequest, keyAttestation)
+            issueBound(state, code, prepareAuthorizationCodeRequest, remoteKeyManager.getKeyAttestation(keyId))
         } catch (e: Exception) {
-            withContext(NonCancellable) { releaseKey(keyAttestation.keyId) }
+            withContext(NonCancellable) { releaseKey(keyId) }
             throw e
         } finally {
             withContext(NonCancellable) {
@@ -124,6 +125,12 @@ class OpenId4VCIManager(
             }
         }
     }
+
+    /**
+     * Releases the key of a credential the user was shown but did not accept: it is in no saved
+     * state any more and no stored document names it, so nothing else would ever free its slot.
+     */
+    suspend fun releaseUnacceptedKey(keyId: String) = releaseKey(keyId)
 
     /** Deletes a key no stored document is bound to; never throws. */
     private suspend fun releaseKey(keyId: String) {

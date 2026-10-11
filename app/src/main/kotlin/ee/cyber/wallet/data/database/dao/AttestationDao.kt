@@ -28,6 +28,13 @@ interface AttestationDao {
     @Query("DELETE FROM $TABLE_ATTESTATION WHERE ${AttestationFields.ID} = :id")
     suspend fun deleteById(id: String)
 
+    /**
+     * Whether any stored attestation row is bound to the key. Reads the raw column, so a row the
+     * document mapper can no longer decode still counts, and nothing is parsed or fetched.
+     */
+    @Query("SELECT EXISTS(SELECT 1 FROM $TABLE_ATTESTATION WHERE ${AttestationFields.KEY_ATTESTATION} = :keyId)")
+    suspend fun isKeyInUse(keyId: String): Boolean
+
     @Query("DELETE FROM $TABLE_ATTESTATION")
     suspend fun deleteAll()
 }

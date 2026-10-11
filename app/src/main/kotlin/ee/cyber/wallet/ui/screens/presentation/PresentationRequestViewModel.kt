@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.data.repository.TransactionLogRepository
+import ee.cyber.wallet.di.ApplicationScope
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
@@ -33,6 +34,7 @@ import eu.europa.ec.eudi.openid4vp.ResolvedRequestObject
 import eu.europa.ec.eudi.openid4vp.dcql.metaMsoMdoc
 import eu.europa.ec.eudi.openid4vp.dcql.metaSdJwtVc
 import eu.europa.ec.eudi.openid4vp.legalName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -135,7 +137,8 @@ class PresentationRequestViewModel @Inject constructor(
     private val transactionLogRepository: TransactionLogRepository,
     private val dcqlRequestProcessor: DcqlRequestProcessor,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
-    private val eePoaConsumption: EePoaConsumption
+    private val eePoaConsumption: EePoaConsumption,
+    @ApplicationScope private val applicationScope: CoroutineScope
 ) : MviViewModel<Event, UiState, Effect>() {
 
     private val log = LoggerFactory.getLogger("PresentationRequestViewModel")
@@ -384,7 +387,8 @@ class PresentationRequestViewModel @Inject constructor(
      * value for "unknown", and filing it under a real type would misname what was asked for.
      *
      * The verifier is then sent a negative answer in the background, so a slow or dead
-     * `response_uri` — likely, for a misconfigured verifier — cannot hold the spinner.
+     * `response_uri` — likely, for a misconfigured verifier — cannot hold the spinner. It runs in
+     * the application scope: the error closes this screen, which would cancel the view model's.
      */
     private suspend fun refuseRequest(requestObject: ResolvedRequestObject.OpenId4VPAuthorization, error: AppError) {
         val verifier = requestObject.verifierName().toString()
@@ -392,7 +396,7 @@ class PresentationRequestViewModel @Inject constructor(
         requestObject.requestedDocTypes().forEach { docType ->
             transactionLogRepository.addTransactionLog(party = verifier, docType = docType, error = error)
         }
-        viewModelScope.launch { openId4VPManager.refuse(requestObject) }
+        applicationScope.launch { openId4VPManager.refuse(requestObject) }
     }
 
     private fun ResolvedRequestObject.OpenId4VPAuthorization.requestedDocTypes(): List<DocType> =
