@@ -82,6 +82,8 @@
     <string name="presentation_close_and_try_again">Close and try again.</string>
     <string name="presentation_verified_party">Verified party</string>
     <string name="presentation_requests_following_data_to">Requests the following information:</string>
+    <string name="presentation_channel_scanned_notice">Cross-device request: you scanned this code from another screen, and nothing checks that the screen is near you. Share only if you started this yourself, just now, at %1$s.</string>
+    <string name="presentation_channel_link_notice">Opened from a link, not from this app\'s scanner. If your camera scanned the link off another screen, share only if you started this yourself at %1$s.</string>
     <string name="presentation_footer_note">Review carefully what data you are going to share with the %1$s!</string>
     <string name="presentation_image_stub">[Image]</string>
     <string name="presentation_zk_notice_proof_requested">This party asked for a zero-knowledge proof, but this presentation cannot use one. The issuer of your document can therefore link this presentation to you.</string>

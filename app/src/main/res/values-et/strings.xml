@@ -82,6 +82,8 @@
     <string name="presentation_close_and_try_again">Sulge ja proovi uuesti.</string>
     <string name="presentation_verified_party">Autenditud osapool</string>
     <string name="presentation_requests_following_data_to">Küsib järgnevaid andmeid:</string>
+    <string name="presentation_channel_scanned_notice">Teise seadme päring: skannisid koodi teiselt ekraanilt ja miski ei kontrolli, et see ekraan on sinu lähedal. Jaga andmeid ainult siis, kui alustasid seda ise ja just praegu teenuses %1$s.</string>
+    <string name="presentation_channel_link_notice">Avatud lingilt, mitte selle rakenduse skannerist. Kui kaamera skannis lingi teiselt ekraanilt, jaga andmeid ainult siis, kui alustasid seda ise teenuses %1$s.</string>
     <string name="presentation_footer_note">Kontrolli tähelepanelikult üle andmed, mida esitad %1$s!</string>
     <string name="presentation_image_stub">[Image]</string>
     <string name="presentation_zk_notice_proof_requested">See osapool küsis nullteadmise tõendit, kuid see esitus ei saa seda kasutada. Seetõttu saab dokumendi väljaandja selle esituse sinuga siduda.</string>

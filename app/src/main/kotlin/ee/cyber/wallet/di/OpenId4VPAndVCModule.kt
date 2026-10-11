@@ -1,8 +1,6 @@
 package ee.cyber.wallet.di
 
 import android.content.Context
-import com.nimbusds.jose.EncryptionMethod
-import com.nimbusds.jose.JWEAlgorithm
 import com.nimbusds.jose.JWSAlgorithm
 import dagger.Module
 import dagger.Provides
@@ -16,6 +14,7 @@ import ee.cyber.wallet.data.datastore.AuthorizationStateDataSource
 import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
+import ee.cyber.wallet.domain.presentation.HaipResponsePolicy
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.security.CertificateChainValidator
 import ee.cyber.wallet.security.FetchLOTLCertificatesDSS
@@ -68,17 +67,17 @@ object OpenId4VPAndVCModule {
             supportedClientIdPrefixes = verifiableClientIdPrefixes(
                 simpleCertificateChainValidator(context.getCertificates(R.raw.trusted))
             ),
+            // EE-PRO-001 (HAIP 1.0): access certificates are EC, so request objects are
+            // ES-signed; RSA and RSA-PSS have no Estonian access certificate to verify against.
             jarConfiguration = JarConfiguration(
-                supportedAlgorithms = listOf(
-                    JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512,
-                    JWSAlgorithm.RS256, JWSAlgorithm.RS384, JWSAlgorithm.RS512,
-                    JWSAlgorithm.PS256, JWSAlgorithm.PS384, JWSAlgorithm.PS512
-                ),
+                supportedAlgorithms = listOf(JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512),
                 supportedRequestUriMethods = SupportedRequestUriMethods.Default
             ),
+            // Advertised and enforced from the same lists: HaipResponsePolicy refuses any request
+            // the library would otherwise answer unencrypted.
             responseEncryptionConfiguration = ResponseEncryptionConfiguration.Supported(
-                supportedAlgorithms = listOf(JWEAlgorithm.ECDH_ES),
-                supportedMethods = listOf(EncryptionMethod.A128CBC_HS256, EncryptionMethod.A256GCM, EncryptionMethod.A128GCM)
+                supportedAlgorithms = HaipResponsePolicy.encryptionAlgorithms,
+                supportedMethods = HaipResponsePolicy.encryptionMethods
             ),
             vpConfiguration = VPConfiguration(
                 vpFormatsSupported = VpFormatsSupported(

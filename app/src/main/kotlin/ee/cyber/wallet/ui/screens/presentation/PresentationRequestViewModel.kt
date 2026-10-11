@@ -15,6 +15,7 @@ import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.documents.DocumentField
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
+import ee.cyber.wallet.domain.presentation.HaipResponsePolicy
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
@@ -55,6 +56,9 @@ data class Success(val redirectUri: URI? = null) : Parcelable
 data class UiState(
     val isLoading: Boolean = false,
     val verifier: String = "",
+    // EE-PRO-010/010a: true when the request came from the wallet's own QR scanner, i.e. a
+    // redirect-flow cross-device request that nothing proves was started near this phone.
+    val scanned: Boolean = false,
     val success: Success? = null,
     val shareDisabled: Boolean = false,
     val credentials: List<Credential> = listOf()
@@ -306,6 +310,14 @@ class PresentationRequestViewModel @Inject constructor(
     private suspend fun handleRequestObject(requestObject: ResolvedRequestObject) {
         when (requestObject) {
             is ResolvedRequestObject.OpenId4VPAuthorization -> {
+                // EE-PRO-001: refuse before matching, so a verifier asking for a cleartext
+                // response never sees a consent screen, let alone documents.
+                HaipResponsePolicy.refusal(requestObject.responseMode, requestObject.responseEncryptionSpecification)?.let { reason ->
+                    log.error("Refusing request: $reason")
+                    logTransaction(error = AppError.PRESENTATION_UNSUPPORTED_REQUEST_ERROR)
+                    showError(Error.UnsupportedRequestType)
+                    return
+                }
                 resolvedRequest.value = requestObject
 
                 val dcqlQuery = requestObject.query
@@ -330,6 +342,7 @@ class PresentationRequestViewModel @Inject constructor(
                 setState {
                     copy(
                         verifier = requestObject.verifierName().toString(),
+                        scanned = intent == null,
                         credentials = credentials
                     )
                 }

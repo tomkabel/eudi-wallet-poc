@@ -116,7 +116,12 @@ class OpenId4VCIManager(
 
             credentialOffer.credentialConfigurationIdentifiers.first().let { credentialIdentifier ->
                 val outcome = when (authorizedRequest) {
-                    is AuthorizedRequest.NoProofRequired -> submitProvidingNoProofs(issuer, authorizedRequest, credentialIdentifier, keyAttestation.keyId)
+                    // EE-PRO-024: a credential issued without a proof of possession is bound to no
+                    // key this wallet holds — a bearer credential anyone holding a copy can
+                    // present. The document would still be stored against keyAttestation, so the
+                    // wallet would claim a binding that does not exist. Refuse instead.
+                    is AuthorizedRequest.NoProofRequired ->
+                        throw IllegalStateException("Issuer requires no proof of possession; refusing an unbound credential")
                     is AuthorizedRequest.ProofRequired -> submitProvidingProofs(issuer, authorizedRequest, credentialIdentifier, keyAttestation.keyId)
                 }
                 val attestation = Attestation(
@@ -126,28 +131,6 @@ class OpenId4VCIManager(
                     keyAttestation = keyAttestation
                 )
                 credentialToDocumentMapper.convert(attestation)!!
-            }
-        }
-    }
-
-    private suspend fun submitProvidingNoProofs(
-        issuer: Issuer,
-        authorized: AuthorizedRequest.NoProofRequired,
-        credentialConfigurationId: CredentialConfigurationIdentifier,
-        keyId: String
-    ): String {
-        with(issuer) {
-            val requestPayload = IssuanceRequestPayload.ConfigurationBased(credentialConfigurationId, null)
-            val (newAuthorized, outcome) = authorized.request(requestPayload).getOrThrow()
-
-            return when (outcome) {
-                is SubmissionOutcome.Success -> outcome.credentials[0].credential.toString() // TODO: handle multiple credentials
-                is SubmissionOutcome.Failed -> throw if (outcome.error is CredentialIssuanceError.InvalidProof) {
-                    IllegalStateException("Although providing a proof with c_nonce the proof is still invalid")
-                } else {
-                    outcome.error
-                }
-                is SubmissionOutcome.Deferred -> TODO()
             }
         }
     }
@@ -169,7 +152,9 @@ class OpenId4VCIManager(
                 } else {
                     outcome.error
                 }
-                is SubmissionOutcome.Deferred -> TODO()
+                // Deferred issuance is not implemented; fail with a reason instead of TODO()'s
+                // NotImplementedError crashing the issuance coroutine.
+                is SubmissionOutcome.Deferred -> throw IllegalStateException("Deferred credential issuance is not supported")
             }
         }
     }
