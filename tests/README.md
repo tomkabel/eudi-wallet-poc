@@ -7,8 +7,8 @@ Every test and check in this repository, where it lives, and what it proves.
 Unit tests sit beside the code they test — Go under `verifier/go/`, the
 cross-language transcript check in `wallet/`. This directory holds only the
 end-to-end and load harnesses. Do not move or rename anything here: ci.yml
-invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh` and
-`tests/*.sh`.
+invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
+`tests/*.sh`, `tools/*.sh` and `demo/*.sh`.
 
 ## Unit tests beside the code
 
@@ -92,13 +92,14 @@ unlisted-circuit POST case; unlisted-circuit rejection is covered only by
 `fast` (no Rust toolchain): `gofmt -l .` in `verifier/go` (output is the
 signal — `gofmt -l` exits 0 either way), `go vet ./...` (type-checks the cgo
 package without linking, covering every package), `go test ./oid4vp/...
-./internal/... ./circuits/...`,
+./internal/... ./circuits/...` with `-race`,
 `python3 -m compileall -q issuer verifier wallet tests`, `ruff check
---isolated --select F,E9 --exclude eudi-arf .` (ruff 0.16.6),
+--isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .` (ruff 0.16.6),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
-step installs `cbor2` and `cryptography`, which `present.py` imports),
-and `shellcheck --severity=warning scripts/*.sh tests/*.sh`. `make lint`
-runs the same set.
+step installs the pinned `tests/requirements-ci.txt`, since `present.py` imports
+`cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`, and
+`shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh`.
+`make check` runs the same set.
 
 `e2e` (needs a Rust toolchain): checks out `google/longfellow-zk` as a sibling
 of this repository at the revision committed in `verifier/zkverify-ffi/longfellow-rev.txt`
@@ -106,8 +107,8 @@ of this repository at the revision committed in `verifier/zkverify-ffi/longfello
 builds the prover examples with `RUSTFLAGS=-C target-cpu=x86-64-v3` and asserts
 `ee_poa_demo` exists (`test -x`), builds the verifier
 (`cargo build --release` in `verifier/zkverify-ffi`, then
-`go build -o ../zkverify .`), runs `go test . ./zk/...`, then `pip install cbor2
-cryptography` and `tests/e2e.sh` with `EE_PROVER` set. The `zk` and package
+`go build -o ../zkverify .`), runs `go test -race . ./zk/...`, then `pip install -r
+tests/requirements-ci.txt` and `tests/e2e.sh` with `EE_PROVER` set. The `zk` and package
 `main` tests are here and not in `fast` because package `zk` links the Rust
 staticlib through cgo and `main` imports it — neither test binary can be linked
 without the Rust build. Between the two jobs
@@ -115,35 +116,21 @@ each package is tested exactly once.
 
 ## Running the checks locally
 
-The `fast` job, from the repository root:
+From the repository root. The `fast` job:
 
 ```bash
-cd verifier/go
-gofmt -l .
-go vet ./...
-go test ./oid4vp/... ./internal/... ./circuits/...
-cd ../..
-python3 -m compileall -q issuer verifier wallet tests
-pip install ruff==0.16.6
-ruff check --isolated --select F,E9 --exclude eudi-arf .
-pip install cbor2 cryptography          # present.py imports them
-python3 wallet/test_transcript.py
-shellcheck --severity=warning scripts/*.sh tests/*.sh
+pip install ruff==0.16.6 -r tests/requirements-ci.txt   # pinned as in ci.yml
+make check          # make lint + make test-go-fast + make test-py
 ```
 
-The `e2e` job — `longfellow-zk` checked out as a sibling at the revision committed in
-`verifier/zkverify-ffi/longfellow-rev.txt`:
+The `e2e` job — `make deps` checks out `longfellow-zk` as a sibling at the revision
+committed in `verifier/zkverify-ffi/longfellow-rev.txt` and builds the prover and the
+verifier (expanded form: `docs/DEVELOPMENT.md` "Build both"):
 
 ```bash
-export RUSTFLAGS=-C target-cpu=x86-64-v3   # ci.yml sets this on the prover build step
-mkdir -p ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples
-cp zk-age-poc/*.rs ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples/
-(cd ../longfellow-zk/rust/applications/mdoc_zk/runtime && cargo build --release --examples --features testonly)
-(cd verifier/zkverify-ffi && cargo build --release)
-(cd verifier/go && go build -o ../zkverify .)
-(cd verifier/go && go test . ./zk/...)
-pip install cbor2 cryptography
-EE_PROVER=../longfellow-zk/rust/target/release/examples/ee_poa_demo tests/e2e.sh
+make deps
+make test-go-zk     # go test -race . ./zk/..., with EE_BENCH_SKIP=1 as in CI
+make e2e            # tests/e2e.sh against the built prover and verifier
 ```
 
 By hand, not in CI:

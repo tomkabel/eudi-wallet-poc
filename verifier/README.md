@@ -31,7 +31,7 @@ make deps          # from the repository root; ~1 min for the staticlib, more fo
 make test-go-fast  # the go tests that do not link the staticlib
 make test-go-zk    # the ones that do (~2 min); needs make deps first, and says so if it is missing
 make e2e           # tests/e2e.sh against the built prover and verifier
-make lint          # gofmt, go vet, ruff, shellcheck — the CI fast job
+make check         # the CI fast job: make lint (gofmt, go vet, ruff, shellcheck) + test-go-fast + test-py
 ```
 
 `zkverify -version` prints the longfellow-zk revision the linked runtime was built

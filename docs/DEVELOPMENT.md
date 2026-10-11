@@ -22,10 +22,10 @@ checkout; `verifier/` is `zkverify`, a Go HTTP server over a Rust staticlib in
 
 ## Prerequisites
 
-- **Python 3.12** — the version CI pins in both jobs. The scripts need `cbor2` and
-  `cryptography` (`pip install cbor2 cryptography`); the lint check uses
-  `pip install ruff==0.16.6`. There is **no requirements file and no Makefile in this
-  repository** — those plain installs in `.github/workflows/ci.yml` are the whole story.
+- **Python 3.12** — the version CI pins in both jobs. Install the scripts' dependencies
+  with `pip install -r tests/requirements-ci.txt`, the exact versions CI uses: the
+  transcript vectors are golden, and a different `cbor2` can shift the bytes they pin.
+  The lint check uses `pip install ruff==0.16.6`.
 - **Go at the version in [`../verifier/go/go.mod`](../verifier/go/go.mod)** (currently
   `go 1.26`); CI reads it from that file. The module has no third-party dependencies and
   no `go.sum`. Its `zk` package is cgo linking a Rust staticlib, so the build also needs a C
@@ -76,29 +76,24 @@ own `.cargo/config.toml`, so the verifier build needs no `RUSTFLAGS`.
 ## Running the checks locally
 
 `.github/workflows/ci.yml` is the definition of green. The `fast` job needs no Rust
-toolchain and runs in seconds:
+toolchain and runs in seconds; `make check` runs the same set (`make lint`,
+`make test-go-fast`, `make test-py`):
 
 ```bash
-(cd verifier/go && test -z "$(gofmt -l .)" && go vet ./... && go test ./oid4vp/... ./internal/... ./circuits/...)
-python3 -m compileall -q issuer verifier wallet tests
-pip install ruff==0.16.6 cbor2 cryptography   # ruff pinned as in ci.yml
-ruff check --isolated --select F,E9 --exclude eudi-arf .
-python3 wallet/test_transcript.py             # the Python half of the transcript pin
-python3 issuer/test_mint_device_key.py
-shellcheck --severity=warning scripts/*.sh tests/*.sh
+pip install ruff==0.16.6 -r tests/requirements-ci.txt   # pinned as in ci.yml
+make check
 ```
 
-`make lint` runs the same set.
-
 The `e2e` job runs "Build both" above, then the packages that link the staticlib and the
-end-to-end script:
+end-to-end script — `make test-go-zk` and `make e2e`, or by hand:
 
 ```bash
-(cd verifier/go && EE_BENCH_SKIP=1 go test . ./zk/...)
+(cd verifier/go && EE_BENCH_SKIP=1 go test -race . ./zk/...)
 EE_PROVER="$PWD/../longfellow-zk/rust/target/release/examples/ee_poa_demo" tests/e2e.sh
 ```
 
-`EE_BENCH_SKIP=1` skips the step 8 percentile run, a host measurement rather than a check.
+`EE_BENCH_SKIP=1` skips the step 8 percentile run, a host measurement rather than a check;
+`make test-go-zk` sets it unless you pass `EE_BENCH_SKIP=` to run the measurement.
 `shellcheck` globs `tests/*.sh` and CI invokes `tests/e2e.sh` by path, so keep both where
 they are.
 

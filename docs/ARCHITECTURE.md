@@ -7,7 +7,8 @@ that date. Where a README and the code disagree, this document notes the disagre
 rather than resolving it silently; each claim names the file it was read from.
 
 > **Imported from ee-eudiw at `e368fc1`.** This describes that repository. Its `README.md`,
-> `AGENTS.md` and `.gitmodules` citations are ee-eudiw's files, and `ui-mock-bilt-me` was not
+> `AGENTS.md` and `.gitmodules` citations are ee-eudiw's files (this repository's own
+> `AGENTS.md` is a different file, and its line numbers do not match), and `ui-mock-bilt-me` was not
 > imported. The Android holder that §"The Android holder, outside this tree" places in a
 > separate fork is `app/` in this repository. The verifier's Go module is now
 > `github.com/tomkabel/eudi-wallet-poc/verifier/go`.

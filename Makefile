@@ -1,4 +1,4 @@
-.PHONY: deps lint test-go-fast test-go-zk e2e sandbox
+.PHONY: deps lint test-go-fast test-go-zk test-py check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -27,12 +27,26 @@ lint:
 	cd verifier/go && unformatted="$$(gofmt -l .)" && if [ -n "$$unformatted" ]; then \
 		echo "not gofmt-clean:"; echo "$$unformatted"; exit 1; fi
 	cd verifier/go && go vet ./...
-	ruff check --isolated --select F,E9 --exclude eudi-arf .
+	python3 -m compileall -q issuer verifier wallet tests
+	ruff check --isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .
 	shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
 
+# -race as in CI: these tests assert concurrency behaviour (session sweeps,
+# the reads limiter) that only the race detector exercises.
 test-go-fast:
-	cd verifier/go && go test ./oid4vp/... ./internal/... ./circuits/...
+	cd verifier/go && go test -race ./oid4vp/... ./internal/... ./circuits/...
 
+# The Python half of the transcript pin and the mint's device-key path. Install
+# tests/requirements-ci.txt, not whatever PyPI serves: the vectors are golden.
+test-py:
+	python3 wallet/test_transcript.py
+	python3 issuer/test_mint_device_key.py
+
+# CI's fast job: no Rust toolchain needed.
+check: lint test-go-fast test-py
+
+# EE_BENCH_SKIP=1 as in CI: the step 8 percentile run is a host measurement,
+# not a check. `EE_BENCH_SKIP= make test-go-zk` runs it.
 test-go-zk:
 	@if [ ! -f verifier/zkverify-ffi/target/release/libzkverify.a ]; then \
 		echo "make test-go-zk: verifier/zkverify-ffi/target/release/libzkverify.a is missing —" >&2; \
@@ -41,7 +55,7 @@ test-go-zk:
 		echo "    make deps" >&2; \
 		exit 1; \
 	fi
-	cd verifier/go && go test . ./zk/...
+	cd verifier/go && EE_BENCH_SKIP=$${EE_BENCH_SKIP-1} go test -race . ./zk/...
 
 e2e: deps
 	@python3 -c 'import cbor2, cryptography, jwcrypto' 2>/dev/null || { \

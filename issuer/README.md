@@ -5,7 +5,7 @@ generated here, so the ZK demo runs end to end on **our own attestation** rather
 Google's mDL test vector.
 
 ```bash
-pip install cbor2 cryptography
+pip install -r ../tests/requirements-ci.txt   # pinned cbor2, cryptography
 python3 mint_ee_poa.py --out out
 ```
 

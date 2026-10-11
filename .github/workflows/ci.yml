@@ -112,9 +112,11 @@ jobs:
         # The submodule is a separate project with its own lint setup, and a
         # developer tree has it checked out even where CI leaves it empty.
         # Keep our linter out of them, or `ruff check .` flags their code.
+        # The same goes for vendored agent tooling (_bmad, .agents, .claude),
+        # which CI never checks out untracked but a developer tree carries.
         run: |
           pip install ruff==0.16.6
-          ruff check --isolated --select F,E9 --exclude eudi-arf .
+          ruff check --isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .
 
       - name: the wallet's half of the transcript pin
         # The Go half of these golden vectors runs in the step above; this is the
