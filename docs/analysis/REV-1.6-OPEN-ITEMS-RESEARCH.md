@@ -39,7 +39,7 @@ Replace EE-POA-027's 1 March with **28 February at 00:00 Europe/Tallinn**, citin
 - **1 March** is under-inclusive. A person who is 18 under the only published Estonian reading is refused for one day in three years out of four. The predicate never says "18" too early, but the spec cannot cite a source for it.
 - **28 February** follows the statute. A relying party that accepts the predicate on 28 February is accepting someone Estonian civil law treats as 18.
 
-The 28 February change is the maintainer's call. A written opinion from Justiits- ja Digiministeerium (which handles legal-language and civil-code questions) would move it from analogy to authority, if certainty is wanted before a production Provider exists.
+The maintainer confirmed 28 February on 12 October 2026; revision 1.7 adopts it. A written opinion from Justiits- ja Digiministeerium (which handles legal-language and civil-code questions) would move it from analogy to authority, if certainty is wanted before a production Provider exists.
 
 ## 2. The eighteen rev 1.6 requirements: external anchors
 
@@ -73,7 +73,7 @@ None of the "not met" rows depends on an unresolved external question. Each is a
 5. **EE-POA-026, EE-POA-027/028** (mock issuer). Floor `validFrom`/`validUntil` to the 7-day epoch, compute predicates from a date of birth in Europe/Tallinn with the chosen 29 February rule. These bind the Provider; in this repository they only make the fixtures honest.
 6. **EE-PRO-025, EE-WUA-008, EE-POA-032** need trust infrastructure (Estonian ACA, AV provider, Wallet Unit revocation) that does not exist here yet, so they stay "not met" by design.
 
-## 3. Suggested spec edits (not made)
+## 3. Spec edits (made in revision 1.7)
 
 - EE-POA-027: 1 March → 28 February; rewrite the *Why* paragraph around § 136(4) and Jurist Aitab; narrow §23 item 36.
 - §22: add EE-POA-030 and EE-POA-031 as divergences from ISO/IEC 18013-5 §7.2.5.
