@@ -20,6 +20,8 @@ import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy.error
 import ee.cyber.wallet.domain.presentation.CredentialClaim
 import ee.cyber.wallet.domain.presentation.DcApiRequestDispatch
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
@@ -30,6 +32,7 @@ import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.presentation.ProtocolRefusal
 import ee.cyber.wallet.domain.presentation.ZkPresentation
 import ee.cyber.wallet.domain.presentation.ZkPresentationReason
+import ee.cyber.wallet.domain.presentation.ZkCapability
 import ee.cyber.wallet.domain.presentation.ZkPresenter
 import ee.cyber.wallet.domain.presentation.mergeZkSpecs
 import ee.cyber.wallet.domain.presentation.resolveSchemeId
@@ -107,16 +110,8 @@ class DigitalCredentialsViewModel @Inject constructor(
     // implementation wraps the same lazy prover as before; the scheme id travels in the proof.
     private val zkPresenter: ZkPresenter by lazy { LongfellowZkPresenter(zkSystem) }
 
-    // Null when this device cannot prove at all. Loading the prover pulls in libzkp.so, which is
-    // only packaged for arm64-v8a and x86_64, so ask once here rather than discovering it as an
-    // UnsatisfiedLinkError in the middle of building a response.
-    // ponytail: holds all bundled circuits (~2 MB) once a ZK request arrives; load only the
-    // requested one via addCircuit() if that footprint ever matters.
-    private val zkSystem: LongfellowZkSystem? by lazy {
-        runCatching { LongfellowZkSystem().apply { addDefaultCircuits() } }
-            .onFailure { logger.warn("Longfellow prover unavailable on this device", it) }
-            .getOrNull()
-    }
+    // Null when this device cannot prove at all (ZkCapability).
+    private val zkSystem: LongfellowZkSystem? get() = ZkCapability.zkSystem
 
     override fun initialState(): DcUiState = DcUiState()
 
@@ -210,6 +205,10 @@ class DigitalCredentialsViewModel @Inject constructor(
                 // the chain even on a failed check, so an ungated CN is attacker-chosen. Trust
                 // validation of a passing chain stays §8.3 scope.
                 val readerSubject = readerAuthSubject(docRequests)
+                // EE-PRO-025 / EE-ZKP-055a: authenticated only when readerAuth both verified and
+                // chained to a trusted access CA. No anchors are configured on this path yet, so
+                // every DC API request counts as unauthenticated: the least-trusted case.
+                val authenticated = docRequests.any { it.readerAuthenticated && it.readerChainTrusted }
 
                 val presentationDefinition = toPresentationDefinition(docRequests)
 
@@ -225,7 +224,8 @@ class DigitalCredentialsViewModel @Inject constructor(
                     // is presented. A repeated docType keeps its first doc request's specs only;
                     // the DCQL carrier's specs fill the docTypes whose ISO zkRequest is absent.
                     effectiveSpecsByDocType,
-                    readerSubject
+                    readerSubject,
+                    authenticated
                 )
             } catch (e: CancellationException) {
                 throw e
@@ -238,13 +238,14 @@ class DigitalCredentialsViewModel @Inject constructor(
         }
     }
 
-    private fun handleMatchResult(
+    private suspend fun handleMatchResult(
         documentMatches: Pair<List<CredentialClaim>, Match>,
         origin: String,
         sessionTranscript: ListElement,
         recipientPublicKey: EcPublicKey,
         zkSystemSpecs: Map<String, List<ZkSystemSpec>>,
-        readerSubject: String?
+        readerSubject: String?,
+        authenticated: Boolean
     ) {
         when (val match = documentMatches.second) {
             is Match.NotMatched -> {
@@ -286,30 +287,51 @@ class DigitalCredentialsViewModel @Inject constructor(
 
                 if (credentials.isEmpty()) {
                     sendEffect { DcEffect.NoMatch }
-                } else {
-                    setState {
-                        copy(
-                            verifier = origin,
-                            // EE-RP-003 (4d): show the readerAuth certificate subject when the
-                            // reader authenticated the request; the origin alone stays otherwise.
-                            readerSubject = readerSubject,
-                            credentials = credentials,
-                            sessionTranscript = sessionTranscript,
-                            recipientPublicKey = recipientPublicKey,
-                            zkSystemSpecs = zkSystemSpecs,
-                            expectedPlainTier = expectedPlainTier(zkSystemSpecs, credentials),
-                            // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's
-                            // certificate chain (msoX5chain) into every ZkDocument, so the
-                            // verifier sees which issuer stands behind the attestation. The
-                            // consent screen says so before the user shares — for a matched
-                            // credential whose own docType resolved specs, as expectedPlainTier
-                            // is scoped, not for a request that merely named mso_mdoc_zk.
-                            issuerDisclosesToVerifier = credentials.any {
-                                zkSystemSpecs[it.credentialType.docType().uri].orEmpty().isNotEmpty()
-                            }
-                        )
-                    }
+                    return
                 }
+                // EE-POA-030/031: refuse before consent. A predicate held false ends like a
+                // request with no matching credential: the activity closes as RESULT_CANCELED.
+                val predicateDecision = AgePredicatePolicy.decideAll(
+                    credentials.map { it.credentialType to it.fields + it.optionalFields }
+                )
+                predicateDecision.error()?.let { error ->
+                    logger.warn("Age predicate rule refused the request: {}", predicateDecision)
+                    refuseBeforeConsent(origin, credentials.first { AgePredicatePolicy.isAgeAttestation(it.credentialType) }.credentialType.docType(), error)
+                    return
+                }
+                val lastAgeAttestation = credentials.any {
+                    AgePredicatePolicy.isAgeAttestation(it.credentialType) && eePoaConsumption.remaining(it.credentialType) <= 1
+                }
+                setState {
+                    copy(
+                        verifier = origin,
+                        requestAuthenticated = authenticated,
+                        lastAgeAttestation = lastAgeAttestation,
+                        // EE-RP-003 (4d): show the readerAuth certificate subject when the
+                        // reader authenticated the request; the origin alone stays otherwise.
+                        readerSubject = readerSubject,
+                        credentials = credentials,
+                        sessionTranscript = sessionTranscript,
+                        recipientPublicKey = recipientPublicKey,
+                        zkSystemSpecs = zkSystemSpecs,
+                        expectedPlainTier = expectedPlainTier(zkSystemSpecs, credentials),
+                        // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's
+                        // certificate chain (msoX5chain) into every ZkDocument, so the
+                        // verifier sees which issuer stands behind the attestation. The
+                        // consent screen says so before the user shares — for a matched
+                        // credential whose own docType resolved specs, as expectedPlainTier
+                        // is scoped, not for a request that merely named mso_mdoc_zk.
+                        issuerDisclosesToVerifier = credentials.any {
+                            zkSystemSpecs[it.credentialType.docType().uri].orEmpty().isNotEmpty()
+                        }
+                    )
+                }
+                // EE-ZKP-055a / EE-POA-013 without a ZK request: no optional-field toggle can make
+                // the proof possible, so refuse now rather than after the consent screen.
+                val askedForProof = credentials.any {
+                    it.credentialType.requiresZkProof() && zkSystemSpecs[it.credentialType.docType().uri].orEmpty().isNotEmpty()
+                }
+                if (!askedForProof) refusePlainWhenSpecsUnsatisfiable(state.value)
             }
         }
     }
@@ -370,18 +392,28 @@ class DigitalCredentialsViewModel @Inject constructor(
                 HolderObligations.refusePlainFallback(
                     zkCapable = zkSystem != null,
                     proofRequested = specs.isNotEmpty(),
-                    satisfiable = resolveSchemeId(zkSystem, specs, credential.allCheckedFields.size) != null
+                    satisfiable = resolveSchemeId(zkSystem, specs, credential.allCheckedFields.size) != null,
+                    authenticated = currentState.requestAuthenticated,
+                    lastAttestation = eePoaConsumption.remaining(credential.credentialType) <= 1
                 )
         } ?: return false
 
-        logger.warn("EE-ZKP-051: refusing plain fallback — device is ZK-capable but the advertised specs cannot be satisfied")
-        refusePlain(
-            currentState.verifier,
-            refused.credentialType.docType(),
-            PresentationTier.PLAIN_NO_MATCHING_CIRCUIT,
-            AppError.PRESENTATION_NO_MATCHING_CIRCUIT
-        )
+        val proofRequested = currentState.zkSystemSpecs[refused.credentialType.docType().uri].orEmpty().isNotEmpty()
+        val error = HolderObligations.plainRefusalReason(proofRequested, currentState.requestAuthenticated)
+        logger.warn("Refusing plain fallback for an age attestation on a ZK-capable device: {}", error)
+        if (error == AppError.PRESENTATION_NO_MATCHING_CIRCUIT) {
+            refusePlain(currentState.verifier, refused.credentialType.docType(), PresentationTier.PLAIN_NO_MATCHING_CIRCUIT, error)
+        } else {
+            refuseBeforeConsent(currentState.verifier, refused.credentialType.docType(), error)
+        }
         return true
+    }
+
+    /** A refusal of a presentation that never happened: logged without a tier, nothing shared. */
+    private suspend fun refuseBeforeConsent(verifier: String, docType: DocType, error: AppError) {
+        transactionLogRepository.addTransactionLog(party = verifier, docType = docType, error = error)
+        setState { copy(isLoading = false, verifier = verifier, plainRefusal = error) }
+        sendEffect { DcEffect.RefusedPlainFallback }
     }
 
     /** Shows the EE-PRO-013 refusal (F8); the user closes it, which ends as RESULT_CANCELED. */
@@ -737,6 +769,11 @@ data class DcUiState(
     val expectedPlainTier: PresentationTier? = null,
     // EE-ZKP-051 refusal already happened for this request; the screen shows this reason.
     val plainRefusal: AppError? = null,
+    // EE-PRO-025 / EE-ZKP-055a: readerAuth verified and chained to a trusted access CA.
+    val requestAuthenticated: Boolean = false,
+    // EE-POA-013: an age attestation in this request is the last of its batch; shown with the
+    // EE-ZKP-042 notice when it would go out plain.
+    val lastAgeAttestation: Boolean = false,
     // EE-PRO-013 (4a, F8): the request's protocol list was refused; the screen shows this reason.
     val protocolRefusal: ProtocolRefusal? = null,
     // EE-ZKP-042 (plan §8.7): true when the response would carry the issuer's certificate chain

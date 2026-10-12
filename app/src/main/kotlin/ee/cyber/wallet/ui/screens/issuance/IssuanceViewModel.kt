@@ -15,6 +15,8 @@ import ee.cyber.wallet.domain.credentials.DigitalCredentialsRegistrar
 import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.IssuePidUseCase
 import ee.cyber.wallet.domain.provider.ageverification.AgeVerificationProviderServiceMock
@@ -60,6 +62,7 @@ class IssuanceViewModel @Inject constructor(
     private val mdlProviderServiceMock: MdlProviderServiceMock,
     private val ageVerificationProviderServiceMock: AgeVerificationProviderServiceMock,
     private val eePoaBatchIssuer: BatchAgeIssuer,
+    private val eePoaConsumption: EePoaConsumption,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
     private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar,
     @ApplicationScope private val applicationScope: CoroutineScope
@@ -185,6 +188,11 @@ class IssuanceViewModel @Inject constructor(
     override suspend fun handleEvents(event: Event): Unit = run {
         when (event) {
             Event.AcceptDocument -> {
+                // Re-issuance replaces the batch: the old age attestations and their keys go
+                // before the new ones are stored, so the wallet never holds two batches.
+                state.value.documents.map { it.attestation.type }.distinct()
+                    .filter { AgePredicatePolicy.isAgeAttestation(it) }
+                    .forEach { eePoaConsumption.discardBatch(it) }
                 state.value.documents.forEach {
                     documentRepository.addDocument(it)
                 }

@@ -51,9 +51,7 @@ class EePoaIssuanceTest {
     private class FakeBatchAgeIssuer(private val cryptoProvider: RecordingCryptoProvider) : BatchAgeIssuer {
         val poaKeyIds = mutableListOf<List<String>>()
 
-        override suspend fun generateAvKey(): KeyAttestation = cryptoProvider.generateKey(KeyType.EC)
-
-        override suspend fun issuePoaBatch(credential: Credential.EePoaCredential, count: Int): List<Attestation> {
+        override suspend fun issueBatch(credential: Credential, count: Int): List<Attestation> {
             val keys = (0 until count).map { cryptoProvider.generateKey(KeyType.EC) }
             poaKeyIds.add(keys.map { it.keyId })
             return keys.map { key ->
@@ -87,7 +85,7 @@ class EePoaIssuanceTest {
             }
         )
 
-        val attestations = issuer.issuePoaBatch(credential, AgeIssuanceConstants.BATCH_SIZE)
+        val attestations = issuer.issueBatch(credential, AgeIssuanceConstants.BATCH_SIZE)
 
         assertEquals(AgeIssuanceConstants.BATCH_SIZE, attestations.size)
         assertEquals(

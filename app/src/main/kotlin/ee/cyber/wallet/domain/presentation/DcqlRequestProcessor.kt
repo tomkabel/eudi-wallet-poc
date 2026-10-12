@@ -109,7 +109,17 @@ class DcqlRequestProcessor {
 
         val claims = credentialQuery.claims
 
-        return if (claims.isNullOrEmpty()) {
+        return if (claims.isNullOrEmpty() && AgePredicatePolicy.isAgeAttestation(document.credentialType())) {
+            // EE-POA-030: a claim-less query for an age attestation asks for age_over_18 only,
+            // never for every predicate the attestation holds.
+            val ageOver18 = document.fields.find { it.name == "age_over_18" } ?: return null
+            Credential(
+                credentialType = document.credentialType(),
+                fields = listOf(MatchedField(ageOver18, checked = true)),
+                optionalFields = emptyList(),
+                attestation = document.attestation
+            )
+        } else if (claims.isNullOrEmpty()) {
             // OpenID4VP §6.4.1: an absent claims list requests no selectively disclosable
             // claims. Offer the fields unchecked, so nothing is disclosed unless the holder opts in.
             log.info("No specific claims requested, offering ${document.fields.size} fields unchecked")

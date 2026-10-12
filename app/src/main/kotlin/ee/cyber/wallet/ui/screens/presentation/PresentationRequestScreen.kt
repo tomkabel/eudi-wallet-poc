@@ -369,6 +369,19 @@ private fun PresentationContent(modifier: Modifier = Modifier, state: UiState, o
             text = stringResource(R.string.presentation_footer_note, state.verifier),
             textAlign = TextAlign.Center
         )
+        // EE-POA-013: the last attestation of a batch goes out plain only with this notice in
+        // front of the user; tapping share is the explicit approval.
+        if (state.lastAgeAttestation) {
+            VSpace(24.dp)
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(R.string.presentation_last_age_attestation_notice),
+                textAlign = TextAlign.Center
+            )
+        }
         VSpace(24.dp)
         WSpace()
         Row(

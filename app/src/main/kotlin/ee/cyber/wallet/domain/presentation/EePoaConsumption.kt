@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory
 /**
  * Consumes one-time EE-PoA attestations after they are presented (conformance plan §4 item 6).
  *
- * ARF `WIAM_21` / `EE-POA-013`: a plain presentation of `ee.riik.poa.1` consumes the attestation —
+ * ARF `WIAM_21` / `EE-POA-013`: a plain presentation of `ee.riik.poa.1`, or of `eu.europa.ec.av.1`
+ * (EE-POA-003 applies the same rules to it), consumes the attestation —
  * the attestation row and its SecureArea device key are deleted, and the attestation is never
  * presented again. A zero-knowledge presentation consumes nothing (`EE-ZKP-025`): the proof
  * discloses no identifying material, so re-presenting it stays unlinkable.
@@ -50,11 +51,11 @@ class EePoaConsumption(
      *   escalated tier, and this helper consumes on any non-ZK tier)
      */
     suspend fun consumeAfterPresentation(attestation: Attestation, tier: PresentationTier): Boolean = mutex.withLock {
-        if (attestation.type != CredentialType.EE_POA) return@withLock false
+        if (!AgePredicatePolicy.isAgeAttestation(attestation.type)) return@withLock false
         // EE-ZKP-025: a ZK presentation consumes nothing.
         if (tier == PresentationTier.ZERO_KNOWLEDGE) return@withLock false
 
-        val siblings = attestationDao.getAll().first().filter { it.attestation.type == CredentialType.EE_POA }
+        val siblings = attestationDao.getAll().first().filter { it.attestation.type == attestation.type }
         // EE-POA-013: never the last — Method A degrades to Method B on an exhausted batch.
         if (siblings.size <= 1) {
             logger.info("EE-PoA {} not consumed: last remaining attestation in the batch", attestation.id)
@@ -77,5 +78,29 @@ class EePoaConsumption(
         keyAttestationDao.deleteById(keyId)
         logger.info("EE-PoA {} consumed after a plain presentation ({} left)", attestation.id, siblings.size - 1)
         true
+    }
+
+    /** How many attestations of [type] remain in the batch (EE-POA-013's last-attestation test). */
+    suspend fun remaining(type: CredentialType): Int =
+        attestationDao.getAll().first().count { it.attestation.type == type }
+
+    /**
+     * Re-issuance replaces the batch: every held attestation of [type] goes, keys first, as in
+     * [consumeAfterPresentation]. A row whose key survives deletion is kept so the data wipe can
+     * still reach the key. Returns how many were removed.
+     */
+    suspend fun discardBatch(type: CredentialType): Int = mutex.withLock {
+        attestationDao.getAll().first().filter { it.attestation.type == type }.count { row ->
+            val keyId = row.keyAttestation.id
+            secureAreaKeyDeleter.deleteKey(keyId)
+            if (secureAreaKeyDeleter.keyExists(keyId)) {
+                logger.error("{} {} kept: SecureArea key {} still exists after delete", type, row.attestation.id, keyId)
+                false
+            } else {
+                attestationDao.deleteById(row.attestation.id)
+                keyAttestationDao.deleteById(keyId)
+                true
+            }
+        }
     }
 }

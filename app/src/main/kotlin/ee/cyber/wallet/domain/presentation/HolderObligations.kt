@@ -1,6 +1,7 @@
 package ee.cyber.wallet.domain.presentation
 
 import ee.cyber.wallet.R
+import ee.cyber.wallet.domain.AppError
 
 /**
  * Pure decision core for the step 3 holder obligations. Kept free of Android types so the
@@ -48,14 +49,31 @@ object HolderObligations {
     }
 
     /**
-     * EE-ZKP-051, strict reading, scoped by the caller to the doctypes the ZK path exists for.
-     * A device capable of proving in general still refuses the plain fallback when the relying
-     * party advertised ZKP support but only circuits this wallet does not hold — otherwise the
-     * advertisement itself becomes the downgrade lever. A device that cannot prove at all, or a
-     * party that did not ask, keeps the plain path with the EE-ZKP-042 notice.
+     * When an age attestation may only go out over Tier 2, scoped by the caller to the doctypes
+     * the ZK path exists for. A device that cannot prove at all keeps the plain path with the
+     * EE-ZKP-042 notice; a capable one refuses the plain fallback when any of these holds:
+     *
+     *  - EE-ZKP-051, strict reading: the party advertised ZKP support but only circuits this
+     *    wallet does not hold — otherwise the advertisement itself becomes the downgrade lever;
+     *  - EE-ZKP-055a: the request is not authenticated by a registration certificate or by reader
+     *    authentication chaining to a trusted access CA. No authentication is the least-trusted
+     *    case, never the absence of a ZKP requirement;
+     *  - EE-POA-013: the attestation is the last of its batch, which is never consumed.
      */
-    fun refusePlainFallback(zkCapable: Boolean, proofRequested: Boolean, satisfiable: Boolean): Boolean =
-        zkCapable && proofRequested && !satisfiable
+    fun refusePlainFallback(
+        zkCapable: Boolean,
+        proofRequested: Boolean,
+        satisfiable: Boolean,
+        authenticated: Boolean,
+        lastAttestation: Boolean
+    ): Boolean = zkCapable && !satisfiable && (proofRequested || !authenticated || lastAttestation)
+
+    /** Why [refusePlainFallback] refused, in the order the user is best told about it. */
+    fun plainRefusalReason(proofRequested: Boolean, authenticated: Boolean): AppError = when {
+        proofRequested -> AppError.PRESENTATION_NO_MATCHING_CIRCUIT
+        !authenticated -> AppError.PRESENTATION_UNAUTHENTICATED_REQUEST
+        else -> AppError.PRESENTATION_LAST_AGE_ATTESTATION
+    }
 
     /**
      * EE-ZKP-053 linkability is a property of the whole DeviceResponse, not of one document: a

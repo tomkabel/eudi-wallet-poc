@@ -16,10 +16,29 @@ import argparse, atexit, base64, datetime as dt, http.server, json, os, re, secr
 import signal, socket, subprocess, sys, tempfile, threading, time
 import urllib.error, urllib.parse, urllib.request
 from collections import OrderedDict
+from zoneinfo import ZoneInfo
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC = os.path.join(REPO, "sandbox", "static")
 THRESHOLDS = (16, 18, 21)
+
+
+def register_today() -> dt.date:
+    """The register day in Estonia, from this side's clock (EE-POA-027)."""
+    return dt.datetime.now(ZoneInfo("Europe/Tallinn")).date()
+
+
+def age_on(born: dt.date, today: dt.date) -> int:
+    """Whole years attained by `today`, from 00:00 of the anniversary (TsUS 135(1), 136(2)).
+
+    A 29 February birthday falls on 28 February in a common year (TsUS 136(4)).
+    """
+    years = today.year - born.year
+    try:
+        anniversary = born.replace(year=today.year)
+    except ValueError:  # 29 February in a common year
+        anniversary = dt.date(today.year, 2, 28)
+    return years - (today < anniversary)
 MAX_HOLDERS = 200
 NAME_RE = re.compile(r"^[^\x00-\x1f<>]{1,60}$")
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{16,64}$")
@@ -119,8 +138,8 @@ class Sandbox:
             born = dt.date.fromisoformat(str(body.get("birth_date", "")))
         except ValueError:
             raise ValueError("birth_date") from None
-        today = dt.date.today()
-        age = today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+        today = register_today()
+        age = age_on(born, today)
         if born > today or age > 130:
             raise ValueError("birth_date")
 

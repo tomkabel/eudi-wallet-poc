@@ -91,6 +91,11 @@
     <string name="presentation_issuer_disclosure_notice">The issuer of this attestation will be visible to the requesting party.</string>
     <string name="error_presentation_no_matching_circuit">Sharing stopped. This party requires a zero-knowledge proof this Wallet cannot produce, and without it the issuer of your document could link this presentation to you.</string>
     <string name="error_presentation_proof_failed">Sharing stopped. The zero-knowledge proof this party asked for could not be produced, and without it the issuer of your document could link this presentation to you.</string>
+    <string name="error_presentation_unauthenticated_request">Sharing stopped. This party did not prove who it is, so this Wallet answers it about your age only with a zero-knowledge proof, and this request does not allow one.</string>
+    <string name="error_presentation_last_age_attestation">Sharing stopped. This is your last single-use age attestation, and this Wallet shares it only as a zero-knowledge proof, which this request does not allow. Renew your age attestations under My documents.</string>
+    <string name="error_presentation_multiple_age_predicates">Sharing stopped. This party asked about more than one age limit. Together the answers would reveal your age range.</string>
+    <string name="error_presentation_age_predicate_false">Your age attestation does not meet the age limit this party asked about, so nothing was shared. The party is told only that no matching document was found.</string>
+    <string name="presentation_last_age_attestation_notice">This is your last single-use age attestation. Every party you show it to from now on can link those presentations to each other. Renew your age attestations under My documents.</string>
     <string name="error_presentation_unsupported_protocol">Sharing stopped. This party requested the data over a protocol this Wallet does not support.</string>
 
     <!-- Errors -->

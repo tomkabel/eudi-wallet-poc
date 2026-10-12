@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
  * them before the first mint, rolled back by the manager if creation fails partway; pre-generation off the critical
  * path (EE-POA-011a) stays in plan §8.4 — and each is attested by the (mock) wallet provider and
  * registered in the keyAttestation table exactly like a single generated key, so SecureArea
- * cleanup keeps seeing every alias. The AV attestation gets a single key on the same manager. The
+ * cleanup keeps seeing every alias. The AV attestation is batched the same way (EE-POA-003). The
  * Android Keystore interaction itself is PENDING-DEVICE (docs/planning/STEP6-RECORD.md); the JVM
  * acceptance test drives the mint through the [BatchAgeIssuer] seam with fake keys instead.
  */
@@ -39,14 +39,9 @@ class WalletProviderBatchAgeIssuer(
 
     private val logger = LoggerFactory.getLogger("WalletProviderBatchAgeIssuer")
 
-    override suspend fun generateAvKey(): KeyAttestation {
-        val key = secureAreaKeyManager.generateKey()
-        return registerAttestedKey(key.keyId, key.jwk())
-    }
-
-    override suspend fun issuePoaBatch(credential: Credential.EePoaCredential, count: Int): List<Attestation> =
+    override suspend fun issueBatch(credential: Credential, count: Int): List<Attestation> =
         withContext(dispatcher) {
-            require(count >= 1) { "an EE-PoA batch has at least one attestation" }
+            require(count >= 1) { "an age attestation batch has at least one attestation" }
 
             // All keys exist before the first mint (EE-POA-011a), so a mid-batch mint failure
             // leaves no half-issued TRANSACTION; batchCreateKey cleans up its own partial
@@ -60,7 +55,7 @@ class WalletProviderBatchAgeIssuer(
                     val keyAttestation = registerAttestedKey(key.keyId, key.jwk())
                     issueCredential(credential, keyAttestation)
                 }.also {
-                    logger.info("issued an EE-PoA batch of {}", it.size)
+                    logger.info("issued an age attestation batch of {}", it.size)
                 }
             } catch (e: Exception) {
                 // NonCancellable: a cancelled issuance must still roll back.

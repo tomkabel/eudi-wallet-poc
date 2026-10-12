@@ -15,11 +15,13 @@ import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.documents.DocumentField
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.presentation.ResponseRefused
+import ee.cyber.wallet.domain.presentation.ZkCapability
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -66,7 +68,9 @@ data class UiState(
     val scanned: Boolean = false,
     val success: Success? = null,
     val shareDisabled: Boolean = false,
-    val credentials: List<Credential> = listOf()
+    val credentials: List<Credential> = listOf(),
+    // EE-POA-013: an age attestation in this request is the last of its batch.
+    val lastAgeAttestation: Boolean = false
 ) : ViewState, Parcelable
 
 @Parcelize
@@ -95,6 +99,9 @@ sealed class Error(
     data object UnsupportedRequestType : Error(AppError.PRESENTATION_UNSUPPORTED_REQUEST_ERROR)
     data object UnencryptedRequest : Error(AppError.PRESENTATION_UNENCRYPTED_REQUEST)
     data object MatchError : Error(AppError.PRESENTATION_MATCH_ERROR)
+    data object MultipleAgePredicates : Error(AppError.PRESENTATION_MULTIPLE_AGE_PREDICATES)
+    data object AgePredicateFalse : Error(AppError.PRESENTATION_AGE_PREDICATE_FALSE)
+    data object LastAgeAttestation : Error(AppError.PRESENTATION_LAST_AGE_ATTESTATION)
 }
 
 sealed class Effect : ViewSideEffect {
@@ -361,11 +368,48 @@ class PresentationRequestViewModel @Inject constructor(
                     return
                 }
 
+                // EE-POA-030: more than one age predicate is refused outright. EE-POA-031: a
+                // predicate held false is answered like a request with no matching credential —
+                // the same log row and screen as the no-match path, and nothing sent.
+                when (AgePredicatePolicy.decideAll(credentials.map { it.credentialType to it.fields + it.optionalFields })) {
+                    AgePredicatePolicy.Decision.ALLOW -> Unit
+                    AgePredicatePolicy.Decision.REFUSE_MORE_THAN_ONE_PREDICATE -> {
+                        showError(Error.MultipleAgePredicates)
+                        refuseRequest(requestObject, AppError.PRESENTATION_MULTIPLE_AGE_PREDICATES)
+                        return
+                    }
+                    AgePredicatePolicy.Decision.PREDICATE_HELD_FALSE -> {
+                        setState { copy(verifier = requestObject.verifierName().toString()) }
+                        requestObject.requestedDocTypes().forEach { docType ->
+                            transactionLogRepository.addTransactionLog(
+                                party = requestObject.verifierName().toString(),
+                                docType = docType,
+                                error = AppError.PRESENTATION_AGE_PREDICATE_FALSE
+                            )
+                        }
+                        showError(Error.AgePredicateFalse)
+                        return
+                    }
+                }
+
+                // EE-POA-013: the last attestation of a batch goes over Tier 2 on a ZK-capable
+                // device. This redirect path carries no ZK request, so such a device refuses;
+                // one that cannot prove presents plain behind the last-attestation notice.
+                val lastAgeAttestation = credentials.any {
+                    AgePredicatePolicy.isAgeAttestation(it.credentialType) && eePoaConsumption.remaining(it.credentialType) <= 1
+                }
+                if (lastAgeAttestation && ZkCapability.capable) {
+                    showError(Error.LastAgeAttestation)
+                    refuseRequest(requestObject, AppError.PRESENTATION_LAST_AGE_ATTESTATION)
+                    return
+                }
+
                 setState {
                     copy(
                         verifier = requestObject.verifierName().toString(),
                         scanned = cameFromScanner(savedStateHandle),
-                        credentials = credentials
+                        credentials = credentials,
+                        lastAgeAttestation = lastAgeAttestation
                     )
                 }
             }
@@ -423,8 +467,8 @@ class PresentationRequestViewModel @Inject constructor(
     }
 
     /**
-     * EE-POA-013 / WIAM_21 (plan §4 item 6): a completed plain presentation of `ee.riik.poa.1`
-     * consumes the attestation and its SecureArea key — never the last in the batch. The tier
+     * EE-POA-013 / WIAM_21 (plan §4 item 6): a completed plain presentation of `ee.riik.poa.1` or
+     * `eu.europa.ec.av.1` consumes the attestation and its SecureArea key — never the last in the batch. The tier
      * on this path is PLAIN_NOT_REQUESTED (the redirect path cannot carry a ZK request), so
      * consumption is unconditional for EE-PoA rows that were actually disclosed. Runs inside the
      * send coroutine, before the success state navigates away; a failure is logged and never
@@ -432,7 +476,7 @@ class PresentationRequestViewModel @Inject constructor(
      */
     private suspend fun consumePresentedEePoa() {
         state.value.credentials.forEach { credential ->
-            if (credential.credentialType == CredentialType.EE_POA) {
+            if (AgePredicatePolicy.isAgeAttestation(credential.credentialType)) {
                 runCatching {
                     eePoaConsumption.consumeAfterPresentation(
                         attestation = credential.attestation,

@@ -60,11 +60,9 @@ class IssuerModule {
     @Provides
     fun providesAgeVerificationProviderServiceMock(
         @ApplicationContext
-        context: Context,
-        cryptoProviderFactory: CryptoProvider.Factory,
-        credentialIssuanceService: CredentialIssuanceService
+        context: Context
     ): AgeVerificationProviderServiceMock {
-        return AgeVerificationProviderServiceMock(context, cryptoProviderFactory, credentialIssuanceService)
+        return AgeVerificationProviderServiceMock(context)
     }
 
     /**

@@ -412,7 +412,7 @@ class MdlProviderServiceMock(
     private val MDL_50801139731 = Credential.MdocMdlCredential(
         familyName = "Alaealine",
         givenName = "Alar",
-        birthDate = LocalDate.parse("2008-01-13"),
+        birthDate = LocalDate.parse("2010-01-13"),
         issueDate = LocalDate.parse("2020-10-14"),
         expiryDate = LocalDate.parse("2028-10-14"),
         issuingCountry = "EE",
@@ -423,7 +423,7 @@ class MdlProviderServiceMock(
             Credential.DrivingPrivilege("A", LocalDate.parse("2020-10-14"), LocalDate.parse("2025-10-14"), listOf(Credential.DrivingPrivilege.Code("C", "S", "V")))
         ),
         unDistinguishingSign = "EST",
-        administrativeNumber = "50801139731",
+        administrativeNumber = "51001139731",
         sex = 2,
         height = 185,
         weight = 85,

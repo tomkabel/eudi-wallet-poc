@@ -13,6 +13,17 @@ import kotlin.random.Random
 const val MOCK_APP_PREFS = "mock_app_prefs"
 const val MOCK_USER_PID = "mock_user_pid"
 
+/**
+ * The mock Population Register's date of birth per mock user, matching the PIDs below: the
+ * authoritative source the age attestations are computed from (EE-POA-006), never a value the
+ * client supplies. Unknown users fall back to the default PID, as [PidProviderServiceMock.issuePid] does.
+ */
+fun mockRegisterBirthDate(mockUser: String?): LocalDate = when (mockUser) {
+    "2" -> LocalDate(1971, 1, 1)
+    "3" -> LocalDate(2010, 1, 13)
+    else -> LocalDate(2005, 1, 8)
+}
+
 class PidProviderServiceMock(
     private val context: Context,
     private val credentialIssuanceService: CredentialIssuanceService
@@ -265,7 +276,7 @@ class PidProviderServiceMock(
         // Mandatory attributes specified in CIR 2024/2977
         familyName = "Alaealine",
         givenName = "Alar",
-        birthdate = LocalDate.parse("2008-01-13"),
+        birthdate = LocalDate.parse("2010-01-13"),
         placeOfBirth = Credential.PlaceOfBirth(locality = "EE"),
         nationalities = listOf("EE"),
         // Optional attributes specified in CIR 2024/2977
@@ -278,7 +289,7 @@ class PidProviderServiceMock(
             streetAddress = "Tartu mnt 605",
             houseNumber = "605"
         ),
-        personalAdministrativeNumber = "50801139731",
+        personalAdministrativeNumber = "51001139731",
         picture = PORTRAIT_50801139731,
         birthFamilyName = "Alarike",
         birthGivenName = "Vastsündinu",
@@ -306,7 +317,7 @@ class PidProviderServiceMock(
         // Mandatory attributes specified in CIR 2024/2977
         familyName = "Alaealine",
         givenName = "Alar",
-        birthDate = LocalDate.parse("2008-01-13"),
+        birthDate = LocalDate.parse("2010-01-13"),
         birthPlace = "EE",
         nationality = listOf("EE"),
         // Optional attributes specified in CIR 2024/2977
@@ -317,7 +328,7 @@ class PidProviderServiceMock(
         residentPostalCode = "13145",
         residentStreet = "Tartu mnt",
         residentHouseNumber = "605",
-        personalAdministrativeNumber = "50801139731",
+        personalAdministrativeNumber = "51001139731",
         portrait = PORTRAIT_50801139731,
         familyNameBirth = "Vastsündinu",
         givenNameBirth = "Alarike",

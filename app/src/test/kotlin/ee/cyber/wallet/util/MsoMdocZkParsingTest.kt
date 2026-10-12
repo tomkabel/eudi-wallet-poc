@@ -139,7 +139,13 @@ class MsoMdocZkParsingTest {
         val proofRequested = specsByDocType.values.any { it.isNotEmpty() }
         val satisfiable = schemeId != null
         assertTrue(
-            HolderObligations.refusePlainFallback(zkCapable = true, proofRequested = proofRequested, satisfiable = satisfiable),
+            HolderObligations.refusePlainFallback(
+                zkCapable = true,
+                proofRequested = proofRequested,
+                satisfiable = satisfiable,
+                authenticated = true,
+                lastAttestation = false
+            ),
             "EE-ZKP-051 must refuse the plain fallback for an unregistered zk_system_type"
         )
     }

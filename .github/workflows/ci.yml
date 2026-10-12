@@ -100,7 +100,7 @@ jobs:
         run: go test -race ./oid4vp/... ./internal/... ./circuits/...
 
       - name: python compiles
-        run: python3 -m compileall -q issuer verifier wallet tests
+        run: python3 -m compileall -q issuer verifier wallet tests sandbox
 
       - name: ruff
         # F (pyflakes) and E9 catch undefined names, unused imports and syntax
@@ -137,6 +137,10 @@ jobs:
         # fixture bytes and no demo or e2e script passes the flag. cbor2 and
         # cryptography are installed by the step above.
         run: python3 issuer/test_mint_device_key.py
+
+      - name: the sandbox's age reckoning
+        # EE-POA-027: Europe/Tallinn, and 28 February for a 29 February birthday.
+        run: python3 sandbox/test_age.py
 
       - name: shellcheck
         # Info-level findings are style opinions and their codes drift between

@@ -205,14 +205,36 @@ class EePoaConsumptionTest {
     }
 
     @Test
-    fun `a non EE-PoA attestation is out of scope`() = runTest {
+    fun `the AV attestation is consumed under the same rules`() = runTest {
+        // EE-POA-003: EE-POA-010 to EE-POA-019 apply to eu.europa.ec.av.1 as to the EE-PoA,
+        // and never-the-last counts siblings of the presented doctype only.
         val h = harness(size = 3)
         h.attestationDao.add("av-0", "key-av-0", CredentialType.AGE_VERIFICATION)
-        val presented = attestation("av-0", CredentialType.AGE_VERIFICATION)
+        h.attestationDao.add("av-1", "key-av-1", CredentialType.AGE_VERIFICATION)
 
-        val consumed = h.consumption.consumeAfterPresentation(presented, PresentationTier.PLAIN_NOT_REQUESTED)
+        assertTrue(h.consumption.consumeAfterPresentation(attestation("av-0", CredentialType.AGE_VERIFICATION), PresentationTier.PLAIN_NOT_REQUESTED))
+        assertFalse(h.consumption.consumeAfterPresentation(attestation("av-1", CredentialType.AGE_VERIFICATION), PresentationTier.PLAIN_NOT_REQUESTED))
+        assertEquals(1, h.consumption.remaining(CredentialType.AGE_VERIFICATION))
+        assertEquals(3, h.consumption.remaining(CredentialType.EE_POA))
+    }
 
-        assertFalse(consumed)
+    @Test
+    fun `a PID is out of scope`() = runTest {
+        val h = harness(size = 3)
+        h.attestationDao.add("pid-0", "key-pid-0", CredentialType.PID_MDOC)
+        h.attestationDao.add("pid-1", "key-pid-1", CredentialType.PID_MDOC)
+
+        assertFalse(h.consumption.consumeAfterPresentation(attestation("pid-0", CredentialType.PID_MDOC), PresentationTier.PLAIN_NOT_REQUESTED))
         assertTrue(h.deleter.deletedKeys.isEmpty())
+    }
+
+    @Test
+    fun `re-issuance discards the whole batch of one doctype`() = runTest {
+        val h = harness(size = 3)
+        h.attestationDao.add("av-0", "key-av-0", CredentialType.AGE_VERIFICATION)
+
+        assertEquals(3, h.consumption.discardBatch(CredentialType.EE_POA))
+        assertEquals(listOf("av-0"), h.attestationDao.rows.value.map { it.attestation.id })
+        assertEquals(3, h.deleter.deletedKeys.size)
     }
 }

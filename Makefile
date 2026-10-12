@@ -27,7 +27,7 @@ lint:
 	cd verifier/go && unformatted="$$(gofmt -l .)" && if [ -n "$$unformatted" ]; then \
 		echo "not gofmt-clean:"; echo "$$unformatted"; exit 1; fi
 	cd verifier/go && go vet ./...
-	python3 -m compileall -q issuer verifier wallet tests
+	python3 -m compileall -q issuer verifier wallet tests sandbox
 	ruff check --isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .
 	shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
 
@@ -41,6 +41,7 @@ test-go-fast:
 test-py:
 	python3 wallet/test_transcript.py
 	python3 issuer/test_mint_device_key.py
+	python3 sandbox/test_age.py
 
 # CI's fast job: no Rust toolchain needed.
 check: lint test-go-fast test-py

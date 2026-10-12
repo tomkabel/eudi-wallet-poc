@@ -14,7 +14,13 @@ import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.data.repository.TransactionLogRepository
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.documents.CredentialDocument
+import ee.cyber.wallet.domain.AppError
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy.error
 import ee.cyber.wallet.domain.presentation.CredentialClaim
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
+import ee.cyber.wallet.domain.presentation.HolderObligations
+import ee.cyber.wallet.domain.presentation.ZkCapability
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.provider.Attestation
@@ -28,6 +34,7 @@ import ee.cyber.wallet.ui.screens.documents.docType
 import ee.cyber.wallet.ui.screens.presentation.MatchedField
 import ee.cyber.wallet.ui.screens.presentation.MatchedFields
 import ee.cyber.wallet.ui.screens.presentation.fields
+import ee.cyber.wallet.util.DeviceRequestParser
 import ee.cyber.wallet.util.toPresentationDefinition
 import eu.europa.ec.eudi.iso18013.transfer.TransferEvent
 import eu.europa.ec.eudi.iso18013.transfer.TransferManager
@@ -70,6 +77,7 @@ class ProximityViewModel @Inject constructor(
     private val secureAreaKeyManager: SecureAreaKeyManager,
     private val transactionLogRepository: TransactionLogRepository,
     private val userPreferencesDataSource: UserPreferencesDataSource,
+    private val eePoaConsumption: EePoaConsumption,
     @Dispatcher(WalletDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher
 ) : MviViewModel<Event, UiState, Effect>() {
 
@@ -210,10 +218,61 @@ class ProximityViewModel @Inject constructor(
                     }
                 }
 
-                setState { copy(credentials = credentials, sessionTranscript = deviceRequest.sessionTranscriptBytes) }
+                ageRefusal(deviceRequest, credentials)?.let { error ->
+                    logger.warn("Proximity age request refused: {}", error)
+                    credentials.filter { AgePredicatePolicy.isAgeAttestation(it.credentialType) }.forEach {
+                        transactionLogRepository.addTransactionLog(
+                            party = context.getString(R.string.log_entry_proximity_party),
+                            docType = it.credentialType.docType(),
+                            error = error
+                        )
+                    }
+                    // A predicate held false (EE-POA-031) ends exactly like no match; the other
+                    // refusals end the same way on the wire and name their reason on screen.
+                    transferManager.stopPresentation(true)
+                    setState { copy(refusal = error) }
+                    sendEffect { Effect.ProximityRequestNoMatch }
+                    return
+                }
+                val lastAgeAttestation = credentials.any {
+                    AgePredicatePolicy.isAgeAttestation(it.credentialType) && eePoaConsumption.remaining(it.credentialType) <= 1
+                }
+                setState {
+                    copy(
+                        credentials = credentials,
+                        sessionTranscript = deviceRequest.sessionTranscriptBytes,
+                        lastAgeAttestation = lastAgeAttestation
+                    )
+                }
                 sendEffect { Effect.ProximityRequest }
             }
         }
+    }
+
+    /**
+     * The age rules a proximity request must pass before consent. EE-POA-030/031 as on every
+     * path. This path has no Tier 2 (no proximity ZK code exists), so on a ZK-capable device an
+     * age attestation is refused whenever Tier 2 would be required: the reader did not
+     * authenticate to a trusted access CA (EE-PRO-025, EE-ZKP-055a), or the attestation is the
+     * last of its batch (EE-POA-013). No reader trust anchors are configured yet, so every
+     * reader is unauthenticated here.
+     */
+    private suspend fun ageRefusal(deviceRequest: DeviceRequest, credentials: List<Credential>): AppError? {
+        AgePredicatePolicy.decideAll(credentials.map { it.credentialType to it.fields + it.optionalFields }).error()
+            ?.let { return it }
+        val ageCredentials = credentials.filter { AgePredicatePolicy.isAgeAttestation(it.credentialType) }
+        if (ageCredentials.isEmpty() || !ZkCapability.capable) return null
+        val authenticated = DeviceRequestParser(deviceRequest.deviceRequestBytes, deviceRequest.sessionTranscriptBytes)
+            .parse().docRequests.any { it.readerAuthenticated && it.readerChainTrusted }
+        val last = ageCredentials.any { eePoaConsumption.remaining(it.credentialType) <= 1 }
+        val refused = HolderObligations.refusePlainFallback(
+            zkCapable = true,
+            proofRequested = false,
+            satisfiable = false,
+            authenticated = authenticated,
+            lastAttestation = last
+        )
+        return if (refused) HolderObligations.plainRefusalReason(proofRequested = false, authenticated = authenticated) else null
     }
 
     private fun PresentationDefinition.getDocumentMatches(documents: List<CredentialDocument>): Pair<List<CredentialClaim>, Match> =
@@ -381,6 +440,12 @@ class ProximityViewModel @Inject constructor(
                 attributes = attributes,
                 tier = PresentationTier.PLAIN_NOT_REQUESTED
             )
+            // EE-POA-013 / WIAM_21: a plain proximity presentation consumes the age attestation
+            // as the online paths do — never the last of the batch. A failure is logged and
+            // never turns a delivered response into an error.
+            runCatching {
+                eePoaConsumption.consumeAfterPresentation(credential.attestation, PresentationTier.PLAIN_NOT_REQUESTED)
+            }.onFailure { logger.error("EE-PoA consumption failed", it) }
         }
     }
 }
@@ -411,7 +476,11 @@ data class UiState(
     val qrCodeBitmap: Bitmap? = null,
     val credentials: List<Credential> = listOf(),
     val shareDisabled: Boolean = false,
-    val isPeripheralMode: Boolean = true
+    val isPeripheralMode: Boolean = true,
+    // Why an age request was refused before consent; null for a plain no-match.
+    val refusal: AppError? = null,
+    // EE-POA-013: an age attestation in this request is the last of its batch.
+    val lastAgeAttestation: Boolean = false
 ) : ViewState, Parcelable
 
 sealed class Effect : ViewSideEffect {

@@ -10,6 +10,7 @@ import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.domain.presentation.SupportedFormat
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.ageverification.AgeIssuanceConstants
+import ee.cyber.wallet.domain.provider.ageverification.AgeReckoning
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.ui.model.IssuerKeyType
 import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
@@ -45,7 +46,6 @@ import org.cose.java.AlgorithmID
 import org.cose.java.OneKey
 import org.slf4j.LoggerFactory
 import java.security.KeyStore
-import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.time.Instant
 
@@ -517,20 +517,17 @@ class CredentialIssuanceServiceMock(
         val mdoc = MDocBuilder(DocType.AGE_VERIFICATION.uri)
             .addItemToSign(Namespace.EU_EUROPA_EC_EUDI_AGE_VERIFICATION_1.uri, "age_over_18", BooleanElement(ageVerification.ageOver18))
 
-        val status = Status(
-            statusList = StatusListInfo(
-                index = ageVerification.locationStatus.idx.toUInt(),
-                uri = ageVerification.locationStatus.uri
-            )
-        )
-
-        val signed = Instant.fromEpochSeconds(1779711303L)
+        // EE-POA-003 applies the EE-PoA rules to the AV attestation: the same 7-day epoch
+        // validity as the EE-PoA (EE-POA-016, EE-POA-026) and no status reference (EE-POA-017),
+        // since a single-use attestation is consumed, not revoked.
+        val (validFrom, validUntil) = AgeIssuanceConstants.validity(issuanceDay())
+        val signed = validFrom.atStartOfDayIn(TimeZone.UTC)
         return mdoc.sign(
-            ValidityInfo(signed, signed, Instant.fromEpochSeconds(2095329603L)),
+            ValidityInfo(signed, signed, validUntil.atStartOfDayIn(TimeZone.UTC)),
             deviceKeyInfo,
             ageVerificationIssuerCryptoProvider(),
             getMdlKeyAlias(),
-            status
+            null
         ).toCBORHex()
     }
 
@@ -542,8 +539,9 @@ class CredentialIssuanceServiceMock(
      */
     suspend fun issueMDocEePoa(poa: Credential.EePoaCredential, keyAttestation: KeyAttestation): String {
         val issuanceDay = issuanceDay()
-        require(poa.expiryDate in issuanceDay..issuanceDay.plus(AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS, DateTimeUnit.DAY)) {
-            "EE-PoA validity must start at issuance and span at most ${AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS} days"
+        val (validFrom, _) = AgeIssuanceConstants.validity(issuanceDay)
+        require(poa.expiryDate in validFrom..issuanceDay.plus(AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS, DateTimeUnit.DAY)) {
+            "EE-PoA validity must span at most ${AgeIssuanceConstants.EE_POA_MAX_VALIDITY_DAYS} days from issuance"
         }
 
         val deviceKeyInfo = DeviceKeyInfo(
@@ -558,10 +556,11 @@ class CredentialIssuanceServiceMock(
             .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "issuing_authority", StringElement(poa.issuingAuthority))
             .addItemToSign(Namespace.EE_RIIK_POA_1.uri, "expiry_date", FullDateElement(poa.expiryDate))
 
-        // EE-POA-012: signed and validFrom coarsened to 00:00:00Z of the issuance day.
-        // EE-POA-016: validUntil is the expiry_date, at most 90 days out.
+        // EE-POA-012/026: signed and validFrom coarsened to 00:00:00Z of the 7-day epoch the
+        // issuance day falls in, shared by every holder issued in that epoch.
+        // EE-POA-016: validUntil is the expiry_date, the epoch boundary at most 90 days out.
         // EE-POA-017: no status reference — null Status writes none into the MSO.
-        val signed = issuanceDay.atStartOfDayIn(TimeZone.UTC)
+        val signed = validFrom.atStartOfDayIn(TimeZone.UTC)
         val issuerKeyPair = mdlIssuerKeyPair()
         return mdoc.sign(
             ValidityInfo(signed, signed, poa.expiryDate.atStartOfDayIn(TimeZone.UTC)),
@@ -574,12 +573,9 @@ class CredentialIssuanceServiceMock(
 
     companion object {
         /**
-         * The issuance day, midnight UTC, that every batch's ValidityInfo anchors to
-         * (EE-POA-012): the current UTC date, so validity is measured from the day of issuance.
+         * The issuance day the batch's ValidityInfo epoch is taken from: the register day in
+         * Europe/Tallinn, the same day the predicate was computed on (EE-POA-027).
          */
-        internal fun issuanceDay(): LocalDate {
-            val javaDay = java.time.Instant.now().atZone(ZoneOffset.UTC).toLocalDate()
-            return LocalDate(javaDay.year, javaDay.monthValue, javaDay.dayOfMonth)
-        }
+        internal fun issuanceDay(): LocalDate = AgeReckoning.today(kotlin.time.Clock.System.now())
     }
 }

@@ -91,6 +91,11 @@
     <string name="presentation_issuer_disclosure_notice">Selle tõendi väljaandja on nähtav andmeid küsivale osapoolele.</string>
     <string name="error_presentation_no_matching_circuit">Jagamine peatati. See osapool nõuab nullteadmise tõendit, mida see digikukkur ei suuda esitada, ja ilma selleta võiks dokumendi väljaandja seda esitust sinuga siduda.</string>
     <string name="error_presentation_proof_failed">Jagamine peatati. Nullteadmise tõendit, mida see osapool küsis, ei õnnestunud koostada, ja ilma selleta võiks dokumendi väljaandja seda esitust sinuga siduda.</string>
+    <string name="error_presentation_unauthenticated_request">Jagamine peatati. See osapool ei tõendanud, kes ta on, seega vastab see digikukkur talle sinu vanuse kohta ainult nullteadmise tõendiga, aga see päring seda ei võimalda.</string>
+    <string name="error_presentation_last_age_attestation">Jagamine peatati. See on sinu viimane ühekordne vanusetõend ja see digikukkur jagab seda ainult nullteadmise tõendina, mida see päring ei võimalda. Uuenda vanusetõendeid jaotises Minu dokumendid.</string>
+    <string name="error_presentation_multiple_age_predicates">Jagamine peatati. See osapool küsis rohkem kui ühe vanusepiiri kohta. Koos paljastaksid vastused sinu vanusevahemiku.</string>
+    <string name="error_presentation_age_predicate_false">Sinu vanusetõend ei vasta vanusepiirile, mille kohta see osapool küsis, seega ei jagatud midagi. Osapoolele öeldakse ainult, et sobivat dokumenti ei leitud.</string>
+    <string name="presentation_last_age_attestation_notice">See on sinu viimane ühekordne vanusetõend. Kõik osapooled, kellele sa seda nüüdsest näitad, saavad need esitused omavahel siduda. Uuenda vanusetõendeid jaotises Minu dokumendid.</string>
     <string name="error_presentation_unsupported_protocol">Jagamine peatati. See osapool küsis andmeid protokolliga, mida see digikukkur ei toeta.</string>
 
     <!-- Errors -->

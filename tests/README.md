@@ -93,11 +93,12 @@ unlisted-circuit POST case; unlisted-circuit rejection is covered only by
 signal — `gofmt -l` exits 0 either way), `go vet ./...` (type-checks the cgo
 package without linking, covering every package), `go test ./oid4vp/...
 ./internal/... ./circuits/...` with `-race`,
-`python3 -m compileall -q issuer verifier wallet tests`, `ruff check
+`python3 -m compileall -q issuer verifier wallet tests sandbox`, `ruff check
 --isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .` (ruff 0.16.6),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
 step installs the pinned `tests/requirements-ci.txt`, since `present.py` imports
-`cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`, and
+`cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`,
+`python3 sandbox/test_age.py` (the sandbox issuer's age reckoning, EE-POA-027), and
 `shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh`.
 `make check` runs the same set.
 
