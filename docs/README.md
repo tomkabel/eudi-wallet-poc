@@ -14,6 +14,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 | [`profiles/DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md`](profiles/DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md) | *ee-eudiw.* Issue text for DCHP #17 on ZKP support |
 | [`decisions/ADR-002-STRICT-CBOR-SUBSET-DECODER.md`](decisions/ADR-002-STRICT-CBOR-SUBSET-DECODER.md) | *ee-eudiw.* Why the ISO dcapi path decodes a strict CBOR subset in-house |
 | [`analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md`](analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md) | *ee-eudiw.* The de-facto `mso_mdoc_zk` carrier in OpenID4VP |
+| [`analysis/REV-1.6-OPEN-ITEMS-RESEARCH.md`](analysis/REV-1.6-OPEN-ITEMS-RESEARCH.md) | Research on spec rev 1.6's open items: the 29 February rule and the external anchors of the 18 new requirements |
 | [`analysis/ZKP08-ANALYSIS.md`](analysis/ZKP08-ANALYSIS.md) | *ee-eudiw.* ARF `ZKP_08` against the Agreed Cryptographic Mechanisms |
 | [`planning/EE-EUDIW-ZK-IMPORT-PLAN.md`](planning/EE-EUDIW-ZK-IMPORT-PLAN.md) | The plan that brought the specification and the ZK spine into this repository |
 | `planning/STEP*-RECORD.md` | Execution records of the conformance plan's steps. The wallet-side ones were written here; `STEP0-CROSS-VERIFY`, `STEP1-FORK`, `STEP2A`, `STEP6-VERIFIER`, `STEP7`, `STEP8` and `STEP8-7` are *ee-eudiw* |
