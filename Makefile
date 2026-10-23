@@ -56,7 +56,7 @@ test-av-fixtures:
 	python3 tools/build_av_fixtures.py --check
 	python3 -m unittest discover -s tests -p 'test_av_fixtures.py'
 
-# Runner regressions exercise local probes and fail-closed external-candidate handling.
+# Runner/report regressions cover ordered evidence, host diagnostics and fail-closed adapters.
 test-av-conformance:
 	python3 -m unittest discover -s tests -p 'test_av_conformance.py'
 

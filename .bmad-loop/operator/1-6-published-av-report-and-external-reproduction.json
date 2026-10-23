@@ -1,0 +1,12 @@
+{
+  "actions": [
+    "Publish the implementation and retained report evidence through the fork remote so the documented public checkout can fetch implementation commit 3cce11df6ec4e9148ebd4859cde95aabf7e650fc.",
+    "Have an independent human or organization run the documented clean-checkout procedure in one sitting and return elapsed times, host metadata, exact commands, return codes, transcript and both report artifacts.",
+    "Arrange execution of an independent candidate at a recorded revision through the existing JSON adapter and retain its failures and unavailable evidence alongside the local result.",
+    "Review the independent evidence and discrepancies, then publish the attributed report and reproduction record at the chosen public location."
+  ],
+  "parked_at": "2026-10-23",
+  "run_id": "20261023-080735-fa7c",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-1-6-published-av-report-and-external-reproduction.md",
+  "story_key": "1-6-published-av-report-and-external-reproduction"
+}

@@ -221,10 +221,27 @@ unlisted-circuit POST case; unlisted-circuit rejection is covered only by
 
 ## AV conformance runner
 
-`python3 tests/run_av_conformance.py --json av-conformance.json` executes the
+`python3 tests/run_av_conformance.py --json /tmp/av-report.json --html /tmp/av-report.html` executes the
 repository verifier's Go tests mapped by `docs/profiles/av/clause-registry.json`
 and the dedicated `TestAVConformance*` probes. It prints per-clause results and
-writes a machine-readable report. The pinned registry denominator remains the
+writes sibling JSON and offline English HTML reports. Omitting `--html` uses
+the JSON filename with an `.html` suffix. Both carry canonical Git/profile
+revisions, clean/dirty status, CPU baseline and advertised flags, Rust/Cargo/Go
+and installed JDK versions (or unavailable), required CPU/Rust baseline versus
+observed FFI configuration and environment, the sibling Longfellow
+pin/revision/mismatch, registry path/SHA-256 and staticlib hash. Effective
+`go env -json` captures overlay flags in GOFLAGS, workspace/GOENV, CGO settings,
+compilers/flags, target and toolchain selection from the module directory;
+current settings do not attest historical compilation.
+Per-test Go assertion output is retained; package startup/build errors remain
+ERROR diagnostics rather than conformance FAIL. Expandable HTML also includes
+exact Go commands, package exit codes/output, all selected named probe results
+and passing/failing/skipped negative controls. Supplementary probe
+FAIL/ERROR/NOT_EXECUTED states affect the verdict independently of clause and
+negative thresholds. All clauses appear per candidate
+in profile order with inline test identifiers or exclusion reasons. See
+[clean-checkout reproduction](../docs/profiles/AV-REPORT-REPRODUCTION.md) and the
+[committed report](../docs/profiles/av/report.html). The pinned registry denominator remains the
 94 retained clauses; this run maps 20 distinct clauses and records negative
 controls separately. The audit is expected to exit nonzero while known AV
 fallback mismatches remain and while no independent candidate is configured.
@@ -240,8 +257,22 @@ available in this checkout; the report lists the operator actions instead of
 inventing a result. `--timeout` bounds each local Go command.
 
 `python3 -m unittest discover -s tests -p 'test_av_conformance.py'` tests local
-coverage accounting, negative-control accounting, known failures, external
-unavailability and the CLI. It runs in fast CI; the full audit is separate.
+coverage/negative-control accounting and retained known failure assertions;
+complete ordered clauses and inline exclusions in JSON/HTML; all result states;
+literal HTML escaping with no network resources; canonical provenance and
+required baseline/observed configuration, effective Go settings and registry
+validation/fingerprints; supplementary probe verdicts and pass-only qualified
+negative counts; actual clean/modified/untracked Git evidence; skipped, missing,
+malformed, duplicate and timed-out
+evidence; package-specific linker errors, unavailable Go, SIGILL and host/JDK
+diagnostics, unavailable Git provenance and unreadable host inputs; explicit
+HTML output and resolved-path/hardlink collisions. These controls use
+synthetic evidence where needed and do not establish independent conformance.
+They run through the existing Makefile/fast-CI target and again in e2e after
+the staticlib build, so the actual local-audit case executes there. Fast CI
+uses synthetic controls and skips only that actual audit when the library is
+absent. External reproduction remains
+UNPERFORMED with imperative operator actions in every report.
 
 ## What CI runs, and where the Rust toolchain matters
 
@@ -270,7 +301,8 @@ of this repository at the revision committed in `verifier/zkverify-ffi/longfello
 builds the prover examples with `RUSTFLAGS=-C target-cpu=x86-64-v3` and asserts
 `ee_poa_demo` exists (`test -x`), builds the verifier
 (`cargo build --release` in `verifier/zkverify-ffi`, then
-`go build -o ../zkverify .`), runs `go test -race . ./zk/...`, then `pip install -r
+`go build -o ../zkverify .`), runs `go test -race . ./zk/...` and the Python
+`test_av_conformance.py` suite with the actual local audit, then `pip install -r
 tests/requirements-ci.txt` and `tests/e2e.sh` with `EE_PROVER` set. The `zk` and package
 `main` tests are here and not in `fast` because package `zk` links the Rust
 staticlib through cgo and `main` imports it — neither test binary can be linked

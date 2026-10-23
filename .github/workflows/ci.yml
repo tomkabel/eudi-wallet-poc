@@ -13,6 +13,7 @@ on:
       - 'docs/profiles/av/**'
       - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
       - 'docs/profiles/AV-PROFILE-FIXTURES.md'
+      - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
       - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
@@ -30,6 +31,7 @@ on:
       - 'docs/profiles/av/**'
       - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
       - 'docs/profiles/AV-PROFILE-FIXTURES.md'
+      - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
       - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
@@ -270,6 +272,11 @@ jobs:
         # failure reported here would mask the e2e assertion below that is the
         # more informative signal.
         run: go test -race . ./zk/...
+
+      - name: AV report regressions with executed local audit
+        run: |
+          test -f verifier/zkverify-ffi/target/release/libzkverify.a
+          python3 -m unittest discover -s tests -p 'test_av_conformance.py'
 
       - name: tests/e2e.sh
         env:

@@ -1,0 +1,146 @@
+{
+  "implementation_revision": "3cce11df6ec4e9148ebd4859cde95aabf7e650fc",
+  "start_utc": "2026-10-23T11:08:26.620234+00:00",
+  "end_utc": "2026-10-23T11:13:43.940190+00:00",
+  "seconds": 317.32,
+  "steps": [
+    {
+      "command": [
+        "git",
+        "clone",
+        "--no-hardlinks",
+        "/home/notroot/Documents/eudi-wallet-poc",
+        "/tmp/av-story-1-6-reproduction/eudi-wallet-poc"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction",
+      "returncode": 0,
+      "seconds": 0.685
+    },
+    {
+      "command": [
+        "git",
+        "checkout",
+        "--detach",
+        "3cce11df6ec4e9148ebd4859cde95aabf7e650fc"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 0.154
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 0.004
+    },
+    {
+      "command": [
+        "python3",
+        "-m",
+        "venv",
+        "/tmp/av-story-1-6-reproduction/venv"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 4.415
+    },
+    {
+      "command": [
+        "python3",
+        "-m",
+        "pip",
+        "install",
+        "-r",
+        "tests/requirements-ci.txt"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 2.784
+    },
+    {
+      "command": [
+        "make",
+        "deps"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 302.576
+    },
+    {
+      "command": [
+        "test",
+        "-x",
+        "../longfellow-zk/rust/target/release/examples/ee_poa_demo"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 0.003
+    },
+    {
+      "command": [
+        "test",
+        "-f",
+        "verifier/zkverify-ffi/target/release/libzkverify.a"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 0.001
+    },
+    {
+      "command": [
+        "git",
+        "-C",
+        "../longfellow-zk",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 0.002
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 0,
+      "seconds": 0.007
+    },
+    {
+      "command": [
+        "python3",
+        "tests/run_av_conformance.py",
+        "--json",
+        "/tmp/av-story-1-6-reproduction/report.json",
+        "--html",
+        "/tmp/av-story-1-6-reproduction/report.html"
+      ],
+      "cwd": "/tmp/av-story-1-6-reproduction/eudi-wallet-poc",
+      "returncode": 1,
+      "seconds": 6.466
+    }
+  ],
+  "transport_limit": "Local clone of unpushed implementation commit; public GitHub transport awaits operator publication. Fresh sibling fetched from public source and both builds executed without copied target artifacts. Existing global dependency caches remain available. This is agent-local verification, not independent reproduction.",
+  "artifacts": {
+    "report.json": {
+      "sha256": "2e6384b2d2d3fdf2957b285bc1a51f469a8119861f4a38575d92819372fd234e",
+      "size_bytes": 295959
+    },
+    "report.html": {
+      "sha256": "4178f4548fd19e0ba9f818867c348f19a20a9c194e103bc18c5cf3e13e7ef539",
+      "size_bytes": 342049
+    },
+    "reproduction-transcript.txt": {
+      "sha256": "4cc55ad59100d3c19961eb5c5e7cb17efa4c2bcaec1a36f639bd8ea115f970be",
+      "size_bytes": 38981
+    }
+  },
+  "kind": "agent-local clean-checkout verification; independent reproduction UNPERFORMED"
+}

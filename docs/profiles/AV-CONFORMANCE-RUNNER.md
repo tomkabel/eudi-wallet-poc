@@ -8,6 +8,13 @@ counted separately; negative controls count only passing executed Go
 subtests. The registry retains its complete 94-clause denominator;
 20 clauses currently have executable mappings.
 
+Every invocation also writes self-contained offline HTML, defaulting to the JSON
+path with an `.html` suffix, or selected with `--html`. Both artifacts retain
+all 94 clauses per candidate in profile order, including exclusions, and record
+host/build provenance separately from property failures. See the
+[clean-checkout reproduction guide](AV-REPORT-REPRODUCTION.md) and
+[published report](av/report.html).
+
 The audit exits nonzero when an in-scope property fails, errors or is not
 executed, when external candidate evidence is unavailable, or when coverage
 falls below 20 clauses/eight negative controls. Existing fallback-policy
