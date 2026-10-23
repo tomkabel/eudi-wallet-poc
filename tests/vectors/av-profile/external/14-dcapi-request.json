@@ -1,0 +1,9 @@
+{
+  "requests" : [ {
+    "data" : {
+      "deviceRequest" : "omd2ZXJzaW9uYzEuMGtkb2NSZXF1ZXN0c4GhbGl0ZW1zUmVxdWVzdNgYWEeiZ2RvY1R5cGVxZXUuZXVyb3BhLmVjLmF2LjFqbmFtZVNwYWNlc6FxZXUuZXVyb3BhLmVjLmF2LjGha2FnZV9vdmVyXzE49A",
+      "encryptionInfo" : "gmVkY2FwaaJlbm9uY2VQtJvGiCZ0egQII8fQgu960HJyZWNpcGllbnRQdWJsaWNLZXmkAQIgASFYIMmliVBWgs8KKpAychO3py0Eqagows-CrraFX1rVOniXIlggIMvYr_x55AY4LKiWZLHBlQJmX1R9Y5BkUfnuSddAmyE"
+    },
+    "protocol" : "org-iso-mdoc"
+  } ]
+}

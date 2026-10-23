@@ -1,0 +1,6 @@
+POST /post HTTP/1.1
+Host: verifier-backend.ageverification.dev
+Content-Type: application/x-www-form-urlencoded
+
+  vp_token=...&
+  state=X2b8D86wXoyQIzFcIC3o8vpq_ebw_u2Ulzjx0JrcmNNYlaNGb2cf0GYubMlwWM2XD0UWL8Zhz1z0RfimJd3oKg

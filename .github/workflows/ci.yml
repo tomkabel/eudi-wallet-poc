@@ -12,11 +12,13 @@ on:
       - 'tests/**'
       - 'docs/profiles/av/**'
       - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
+      - 'docs/profiles/AV-PROFILE-FIXTURES.md'
       - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
       - 'tools/**'
       - 'Makefile'
+      - '.gitattributes'
       - '.github/workflows/ci.yml'
   pull_request:
     paths:
@@ -27,11 +29,13 @@ on:
       - 'tests/**'
       - 'docs/profiles/av/**'
       - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
+      - 'docs/profiles/AV-PROFILE-FIXTURES.md'
       - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
       - 'tools/**'
       - 'Makefile'
+      - '.gitattributes'
       - '.github/workflows/ci.yml'
 
 # A PR from a branch in this repo triggers both `push` and `pull_request`. Keying
@@ -112,6 +116,11 @@ jobs:
         run: |
           python3 tests/check_av_registry.py
           python3 -m unittest discover -s tests -p 'test_av_registry.py'
+
+      - name: AV profile fixtures (read-only bytes, provenance and corruption controls)
+        run: |
+          python3 tools/build_av_fixtures.py --check
+          python3 -m unittest discover -s tests -p 'test_av_fixtures.py'
 
       - name: ruff
         # F (pyflakes) and E9 catch undefined names, unused imports and syntax

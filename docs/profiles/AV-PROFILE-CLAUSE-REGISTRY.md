@@ -12,7 +12,8 @@ and date were checked against its GitHub commit API. The commit identifies the
 document revision; no release number is inferred from it. Every mapped test is
 marked `partial`: a useful assertion can exist while most of a clause remains
 unevidenced. The offline checker does not run those tests or produce a pass for
-their clauses. Fixtures, the conformance runner and issuance work are later stories.
+their clauses. [AV fixtures](AV-PROFILE-FIXTURES.md) add scoped assertions; the
+conformance runner and issuance work remain later stories.
 
 ## Retained source and attribution
 
@@ -27,7 +28,10 @@ The source's wording, whitespace, references and normative-status marker are
 preserved. This registry and this explanatory document are additions. A.10
 (comparison) and A.11 (examples) are outside the retained normative excerpt.
 Their original bytes are included in the full-source digest, not in the registry's
-coverage denominator. No private repository material was imported.
+coverage denominator. A.11 is now retained separately in
+[av/annex-a-examples.md](av/annex-a-examples.md) with
+[example provenance](av/examples-source.json), without changing that denominator.
+No private repository material was imported.
 
 The unchanged excerpt's relative terminology link resolves in its upstream
 directory, rather than in this checkout. Use this companion reference map;
@@ -111,17 +115,20 @@ honesty still require review.
 
 ## What the current mappings establish
 
-There are **86 source blocks, 94 clause rows, six partial test mappings and 88
+There are **86 source blocks, 94 clause rows, nine partial test mappings and 85
 explicit exclusions**. Counts include explanatory and non-obligation text, so they
 are not a count of independent normative obligations or a coverage percentage.
 
 | Clause | Mapped test | Assertion boundary |
 |---|---|---|
+| `AV-A.4-002` | `TestAVProfileLocalContainers` | AV fixture identity and request construction; no issuance enforcement or proof verification |
 | `AV-A.6-007` | `TestEncryptionInfoShape` | Selected CBOR array/map structure; not every member/type or wire encoding |
 | `AV-A.6-008` | `TestDeviceRequestBuild` | Selected CBOR request fields and a byte vector; not the complete inherited ISO schema or AV parameter tuple |
 | `AV-A.6-011` | `TestHPKERoundTrip` | Local encryption round trip and tampering rejection with arbitrary plaintext; not a full DeviceResponse |
 | `AV-A.7-001.1.1` | `TestGenerateKeyProducesUsableP256` | Local JWK key generation properties; not every AP/AVI/RP |
 | `AV-A.7-001.1.2` | `TestJWSSignVerifyRoundTrip` | Local signing/verification primitive; not all profile operations |
+| `AV-A.8-002` | `TestAVProfileRequiredParameters` | Actual local allowlist accepts the positive tuple and refuses all five missing/tampered fields; no scheme-owner authority |
+| `AV-A.8-003` | `TestAVProfileExternalContainers` | Exact public literals and direct binary decodes, selected outer containers and version-6 tuples; no ciphertext decryption or proof verification |
 | `AV-A.8-011` | `TestRegistryRejectsUnlisted` | Local circuit allowlist refusal; not the scheme owner's accepted set or full presentation processing order |
 
 The registry records these material gaps and limits inline:
@@ -133,8 +140,8 @@ The registry records these material gaps and limits inline:
   requirement. No runtime policy is changed to create a mapping.
 - The unofficial OpenID4VP `mso_mdoc_zk` path is outside this profile's ZK
   transport. Its successful tests are not counted as AV conformance.
-- AV-specific fixtures, parameter-tuple assertions, invocation and AVSUA-equivalent
-  issuance are not implemented by this story.
+- AV fixture/container and parameter-tuple assertions are documented in the
+  fixture guide; invocation and AVSUA-equivalent issuance remain unevidenced.
 
 The pin verifies Annex A itself. Its unversioned ISO/OpenID/ARF/TS3 references
 remain inherited dependencies; this inventory neither expands them into invented

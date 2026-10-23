@@ -1,0 +1,9 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+
+{
+  "access_token": "czZCaGRSa3F0MzpnWDFmQmF0M2JW",
+  "token_type": "Bearer",
+  "expires_in": 86400,
+}

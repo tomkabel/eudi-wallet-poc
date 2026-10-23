@@ -1,0 +1,33 @@
+{
+  "credentials": [
+    {
+      "id": "proof_of_age",
+      "format": "mso_mdoc_zk",
+      "meta": {
+        "doctype_value": "eu.europa.ec.av.1",
+        "zk_system_type": [
+          {
+            "system": "longfellow-libzk-v1",
+            "id": "longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121",
+            "circuit_hash": "8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121",
+            "version": 7,
+            "num_attributes": 1,
+            "block_enc_hash": 4151,
+            "block_enc_sig": 4096
+          }
+        ]
+      },
+      "claims": [
+        {
+          "path": [
+            "eu.europa.ec.av.1",
+            "age_over_18"
+          ],
+          "values": [
+            true
+          ]
+        }
+      ]
+    }
+  ]
+}

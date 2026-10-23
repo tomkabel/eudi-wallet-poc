@@ -1,0 +1,8 @@
+[
+  null,
+  null,
+  [
+    "OpenID4VPHandover",
+    h'5d5454853ef21216f8c5dfe774aeb35029cf2e860bbe59aaf79afce879897331'
+  ]
+]

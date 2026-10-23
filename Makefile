@@ -1,4 +1,4 @@
-.PHONY: deps lint test-go-fast test-go-zk test-py test-av-registry check e2e sandbox
+.PHONY: deps lint test-go-fast test-go-zk test-py test-av-registry test-av-fixtures check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -44,12 +44,17 @@ test-py:
 	python3 sandbox/test_age.py
 
 # CI's fast job: no Rust toolchain needed.
-check: lint test-go-fast test-py test-av-registry
+check: lint test-go-fast test-py test-av-registry test-av-fixtures
 
 # Offline traceability validation and its malformed-input controls use stdlib only.
 test-av-registry:
 	python3 tests/check_av_registry.py
 	python3 -m unittest discover -s tests -p 'test_av_registry.py'
+
+# Exact retained examples, copied proof and locally built requests; no writes.
+test-av-fixtures:
+	python3 tools/build_av_fixtures.py --check
+	python3 -m unittest discover -s tests -p 'test_av_fixtures.py'
 
 # EE_BENCH_SKIP=1 as in CI: the step 8 percentile run is a host measurement,
 # not a check. `EE_BENCH_SKIP= make test-go-zk` runs it.

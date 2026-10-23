@@ -1,0 +1,18 @@
+{
+  "repository": "https://github.com/eu-digital-identity-wallet/av-doc-technical-specification",
+  "revision": "014dc2fd0f9332eeabe1eef70d234ed2aef20fd7",
+  "commit_date": "2026-09-01T21:59:02Z",
+  "source_path": "docs/annexes/annex-A/annex-A-av-profile.md",
+  "source_url": "https://raw.githubusercontent.com/eu-digital-identity-wallet/av-doc-technical-specification/014dc2fd0f9332eeabe1eef70d234ed2aef20fd7/docs/annexes/annex-A/annex-A-av-profile.md",
+  "source_sha256": "54808f94484cb75e7b495b508f0c17568e41b7ca7c3657799c7b432a770538a9",
+  "license_path": "docs/profiles/av/LICENSE.upstream",
+  "license_sha256": "8e7a9299a281b71fa9ad3f978bcbd5c4d8809b21b2ab51ca5e173e3a16ed6ccb",
+  "schema_version": 1,
+  "excerpt_path": "docs/profiles/av/annex-a-examples.md",
+  "excerpt_sha256": "c907940c18a291fce6b231bc2419fc25433218d89368553582771d695e28afe2",
+  "source_byte_start": 20029,
+  "source_byte_end": 1131871,
+  "extraction_rule": "Exact byte suffix starting at the first '## A.11. Examples' heading through EOF; no newline or wording changes.",
+  "normative": false,
+  "attribution": "The European Age Verification Solution technical specification © 2025 by European Commission; upstream license: Creative Commons Attribution 4.0 International. Retained non-normative examples are unchanged; fixture packaging and commentary are additions."
+}

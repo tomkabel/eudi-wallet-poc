@@ -40,8 +40,10 @@ class AVRegistryMutations(unittest.TestCase):
 
     def test_valid_checkout(self):
         counts = validate()
-        self.assertEqual(counts, {"source_blocks": 86, "clauses": 94, "mapped": 6,
-                                  "excluded": 88, "tests": 6})
+        self.assertEqual(counts, {"source_blocks": 86, "clauses": 94,
+                                  "mapped": sum("test" in c for c in self.registry["clauses"]),
+                                  "excluded": sum("out_of_scope_for_v1" in c for c in self.registry["clauses"]),
+                                  "tests": len(self.registry["tests"])})
         self.assertEqual(counts["clauses"], counts["mapped"] + counts["excluded"])
 
     def test_duplicate_provenance_keys_in_json_files(self):
@@ -250,6 +252,20 @@ class AVRegistryMutations(unittest.TestCase):
         del mapping["test"]
         mapping["out_of_scope_for_v1"] = "out of scope for v1: test was removed"
         self.reject("orphan references")
+
+    def test_removed_fixture_clause_cannot_leave_catalogue_evidence(self):
+        mapping = next(c for c in self.registry["clauses"] if c["id"] == "AV-A.8-002")
+        test_id = mapping["test"]["id"]
+        self.assertTrue(test_id.endswith("::TestAVProfileRequiredParameters"))
+        self.registry["clauses"].remove(mapping)
+        self.reject("A.8-B002: missing clause coverage")
+        # Even when the source denominator is preserved as an explicit exclusion,
+        # the now-unmapped catalogue test must cease to read as evidence.
+        del mapping["test"]
+        mapping["out_of_scope_for_v1"] = "out of scope for v1: fixture mapping removed"
+        following = next(i for i, c in enumerate(self.registry["clauses"]) if c["id"] == "AV-A.8-003")
+        self.registry["clauses"].insert(following, mapping)
+        self.reject("orphan references.*TestAVProfileRequiredParameters")
 
     def test_bad_normative_strength(self):
         self.mapped()["normative_strength"] = ["PASS"]

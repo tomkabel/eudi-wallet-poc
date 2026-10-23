@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "docRequests": [
+    {
+      "itemsRequest": 24(<<
+        {
+          "docType": "eu.europa.ec.av.1",
+          "nameSpaces": {
+            "eu.europa.ec.av.1": {
+              "age_over_18": false
+            }
+          },
+          "requestInfo": {
+            "zkRequest": {
+              "systemSpecs": [
+                {
+                  "zkSystemId": "longfellow-libzk-v1_6_1_4096_2945_137e5a75ce72735a37c8a72da1a8a0a5df8d13365c2ae3d2c2bd6a0e7197c7c6",
+                  "system": "longfellow-libzk-v1",
+                  "params": {
+                    "version": 6,
+                    "circuit_hash": "137e5a75ce72735a37c8a72da1a8a0a5df8d13365c2ae3d2c2bd6a0e7197c7c6",
+                    "num_attributes": 1,
+                    "block_enc_hash": 4096,
+                    "block_enc_sig": 2945
+                  }
+                },
+                {
+                  "zkSystemId": "longfellow-libzk-v1_6_2_4025_2945_b4bb6f01b7043f4f51d8302a30b36e3d4d2d0efc3c24557ab9212ad524a9764e",
+                  "system": "longfellow-libzk-v1",
+                  "params": {
+                    "version": 6,
+                    "circuit_hash": "b4bb6f01b7043f4f51d8302a30b36e3d4d2d0efc3c24557ab9212ad524a9764e",
+                    "num_attributes": 2,
+                    "block_enc_hash": 4025,
+                    "block_enc_sig": 2945
+                  }
+                },
+                {
+                  "zkSystemId": "longfellow-libzk-v1_6_3_4121_2945_b2211223b954b34a1081e3fbf71b8ea2de28efc888b4be510f532d6ba76c2010",
+                  "system": "longfellow-libzk-v1",
+                  "params": {
+                    "version": 6,
+                    "circuit_hash": "b2211223b954b34a1081e3fbf71b8ea2de28efc888b4be510f532d6ba76c2010",
+                    "num_attributes": 3,
+                    "block_enc_hash": 4121,
+                    "block_enc_sig": 2945
+                  }
+                },
+                {
+                  "zkSystemId": "longfellow-libzk-v1_6_4_4283_2945_c70b5f44a1365c53847eb8948ad5b4fdc224251a2bc02d958c84c862823c49d6",
+                  "system": "longfellow-libzk-v1",
+                  "params": {
+                    "version": 6,
+                    "circuit_hash": "c70b5f44a1365c53847eb8948ad5b4fdc224251a2bc02d958c84c862823c49d6",
+                    "num_attributes": 4,
+                    "block_enc_hash": 4283,
+                    "block_enc_sig": 2945
+                  }
+                }
+              ],
+              "zkRequired": false
+            }
+          }
+        }
+      >>)
+    }
+  ]
+}
+

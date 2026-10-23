@@ -30,7 +30,32 @@ invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
   the normative excerpt and license bytes are retained for offline hashing.
 
 The [registry guide](../docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md) documents the
-schema, source pin, six partial mappings, exclusions and refresh procedure.
+schema, source pin, nine partial mappings, exclusions and refresh procedure.
+
+## AV Profile fixture checks (Python standard library and Go, no Rust)
+
+- `python3 tools/build_av_fixtures.py --check` compares all 49 committed files in
+  `tests/vectors/av-profile/`, including the version/provenance manifest, against
+  an in-memory rebuild; missing/extra files and changed source/provenance pins fail.
+  This command writes nothing and never reserializes decoded golden CBOR.
+- `python3 -m unittest discover -s tests -p 'test_av_fixtures.py'` checks source,
+  local input, provenance, manifest and output corruption plus complete inventory
+  failures and read-only CLI behavior.
+- `cd verifier/go && go test ./oid4vp -run '^TestAVProfile'` independently checks
+  all 32 A.11 literal bodies, ten direct binary decodes, selected outer containers,
+  AV docType/namespace/age predicate, nested tuple values and local request bytes
+  against runtime `DeviceRequest`/`ZkAgeQuery`. The actual allowlist accepts the
+  local positive tuple and refuses all five missing and five tampered parameters,
+  an unknown system and all four external version-6 tuples.
+- `make test-av-fixtures`, `make check` and fast CI run the Python checks; the Go
+  tests run through that job's existing package tests. No network, new keys or
+  cryptographic proof generation is required.
+
+See the [fixture guide](../docs/profiles/AV-PROFILE-FIXTURES.md) for regeneration
+and version/origin details. Public examples remain version 6; local data uses
+version 7. Encrypted examples stay opaque and the copied minted proof retains
+its OpenID4VPHandover binding. These tests do not verify proofs or establish AV
+transport conformance, scheme-owner circuit acceptance or certification.
 
 ## Unit tests beside the code
 
@@ -120,6 +145,9 @@ package without linking, covering every package), `go test ./oid4vp/...
 `python3 tests/check_av_registry.py` and
 `python3 -m unittest discover -s tests -p 'test_av_registry.py'` (offline AV
 traceability and mutation controls),
+`python3 tools/build_av_fixtures.py --check` and
+`python3 -m unittest discover -s tests -p 'test_av_fixtures.py'` (read-only fixture
+bytes/provenance and corruption controls),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
 step installs the pinned `tests/requirements-ci.txt`, since `present.py` imports
 `cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`,
@@ -146,7 +174,7 @@ From the repository root. The `fast` job:
 
 ```bash
 pip install ruff==0.16.6 -r tests/requirements-ci.txt   # pinned as in ci.yml
-make check          # make lint + make test-go-fast + make test-py
+make check          # lint + fast Go/Python tests + AV registry/fixture checks
 ```
 
 The `e2e` job — `make deps` checks out `longfellow-zk` as a sibling at the revision

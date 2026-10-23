@@ -1005,6 +1005,33 @@
       "limits": "Local allowlist check only. The scheme-owner accepted set and its publication/authority are [UNVERIFIED]; not AV circuit acceptance evidence.",
       "command": "cd verifier/go && go test ./zk -run ^TestRegistryRejectsUnlisted$",
       "requires": "Go/cgo and Rust staticlib from make deps"
+    },
+    {
+      "id": "verifier/go/oid4vp/av_profile_test.go::TestAVProfileLocalContainers",
+      "path": "verifier/go/oid4vp/av_profile_test.go",
+      "symbol": "TestAVProfileLocalContainers",
+      "asserts": "Asserts AV docType/namespace/age predicate in the copied minted document and local requests; checks all five nested tuple fields and compares independent CBOR/JSON fixtures with runtime DeviceRequest and ZkAgeQuery.",
+      "limits": "Only fixture identities and request construction are covered. The copied proof binds OpenID4VPHandover; no new proof, issuance enforcement, DC API proof verification or full attribute allowlist is established.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestAVProfileLocalContainers$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/av_profile_test.go::TestAVProfileRequiredParameters",
+      "path": "verifier/go/oid4vp/av_profile_test.go",
+      "symbol": "TestAVProfileRequiredParameters",
+      "asserts": "Accepts the positive local longfellow-libzk-v1 version-7 AV tuple with the actual verifier allowlist; rejects each of five missing and tampered parameters and an unknown system.",
+      "limits": "Exercises local DCQL allowlist validation with the profile parameter names. Existing carrier policy also accepts the legacy org.iso.mdoc.zk alias; this compatibility exception does not establish AV system exclusivity. The unofficial OpenID4VP ZK carrier is not AV transport conformance. The scheme-owner accepted set/publication/authority and external standards editions remain [UNVERIFIED].",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestAVProfileRequiredParameters$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/av_profile_test.go::TestAVProfileExternalContainers",
+      "path": "verifier/go/oid4vp/av_profile_test.go",
+      "symbol": "TestAVProfileExternalContainers",
+      "asserts": "Independently compares all 32 A.11 fenced literal bodies and ten binary decodes; checks DC API request/encrypted-response containers, AV doctype and all five version-6 example parameters; refuses those external tuples against the local version-7 allowlist.",
+      "limits": "Non-normative external container examples only. Ciphertexts are retained without decryption, diagnostics are literal text and no external proof is verified. Full inherited ISO/proof schemas, DC API end-to-end operation and scheme acceptance remain unevidenced.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestAVProfileExternalContainers$",
+      "requires": "Go toolchain; no Rust staticlib"
     }
   ],
   "clauses": [
@@ -1304,7 +1331,12 @@
         "SHALL"
       ],
       "excerpt": "The document type for Proof of Age attestation SHALL be `eu.europa.ec.av.1`.",
-      "out_of_scope_for_v1": "out of scope for v1: Existing request tests supply this doctype but do not assert it or prove issuance/presentation enforcement of the AV document type."
+      "test": {
+        "id": "verifier/go/oid4vp/av_profile_test.go::TestAVProfileLocalContainers",
+        "coverage": "partial",
+        "scope": "Asserts AV docType/namespace/age predicate in the copied minted document and local requests; checks all five nested tuple fields and compares independent CBOR/JSON fixtures with runtime DeviceRequest and ZkAgeQuery.",
+        "limits": "Only fixture identities and request construction are covered. The copied proof binds OpenID4VPHandover; no new proof, issuance enforcement, DC API proof verification or full attribute allowlist is established."
+      }
     },
     {
       "id": "AV-A.4-003",
@@ -1753,7 +1785,12 @@
         "SHALL"
       ],
       "excerpt": "For this version of the profile, the only Zero-Knowledge Proof system in scope is the system identified by `longfellow-libzk-v1`, as defined in [Fri2024] and specified in [draft-google-cfrg-libzk](https://datatracker.ietf.org/doc/draft-google-cfrg-libzk/), using the circuit and parameters identified by the ZkSystemSpec parameters (`circuit_hash`, `version`, `num_attributes`, `block_enc_hash`, `block_enc_sig`) as defined in ISO/IEC DIS 18013-5 (Second Edition), Section 10.2.7. An implementation SHALL use that system. Support for any other Zero-Knowledge Proof system does not constitute conformance with this profile. The system identifier is versioned, and future versions of this profile may add or replace the systems in scope. The set of circuits accepted for the purposes of this profile, identified by their circuit hashes, is published and maintained by the scheme owner separately from this document.",
-      "out_of_scope_for_v1": "out of scope for v1: No full AV ZkSystemSpec parameter-tuple and mandatory-system test. Local circuit policy is not the scheme-owner accepted set; accepted-set publication/authority and external standards editions remain [UNVERIFIED]."
+      "test": {
+        "id": "verifier/go/oid4vp/av_profile_test.go::TestAVProfileRequiredParameters",
+        "coverage": "partial",
+        "scope": "Accepts the positive local longfellow-libzk-v1 version-7 AV tuple with the actual verifier allowlist; rejects each of five missing and tampered parameters and an unknown system.",
+        "limits": "Exercises local DCQL allowlist validation with the profile parameter names. Existing carrier policy also accepts the legacy org.iso.mdoc.zk alias; this compatibility exception does not establish AV system exclusivity. The unofficial OpenID4VP ZK carrier is not AV transport conformance. The scheme-owner accepted set/publication/authority and external standards editions remain [UNVERIFIED]."
+      }
     },
     {
       "id": "AV-A.8-003",
@@ -1762,7 +1799,12 @@
         "SHALL"
       ],
       "excerpt": "The request and response structure of a Zero-Knowledge Proof presentation SHALL follow the ZkSystemSpec mechanism defined in ISO/IEC 18013-5 (Second Edition), Section 10.2.7, transported over the W3C Digital Credentials API as specified in ISO/IEC 18013-7, Annex C. The proof format SHALL follow [draft-google-cfrg-libzk]; a non-normative example is provided in Section A.11 (\"W3C Digital Credentials API with ZKP\").",
-      "out_of_scope_for_v1": "out of scope for v1: Inherited ISO ZkSystemSpec request/response and draft-google-cfrg-libzk proof-format requirements are not expanded or fully verified; dedicated fixtures are a later story."
+      "test": {
+        "id": "verifier/go/oid4vp/av_profile_test.go::TestAVProfileExternalContainers",
+        "coverage": "partial",
+        "scope": "Independently compares all 32 A.11 fenced literal bodies and ten binary decodes; checks DC API request/encrypted-response containers, AV doctype and all five version-6 example parameters; refuses those external tuples against the local version-7 allowlist.",
+        "limits": "Non-normative external container examples only. Ciphertexts are retained without decryption, diagnostics are literal text and no external proof is verified. Full inherited ISO/proof schemas, DC API end-to-end operation and scheme acceptance remain unevidenced."
+      }
     },
     {
       "id": "AV-A.8-004",
