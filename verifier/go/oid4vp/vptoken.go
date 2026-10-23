@@ -42,7 +42,10 @@ type VPToken map[string][]string
 func (t VPToken) Parse(q CredentialQuery) (*ZKPresentation, []byte, error) {
 	entries, ok := t[q.ID]
 	if !ok {
-		return nil, nil, fmt.Errorf("vp_token has no entry for credential id %q", q.ID)
+		return nil, nil, fmt.Errorf("%w: vp_token has no entry for credential id %q", ErrMissingVPTokenEntry, q.ID)
+	}
+	if len(entries) == 0 {
+		return nil, nil, fmt.Errorf("%w: vp_token has no presentation for credential id %q", ErrMissingVPTokenEntry, q.ID)
 	}
 	if len(entries) != 1 {
 		return nil, nil, fmt.Errorf("expected exactly one presentation for %q, got %d", q.ID, len(entries))
@@ -86,7 +89,10 @@ func (t VPToken) Parse(q CredentialQuery) (*ZKPresentation, []byte, error) {
 func (t VPToken) ParseCarrier(q CredentialQuery, override Carrier) (*CheckedPresentation, Carrier, error) {
 	entries, ok := t[q.ID]
 	if !ok {
-		return nil, nil, fmt.Errorf("vp_token has no entry for credential id %q", q.ID)
+		return nil, nil, fmt.Errorf("%w: vp_token has no entry for credential id %q", ErrMissingVPTokenEntry, q.ID)
+	}
+	if len(entries) == 0 {
+		return nil, nil, fmt.Errorf("%w: vp_token has no presentation for credential id %q", ErrMissingVPTokenEntry, q.ID)
 	}
 	if len(entries) != 1 {
 		return nil, nil, fmt.Errorf("expected exactly one presentation for %q, got %d", q.ID, len(entries))
@@ -101,7 +107,7 @@ func (t VPToken) ParseCarrier(q CredentialQuery, override Carrier) (*CheckedPres
 	}
 	cp, err := carrier.Parse(raw, q)
 	if err != nil {
-		return nil, nil, err
+		return nil, carrier, err
 	}
 	return cp, carrier, nil
 }
@@ -120,10 +126,25 @@ func (t VPToken) ParseCarrierMulti(qs []CredentialQuery, override Carrier) ([]*C
 	cps := make([]*CheckedPresentation, 0, len(qs))
 	carriers := make([]Carrier, 0, len(qs))
 	asked := make(map[string]bool, len(qs))
+	// Validate entry presence/cardinality before parsing any carrier. This
+	// keeps an incomplete multi-response at the missing-entry outcome without
+	// claiming that a presentation carrier was selected.
+	for _, q := range qs {
+		entries, ok := t[q.ID]
+		if !ok || len(entries) == 0 {
+			return nil, nil, fmt.Errorf("credential %q: %w: vp_token has no presentation entry", q.ID, ErrMissingVPTokenEntry)
+		}
+		if len(entries) != 1 {
+			return nil, nil, fmt.Errorf("credential %q: expected exactly one presentation, got %d", q.ID, len(entries))
+		}
+	}
 	for _, q := range qs {
 		cp, carrier, err := t.ParseCarrier(q, override)
 		if err != nil {
-			return nil, nil, fmt.Errorf("credential %q: %w", q.ID, err)
+			if carrier != nil {
+				carriers = append(carriers, carrier)
+			}
+			return cps, carriers, fmt.Errorf("credential %q: %w", q.ID, err)
 		}
 		asked[q.ID] = true
 		cps = append(cps, cp)
@@ -131,7 +152,7 @@ func (t VPToken) ParseCarrierMulti(qs []CredentialQuery, override Carrier) ([]*C
 	}
 	for id := range t {
 		if !asked[id] {
-			return nil, nil, fmt.Errorf("vp_token carries an entry for %q, which this session did not ask for", id)
+			return cps, carriers, fmt.Errorf("vp_token carries an entry for %q, which this session did not ask for", id)
 		}
 	}
 	return cps, carriers, nil
@@ -192,7 +213,10 @@ func matchesQueryValue(attrID string, attrCBOR []byte, want []any) error {
 func (t VPToken) ParseZkVPToken(q CredentialQuery) ([]*ZkDocument, error) {
 	entries, ok := t[q.ID]
 	if !ok {
-		return nil, fmt.Errorf("vp_token has no entry for credential id %q", q.ID)
+		return nil, fmt.Errorf("%w: vp_token has no entry for credential id %q", ErrMissingVPTokenEntry, q.ID)
+	}
+	if len(entries) == 0 {
+		return nil, fmt.Errorf("%w: vp_token has no presentation for credential id %q", ErrMissingVPTokenEntry, q.ID)
 	}
 	if len(entries) != 1 {
 		return nil, fmt.Errorf("expected exactly one presentation for %q, got %d", q.ID, len(entries))
@@ -203,7 +227,7 @@ func (t VPToken) ParseZkVPToken(q CredentialQuery) ([]*ZkDocument, error) {
 	}
 	docs, err := ParseZkDocumentsBytes(raw)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrMalformedEnvelope, err)
 	}
 	return docs, nil
 }

@@ -499,12 +499,10 @@ So that "which carrier" stops being an integration surprise.
 encrypted) is named per case,
 - **And** the published vectors under `tests/vectors/carrier-v1/` accompany the runner,
 - **And** the suite is added to `tests/README.md` and wired into `make check` or the matching CI job (or the story records why it is excluded and how it is run instead),
-- **And** a `vp_token` entry matching neither carrier, and bytes matching no family at all, are
-reported as their own outcomes rather than as a JSON parse failure, and an undecryptable JWE is
-refused naming decryption rather than a binding property,
-
-carrier family, are reported as their own outcomes rather than falling through to a JSON parse
-failure,
+- **And** a `vp_token` entry matching neither carrier, bytes matching no supported family, and
+an undecryptable JWE are reported as their own outcomes: unknown carrier bytes do not fall
+through to JSON parsing, and JWE decryption failures are named as decryption rather than as a
+binding-property failure,
 **Blocked by (external):** the external implementation named in Story 2.4. Where the external
 party or hardware is unavailable, the story still closes its in-repository half and records the
 state as blocked with the reason and date — never as passed, and never with a fabricated result.

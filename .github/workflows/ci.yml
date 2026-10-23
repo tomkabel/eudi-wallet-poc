@@ -14,6 +14,7 @@ on:
       - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
       - 'docs/profiles/AV-PROFILE-FIXTURES.md'
       - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
+      - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
       - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
@@ -32,6 +33,7 @@ on:
       - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
       - 'docs/profiles/AV-PROFILE-FIXTURES.md'
       - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
+      - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
       - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
@@ -127,6 +129,9 @@ jobs:
       - name: AV conformance runner regressions
         run: python3 -m unittest discover -s tests -p 'test_av_conformance.py'
 
+      - name: Carrier runner regressions
+        run: python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'
+
       - name: ruff
         # F (pyflakes) and E9 catch undefined names, unused imports and syntax
         # errors — the things that are wrong rather than merely unfashionable.
@@ -176,7 +181,7 @@ jobs:
         run: shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
 
   e2e:
-    name: e2e (prover + verifier, tests/e2e.sh)
+    name: carrier conformance (prover + verifier)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -278,9 +283,9 @@ jobs:
           test -f verifier/zkverify-ffi/target/release/libzkverify.a
           python3 -m unittest discover -s tests -p 'test_av_conformance.py'
 
-      - name: tests/e2e.sh
+      - name: carrier runner (E2E assertions + committed carrier vectors)
         env:
           EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
         run: |
           pip install -r tests/requirements-ci.txt
-          tests/e2e.sh
+          python3 tests/run_carrier_conformance.py --json carrier-conformance-report.json

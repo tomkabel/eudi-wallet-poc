@@ -1,4 +1,4 @@
-.PHONY: deps lint test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance check e2e sandbox
+.PHONY: deps lint test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -44,7 +44,7 @@ test-py:
 	python3 sandbox/test_age.py
 
 # CI's fast job: no Rust toolchain needed.
-check: lint test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance
+check: lint test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
 
 # Offline traceability validation and its malformed-input controls use stdlib only.
 test-av-registry:
@@ -59,6 +59,10 @@ test-av-fixtures:
 # Runner/report regressions cover ordered evidence, host diagnostics and fail-closed adapters.
 test-av-conformance:
 	python3 -m unittest discover -s tests -p 'test_av_conformance.py'
+
+# Runner inventory/order/outcome controls use fake child processes and need no Rust build.
+test-carrier-conformance:
+	python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'
 
 # EE_BENCH_SKIP=1 as in CI: the step 8 percentile run is a host measurement,
 # not a check. `EE_BENCH_SKIP= make test-go-zk` runs it.
@@ -76,7 +80,7 @@ e2e: deps
 	@python3 -c 'import cbor2, cryptography, jwcrypto' 2>/dev/null || { \
 		echo "make e2e: Python dependencies missing — pip install -r tests/requirements-ci.txt" >&2; exit 1; }
 	EE_PROVER="$$(pwd)/../longfellow-zk/rust/target/release/examples/ee_poa_demo" \
-		EE_VERIFIER="$$(pwd)/verifier/zkverify" tests/e2e.sh
+		EE_VERIFIER="$$(pwd)/verifier/zkverify" python3 tests/run_carrier_conformance.py
 
 sandbox:
 	EE_PROVER="$$(pwd)/../longfellow-zk/rust/target/release/examples/ee_poa_demo" \

@@ -10,6 +10,37 @@ end-to-end and load harnesses and offline registry checks. Do not move or rename
 invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
 `tests/*.sh`, `tools/*.sh` and `demo/*.sh`.
 
+## Carrier conformance runner
+
+`python3 tests/run_carrier_conformance.py --json /tmp/carrier-report.json` runs
+the Go carrier dispatch/parser checks, the committed carrier-vector verifier
+test, then `tests/e2e.sh`. The E2E script keeps its human-readable assertions
+and writes JSONL case observations to a private path supplied by the runner.
+The report has one ordered row for each of the 13 numbered assertions, with
+`path_label`, carrier, response mode, outcome and result. Cases that do not
+carry a presentation (for example, proving the response key is published) have
+carrier `NOT_OBSERVED`; encrypted transport mode does not infer one. Child
+failures remain `FAIL`/`ERROR`, and cases the E2E child never reports remain
+`NOT_EXECUTED`.
+
+The E2E inventory exercises the OpenID4VP interim PoC path. Its rows do not
+claim that all 13 assertions exercise both encodings. The second layer runs the
+same-proof committed vectors for `interim-json` and `mso-mdoc-zk-cbor`, whose
+byte hashes and provenance are in `tests/vectors/carrier-v1/manifest.json`.
+The runner requires `make deps` (including the Rust static library, prover and
+verifier) and `pip install -r tests/requirements-ci.txt`; `make e2e` invokes
+it. `make check` runs only its fake-child inventory controls and remains
+Rust-free.
+
+Run the focused runner controls with
+`python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'`.
+These test event order, exact/unique inventory, malformed records and missing
+child behavior. Local execution establishes repository behavior only; it does
+not prove independent-wallet behavior or external conformance. The OpenID4VP
+`mso_mdoc_zk` path is profiled but unofficial; the Digital Credentials API is
+the mandated ZK path. Story 2.4 remains the independent evidence gate. See the
+[runner profile](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md).
+
 ## AV Profile registry checks (Python standard library, offline)
 
 - `python3 tests/check_av_registry.py` validates the public Annex A revision/date

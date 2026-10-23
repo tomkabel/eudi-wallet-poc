@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -560,4 +561,43 @@ func goldenRequestMeta(t *testing.T) goldenRequest {
 		t.Fatalf("parse request.json: %v", err)
 	}
 	return goldenRequest{ClientID: m.ClientID, Nonce: m.Nonce, ResponseURI: m.ResponseURI}
+}
+
+func TestCarrierDispatchStableOutcomes(t *testing.T) {
+	q := carrierFixtureQuery(t)
+	if _, err := CarrierForBytes([]byte("not a carrier"), q, nil); !errors.Is(err, ErrUnknownCarrier) {
+		t.Fatalf("unsupported bytes error = %v, want unknown-carrier", err)
+	}
+	if carrier, err := CarrierForBytes([]byte("{broken"), q, nil); err != nil || carrier.Name() != "interim-json" {
+		t.Fatalf("malformed JSON dispatch = %v, %v; want interim-json parser", carrier, err)
+	}
+	if carrier, err := CarrierForBytes([]byte(" \t\r\n{\"valid\":true}"), q, nil); err != nil || carrier.Name() != "interim-json" {
+		t.Fatalf("whitespace-prefixed JSON dispatch = %v, %v; want interim-json", carrier, err)
+	}
+	if carrier, err := CarrierForBytes([]byte{0xa0}, q, nil); err != nil || carrier.Name() != "mso-mdoc-zk-cbor" {
+		t.Fatalf("CBOR map dispatch = %v, %v; want mso-mdoc-zk-cbor parser", carrier, err)
+	}
+	if _, err := (InterimJSON{}).Parse([]byte("{broken"), q); !errors.Is(err, ErrMalformedEnvelope) {
+		t.Fatalf("malformed JSON error = %v, want malformed-envelope", err)
+	}
+	if _, err := (MsoMdocZkCBOR{}).Parse([]byte{0xa0}, q); !errors.Is(err, ErrMalformedEnvelope) {
+		t.Fatalf("malformed CBOR error = %v, want malformed-envelope", err)
+	}
+	if _, _, err := (VPToken{}).ParseCarrier(q, nil); !errors.Is(err, ErrMissingVPTokenEntry) || !strings.Contains(err.Error(), q.ID) {
+		t.Fatalf("missing vp_token entry error = %v, want missing-entry naming %q", err, q.ID)
+	}
+	malformedToken := VPToken{q.ID: []string{base64.RawURLEncoding.EncodeToString([]byte("{broken"))}}
+	if _, carrier, err := malformedToken.ParseCarrier(q, nil); !errors.Is(err, ErrMalformedEnvelope) || carrier == nil || carrier.Name() != "interim-json" {
+		t.Fatalf("selected carrier on malformed envelope = %v, %v; want interim-json with malformed-envelope", carrier, err)
+	}
+	other, err := ZkAgeQuery("other_credential", "eu.europa.ec.av.1", "eu.europa.ec.av.1",
+		"age_over_21", carrierFixtureCircuit).Single()
+	if err != nil {
+		t.Fatalf("second query: %v", err)
+	}
+	_, carriers, err := (VPToken{q.ID: []string{"e30"}}).ParseCarrierMulti(
+		[]CredentialQuery{q, other}, nil)
+	if !errors.Is(err, ErrMissingVPTokenEntry) || len(carriers) != 0 {
+		t.Fatalf("incomplete multi vp_token error/carriers = %v / %v, want missing-entry / none", err, carriers)
+	}
 }

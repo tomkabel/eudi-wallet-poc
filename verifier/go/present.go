@@ -408,12 +408,15 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
-	valid, detail, code := p.check(s, token)
+	valid, detail, code, carriers := p.check(s, token)
 	if _, err := p.store.Complete(id, valid, detail); err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
-	writeJSON(w, code, map[string]any{"valid": valid, "detail": detail})
+	if carriers == nil {
+		carriers = []string{}
+	}
+	writeJSON(w, code, map[string]any{"valid": valid, "detail": detail, "carriers": carriers})
 }
 
 // check runs the actual verification and returns a plain answer.
@@ -433,13 +436,13 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 // credential verifies, and a failure on any credential ends the walk — partial
 // results are never returned, so "learn whether the holder presented" is all
 // the outcome ever reveals.
-func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string, int) {
+func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string, int, []string) {
 	qs, err := s.Query.Validate(p.maxCredentials)
 	if err != nil {
 		// The session's own stored query; a validation failure here is a
 		// construction bug, not holder input.
 		log.Printf("/present/response/%s: session query is unusable: %v", s.ID, err)
-		return false, "verifier configuration error", http.StatusInternalServerError
+		return false, "verifier configuration error", http.StatusInternalServerError, nil
 	}
 	if len(qs) > 1 {
 		return p.checkMulti(s, qs, token)
@@ -455,13 +458,24 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 		// The holder sent this; telling them exactly what was wrong with it is
 		// the whole value of the answer. A forced carrier that does not match
 		// the bytes is refused here too — an override never falls back.
-		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest, carrierNames(carrier)
 	}
 	pres, proof, err := interimOfChecked(cp, carrier)
 	if err != nil {
-		return false, err.Error(), http.StatusBadRequest
+		return false, err.Error(), http.StatusBadRequest, carrierNames(carrier)
 	}
-	return p.verifyPlain(s, pres, proof)
+	valid, detail, code := p.verifyPlain(s, pres, proof)
+	return valid, detail, code, carrierNames(carrier)
+}
+
+func carrierNames(carriers ...oid4vp.Carrier) []string {
+	names := make([]string, 0, len(carriers))
+	for _, carrier := range carriers {
+		if carrier != nil {
+			names = append(names, carrier.Name())
+		}
+	}
+	return names
 }
 
 // checkMulti verifies every credential in a multi-credential session. The
@@ -473,12 +487,13 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 // refused presentation, a proof that does not verify — fails the whole
 // session, naming the offending credential id; partial results are never
 // returned, so the outcome still reveals nothing beyond "did they present".
-func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int) {
+func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int, []string) {
 	// Parse every credential first: a missing, extra, or malformed entry is
 	// refused before any FFI work runs, for any credential.
 	cps, carriers, err := token.ParseCarrierMulti(qs, p.carrier)
+	selected := carrierNames(carriers...)
 	if err != nil {
-		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest, selected
 	}
 	for i, cq := range qs {
 		var valid bool
@@ -492,7 +507,7 @@ func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, t
 			// keeps its own verifier; one session may carry either shape.
 			pres, proof, perr := interimOfChecked(cps[i], carriers[i])
 			if perr != nil {
-				return false, fmt.Sprintf("credential %q: %s", cq.ID, perr.Error()), http.StatusBadRequest
+				return false, fmt.Sprintf("credential %q: %s", cq.ID, perr.Error()), http.StatusBadRequest, selected
 			}
 			valid, detail, code = p.verifyPlain(s, pres, proof)
 		} else {
@@ -501,10 +516,10 @@ func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, t
 		if !valid || code != http.StatusOK {
 			// All-or-error: name the credential that failed so the holder can
 			// act on it, but the session never reports a partial pass.
-			return false, fmt.Sprintf("credential %q: %s", cq.ID, detail), code
+			return false, fmt.Sprintf("credential %q: %s", cq.ID, detail), code, selected
 		}
 	}
-	return true, fmt.Sprintf("all %d credentials proved in zero knowledge", len(qs)), http.StatusOK
+	return true, fmt.Sprintf("all %d credentials proved in zero knowledge", len(qs)), http.StatusOK, selected
 }
 
 // interimOfChecked rebuilds the interim envelope the plain path verifies from
@@ -592,19 +607,21 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 //
 // Rule order mirrors the ISO path: the advertised-circuit allowlist (EE-ZKP-023,
 // before any FFI work), then the per-zkDocument rules, then zk.Verify.
-func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int) {
-	cp, _, err := token.ParseCarrier(cq, p.carrier)
+func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int, []string) {
+	cp, carrier, err := token.ParseCarrier(cq, p.carrier)
+	selected := carrierNames(carrier)
 	if err != nil {
 		if errors.Is(err, oid4vp.ErrNoZkDocument) {
 			// The wallet answered with no provable document. That is an
 			// answer, not an error — but not the yes the verifier asked for.
-			return false, err.Error(), http.StatusOK
+			return false, err.Error(), http.StatusOK, selected
 		}
 		// The holder sent this; telling them exactly what was wrong with it is
 		// the whole value of the answer.
-		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest, selected
 	}
-	return p.verifyZkPresentation(s, cq, cp)
+	valid, detail, code := p.verifyZkPresentation(s, cq, cp)
+	return valid, detail, code, selected
 }
 
 // verifyZkPresentation runs the rule chain on an already-parsed mso_mdoc_zk

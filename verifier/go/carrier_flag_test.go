@@ -71,6 +71,24 @@ func postPlain(t *testing.T, p *presenter, s *oid4vp.Session, raw []byte) *httpt
 	return rec
 }
 
+func assertResponseCarriers(t *testing.T, rec *httptest.ResponseRecorder, want ...string) {
+	t.Helper()
+	var body struct {
+		Carriers []string `json:"carriers"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("response JSON: %v: %s", err, rec.Body.String())
+	}
+	if len(body.Carriers) != len(want) {
+		t.Fatalf("response carriers = %v, want %v", body.Carriers, want)
+	}
+	for i := range want {
+		if body.Carriers[i] != want[i] {
+			t.Fatalf("response carriers = %v, want %v", body.Carriers, want)
+		}
+	}
+}
+
 func plainEnvelope(t *testing.T) []byte {
 	t.Helper()
 	proof, err := os.ReadFile("zk/testdata/step8-7-openid4vp-zk/device_response.cbor")
@@ -108,12 +126,16 @@ func TestPlainPathCarrierOverride(t *testing.T) {
 	p, s := plainCarrierHarness(t, nil)
 	if rec := postPlain(t, p, s, raw); rec.Code == http.StatusBadRequest {
 		t.Fatalf("default dispatch refused the interim envelope: %s", rec.Body.String())
+	} else {
+		assertResponseCarriers(t, rec, "interim-json")
 	}
 
 	// Forced interim carrier: same acceptance.
 	p, s = plainCarrierHarness(t, oid4vp.InterimJSON{})
 	if rec := postPlain(t, p, s, raw); rec.Code == http.StatusBadRequest {
 		t.Fatalf("forced interim carrier refused the interim envelope: %s", rec.Body.String())
+	} else {
+		assertResponseCarriers(t, rec, "interim-json")
 	}
 
 	// Forced CBOR carrier over JSON bytes: a loud refusal, never a fallback.
@@ -126,4 +148,5 @@ func TestPlainPathCarrierOverride(t *testing.T) {
 		t.Fatalf("forced CBOR carrier over interim bytes: got %d %s, want a 400 naming the CBOR subset",
 			rec.Code, rec.Body.String())
 	}
+	assertResponseCarriers(t, rec, "mso-mdoc-zk-cbor")
 }

@@ -1,6 +1,7 @@
 package oid4vp
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -91,6 +92,14 @@ type CheckedPresentation struct {
 // on their path (a 200 valid:false here), never into a parse failure.
 var ErrNoZkDocument = errors.New("no zkDocument: the wallet presented nothing provable in this response")
 
+// Stable carrier outcomes. Callers can classify these without parsing
+// diagnostic wording, while the wrapped text keeps the holder-facing detail.
+var (
+	ErrMissingVPTokenEntry = errors.New("missing-entry")
+	ErrUnknownCarrier      = errors.New("unknown-carrier")
+	ErrMalformedEnvelope   = errors.New("malformed-envelope")
+)
+
 // InterimJSON is the interim encoding this repository introduced so the flow
 // could be built before any carrier existed: the ZKPresentation JSON
 // envelope, base64url inside the vp_token. It is a versioned stand-in, not an
@@ -144,7 +153,7 @@ func interimCircuitSpecID(zkSystem string, version, numAttributes uint32) string
 func parseInterimJSON(raw []byte, q CredentialQuery) (*ZKPresentation, []byte, error) {
 	var p ZKPresentation
 	if err := json.Unmarshal(raw, &p); err != nil {
-		return nil, nil, fmt.Errorf("presentation is not a ZK presentation envelope: %w", err)
+		return nil, nil, fmt.Errorf("%w: presentation is not a ZK presentation envelope: %v", ErrMalformedEnvelope, err)
 	}
 
 	// The presentation must answer the query that was actually asked.
@@ -204,7 +213,7 @@ func (MsoMdocZkCBOR) Name() string { return "mso-mdoc-zk-cbor" }
 func (MsoMdocZkCBOR) Parse(raw []byte, q CredentialQuery) (*CheckedPresentation, error) {
 	docs, err := ParseZkDocumentsBytes(raw)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrMalformedEnvelope, err)
 	}
 	d, err := MatchQueryZkDocument(docs, q)
 	if err != nil {
@@ -323,32 +332,28 @@ func ParseCarrierName(name string) (Carrier, error) {
 }
 
 // CarrierForBytes picks the carrier for one vp_token entry: an explicit
-// override wins (the -carrier flag, for tests), an mso_mdoc_zk query names
-// its carrier, and anything else is sniffed off the first byte — '{' is the
-// interim JSON envelope, a CBOR map or array head is the DeviceResponse. The
-// de-facto DeviceResponse is a map at top level (verified against the multipaz
-// fixture); the array head is accepted for the sniff so an unexpected-but-CBOR
-// envelope gets the CBOR carrier's specific error, not a JSON one.
-func CarrierForBytes(raw []byte, q CredentialQuery, override Carrier) (Carrier, error) {
+// override wins (the -carrier flag, for tests); otherwise '{' identifies the
+// interim JSON envelope and a CBOR map or array head selects the CBOR parser.
+// The query format and response encryption mode do not identify the carrier.
+// Other bytes are reported as unknown instead of falling through to JSON.
+func CarrierForBytes(raw []byte, _ CredentialQuery, override Carrier) (Carrier, error) {
 	if override != nil {
 		return override, nil
 	}
+	// JSON allows only these four whitespace bytes before its first token.
+	// Ignore them for family sniffing, while passing the original bytes to
+	// the strict JSON parser.
+	sniff := bytes.TrimLeft(raw, " \t\r\n")
 	// An interim JSON envelope is unambiguous — '{' cannot head a
-	// DeviceResponse in the accepted CBOR subset — and it is the encoding
-	// every holder in this PoC speaks, so it wins over the query's format
-	// label: an mso_mdoc_zk query answered with the interim envelope parses
-	// as interim JSON instead of dying as a CBOR refusal. Bytes that are not
-	// JSON follow the query's format, then the first-byte sniff.
-	if len(raw) > 0 && raw[0] == '{' {
+	// DeviceResponse in the accepted CBOR subset. Keep malformed JSON on this
+	// path so it is classified as malformed-envelope rather than unknown.
+	if len(sniff) > 0 && sniff[0] == '{' {
 		return InterimJSON{}, nil
-	}
-	if q.Format == FormatMsoMdocZk {
-		return MsoMdocZkCBOR{}, nil
 	}
 	if len(raw) > 0 {
 		if raw[0]>>5 == 4 || raw[0]>>5 == 5 { // CBOR major 4 (array) or 5 (map)
 			return MsoMdocZkCBOR{}, nil
 		}
 	}
-	return InterimJSON{}, nil
+	return nil, fmt.Errorf("%w: bytes do not begin with a recognized JSON or CBOR envelope", ErrUnknownCarrier)
 }

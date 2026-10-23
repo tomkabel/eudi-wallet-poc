@@ -36,6 +36,48 @@ failures=0
 pass() { printf '  PASS  %s\n' "$1"; }
 fail() { printf '  FAIL  %s\n' "$1"; failures=$((failures + 1)); }
 
+observed_carriers() {
+	python3 - "$1" <<'PY'
+import json, sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+decoder = json.JSONDecoder()
+found = []
+for pos, char in enumerate(text):
+    if char != "{":
+        continue
+    try:
+        value, _ = decoder.raw_decode(text[pos:])
+    except json.JSONDecodeError:
+        continue
+    if isinstance(value, dict) and isinstance(value.get("carriers"), list):
+        found = value["carriers"]
+if found and all(isinstance(item, str) for item in found):
+    print(",".join(found))
+else:
+    print("NOT_OBSERVED")
+PY
+}
+
+# The conformance runner supplies a private JSONL path. Keep the script's
+# human-readable output and assertions unchanged while recording observed
+# metadata for each assertion.
+case_record() {
+	[ -n "${EE_E2E_CASES:-}" ] || return 0
+	python3 - "$EE_E2E_CASES" "$@" <<'PY'
+import json, sys
+path, case_id, carrier, response_mode, outcome, result = sys.argv[1:]
+with open(path, "a", encoding="utf-8") as f:
+    f.write(json.dumps({
+        "case_id": case_id,
+        "path_label": "openid4vp-interim-poc",
+        "carriers": carrier.split(",") if carrier != "NOT_OBSERVED" else [],
+        "response_mode": response_mode,
+        "outcome": outcome,
+        "result": result,
+    }, sort_keys=True) + "\n")
+PY
+}
+
 # 1. Mint the identities: adult and minor over the national doctype, plus the
 # second doctype fixture (W6) — the EU AV document from its own issuer key, so
 # the two-credential session has two doctypes from two issuers to trust.
@@ -85,24 +127,30 @@ start_verifier -response-mode direct_post -allow-unencrypted-response
 echo "1. happy path: an over-18 holder presents age_over_18"
 present "$work/1.log" "$work/adult"
 if grep -q '"valid": true' "$work/1.log"; then
+	case_record 1 "$(observed_carriers "$work/1.log")" direct_post proof-verified PASS
 	pass "verifier answered valid:true"
 else
+	case_record 1 "$(observed_carriers "$work/1.log")" direct_post proof-verified FAIL
 	fail "expected valid:true"; tail -20 "$work/1.log"
 fi
 
 echo "2. transcript binding: a proof made against a different nonce"
 present "$work/2.log" "$work/adult" --tamper-nonce
 if grep -q '"valid": false' "$work/2.log"; then
+	case_record 2 "$(observed_carriers "$work/2.log")" direct_post transcript-binding-refused PASS
 	pass "verifier answered valid:false"
 else
+	case_record 2 "$(observed_carriers "$work/2.log")" direct_post transcript-binding-refused FAIL
 	fail "expected valid:false"; tail -20 "$work/2.log"
 fi
 
 echo "3. single use: the same vp_token posted twice"
 present "$work/3.log" "$work/adult" --replay
 if grep -q 'replay     : HTTP 410' "$work/3.log"; then
+	case_record 3 "$(observed_carriers "$work/3.log")" direct_post replay-refused PASS
 	pass "the replayed post was refused with 410"
 else
+	case_record 3 "$(observed_carriers "$work/3.log")" direct_post replay-refused FAIL
 	fail "expected HTTP 410 on replay"; tail -20 "$work/3.log"
 fi
 
@@ -111,8 +159,10 @@ fi
 echo "4. predicate binding: an under-18 holder proves age_over_18 = false"
 present "$work/4.log" "$work/minor" --allow-false-predicate
 if grep -q '"valid": false' "$work/4.log" && grep -q 'only accepts 0xf5' "$work/4.log"; then
+	case_record 4 "$(observed_carriers "$work/4.log")" direct_post false-predicate-refused PASS
 	pass "verifier answered valid:false, on the value and not by accident"
 else
+	case_record 4 "$(observed_carriers "$work/4.log")" direct_post false-predicate-refused FAIL
 	fail "a false predicate was accepted as true"; tail -20 "$work/4.log"
 fi
 
@@ -124,10 +174,13 @@ echo "5. prover refuses a false predicate by default"
 rc=0
 { "$prover" "$work/minor" age_over_18 >"$work/5.log" 2>&1 || rc=$?; } 2>/dev/null
 if [ "$rc" -eq 0 ]; then
+	case_record 5 NOT_OBSERVED direct_post prover-guard-failed FAIL
 	fail "the prover proved age_over_18 for an under-18 attestation"; tail -20 "$work/5.log"
 elif grep -q -- '--allow-false-predicate' "$work/5.log"; then
+	case_record 5 NOT_OBSERVED direct_post prover-guard-refused PASS
 	pass "the prover exited non-zero, naming the attribute and its actual value"
 else
+	case_record 5 NOT_OBSERVED direct_post prover-guard-failed FAIL
 	fail "the prover failed, but not on the predicate value"; tail -20 "$work/5.log"
 fi
 
@@ -146,16 +199,20 @@ keys = req["client_metadata"]["jwks"]["keys"]
 assert keys and keys[0]["kty"] == "EC" and keys[0]["crv"] == "P-256", keys
 PY
 then
+	case_record 6 NOT_OBSERVED direct_post.jwt response-key-published PASS
 	pass "the authorization request carries client_metadata.jwks with the P-256 response key"
 else
+	case_record 6 NOT_OBSERVED direct_post.jwt response-key-published FAIL
 	fail "the request did not publish the response key"; cat "$work/6-req.json" 2>/dev/null
 fi
 
 echo "7. encrypted mode: an over-18 holder answers with a JWE"
 present "$work/7.log" "$work/adult" --encrypt-for /dev/null
 if grep -q '"valid": true' "$work/7.log"; then
+	case_record 7 "$(observed_carriers "$work/7.log")" direct_post.jwt proof-verified PASS
 	pass "verifier answered valid:true over the encrypted response"
 else
+	case_record 7 "$(observed_carriers "$work/7.log")" direct_post.jwt proof-verified FAIL
 	fail "expected valid:true on the encrypted flow"; tail -20 "$work/7.log"
 fi
 
@@ -201,8 +258,10 @@ except urllib.error.HTTPError as e:
     assert "decrypt" not in body_txt.lower(), body_txt
 PY
 then
+	case_record 8 NOT_OBSERVED direct_post.jwt encrypted-wire-assertion PASS
 	pass "the wire carries a compact JWE; plaintext never leaves the wallet"
 else
+	case_record 8 NOT_OBSERVED direct_post.jwt encrypted-wire-assertion FAIL
 	fail "the response was not ciphertext on the wire"
 fi
 
@@ -241,8 +300,10 @@ except urllib.error.HTTPError as e:
 PY
 )" || true
 if [ "$tamper_check" = "OK" ]; then
+	case_record 9 NOT_OBSERVED direct_post.jwt decryption-failed PASS
 	pass "the tampered JWE got a 400 and nothing was parsed from it"
 else
+	case_record 9 NOT_OBSERVED direct_post.jwt decryption-failed FAIL
 	fail "tampered JWE handling: $tamper_check"
 fi
 
@@ -270,8 +331,10 @@ except urllib.error.HTTPError as e:
 PY
 )" || true
 if [ "$plain_check" = "OK" ]; then
+	case_record 10 NOT_OBSERVED direct_post plain-response-refused PASS
 	pass "the plain response got a 400 naming the encrypted requirement"
 else
+	case_record 10 NOT_OBSERVED direct_post plain-response-refused FAIL
 	fail "plain-response refusal: $plain_check"
 fi
 
@@ -291,8 +354,10 @@ print("OK" if obj.get("response_mode") == "direct_post.jwt" else f"BAD {obj.get(
 PY
 )" || true
 if [ "$default_check" = "OK" ]; then
+	case_record 11 NOT_OBSERVED direct_post.jwt encrypted-default-confirmed PASS
 	pass "a fresh /present/new without mode flags answers direct_post.jwt"
 else
+	case_record 11 NOT_OBSERVED direct_post.jwt encrypted-default-confirmed FAIL
 	fail "the default response mode is not direct_post.jwt: $default_check"
 fi
 
@@ -309,8 +374,10 @@ start_verifier -response-mode direct_post -allow-unencrypted-response -multi-cre
 echo "12. multi-credential: one session requests and verifies two doctypes"
 present "$work/12.log" "$work/adult" --credential "$work/av"
 if grep -q '"valid": true' "$work/12.log" && grep -q 'all 2 credentials proved in zero knowledge' "$work/12.log"; then
+	case_record 12 "$(observed_carriers "$work/12.log")" direct_post multi-credential-proof-verified PASS
 	pass "a two-credential (two doctype, two issuer) session verified both"
 else
+	case_record 12 "$(observed_carriers "$work/12.log")" direct_post multi-credential-proof-verified FAIL
 	fail "expected valid:true over both credentials"; tail -20 "$work/12.log"
 fi
 
@@ -385,16 +452,23 @@ try:
     with urllib.request.urlopen(req_obj, timeout=60) as r:
         resp = json.load(r)
     ok = resp.get("valid") is False and queries[1]["id"] in resp.get("detail", "")
-    print("OK" if ok else f"BAD {resp}")
 except urllib.error.HTTPError as e:
     txt = e.read().decode()
+    try:
+        resp = json.loads(txt)
+    except json.JSONDecodeError:
+        resp = {}
     ok = queries[1]["id"] in txt
-    print("OK" if ok else f"BAD {e.code} {txt[:200]}")
+carriers = resp.get("carriers", [])
+carrier_label = ",".join(carriers) if carriers else "NOT_OBSERVED"
+print(("OK" if ok else "BAD") + " " + carrier_label)
 PY
 )" || true
-if [ "$missing_check" = "OK" ]; then
+if [ "$missing_check" = "OK NOT_OBSERVED" ]; then
+	case_record 13 "${missing_check#OK }" direct_post missing-entry PASS
 	pass "the one-of-two answer failed the session, naming the missing id"
 else
+	case_record 13 NOT_OBSERVED direct_post missing-entry FAIL
 	fail "missing-credential refusal: $missing_check"
 fi
 
