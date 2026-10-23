@@ -1,0 +1,152 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 10-23-2026 04:42
+last_updated: 10-23-2026 06:30
+project: eudi-wallet-poc
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts/stories
+development_status:
+  epic-1: backlog
+  1-1-av-profile-clause-registry: backlog
+  1-2-av-profile-fixtures: backlog
+  1-3-av-conformance-runner: backlog
+  1-4-av-vci-invocation: backlog
+  1-5-avsua-equivalent-issuance-path: backlog
+  1-6-published-av-report-and-external-reproduction: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-carrier-runner-over-existing-cases: backlog
+  2-2-binding-property-failure-naming: backlog
+  2-3-version-labelled-carrier-fixtures: backlog
+  2-4-external-carrier-run-and-published-result: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-deployable-rp-service-profile: backlog
+  3-2-tara-facing-adapter-contract: backlog
+  3-3-fail-closed-rp-register-interface-and-mock: backlog
+  3-4-rp-register-interface-proposal: backlog
+  3-5-four-estonian-acceptance-cases: backlog
+  3-6-refusal-distinguishable-from-cancellation: backlog
+  3-7-integrator-readme-and-timed-onboarding: backlog
+  3-8-parallel-path-integration-note: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-intendedusesource-interface: backlog
+  4-2-registration-certificate-parsing: backlog
+  4-3-certificate-driven-two-predicate-decision: backlog
+  4-4-topic-19-log-fields-from-the-certificate: backlog
+  4-5-fail-closed-defaults-and-certificate-property-tests: backlog
+  4-6-certificate-fixture-generator: backlog
+  4-7-plain-fallback-visibility-guard: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-signed-circuit-list-document-and-generator: backlog
+  5-2-verifier-fetch-with-pinned-key-validation: backlog
+  5-3-wallet-scheme-resolution-from-the-registry: backlog
+  5-4-tamper-and-two-instance-agreement-tests: backlog
+  5-5-circuit-provenance-audit-query: backlog
+  5-6-registry-hosting-and-succession-path: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-on-device-proving-measurements: backlog
+  6-2-verification-capacity-on-target-hardware: backlog
+  6-3-proximity-ble-transfer-measurement: backlog
+  6-4-verification-budget-and-refusal-cost-regression: backlog
+  6-5-register-latency-and-availability-profile: backlog
+  6-6-honest-measurement-reporting: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-fix-the-stale-issuerauth-conformity-row: backlog
+  7-2-audit-remaining-hand-maintained-conformity-rows: backlog
+  7-3-test-derived-conformity-statuses: backlog
+  7-4-evidence-scoped-compliance-and-estimate-vocabulary: backlog
+  7-5-haip-1-0-clause-statement: backlog
+  7-6-ts13-clause-map: backlog
+  7-7-eccg-clause-map-and-algorithm-inventory: backlog
+  7-8-narrow-scope-statement-for-the-zkp-work: backlog
+  7-9-attestation-ordering-statement: backlog
+  7-10-national-wallet-production-comparison: backlog
+  7-11-estimate-method-discipline: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-zkp_08-and-eccg-tension-report: backlog
+  8-2-iso-18013-5-second-edition-watch: backlog
+  8-3-zk-jwt-path-feasibility: backlog
+  8-4-per-path-unlinkability-statement: backlog
+  8-5-loa-high-authentication-with-a-zkp-presentation: backlog
+  8-6-dchp-17-filing-and-issue-tracking: backlog
+  8-7-missing-zkp_03-zkp_04-acp_03-design-notes: backlog
+  8-8-second-zk-family-readiness: backlog
+  8-9-upstream-dormancy-maintenance-position: backlog
+  epic-8-retrospective: optional
+
+  epic-9: backlog
+  9-1-statutory-threshold-to-circuit-map: backlog
+  9-2-accepted-circuit-set-per-threshold: backlog
+  9-3-nearest-true-above-negotiation-library: backlog
+  9-4-threshold-boundary-tests: backlog
+  9-5-refusal-with-a-user-visible-reason: backlog
+  9-6-legal-review-of-the-threshold-list: backlog
+  epic-9-retrospective: optional
+
+  epic-10: backlog
+  10-1-real-issuer-integration: backlog
+  10-2-batch-issuance: backlog
+  10-3-real-wallet-unit-attestation-issuance: backlog
+  10-4-revocation-end-to-end-with-a-revoked-fixture: backlog
+  10-5-mobile-device-security-test-matrix: backlog
+  epic-10-retrospective: optional
+
+  epic-11: backlog
+  11-1-operations-runbook: backlog
+  11-2-monitoring-availability-and-incident-process: backlog
+  11-3-accessibility-conformance-audit: backlog
+  11-4-external-security-review: backlog
+  11-5-runbook-game-day: backlog
+  11-6-certificate-transparency-for-access-certificates: backlog
+  11-7-cross-border-onboarding-without-a-national-identifier: backlog
+  11-8-dependency-and-vendored-artefact-hygiene: backlog
+  epic-11-retrospective: optional
+
+  epic-12: backlog
+  12-1-requester-name-authenticated-at-consent: backlog
+  12-2-credential-keys-require-user-presence: backlog
+  12-3-consent-gate-resists-guessing: backlog
+  12-4-proximity-share-carries-consent: backlog
+  epic-12-retrospective: optional

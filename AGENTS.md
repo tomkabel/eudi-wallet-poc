@@ -1,5 +1,5 @@
 <!-- bmad:context -->
-<!-- Verified 2026-10-11 against 0579cc2. Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
+<!-- Verified 2026-10-23 against 2d38feb. Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
 ## eudi-wallet-poc
 
 Independent fork of open-eid's EE Wallet PoC: an Android wallet (Kotlin, Gradle, `app/`) plus an imported ZK age-proof spine — Python issuer and holder, a Go verifier over a Rust Longfellow staticlib — and the EE-EUDIW specification (`spec/`). Plans and step records live in `docs/planning/`; every doc is indexed in `docs/README.md`.
@@ -14,6 +14,7 @@ Independent fork of open-eid's EE Wallet PoC: an Android wallet (Kotlin, Gradle,
 ## Where things are
 
 - ZK spine build, run and troubleshooting: `docs/DEVELOPMENT.md`; every test and check: `tests/README.md`.
+- The sprint backlog lives in `_bmad-output/implementation-artifacts/sprint-status.yaml`; the epics and stories behind it are in `_bmad-output/planning-artifacts/epics.md`, sourced from the research corpus in `docs/research/`. Read the story before implementing it.
 - Wallet vs OpenID4VP 1.0 / HAIP 1.0, requirement by requirement: `docs/CONFORMITY.md`.
 
 ## Running and verifying
