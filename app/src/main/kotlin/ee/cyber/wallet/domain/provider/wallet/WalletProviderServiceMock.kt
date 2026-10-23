@@ -70,6 +70,46 @@ class WalletProviderServiceMock(
         }
     }
 
+    /** Explicit demo trust input, obtained by DI rather than from an untrusted token header. */
+    fun avsuaTrustKey(): JWK {
+        ensureProviderKey()
+        return loadJwkFromKeyStore(PROVIDER_KEY_ALIAS).toPublicJWK()
+    }
+
+    override suspend fun attestAvIssuance(
+        context: AvIssuanceContext,
+        issuanceKey: JWK,
+        credentials: WalletInstanceCredentials
+    ): AvsuaEvidence = withContext(dispatcher) {
+        require(!issuanceKey.isPrivate && issuanceKey !is OctetSequenceKey) { "AVSUA requires a PUBLIC issuance JWK" }
+        ensureProviderKey()
+        val signer = jwsSigner(loadJwkFromKeyStore(PROVIDER_KEY_ALIAS))
+        val now = Instant.now()
+        fun token(type: String): String {
+            val claims = JWTClaimsSet.Builder()
+                .issuer(AvsuaVerifier.PROVIDER_ISSUER)
+                .audience(context.audience)
+                .jwtID(UUID.randomUUID().toString())
+                .issueTime(Date.from(now))
+                .notBeforeTime(Date.from(now))
+                .expirationTime(Date.from(now.plusSeconds(AvsuaVerifier.MAX_LIFETIME_SECONDS)))
+                .claim("transaction_id", context.transactionId)
+                .claim("nonce", context.challenge)
+                .claim("issuance_key_jkt", issuanceKey.computeThumbprint().toString())
+                .claim("demo_only", true)
+            if (type == AvsuaVerifier.INSTANCE_TYPE) claims.claim("integrity_ok", true)
+            else claims.claim("key_security", AvsuaVerifier.DEMO_KEY_SECURITY)
+            return JWSObject(
+                JWSHeader.Builder(PROVIDER_KEY_JWS_ALGORITHM).type(com.nimbusds.jose.JOSEObjectType(type)).build(),
+                Payload(claims.build().toJSONObject())
+            ).also { it.sign(signer) }.serialize()
+        }
+        // Instance authentication is a demonstration assumption: credentials are not checked by
+        // this mock. No account identifier, key alias, certificate or private material is copied
+        // into either signed part. Both signatures use the same captured provider key.
+        AvsuaEvidence(token(AvsuaVerifier.INSTANCE_TYPE), token(AvsuaVerifier.KEY_TYPE))
+    }
+
     private fun createKeyAttestation(keyType: KeyType, keyId: String): KeyAttestation {
         val jwk = loadJwkFromKeyStore(keyId)
         val now = Instant.now()

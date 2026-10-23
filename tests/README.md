@@ -57,6 +57,40 @@ version 7. Encrypted examples stay opaque and the copied minted proof retains
 its OpenID4VPHandover binding. These tests do not verify proofs or establish AV
 transport conformance, scheme-owner circuit acceptance or certification.
 
+## AVSUA-equivalent issuance (Android JVM)
+
+- `AvsuaIssuanceTest` in `app/src/test/kotlin/ee/cyber/wallet/domain/provider/wallet/`
+  calls the actual `CredentialIssuanceServiceMock` mint, decodes its AV mdoc docType
+  and bound device key, and verifies the issuer signature. It refuses withheld
+  bundle/instance/key evidence at the outer boundary and public AV helper;
+  separately tampered instance and key signatures; an untrusted signer with a
+  supplied x5c; wrong key/audience/transaction/challenge and signed bindings;
+  expired/future/missing/oversized validity; absent/negative integrity and absent,
+  wrong-value or wrong-type key-security assertions. Fresh contexts/tokens across
+  local APs omit account identifiers in claims and JOSE headers and reject replay.
+  Separate controls isolate the AP context's original key binding and cross-AP
+  ownership with shared provider trust and holder key. Fixed-clock controls
+  isolate exact token and AP context expiry, including expiry during trust
+  resolution and refusal after expired-context pruning; concurrent reuse allows
+  exactly one mint. Additional controls
+  cover malformed/type/algorithm/jti/demo markers, absent or failing trust,
+  cancellation, provider reset and signing-failure retry. Actual application
+  factory tests establish configured trust before asset loading and evidence
+  forwarding to the real mint. The real `WalletProviderBatchAgeIssuer` loop runs
+  with fake Android key storage and Room, forwards evidence for generated keys,
+  rolls back all keys/rows on a later mint refusal or evidence-provider failure
+  and cancellation, and preserves EE-PoA issuance
+  without AVSUA. The platform keystore and actual platform integrity are outside
+  JVM coverage; generated JVM issuer keys replace Android asset loading only.
+- Run `JAVA_HOME=/usr/lib/jvm/java-17-openjdk ANDROID_HOME=/opt/android-sdk ./gradlew :app:testLocal_mocksUnitTest :app:assembleLocal_mocks`.
+  To select this test class use the unit task alone with
+  `--tests ee.cyber.wallet.domain.provider.wallet.AvsuaIssuanceTest`.
+- [AVSUA-ISSUANCE.md](../docs/profiles/AVSUA-ISSUANCE.md) documents the primary
+  requirements, local format, configured provider trust, refusal causes and
+  demonstration-only assertions. This is local mock equivalence, not TS3 or
+  external-provider conformance. Registry A.5 exclusions remain: its runner
+  executes Go probes and does not execute these JVM tests.
+
 ## AV issuance invocation (Android JVM and adb surface)
 
 - `AvVciInvocationTest` in `app/src/test/kotlin/ee/cyber/wallet/domain/credentials/`

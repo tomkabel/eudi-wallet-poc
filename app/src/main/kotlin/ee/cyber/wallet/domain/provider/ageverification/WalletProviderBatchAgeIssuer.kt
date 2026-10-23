@@ -4,12 +4,15 @@ import ee.cyber.wallet.data.database.KeyAttestationEntity
 import ee.cyber.wallet.data.database.dao.KeyAttestationDao
 import ee.cyber.wallet.domain.credentials.Credential
 import ee.cyber.wallet.domain.provider.Attestation
+import ee.cyber.wallet.domain.provider.wallet.AvIssuanceContext
+import ee.cyber.wallet.domain.provider.wallet.AvIssuanceRequest
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
 import ee.cyber.wallet.domain.provider.wallet.KeyType
 import ee.cyber.wallet.domain.provider.wallet.WalletInstanceCredentials
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.SecureAreaKeyCleanup
 import ee.cyber.wallet.security.SecureAreaKeyManager
+import ee.cyber.wallet.security.SecureAreaBatchKeyManager
 import ee.cyber.wallet.security.jwk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
@@ -26,14 +29,15 @@ import org.slf4j.LoggerFactory
  * registered in the keyAttestation table exactly like a single generated key, so SecureArea
  * cleanup keeps seeing every alias. The AV attestation is batched the same way (EE-POA-003). The
  * Android Keystore interaction itself is PENDING-DEVICE (docs/planning/STEP6-RECORD.md); the JVM
- * acceptance test drives the mint through the [BatchAgeIssuer] seam with fake keys instead.
+ * acceptance test drives this real transaction with a fake [SecureAreaBatchKeyManager].
  */
 class WalletProviderBatchAgeIssuer(
-    private val secureAreaKeyManager: SecureAreaKeyManager,
+    private val secureAreaKeyManager: SecureAreaBatchKeyManager,
     private val walletProviderService: WalletProviderService,
     private val keyAttestationDao: ee.cyber.wallet.data.database.dao.KeyAttestationDao,
     private val credentials: suspend () -> WalletInstanceCredentials,
-    private val issueCredential: suspend (Credential, KeyAttestation) -> Attestation,
+    private val issueCredential: suspend (Credential, KeyAttestation, AvIssuanceRequest?) -> Attestation,
+    private val createAvIssuanceContext: suspend (com.nimbusds.jose.jwk.JWK) -> AvIssuanceContext,
     private val dispatcher: CoroutineDispatcher
 ) : BatchAgeIssuer {
 
@@ -53,7 +57,11 @@ class WalletProviderBatchAgeIssuer(
             try {
                 keys.map { key ->
                     val keyAttestation = registerAttestedKey(key.keyId, key.jwk())
-                    issueCredential(credential, keyAttestation)
+                    val request = if (credential is Credential.AgeVerificationCredential) {
+                        val context = createAvIssuanceContext(key.jwk())
+                        AvIssuanceRequest(context, walletProviderService.attestAvIssuance(context, key.jwk(), credentials()))
+                    } else null
+                    issueCredential(credential, keyAttestation, request)
                 }.also {
                     logger.info("issued an age attestation batch of {}", it.size)
                 }

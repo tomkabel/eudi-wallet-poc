@@ -21,8 +21,12 @@ import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
 import ee.cyber.wallet.domain.provider.ageverification.WalletProviderBatchAgeIssuer
 import ee.cyber.wallet.domain.provider.mdl.MdlProviderServiceMock
 import ee.cyber.wallet.domain.provider.pid.PidProviderService
+import ee.cyber.wallet.domain.provider.wallet.AvsuaVerifier
+import ee.cyber.wallet.domain.provider.wallet.WalletProviderServiceMock
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.SecureAreaKeyManager
+import ee.cyber.wallet.security.SecureAreaBatchKeyManager
+import ee.cyber.wallet.domain.provider.wallet.WalletInstanceCredentials
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import javax.inject.Singleton
@@ -36,10 +40,15 @@ class IssuerModule {
     fun providesCredentialIssuanceService(
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher,
         @ApplicationContext context: Context,
-        userPreferencesDataSource: UserPreferencesDataSource
+        userPreferencesDataSource: UserPreferencesDataSource,
+        walletProviderService: WalletProviderService
     ): CredentialIssuanceService {
         return if (AppConfig.useMocks) {
-            CredentialIssuanceServiceMock(context, dispatcher, userPreferencesDataSource)
+            CredentialIssuanceServiceMock(
+                context, dispatcher, userPreferencesDataSource,
+                // Explicit local demo trust: never infer trust from AVSUA token headers.
+                AvsuaVerifier({ (walletProviderService as? WalletProviderServiceMock)?.avsuaTrustKey() })
+            )
         } else {
             RpcCredentialIssuanceService(AppConfig.walletProviderRpcUrl, dispatcher)
         }
@@ -80,14 +89,30 @@ class IssuerModule {
         credentialIssuanceService: CredentialIssuanceService,
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher
     ): BatchAgeIssuer {
+        return createWalletProviderBatchAgeIssuer(
+            secureAreaKeyManager, walletProviderService, keyAttestationDao,
+            { walletInstanceCredentialsDataSource.credentials.first() }, credentialIssuanceService, dispatcher
+        )
+    }
+
+    /** Shared factory wiring; accepts the public-key storage interface used by the batch. */
+    internal fun createWalletProviderBatchAgeIssuer(
+        secureAreaKeyManager: SecureAreaBatchKeyManager,
+        walletProviderService: WalletProviderService,
+        keyAttestationDao: ee.cyber.wallet.data.database.dao.KeyAttestationDao,
+        credentials: suspend () -> WalletInstanceCredentials,
+        credentialIssuanceService: CredentialIssuanceService,
+        dispatcher: CoroutineDispatcher
+    ): BatchAgeIssuer {
         return WalletProviderBatchAgeIssuer(
             secureAreaKeyManager = secureAreaKeyManager,
             walletProviderService = walletProviderService,
             keyAttestationDao = keyAttestationDao,
-            credentials = { walletInstanceCredentialsDataSource.credentials.first() },
-            issueCredential = { credential, keyAttestation ->
-                credentialIssuanceService.issueCredential(credential, keyAttestation)
+            credentials = credentials,
+            issueCredential = { credential, keyAttestation, avIssuance ->
+                credentialIssuanceService.issueCredential(credential, keyAttestation, avIssuance)
             },
+            createAvIssuanceContext = { credentialIssuanceService.createAvIssuanceContext(it) },
             dispatcher = dispatcher
         )
     }

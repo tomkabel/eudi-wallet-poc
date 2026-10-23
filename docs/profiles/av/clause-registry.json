@@ -1586,7 +1586,7 @@
         "conditional"
       ],
       "excerpt": "When following the EUDI Wallet issuance framework, the AVI SHOULD present an AVS Unit\nAttestation (AVSUA) to the AP during issuance. The AVSUA comprises an Age Verification App\nInstance Attestation (AVIA), attesting to the integrity of the AVI, and a Key Attestation\n(KA), attesting to the security of the keys the AVI uses in the issuance flow. Both are\nissued and signed by the provider of the Age Verification solution, which performs for the\nAVI the role that [TS3] assigns to the Wallet Provider.",
-      "out_of_scope_for_v1": "out of scope for v1: Conditional AVSUA presentation, AVIA/KA composition and provider signatures lack AV-specific evidence; equivalent issuance is reserved for Story 1.5."
+      "out_of_scope_for_v1": "out of scope for v1: The Go-only v1 runner does not execute Android issuance. Story 1.5 provides separate local mock JVM evidence for signed AVIA/KA validation and withholding controls (docs/profiles/AVSUA-ISSUANCE.md); this is not runnable registry coverage, TS3 conformance or external issuance."
     },
     {
       "id": "AV-A.5-005",

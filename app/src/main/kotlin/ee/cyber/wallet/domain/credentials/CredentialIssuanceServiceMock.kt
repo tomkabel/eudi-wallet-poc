@@ -11,7 +11,8 @@ import ee.cyber.wallet.domain.presentation.SupportedFormat
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.ageverification.AgeIssuanceConstants
 import ee.cyber.wallet.domain.provider.ageverification.AgeReckoning
-import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
+import ee.cyber.wallet.domain.provider.wallet.*
+import com.nimbusds.jose.jwk.JWK
 import ee.cyber.wallet.ui.model.IssuerKeyType
 import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps
 import eu.europa.ec.eudi.sdjwt.NimbusSdJwtOps.serialize
@@ -52,22 +53,59 @@ import kotlin.time.Instant
 class CredentialIssuanceServiceMock(
     val context: Context,
     val dispatcher: CoroutineDispatcher,
-    val userPreferencesDataSource: UserPreferencesDataSource
+    val userPreferencesDataSource: UserPreferencesDataSource,
+    private val avsuaVerifier: AvsuaVerifier = AvsuaVerifier({ null }),
+    private val avClock: java.time.Clock = java.time.Clock.systemUTC(),
+    private val avAudience: String = AV_AUDIENCE,
+    // Asset access is the only Android dependency in the mint; injectable for JVM execution.
+    private val issuerKeyLoader: suspend (String, String) -> ECKey = { resource, alias ->
+        val store = KeyStore.getInstance("PKCS12")
+        context.assets.open(resource).use { store.load(it, "changeit".toCharArray()) }
+        ECKey.load(store, alias, "changeit".toCharArray())
+    }
 ) : CredentialIssuanceService {
     private val logger = LoggerFactory.getLogger("CredentialIssuanceServiceMock")
+
+    private data class PendingAv(val context: AvIssuanceContext, val keyThumbprint: String, val expires: java.time.Instant)
+    private val pendingAv = java.util.concurrent.ConcurrentHashMap<String, PendingAv>()
+
+    override suspend fun createAvIssuanceContext(issuanceKey: JWK): AvIssuanceContext {
+        require(!issuanceKey.isPrivate && issuanceKey is ECKey) { "AV issuance requires a public EC key" }
+        val now = avClock.instant()
+        pendingAv.entries.removeIf { it.value.expires <= now }
+        val context = AvIssuanceContext(avAudience, UUID.randomUUID().toString(), UUID.randomUUID().toString())
+        pendingAv[context.transactionId] = PendingAv(context, issuanceKey.computeThumbprint().toString(), now.plusSeconds(300))
+        return context
+    }
+
+    private fun validateAvIssuance(keyAttestation: KeyAttestation, request: AvIssuanceRequest?) {
+        val supplied = request ?: throw AvsuaRefusal(AvsuaRefusalCause.MISSING_BUNDLE)
+        val issuanceKey = try { keyAttestation.jwk } catch (e: Exception) {
+            throw AvsuaRefusal(AvsuaRefusalCause.MALFORMED)
+        }
+        if (issuanceKey !is ECKey || issuanceKey.isPrivate) throw AvsuaRefusal(AvsuaRefusalCause.BINDING)
+        val pending = pendingAv[supplied.context.transactionId] ?: throw AvsuaRefusal(AvsuaRefusalCause.BINDING)
+        if (pending.context != supplied.context || pending.keyThumbprint != issuanceKey.computeThumbprint().toString()) {
+            throw AvsuaRefusal(AvsuaRefusalCause.BINDING)
+        }
+        if (pending.expires <= avClock.instant()) throw AvsuaRefusal(AvsuaRefusalCause.VALIDITY)
+        avsuaVerifier.validate(supplied.evidence, pending.context, issuanceKey)
+        if (pending.expires <= avClock.instant()) throw AvsuaRefusal(AvsuaRefusalCause.VALIDITY)
+        if (!pendingAv.remove(supplied.context.transactionId, pending)) throw AvsuaRefusal(AvsuaRefusalCause.BINDING)
+    }
 
     override fun supports(credentialType: CredentialType): Boolean = when (credentialType) {
         CredentialType.PID_SD_JWT, CredentialType.PID_MDOC, CredentialType.AGE_VERIFICATION, CredentialType.EE_POA -> true
         else -> false
     }
 
-    override suspend fun issueCredential(credential: Credential, keyAttestation: KeyAttestation): Attestation {
+    override suspend fun issueCredential(credential: Credential, keyAttestation: KeyAttestation, avIssuance: AvIssuanceRequest?): Attestation {
         logger.debug("issueCredential: {}", credential)
         return when (credential) {
             is Credential.JwtArfPidCredential -> issueSdJwtPid(credential, keyAttestation)
             is Credential.MdocPidCredential -> issueMDocPid(credential, keyAttestation)
             is Credential.MdocMdlCredential -> issueMDocMdl(credential, keyAttestation)
-            is Credential.AgeVerificationCredential -> issueMDocAgeVerification(credential, keyAttestation)
+            is Credential.AgeVerificationCredential -> issueMDocAgeVerification(credential, keyAttestation, avIssuance)
             is Credential.EePoaCredential -> issueMDocEePoa(credential, keyAttestation)
             else -> TODO("${credential.type} not supported yet")
         }.let {
@@ -461,32 +499,14 @@ class CredentialIssuanceServiceMock(
         )
     }
 
-    suspend fun ageVerificationIssuerKeyPair(): ECKey {
-        val alias = getMdlKeyAlias()
-        val keyStore = KeyStore.getInstance("PKCS12")
-        context.assets.open("keys/doc_signer_mdl_issuer.p12").use { inputStream ->
-            keyStore.load(inputStream, "changeit".toCharArray())
-        }
-        return ECKey.load(keyStore, alias, "changeit".toCharArray())
-    }
+    suspend fun ageVerificationIssuerKeyPair(): ECKey =
+        issuerKeyLoader("keys/doc_signer_mdl_issuer.p12", getMdlKeyAlias())
 
-    suspend fun pidIssuerKeyPair(): ECKey {
-        val alias = getPidKeyAlias()
-        val keyStore = KeyStore.getInstance("PKCS12")
-        context.assets.open("keys/doc_signer_pid_issuer.p12").use { inputStream ->
-            keyStore.load(inputStream, "changeit".toCharArray())
-        }
-        return ECKey.load(keyStore, alias, "changeit".toCharArray())
-    }
+    suspend fun pidIssuerKeyPair(): ECKey =
+        issuerKeyLoader("keys/doc_signer_pid_issuer.p12", getPidKeyAlias())
 
-    suspend fun mdlIssuerKeyPair(): ECKey {
-        val alias = getMdlKeyAlias()
-        val keyStore = KeyStore.getInstance("PKCS12")
-        context.assets.open("keys/doc_signer_mdl_issuer.p12").use { inputStream ->
-            keyStore.load(inputStream, "changeit".toCharArray())
-        }
-        return ECKey.load(keyStore, alias, "changeit".toCharArray())
-    }
+    suspend fun mdlIssuerKeyPair(): ECKey =
+        issuerKeyLoader("keys/doc_signer_mdl_issuer.p12", getMdlKeyAlias())
 
     suspend fun getMdlKeyAlias(): String {
         val issuerKeyType = userPreferencesDataSource.userPreferences.first().issuerKeyType
@@ -504,7 +524,12 @@ class CredentialIssuanceServiceMock(
         }
     }
 
-    suspend fun issueMDocAgeVerification(ageVerification: Credential.AgeVerificationCredential, keyAttestation: KeyAttestation): String {
+    suspend fun issueMDocAgeVerification(
+        ageVerification: Credential.AgeVerificationCredential,
+        keyAttestation: KeyAttestation,
+        avIssuance: AvIssuanceRequest? = null
+    ): String {
+        validateAvIssuance(keyAttestation, avIssuance)
         val deviceKeyInfo = DeviceKeyInfo(
             DataElement.fromCBOR(
                 OneKey(keyAttestation.jwk.toECKey().toPublicKey(), null).AsCBOR().EncodeToBytes()
@@ -572,6 +597,8 @@ class CredentialIssuanceServiceMock(
     }
 
     companion object {
+        const val AV_AUDIENCE = "urn:ee:wallet:mock-av-attestation-provider"
+
         /**
          * The issuance day the batch's ValidityInfo epoch is taken from: the register day in
          * Europe/Tallinn, the same day the predicate was computed on (EE-POA-027).

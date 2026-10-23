@@ -5,6 +5,7 @@ import ee.cyber.pid.provider.PidIssuanceServiceGrpcKt
 import ee.cyber.pid.provider.eePidIssuanceRequest
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.wallet.KeyAttestation
+import ee.cyber.wallet.domain.provider.wallet.AvIssuanceRequest
 import ee.cyber.wallet.util.useTransportSecurityForBuild
 import io.grpc.okhttp.OkHttpChannelBuilder
 import kotlinx.coroutines.CoroutineDispatcher
@@ -26,7 +27,7 @@ class RpcCredentialIssuanceService(
         else -> false
     }
 
-    override suspend fun issueCredential(credential: Credential, keyAttestation: KeyAttestation): Attestation {
+    override suspend fun issueCredential(credential: Credential, keyAttestation: KeyAttestation, avIssuance: AvIssuanceRequest?): Attestation {
         logger.debug("issueCredential: {}", credential)
         return when (credential) {
             is Credential.JwtPidCredential -> rpc { issueSdJwtPid(credential, keyAttestation) }
