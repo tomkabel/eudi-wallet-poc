@@ -1,0 +1,20 @@
+{
+  "repository": "https://github.com/eu-digital-identity-wallet/av-doc-technical-specification",
+  "revision": "014dc2fd0f9332eeabe1eef70d234ed2aef20fd7",
+  "commit_date": "2026-09-01T21:59:02Z",
+  "source_path": "docs/annexes/annex-A/annex-A-av-profile.md",
+  "source_sha256": "54808f94484cb75e7b495b508f0c17568e41b7ca7c3657799c7b432a770538a9",
+  "excerpt_sha256": "72af44bd3c04a341b1a49c0ef5bb6d975dc355009f3d381962f6aefd183ba8d3",
+  "license_sha256": "8e7a9299a281b71fa9ad3f978bcbd5c4d8809b21b2ab51ca5e173e3a16ed6ccb",
+  "schema_version": 1,
+  "excerpt_path": "docs/profiles/av/annex-a-normative.md",
+  "license_path": "docs/profiles/av/LICENSE.upstream",
+  "extraction_rule": "Exact byte prefix before the first '## A.10. Comparison with other profiles' heading; no newline or wording changes.",
+  "excluded_sections": [
+    "A.10",
+    "A.11"
+  ],
+  "attribution": "The European Age Verification Solution technical specification © 2025 by European Commission; upstream license: Creative Commons Attribution 4.0 International. Retained excerpt is unchanged; this registry and commentary are additions.",
+  "source_url": "https://raw.githubusercontent.com/eu-digital-identity-wallet/av-doc-technical-specification/014dc2fd0f9332eeabe1eef70d234ed2aef20fd7/docs/annexes/annex-A/annex-A-av-profile.md",
+  "license_url": "https://raw.githubusercontent.com/eu-digital-identity-wallet/av-doc-technical-specification/014dc2fd0f9332eeabe1eef70d234ed2aef20fd7/LICENSE"
+}

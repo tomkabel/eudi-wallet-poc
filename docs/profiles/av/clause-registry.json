@@ -1,0 +1,1902 @@
+{
+  "schema_version": 1,
+  "source_revision": "014dc2fd0f9332eeabe1eef70d234ed2aef20fd7",
+  "source_excerpt_sha256": "72af44bd3c04a341b1a49c0ef5bb6d975dc355009f3d381962f6aefd183ba8d3",
+  "evidence_status": "mappings only; conformance not executed",
+  "source_blocks": [
+    {
+      "id": "Annex A-B001",
+      "section": "Annex A",
+      "heading": "ANNEX A - Age Verification Profile",
+      "anchor": "annex-a---age-verification-profile",
+      "start_line": 2,
+      "end_line": 2,
+      "kind": "paragraph",
+      "excerpt": "(normative)",
+      "sha256": "e60481d9e039a5331b81c8c5d79954de371deb259e7a0ae1603017c4c001b6ec"
+    },
+    {
+      "id": "A.1-B001",
+      "section": "A.1",
+      "heading": "A.1. Introduction",
+      "anchor": "a1-introduction",
+      "start_line": 6,
+      "end_line": 10,
+      "kind": "paragraph",
+      "excerpt": "This document defines a set of requirements for the existing specifications to\nenable interoperability among Attestation Providers (APs), Age Verification App Instances (AVIs)\nand Relying Parties (RPs) where a substantial level of security and privacy is required.\nThis document is an interoperability profile that can be used by implementations\nin various contexts, be it a certain industry or a certain regulatory environment.",
+      "sha256": "f66f2c2d3dae7c1139e91fb3142a294d566c6cd843d47595e96cd23362082145"
+    },
+    {
+      "id": "A.1-B002",
+      "section": "A.1",
+      "heading": "A.1. Introduction",
+      "anchor": "a1-introduction",
+      "start_line": 12,
+      "end_line": 14,
+      "kind": "paragraph",
+      "excerpt": "This profile is part of the EU Age Verification technical specifications. It builds\non existing specifications commonly used for credential issuance and verification\nand defines a set of features to be implemented in the context of age verification",
+      "sha256": "162350b49cf4141930b4544efe83340dbb27ea1a48a6c43260f696845efafab0"
+    },
+    {
+      "id": "A.1-B003",
+      "section": "A.1",
+      "heading": "A.1. Introduction",
+      "anchor": "a1-introduction",
+      "start_line": 16,
+      "end_line": 22,
+      "kind": "paragraph",
+      "excerpt": "This document outlines a profile for the age verification target architecture,\nserving as a conceptual framework rather than a comprehensive specification of all\nfeatures and requirements. At the current stage of development, not all functionalities\ndescribed herein have been implemented in the Age Verification Solution Toolbox.\nFurthermore, certain features are also absent in the present development state of\nthe EUDI Wallet libraries. These functionalities will be developed and integrated\nincrementally over the course of the project.",
+      "sha256": "45285309c3a899b78d98237fcd90ccb9c9a373c80117676029c916fa440612fb"
+    },
+    {
+      "id": "A.1-B004",
+      "section": "A.1",
+      "heading": "A.1. Introduction",
+      "anchor": "a1-introduction",
+      "start_line": 24,
+      "end_line": 28,
+      "kind": "paragraph",
+      "excerpt": "The profile uses OpenID for Verifiable Credential Issuance [OID4VCI] for issuance\nof Proof of Age attestations. Furthermore, for the presentation of Proof of Age\nattestations, the profile uses the W3C Digital Credentials API [W3C Digital Credentials API] as specified in\n\\[ISO/IEC 18013-7\\], Annex C, as well as OpenID for Verifiable Presentations [OID4VP]\nas a fallback mechanism. The attestation format used is ISO mDoc [ISO18013-5].",
+      "sha256": "40cb3bdfb5d5dd52bfca7f464c664c52b89ea5a8a77dc7bd0487934686010911"
+    },
+    {
+      "id": "A.1-B005",
+      "section": "A.1",
+      "heading": "A.1. Introduction",
+      "anchor": "a1-introduction",
+      "start_line": 30,
+      "end_line": 31,
+      "kind": "paragraph",
+      "excerpt": "A full list of the open standards used in this profile can be found in Overview of\nthe Open Standards Requirements.",
+      "sha256": "2341638dbd9a5adb6e42436eb58270941e745d094e979c11ab96de7482c0f65f"
+    },
+    {
+      "id": "A.1-B006",
+      "section": "A.1",
+      "heading": "Target audience/Usage",
+      "anchor": "target-audienceusage",
+      "start_line": 35,
+      "end_line": 44,
+      "kind": "paragraph",
+      "excerpt": "The intended audience for this document comprises Member States and designated\norganizations that seek to implement an age verification solution. This profile,\nthe referenced technical standards and accompanying guidelines are designed to\nsupport governmental authorities as well as commissioned organizations in the\ndevelopment, integration, and deployment of compliant age verification systems\nwithin their respective jurisdictions or operational domains. This approach ensures\nthat both public sector bodies and their authorized private sector partners are\nequipped to realize and maintain robust, privacy-preserving age verification in\nalignment with European regulatory requirements, age verification digital services\nrequirements, and digital identity initiatives.",
+      "sha256": "adb6b8e97da87a52aed9f0475106ba4349843ba880e607aa2ff74c4adcc71916"
+    },
+    {
+      "id": "A.2-B001",
+      "section": "A.2",
+      "heading": "A.2. Terminology",
+      "anchor": "a2-terminology",
+      "start_line": 47,
+      "end_line": 48,
+      "kind": "paragraph",
+      "excerpt": "This specification uses the terms\nAttestation Providers (APs), Age Verification App Instances (AVIs), Relying Parties (RPs), Proof of Age attestation, and AVS Unit Attestation (AVSUA) as defined in [Operational, Security, Product, and Architecture Specifications](../../../docs/architecture-and-technical-specifications.md).",
+      "sha256": "d8e8b5ba86337f6c29e83e13ba8e4b6caec74d1a28383b0e68c79fa2dd495670"
+    },
+    {
+      "id": "A.3-B001",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 52,
+      "end_line": 59,
+      "kind": "paragraph",
+      "excerpt": "The primary focus of this document is on online services, with the intention that\nage verification should be conducted digitally in online environments. The solution\nis specifically designed to enable users to prove their age when accessing online\ncontent, products, or services that are subject to age restrictions. This approach\naddresses the increasing need for robust online age verification mechanisms,\nensuring that age-restricted content is accessed only by individuals who meet\nthe required legal age, and supporting compliance with relevant regulatory\nrequirements for online platforms.",
+      "sha256": "793115e23aa0498009d68a0a8e8fbded2207d9d72a6d5b10b9933d4ea3d6aeee"
+    },
+    {
+      "id": "A.3-B002",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 61,
+      "end_line": 61,
+      "kind": "paragraph",
+      "excerpt": "The following aspects are in scope of this interoperability profile:",
+      "sha256": "db5e8df192433b1ddae127b2c7acb667930d98b35ce0ae7a21e2a7da626bbb81"
+    },
+    {
+      "id": "A.3-B003",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 63,
+      "end_line": 63,
+      "kind": "list-item",
+      "excerpt": "- Profile of OpenID4VCI to issue ISO mDoc Proof of Age attestations",
+      "sha256": "65592015e572f266e7ff7e8115d36ff23a5d25c72c07f1c4dba7fee37d7c75f0"
+    },
+    {
+      "id": "A.3-B004",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 64,
+      "end_line": 64,
+      "kind": "list-item",
+      "excerpt": "- Profile of OpenID4VP to present ISO mDoc Proof of Age attestation",
+      "sha256": "317921f56488ccda428f332b838ee048f697ae053320e0a227f396793a082e0e"
+    },
+    {
+      "id": "A.3-B005",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 65,
+      "end_line": 65,
+      "kind": "list-item",
+      "excerpt": "- Crypto Suites",
+      "sha256": "deb79be995f24a066075613034b7a7c06f533031f3be5980777a22e8a45b8e7b"
+    },
+    {
+      "id": "A.3-B006",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 66,
+      "end_line": 66,
+      "kind": "list-item",
+      "excerpt": "- Data model examples",
+      "sha256": "64d625960c095ccbae4bfd78ffb3da81b18b1975ad0f5437ebd900671708a1dd"
+    },
+    {
+      "id": "A.3-B007",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 68,
+      "end_line": 68,
+      "kind": "paragraph",
+      "excerpt": "The following assumptions are made:",
+      "sha256": "180a3fcb0e2a2fa1b1a33e6f56e7eeacdf841be5bc74f570ac4bd9f572028fe2"
+    },
+    {
+      "id": "A.3-B008",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 70,
+      "end_line": 70,
+      "kind": "list-item",
+      "excerpt": "- The APs and RPs cannot pre-discover Age Verification App’s capability",
+      "sha256": "e27eec82920fe7e471a8bd91fd199d9b1c0fafb977dba9786c47b7568748699d"
+    },
+    {
+      "id": "A.3-B009",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 71,
+      "end_line": 71,
+      "kind": "list-item",
+      "excerpt": "- The AP is talking to the AVI supporting the features defined in this profile (via AVI invocation mechanism)",
+      "sha256": "ddfb6c9502740f829049f3fac2f47ba00479b6217439347abee92636134a86f0"
+    },
+    {
+      "id": "A.3-B010",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 72,
+      "end_line": 72,
+      "kind": "list-item",
+      "excerpt": "- Support for mDoc only as the Proof of Age attestation format",
+      "sha256": "51bcf0cb4259e50268b989f0d02a9473f3257e1d93c23cff12b852d31385fc2b"
+    },
+    {
+      "id": "A.3-B011",
+      "section": "A.3",
+      "heading": "A.3. Scope",
+      "anchor": "a3-scope",
+      "start_line": 73,
+      "end_line": 75,
+      "kind": "list-item",
+      "excerpt": "- No personal data, especially no information from personal identification documents\nsuch as national ID card, is stored within an AVI. Only the Proof of Age attestation,\nspecifically indicating \"older than 18\", is utilized for age verification purposes",
+      "sha256": "8c816cf769def13404e18005c85f483b663f92cfa532f6b04d301a023fb104b2"
+    },
+    {
+      "id": "A.3-B012",
+      "section": "A.3",
+      "heading": "Out of Scope",
+      "anchor": "out-of-scope",
+      "start_line": 78,
+      "end_line": 78,
+      "kind": "paragraph",
+      "excerpt": "The following items are out of scope for the current version of this document, but might be added in future versions:",
+      "sha256": "648901a6f192566bb275705ed51304f28d5187c1343ecef82f4b18699bee09b4"
+    },
+    {
+      "id": "A.3-B013",
+      "section": "A.3",
+      "heading": "Out of Scope",
+      "anchor": "out-of-scope",
+      "start_line": 80,
+      "end_line": 80,
+      "kind": "list-item",
+      "excerpt": "- Support for Level of Assurance (LoA) \"high\".",
+      "sha256": "c44c50f0b5f92d3011273bb8678def8feef61a1c6f5b9145d63d80b71b0b47f7"
+    },
+    {
+      "id": "A.3-B014",
+      "section": "A.3",
+      "heading": "Out of Scope",
+      "anchor": "out-of-scope",
+      "start_line": 81,
+      "end_line": 81,
+      "kind": "list-item",
+      "excerpt": "- Proof of Age attestation re-issuance (using refresh tokens) and revocation.",
+      "sha256": "822142e6712287995bd6d0d800a115008bb9bc8d270aa5bd31ed89988158b264"
+    },
+    {
+      "id": "A.3-B015",
+      "section": "A.3",
+      "heading": "Out of Scope",
+      "anchor": "out-of-scope",
+      "start_line": 82,
+      "end_line": 82,
+      "kind": "list-item",
+      "excerpt": "- RP registration and trusted lists of RPs.",
+      "sha256": "516d15b9f1901f9252b42cd37cc0eb02f01af699525f572d8417188e4207ca2f"
+    },
+    {
+      "id": "A.3-B016",
+      "section": "A.3",
+      "heading": "Out of Scope",
+      "anchor": "out-of-scope",
+      "start_line": 83,
+      "end_line": 83,
+      "kind": "list-item",
+      "excerpt": "- Trusted lists of Age Verification App providers under the envisaged EU Age Verification Scheme (the interim publication of provider certificates by the Commission is described in the Operational, Security, Product, and Architecture Specifications, Section 4.2).",
+      "sha256": "469bbb530d680583b76391a68ac207ca21c1ba1de2fb98fd5f92d981e95578ae"
+    },
+    {
+      "id": "A.3-B017",
+      "section": "A.3",
+      "heading": "Out of Scope",
+      "anchor": "out-of-scope",
+      "start_line": 84,
+      "end_line": 84,
+      "kind": "list-item",
+      "excerpt": "- Proof of Age attestation presentation using proximity.",
+      "sha256": "f79b4531345a0d65405fad2b8bece75e9585f55135a3db5e89ff7f00e8549e90"
+    },
+    {
+      "id": "A.3-B018",
+      "section": "A.3",
+      "heading": "Out of Scope",
+      "anchor": "out-of-scope",
+      "start_line": 85,
+      "end_line": 85,
+      "kind": "list-item",
+      "excerpt": "- Profile of OpenID4VCI to issue ISO mDoc [ISO.18013-5] is defined in ISO 23220-3.",
+      "sha256": "ccba27c7c8dbf907dbbffbc8c13afba17a992d721d97acb7578c4d7a5ad88583"
+    },
+    {
+      "id": "A.3-B019",
+      "section": "A.3",
+      "heading": "Standards Requirements",
+      "anchor": "standards-requirements",
+      "start_line": 89,
+      "end_line": 89,
+      "kind": "paragraph",
+      "excerpt": "This specification enables interoperable implementations of the following flows:",
+      "sha256": "e7df444784cb5eb02a15f878d597e0de85f63a03cf280a50280e9ce98ed39ee5"
+    },
+    {
+      "id": "A.3-B020",
+      "section": "A.3",
+      "heading": "Standards Requirements",
+      "anchor": "standards-requirements",
+      "start_line": 91,
+      "end_line": 91,
+      "kind": "list-item",
+      "excerpt": "- Issuance of ISO mDoc Proof of Age attestation using OpenID4VCI",
+      "sha256": "84b7d5209d5f238559591b662583290c1769b4bb544473cb9aa6e7d057fa14ca"
+    },
+    {
+      "id": "A.3-B021",
+      "section": "A.3",
+      "heading": "Standards Requirements",
+      "anchor": "standards-requirements",
+      "start_line": 92,
+      "end_line": 95,
+      "kind": "list-item",
+      "excerpt": "- Presentation of ISO mDoc Proof of Age attestation using OpenID4VP\nImplementations of this specification do not have to implement all of the flows listed above.\nA parameter that is listed as optional to be implemented in a specification that is\nbeing profiled (i.e., OpenID4VCI, OpenID4VP and ISO mDoc) remains optional unless it is stated otherwise in this specification.",
+      "sha256": "ac024c23be03820d44786ac9fe90e9b4abc13e281d1870e5a5869ca5c1c2a743"
+    },
+    {
+      "id": "A.4-B001",
+      "section": "A.4",
+      "heading": "A.4 Proof of Age attestation Data Model",
+      "anchor": "a4-proof-of-age-attestation-data-model",
+      "start_line": 98,
+      "end_line": 100,
+      "kind": "paragraph",
+      "excerpt": "The data model for the Proof of Age attestation is defined as a profile of\nthe attribute schema specified in \\[ISO/IEC 18013-5\\]\nand \\[ISO/IEC 23220-2\\]. A Proof of Age attestation SHALL comply with this data model.",
+      "sha256": "d44ac5be01a48f7448a52d1e045c487b90b287c7aee3aaa47ba78275a5ee3cb0"
+    },
+    {
+      "id": "A.4-B002",
+      "section": "A.4",
+      "heading": "A.4.1 Document type",
+      "anchor": "a41-document-type",
+      "start_line": 103,
+      "end_line": 103,
+      "kind": "paragraph",
+      "excerpt": "The document type for Proof of Age attestation SHALL be `eu.europa.ec.av.1`.",
+      "sha256": "4203f5937b2e12ea962d4ea681a89d1a5e2d89bf35bdc50842acb5f80b909b77"
+    },
+    {
+      "id": "A.4-B003",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 106,
+      "end_line": 107,
+      "kind": "paragraph",
+      "excerpt": "The Proof of Age attestation attribute set SHALL be composed of attributes defined in the following\nTable. All attributes belong to namespace `eu.europa.ec.av.1`",
+      "sha256": "578be721b64308dce0e787e012c7bc5411d97e8e75b7dca0cd2e55f77d11b425"
+    },
+    {
+      "id": "A.4-B004",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 109,
+      "end_line": 109,
+      "kind": "table-row",
+      "excerpt": "| Identifier | Meaning | Presence in issuance | Presence in verification | Encoding format |",
+      "sha256": "2178f7fc5b15eda8b349ec2b974be985907ad6e12b916fc1a44b25c2e144e157"
+    },
+    {
+      "id": "A.4-B005",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 110,
+      "end_line": 110,
+      "kind": "table-row",
+      "excerpt": "| :---- | :---- | :---- | :---- | :---- |",
+      "sha256": "ed5e76d0a9fe6e4a5e45e2903f28407acd5bfcdf75a9b299057554401fa8a293"
+    },
+    {
+      "id": "A.4-B006",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 111,
+      "end_line": 111,
+      "kind": "table-row",
+      "excerpt": "| age\\_over\\_18 | This attribute is present in all Proof of Age attestations and indicates whether the user is above 18\\. | Mandatory | Conditional mandatory (either age\\_over\\_18 or one of age\\_over\\_NN attributes SHALL be requested) | bool |",
+      "sha256": "24e3923e64b804e93be69e5ae07ac865edee87acbebeae112e8fa37725cde4b9"
+    },
+    {
+      "id": "A.4-B007",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 112,
+      "end_line": 112,
+      "kind": "table-row",
+      "excerpt": "| age\\_over\\_NN | Confirming whether the Proof of Age attestation user is currently over NN years of age. Multiple entries MAY be provided as separate attributes. | Optional | Conditional mandatory (either age\\_over\\_18 or one of age\\_over\\_NN attributes SHALL be requested)  | bool |",
+      "sha256": "faab5b51609a5a66cf23af55b21b89a334bffa6aa7de4e1239ac7d11bd2e96c8"
+    },
+    {
+      "id": "A.4-B008",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 114,
+      "end_line": 114,
+      "kind": "paragraph",
+      "excerpt": "A Proof of Age Attestation SHALL NOT include any other attribute.",
+      "sha256": "25ecb0db9da397767502dc90bf5454fcc90ac417c29bdc957d034db575f01e67"
+    },
+    {
+      "id": "A.4-B009",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 116,
+      "end_line": 116,
+      "kind": "paragraph",
+      "excerpt": "**Note on Age Attribute Scope**",
+      "sha256": "10b47dfbc614ce3d00fc793f02e0cbddb744fe8c7147a7112b03130c1bedff2e"
+    },
+    {
+      "id": "A.4-B010",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 118,
+      "end_line": 122,
+      "kind": "paragraph",
+      "excerpt": "While the technical architecture and data model (based on \\[ISO/IEC 18013-5\\]\nand \\[ISO/IEC 23220-2\\]) inherently support the age\\_over\\_NN attribute schema\nfor arbitrary age thresholds (e.g., age\\_over\\_14, age\\_over\\_65), this\nspecification explicitly focuses on age\\_over\\_18 to address the most common\nregulatory requirement for age-restricted online services in the EU.",
+      "sha256": "6f856e4dbbfc84f11c4675a9de1575f7108c86856dddda42575256f92e5f6357"
+    },
+    {
+      "id": "A.4-B011",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 124,
+      "end_line": 124,
+      "kind": "paragraph",
+      "excerpt": "Extending the solution to additional age thresholds would require:",
+      "sha256": "a97c6a4952c0e07f1e31d325d3a378a8d4be63577989471368d2c2f1f6fc1471"
+    },
+    {
+      "id": "A.4-B012",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 126,
+      "end_line": 126,
+      "kind": "list-item",
+      "excerpt": "1. Validation of enrolment methods for the target age group.",
+      "sha256": "f423457da0d7fc7846d8c1fe69a3d9af93e2753ad5611ef7b02097fd140cf418"
+    },
+    {
+      "id": "A.4-B013",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 128,
+      "end_line": 128,
+      "kind": "list-item",
+      "excerpt": "2. Alignment with jurisdictional legal frameworks governing the specific age-based restrictions.",
+      "sha256": "163a8f087eca3f2209c7d535e065cfdbd581ee30ef06a7bd2b2dd963c9a6f169"
+    },
+    {
+      "id": "A.4-B014",
+      "section": "A.4",
+      "heading": "A.4.2 Attribute set",
+      "anchor": "a42-attribute-set",
+      "start_line": 130,
+      "end_line": 132,
+      "kind": "paragraph",
+      "excerpt": "Section 7.2.5 \\[ISO/IEC 18013-5\\] of specification 'Age attestation: nearest “true”\nattestation above request' may be considered in implementations making use of\nthe optional age_over_NN attribute.",
+      "sha256": "1c201668d8f01c81601ee456191ca1198c8016568b352f5ce8727239abac7c53"
+    },
+    {
+      "id": "A.5-B001",
+      "section": "A.5",
+      "heading": "A.5. Proof of Age Attestation Issuance",
+      "anchor": "a5-proof-of-age-attestation-issuance",
+      "start_line": 135,
+      "end_line": 137,
+      "kind": "paragraph",
+      "excerpt": "Issuance of Proof of Age attestations SHOULD follow the issuance framework\ndefined for the EUDI Wallet in the [EUDI Wallet ARF](https://eu-digital-identity-wallet.github.io/eudi-doc-architecture-and-reference-framework/),\nwhich is based on OpenID for Verifiable Credential Issuance. ",
+      "sha256": "e3a10dce79b4e97dbe822d95380340ec78226ef47eff1a428a3309f25a5d3051"
+    },
+    {
+      "id": "A.5-B002",
+      "section": "A.5",
+      "heading": "A.5. Proof of Age Attestation Issuance",
+      "anchor": "a5-proof-of-age-attestation-issuance",
+      "start_line": 139,
+      "end_line": 143,
+      "kind": "paragraph",
+      "excerpt": "An Attestation Provider and an Age Verification App Provider MAY instead agree on an internal\nissuance interface (for example, where both roles are performed by the same or\naffiliated entities), provided that it achieves equivalent assurance, in\nparticular regarding the verification of the legitimacy of the requesting AVI\n(see AVS Unit Attestation below).",
+      "sha256": "0390ffec6792462bf26851f6301a1e860f5e76d3ff7bdcd6593b0595b5c7c18b"
+    },
+    {
+      "id": "A.5-B003",
+      "section": "A.5",
+      "heading": "Credential Offer",
+      "anchor": "credential-offer",
+      "start_line": 146,
+      "end_line": 146,
+      "kind": "list-item",
+      "excerpt": "- As a way to invoke the AVI, at least a custom URL scheme av-vci:// MUST be supported.",
+      "sha256": "1713deb093635da872ae71b0680cf84d9bee896380aef25339c618e5a1875986"
+    },
+    {
+      "id": "A.5-B004",
+      "section": "A.5",
+      "heading": "AVS Unit Attestation",
+      "anchor": "avs-unit-attestation",
+      "start_line": 150,
+      "end_line": 155,
+      "kind": "paragraph",
+      "excerpt": "When following the EUDI Wallet issuance framework, the AVI SHOULD present an AVS Unit\nAttestation (AVSUA) to the AP during issuance. The AVSUA comprises an Age Verification App\nInstance Attestation (AVIA), attesting to the integrity of the AVI, and a Key Attestation\n(KA), attesting to the security of the keys the AVI uses in the issuance flow. Both are\nissued and signed by the provider of the Age Verification solution, which performs for the\nAVI the role that [TS3] assigns to the Wallet Provider.",
+      "sha256": "efa7a9765b56dbac4b455a27e572ed7b19c7d7efaabee49013be601e03196391"
+    },
+    {
+      "id": "A.5-B005",
+      "section": "A.5",
+      "heading": "AVS Unit Attestation",
+      "anchor": "avs-unit-attestation",
+      "start_line": 157,
+      "end_line": 160,
+      "kind": "paragraph",
+      "excerpt": "The AVSUA is the Age Verification instantiation of the Wallet Unit Attestation mechanism\nspecified in [TS3]: the AVIA corresponds to the Wallet Instance Attestation (WIA) and the KA\nto the Key Attestation of that specification. Implementations MAY reuse Wallet Unit\nAttestation implementations for this purpose. The [ARF] provides the wider context.",
+      "sha256": "1a027c797e797ffe4f9e845586ac599ccd7d4dde59b1fe9ccc7e78d42b2e995c"
+    },
+    {
+      "id": "A.5-B006",
+      "section": "A.5",
+      "heading": "AVS Unit Attestation",
+      "anchor": "avs-unit-attestation",
+      "start_line": 162,
+      "end_line": 164,
+      "kind": "paragraph",
+      "excerpt": "Note (informative): on the trust anchor for AVSUA validation and its evolution under the\nenvisaged EU Age Verification Scheme, see Section 3.4.4 of the Operational, Security,\nProduct, and Architecture Specifications.",
+      "sha256": "b05340b34c07c1a0923b8b2903d80933f4e8417be09ca610fe6945130b76b9f1"
+    },
+    {
+      "id": "A.6-B001",
+      "section": "A.6",
+      "heading": "A.6. Proof of Age attestation presentation",
+      "anchor": "a6-proof-of-age-attestation-presentation",
+      "start_line": 167,
+      "end_line": 167,
+      "kind": "paragraph",
+      "excerpt": "Presentation involves two choices: the presentation mechanism and the transport. The two are not independent, since the Zero-Knowledge Proof mechanism is available only over the W3C Digital Credentials API transport.",
+      "sha256": "96f77c9cc9f4ed1570fe116775287a12e1d443d704bbcb13ae7d9bc73d9f85ad"
+    },
+    {
+      "id": "A.6-B002",
+      "section": "A.6",
+      "heading": "A.6. Proof of Age attestation presentation",
+      "anchor": "a6-proof-of-age-attestation-presentation",
+      "start_line": 169,
+      "end_line": 169,
+      "kind": "list-item",
+      "excerpt": "- **Presentation mechanism.** The preferred mechanism is a Zero-Knowledge Proof defined in Section A.8. A plain ISO mDoc presentation SHALL be used as the fallback where, and only where, either (a) the User's device does not support Zero-Knowledge Proof generation, or (b) the OpenID for Verifiable Presentations transport is used.",
+      "sha256": "b82c941502f524d75e28035b1e914b24deff894fe30e027b611aba4de3a43606"
+    },
+    {
+      "id": "A.6-B003",
+      "section": "A.6",
+      "heading": "A.6. Proof of Age attestation presentation",
+      "anchor": "a6-proof-of-age-attestation-presentation",
+      "start_line": 171,
+      "end_line": 171,
+      "kind": "list-item",
+      "excerpt": "- **Transport.** The default transport is the W3C Digital Credentials API. OpenID for Verifiable Presentations is used as a transport fallback when the Digital Credentials API is not available.",
+      "sha256": "16d376f31f4f188be047fcccfe3ed6328fe023ce5710367a00e6b35f8beb8763"
+    },
+    {
+      "id": "A.6-B004",
+      "section": "A.6",
+      "heading": "W3C Digital Credentials API",
+      "anchor": "w3c-digital-credentials-api",
+      "start_line": 174,
+      "end_line": 175,
+      "kind": "paragraph",
+      "excerpt": "Presentation as a Zero-Knowledge Proof over the W3C Digital Credentials API SHALL follow Section A.8, which specifies the normative request and response format by reference; a non-normative example is provided in Section A.11 (\"W3C Digital Credentials API with ZKP\"). The plain ISO mDoc presentation described below is the fallback mechanism, used under the conditions set out at the beginning of this section.\nThe W3C Digital Credentials API is used as specified in \\[ISO/IEC 18013-7\\], Annex C.",
+      "sha256": "5384963c5647214ebfce96fa73a7872edf9f92dc13eccda39cd88c1a51322256"
+    },
+    {
+      "id": "A.6-B005",
+      "section": "A.6",
+      "heading": "Request",
+      "anchor": "request",
+      "start_line": 178,
+      "end_line": 179,
+      "kind": "paragraph",
+      "excerpt": "The Relying Party builds a request which consists of two parts: `encryptionInfo`\nand `deviceRequest`.",
+      "sha256": "1c4cefe4ac25316303fa8c289ca36457b20558b26f9f16e9c401e3560e6a9d62"
+    },
+    {
+      "id": "A.6-B006",
+      "section": "A.6",
+      "heading": "Request",
+      "anchor": "request",
+      "start_line": 181,
+      "end_line": 183,
+      "kind": "paragraph",
+      "excerpt": "**Encryption info**\n`encryptionInfo` is the base64-url without padding encoding of the cbor\nencoded `EncryptionInfo` object defined below",
+      "sha256": "ece34f54df48e867f129423f04eee7401ad676035d009675753278a68702bb5c"
+    },
+    {
+      "id": "A.6-B007",
+      "section": "A.6",
+      "heading": "Request",
+      "anchor": "request",
+      "start_line": 185,
+      "end_line": 195,
+      "kind": "code",
+      "excerpt": "```cddl\nEncryptionInfo = [\n  \"dcapi\",\n  EncryptionParameters\n]\n\nEncryptionParameters = {\n  \"nonce\" : bstr,\n  \"recipientPublicKey\" : COSE_Key\n}\n```",
+      "sha256": "c45d45f7d67d944d3ffc6ebaec2a22a83d64b2093d7690b672455163514b377e"
+    },
+    {
+      "id": "A.6-B008",
+      "section": "A.6",
+      "heading": "Request",
+      "anchor": "request",
+      "start_line": 197,
+      "end_line": 199,
+      "kind": "paragraph",
+      "excerpt": "**Device Request**\n`deviceRequest` is the base64-url without padding encoding of the cbor encoded\n`DeviceRequest` defined in \\[ISO/IEC 18013-5\\] §8.3.2.1.2.1",
+      "sha256": "801bd33f77c42d60db52cf2a418fc45c18049e539267828baf462dd0bc4968ba"
+    },
+    {
+      "id": "A.6-B009",
+      "section": "A.6",
+      "heading": "Response",
+      "anchor": "response",
+      "start_line": 202,
+      "end_line": 203,
+      "kind": "paragraph",
+      "excerpt": "The response is the base64-url without padding encoding of the cbor\nencoded `EncryptedResponse` object defined below:",
+      "sha256": "efe40f90ab24acd5e53aecdc37d044ff7d02fc57ce9ec029809d3b0414dd51ac"
+    },
+    {
+      "id": "A.6-B010",
+      "section": "A.6",
+      "heading": "Response",
+      "anchor": "response",
+      "start_line": 205,
+      "end_line": 214,
+      "kind": "code",
+      "excerpt": "```cddl\nEncryptedResponse = [\n  \"dcapi\",\n  EncryptedResponseData\n]\nEncryptedResponseData = {\n  \"enc\" : bstr,\n  \"cipherText\" : bstr\n}\n```",
+      "sha256": "f66c7eea30526bd6a81be0acd52167aba7ab49496177d1cdbaefe1d6d137836e"
+    },
+    {
+      "id": "A.6-B011",
+      "section": "A.6",
+      "heading": "Response",
+      "anchor": "response",
+      "start_line": 216,
+      "end_line": 219,
+      "kind": "paragraph",
+      "excerpt": "`enc` is the public key used for the generation of the ciphertext, which is used\nin the decryption process, and `cipherText` is the encrypted response, which is\na `DeviceResponse`, defined in Section 8.3.2.1.2.3 of ISO/IEC 18013-5, encrypted\nusing Hybrid Public Key Encryption (HPKE) defined in RFC 9180.",
+      "sha256": "64654fa0bab1c35889ee423610ccc0ad0ceddc88f0fd7379cdbc6916ead5007c"
+    },
+    {
+      "id": "A.6-B012",
+      "section": "A.6",
+      "heading": "Reader Authentication",
+      "anchor": "reader-authentication",
+      "start_line": 222,
+      "end_line": 222,
+      "kind": "paragraph",
+      "excerpt": "Reader authentication is not required and therefore is out of scope of this profile",
+      "sha256": "7d5dede67c497af25fe4dcd40dd70b30f09d343f3c9ea341b40e6f665560cc5e"
+    },
+    {
+      "id": "A.6-B013",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 225,
+      "end_line": 226,
+      "kind": "paragraph",
+      "excerpt": "OpenID for Verifiable Presentations is used as a transport fallback when W3C\nDigital Credentials API is not available. Zero-Knowledge Proofs are not supported over OpenID for Verifiable Presentations in this version of the profile, since no standardized DCQL query for requesting Zero-Knowledge Proof is available. This transport is for ISO mDoc format attestations only. This transport will be revisited once the relevan standardisation work has concluded.",
+      "sha256": "db313c1173edf155ac1c13e769e4917973fa6b3b32dbaa1b6c7c0c748b31e117"
+    },
+    {
+      "id": "A.6-B014",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 228,
+      "end_line": 228,
+      "kind": "list-item",
+      "excerpt": "- As a way to invoke the Age Verification App, at least a custom URL scheme av:// MUST be supported.",
+      "sha256": "175ecfe656c6513adbbccdfe43b9d08739d3bb2c3633427abad5d69895c45754"
+    },
+    {
+      "id": "A.6-B015",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 229,
+      "end_line": 229,
+      "kind": "list-item",
+      "excerpt": "- Response type MUST be `vp_token`",
+      "sha256": "001c29ec6e3386d5e0b3145f67328070076a16baaac89be88ce3ccae78214cac"
+    },
+    {
+      "id": "A.6-B016",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 230,
+      "end_line": 230,
+      "kind": "list-item",
+      "excerpt": "- `response_mode` MUST be `direct_post`",
+      "sha256": "da8df98a2c4d24981a567692731d6c60cb3746b7c1b82dc721f453173e2341c9"
+    },
+    {
+      "id": "A.6-B017",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 231,
+      "end_line": 231,
+      "kind": "list-item",
+      "excerpt": "- RP MUST send the request as URL-encoded query parameters. The `request` and `request_uri` parameters MUST NOT be used (i.e., support for JAR is not required)",
+      "sha256": "5e8f59cb5b239e82fb730adb3a88350300c4d24278c8fa10924ec289ed28baea"
+    },
+    {
+      "id": "A.6-B018",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 232,
+      "end_line": 232,
+      "kind": "list-item",
+      "excerpt": "- The client identifier scheme MUST be `redirect_uri` followed by the `response_uri`",
+      "sha256": "a4f79f81aeb22503374c790f3e826bf789b977efab4a0199707a03f2cfba8ecc"
+    },
+    {
+      "id": "A.6-B019",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 233,
+      "end_line": 233,
+      "kind": "list-item",
+      "excerpt": "- A request MUST specify the nonce parameter",
+      "sha256": "796cfa6ece25d71d2c804d15b9a624a7cfb797945bf22e5dcb8aee5b2a9aa1d2"
+    },
+    {
+      "id": "A.6-B020",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 234,
+      "end_line": 234,
+      "kind": "list-item",
+      "excerpt": "- The DCQL query and response as defined in Section 6 of [OID4VP] MUST be used",
+      "sha256": "e674001862d10425918f42668cfa0bd01aedb7dd98eddd0152f804212cd139f9"
+    },
+    {
+      "id": "A.6-B021",
+      "section": "A.6",
+      "heading": "OpenID for Verifiable Presentations profile Requirements",
+      "anchor": "openid-for-verifiable-presentations-profile-requirements",
+      "start_line": 235,
+      "end_line": 235,
+      "kind": "list-item",
+      "excerpt": "- The `state` parameter as defined in Section 4.1.1 of [OID4VP] is optional",
+      "sha256": "f9bce32f073c4750c119f679cc32d720d5d53056f1e3865a9273cef70d406420"
+    },
+    {
+      "id": "A.6-B022",
+      "section": "A.6",
+      "heading": "Client Authentication",
+      "anchor": "client-authentication",
+      "start_line": 238,
+      "end_line": 238,
+      "kind": "paragraph",
+      "excerpt": "Client authentication is not required and is therefore out of scope of this profile.",
+      "sha256": "9ac15e85fbc4e43599dd4062f3cd3147d9ea43237dd0b8e26bc76bb9bc2133fc"
+    },
+    {
+      "id": "A.7-B001",
+      "section": "A.7",
+      "heading": "A.7. Crypto Suites",
+      "anchor": "a7-crypto-suites",
+      "start_line": 242,
+      "end_line": 246,
+      "kind": "paragraph",
+      "excerpt": "All entities MUST support P-256 (secp256r1) as a key type with ES256 JWT algorithm for signing and signature validation\nwhenever this profile requires to do so.\nSHA256 MUST be supported by all the entities as the hash algorithm to generate and validate the digests in the MDOC VC.\nNote: When using this profile with other cryptosuites, it is recommended to be explicit about which entity is required\nto support which curve for signing and/or signature validation.",
+      "sha256": "25843034cb03c540152b9d7ca9b5a27c9194f73e034dff79f9b0040090c153e6"
+    },
+    {
+      "id": "A.8-B001",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 249,
+      "end_line": 251,
+      "kind": "paragraph",
+      "excerpt": "Where the User's device provides the necessary platform support, the AVI SHALL support the generation of Zero-Knowledge Proofs using the solution detailed in: *\"Matteo Frigo and abhi shelat, Anonymous credentials from ECDSA,\nIACR Communications in Cryptology, vol. 3, no. 1, 2026, available at [https://doi.org/10.62056/a3qjmpgxq](https://doi.org/10.62056/a3qjmpgxq)\"* [Fri2024].\nAn open-source implementation of this solution has been released [here](https://github.com/google/longfellow-zk). A Zero-Knowledge Proof is the preferred mechanism for presenting a Proof of Age attestation. It is requested and returned over the W3C Digital Credentials API.",
+      "sha256": "75751bd10ce427f44ee11e5f87138d97f39a746cd826830ced75dfcdabdc5898"
+    },
+    {
+      "id": "A.8-B002",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 253,
+      "end_line": 253,
+      "kind": "paragraph",
+      "excerpt": "For this version of the profile, the only Zero-Knowledge Proof system in scope is the system identified by `longfellow-libzk-v1`, as defined in [Fri2024] and specified in [draft-google-cfrg-libzk](https://datatracker.ietf.org/doc/draft-google-cfrg-libzk/), using the circuit and parameters identified by the ZkSystemSpec parameters (`circuit_hash`, `version`, `num_attributes`, `block_enc_hash`, `block_enc_sig`) as defined in ISO/IEC DIS 18013-5 (Second Edition), Section 10.2.7. An implementation SHALL use that system. Support for any other Zero-Knowledge Proof system does not constitute conformance with this profile. The system identifier is versioned, and future versions of this profile may add or replace the systems in scope. The set of circuits accepted for the purposes of this profile, identified by their circuit hashes, is published and maintained by the scheme owner separately from this document.",
+      "sha256": "420f583a2c4c48c56c3d0e9b1112fc9800ee1698da1a94f296d88c2e14f253f9"
+    },
+    {
+      "id": "A.8-B003",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 255,
+      "end_line": 255,
+      "kind": "paragraph",
+      "excerpt": "The request and response structure of a Zero-Knowledge Proof presentation SHALL follow the ZkSystemSpec mechanism defined in ISO/IEC 18013-5 (Second Edition), Section 10.2.7, transported over the W3C Digital Credentials API as specified in ISO/IEC 18013-7, Annex C. The proof format SHALL follow [draft-google-cfrg-libzk]; a non-normative example is provided in Section A.11 (\"W3C Digital Credentials API with ZKP\").",
+      "sha256": "c98fc32e41e0dd2e2a9b23e277cae27f19efcbc66d0b48b0263b773c036a30f0"
+    },
+    {
+      "id": "A.8-B004",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 257,
+      "end_line": 257,
+      "kind": "paragraph",
+      "excerpt": "Such a proof SHALL demonstrate that:",
+      "sha256": "9c6ee9f6f2633b2c12b9615150bd36e07eac8199abf0e5c42d3b0f5f3f6c74a2"
+    },
+    {
+      "id": "A.8-B005",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 259,
+      "end_line": 259,
+      "kind": "list-item",
+      "excerpt": "- The Proof of Age attestation includes a signature that can be verified using the public key of the AP",
+      "sha256": "a8445fbf31c24770dbf2e681a4bffe860534f72e83c0f536d6364601544570d5"
+    },
+    {
+      "id": "A.8-B006",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 260,
+      "end_line": 260,
+      "kind": "list-item",
+      "excerpt": "- The Proof of Age attestation includes the requested attribute and its value is true",
+      "sha256": "36c6ef08507e232479afef339d5d1935cc180c57b2962db887869f5372cc001c"
+    },
+    {
+      "id": "A.8-B007",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 261,
+      "end_line": 262,
+      "kind": "list-item",
+      "excerpt": "- The AVI can generate a signature of the nonce that is verifiable using the\npublic key included in the Proof of attestation",
+      "sha256": "e284d96c1adf0d1b80d319b275228db8cbdfd92fdb4ec3e0eda7908b2015a4fe"
+    },
+    {
+      "id": "A.8-B008",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 263,
+      "end_line": 263,
+      "kind": "list-item",
+      "excerpt": "- The Proof of Age attestation is within its validity period",
+      "sha256": "01b731f116185a2052ac09f075835b6a34aa2b5dfb54d9a5021a54292f02da3f"
+    },
+    {
+      "id": "A.8-B009",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 265,
+      "end_line": 265,
+      "kind": "paragraph",
+      "excerpt": "Verification requirements:",
+      "sha256": "d8446f5798b69e1c429e9d141001a3f790c4548d959cbb32fcdc2dcae580e3f3"
+    },
+    {
+      "id": "A.8-B010",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 266,
+      "end_line": 266,
+      "kind": "list-item",
+      "excerpt": "- An RP SHALL be able to verify these Zero-Knowledge Proofs.",
+      "sha256": "8075c70aa29e2c078f5b4cfb8a0c1106b9740971b9ad91a07b2012cae1f7fa7c"
+    },
+    {
+      "id": "A.8-B011",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 267,
+      "end_line": 267,
+      "kind": "list-item",
+      "excerpt": "- An RP SHALL verify that the Zero-Knowledge Proof was generated using an accepted circuit, by verifying the circuit hash against the set of circuits accepted for the purposes of this profile, before verifying the proof. An RP SHALL reject a presentation generated using a circuit that is not among the accepted circuits.",
+      "sha256": "d44573f9cfe49dc4804ca8b13216c89cb0722ead17fa2e05c91acccd194b8a4e"
+    },
+    {
+      "id": "A.8-B012",
+      "section": "A.8",
+      "heading": "A.8. Zero-Knowledge Proofs",
+      "anchor": "a8-zero-knowledge-proofs",
+      "start_line": 268,
+      "end_line": 268,
+      "kind": "list-item",
+      "excerpt": "- Where the User's device does not support Zero-Knowledge Proof generation, the AVI SHALL fall back to the plain ISO mDoc presentation defined in Section A.6. The RP SHALL be able to verify both a Zero-Knowledge Proof presentation and the plain ISO mDoc fallback presentation.",
+      "sha256": "fd8c6fc07b7f2b071da78abad6689c28d66b1bff3dcf58427ebfd276fe8bef91"
+    },
+    {
+      "id": "A.9-B001",
+      "section": "A.9",
+      "heading": "A.9. Security Considerations",
+      "anchor": "a9-security-considerations",
+      "start_line": 272,
+      "end_line": 272,
+      "kind": "paragraph",
+      "excerpt": "The security considerations in [OID4VCI] and [OID4VP] apply when compatible with Level of Assurance substantial only.",
+      "sha256": "7c9658e110f5fe3638082180245ced97dbda947f891a118dcb7fb8d6093d556d"
+    },
+    {
+      "id": "A.9-B002",
+      "section": "A.9",
+      "heading": "A.9. Security Considerations",
+      "anchor": "a9-security-considerations",
+      "start_line": 274,
+      "end_line": 274,
+      "kind": "paragraph",
+      "excerpt": "Because Relying Parties cannot pre-discover the capabilities of an Age Verification App Instance, a Relying Party cannot distinguish a User device that lacks Zero-Knowledge Proof support from a presentation that has been downgraded to the fallback mechanism. A Relying Party SHALL NOT reject a presentation solely on the ground that it uses the plain ISO mDoc fallback mechanism. Note that the plain ISO mDoc presentation does not provide the unlinkability properties of the Zero-Knowledge Proof mechanism (see Annex B); the residual linkability risk is mitigated by the batch issuance and single-use requirements of the main specification.",
+      "sha256": "cd510c6b1ed6e7cdd7e44d3261160840019b1e0a41a85266e5ff61a3ca750d32"
+    }
+  ],
+  "tests": [
+    {
+      "id": "verifier/go/oid4vp/isodcapi_test.go::TestEncryptionInfoShape",
+      "path": "verifier/go/oid4vp/isodcapi_test.go",
+      "symbol": "TestEncryptionInfoShape",
+      "asserts": "Checks the emitted CBOR EncryptionInfo array discriminator, nonce key presence and bare COSE_Key map shape.",
+      "limits": "Does not assert base64url padding, complete ISO conformance, plain mdoc fallback, or all COSE_Key members.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestEncryptionInfoShape$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/isodcapi_test.go::TestDeviceRequestBuild",
+      "path": "verifier/go/oid4vp/isodcapi_test.go",
+      "symbol": "TestDeviceRequestBuild",
+      "asserts": "Builds an AV-doctype DeviceRequest, decodes selected request and ZK system fields and compares its bytes with the committed request vector.",
+      "limits": "No explicit assertion of docType, namespace or age predicate; not a plain mdoc fallback test or a proof that the profile parameter tuple and scheme-owner circuits are accepted.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestDeviceRequestBuild$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/isodcapi_test.go::TestHPKERoundTrip",
+      "path": "verifier/go/oid4vp/isodcapi_test.go",
+      "symbol": "TestHPKERoundTrip",
+      "asserts": "Checks nonce length, local HPKE seal/open round trip with a transcript and rejection of a flipped ciphertext bit.",
+      "limits": "Uses arbitrary plaintext, not a DeviceResponse, and does not assert EncryptedResponse wrapper or complete base64url encoding.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestHPKERoundTrip$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/internal/jose/jwk_test.go::TestGenerateKeyProducesUsableP256",
+      "path": "verifier/go/internal/jose/jwk_test.go",
+      "symbol": "TestGenerateKeyProducesUsableP256",
+      "asserts": "Checks generated JWK EC/P-256 labels, 32-byte x coordinate and 32-byte thumbprint.",
+      "limits": "Local verifier key generation only; not every entity or all signing and validation operations.",
+      "command": "cd verifier/go && go test ./internal/jose -run ^TestGenerateKeyProducesUsableP256$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/internal/jose/jws_test.go::TestJWSSignVerifyRoundTrip",
+      "path": "verifier/go/internal/jose/jws_test.go",
+      "symbol": "TestJWSSignVerifyRoundTrip",
+      "asserts": "Signs a compact JWS and verifies that its payload round trips using the public key.",
+      "limits": "Local P-256/ES256 primitive only; no AVI/AP interoperability or entire-entity algorithm coverage.",
+      "command": "cd verifier/go && go test ./internal/jose -run ^TestJWSSignVerifyRoundTrip$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/zk/zk_test.go::TestRegistryRejectsUnlisted",
+      "path": "verifier/go/zk/zk_test.go",
+      "symbol": "TestRegistryRejectsUnlisted",
+      "asserts": "A local registry containing only deadbeef refuses the computed circuit for parameters (7,1).",
+      "limits": "Local allowlist check only. The scheme-owner accepted set and its publication/authority are [UNVERIFIED]; not AV circuit acceptance evidence.",
+      "command": "cd verifier/go && go test ./zk -run ^TestRegistryRejectsUnlisted$",
+      "requires": "Go/cgo and Rust staticlib from make deps"
+    }
+  ],
+  "clauses": [
+    {
+      "id": "AV-ANNEX-001",
+      "block_id": "Annex A-B001",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "(normative)",
+      "out_of_scope_for_v1": "out of scope for v1: Normative-status marker; document metadata has no executable conformance assertion."
+    },
+    {
+      "id": "AV-A.1-001",
+      "block_id": "A.1-B001",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "This document defines a set of requirements for the existing specifications to\nenable interoperability among Attestation Providers (APs), Age Verification App Instances (AVIs)\nand Relying Parties (RPs) where a substantial level of security and privacy is required.\nThis document is an interoperability profile that can be used by implementations\nin various contexts, be it a certain industry or a certain regulatory environment.",
+      "out_of_scope_for_v1": "out of scope for v1: A.1 section disposition: overview, implementation-stage caveat, standards navigation and intended audience; no standalone executable requirement."
+    },
+    {
+      "id": "AV-A.1-002",
+      "block_id": "A.1-B002",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "This profile is part of the EU Age Verification technical specifications. It builds\non existing specifications commonly used for credential issuance and verification\nand defines a set of features to be implemented in the context of age verification",
+      "out_of_scope_for_v1": "out of scope for v1: A.1 section disposition: overview, implementation-stage caveat, standards navigation and intended audience; no standalone executable requirement."
+    },
+    {
+      "id": "AV-A.1-003",
+      "block_id": "A.1-B003",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "This document outlines a profile for the age verification target architecture,\nserving as a conceptual framework rather than a comprehensive specification of all\nfeatures and requirements. At the current stage of development, not all functionalities\ndescribed herein have been implemented in the Age Verification Solution Toolbox.\nFurthermore, certain features are also absent in the present development state of\nthe EUDI Wallet libraries. These functionalities will be developed and integrated\nincrementally over the course of the project.",
+      "out_of_scope_for_v1": "out of scope for v1: A.1 section disposition: overview, implementation-stage caveat, standards navigation and intended audience; no standalone executable requirement."
+    },
+    {
+      "id": "AV-A.1-004",
+      "block_id": "A.1-B004",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "The profile uses OpenID for Verifiable Credential Issuance [OID4VCI] for issuance\nof Proof of Age attestations. Furthermore, for the presentation of Proof of Age\nattestations, the profile uses the W3C Digital Credentials API [W3C Digital Credentials API] as specified in\n\\[ISO/IEC 18013-7\\], Annex C, as well as OpenID for Verifiable Presentations [OID4VP]\nas a fallback mechanism. The attestation format used is ISO mDoc [ISO18013-5].",
+      "out_of_scope_for_v1": "out of scope for v1: A.1 section disposition: inherited issuance/presentation/format overview is retained; complete OpenID4VCI, OpenID4VP fallback and ISO mdoc interoperability is not established by existing ZK tests."
+    },
+    {
+      "id": "AV-A.1-005",
+      "block_id": "A.1-B005",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "A full list of the open standards used in this profile can be found in Overview of\nthe Open Standards Requirements.",
+      "out_of_scope_for_v1": "out of scope for v1: A.1 section disposition: overview, implementation-stage caveat, standards navigation and intended audience; no standalone executable requirement."
+    },
+    {
+      "id": "AV-A.1-006",
+      "block_id": "A.1-B006",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "The intended audience for this document comprises Member States and designated\norganizations that seek to implement an age verification solution. This profile,\nthe referenced technical standards and accompanying guidelines are designed to\nsupport governmental authorities as well as commissioned organizations in the\ndevelopment, integration, and deployment of compliant age verification systems\nwithin their respective jurisdictions or operational domains. This approach ensures\nthat both public sector bodies and their authorized private sector partners are\nequipped to realize and maintain robust, privacy-preserving age verification in\nalignment with European regulatory requirements, age verification digital services\nrequirements, and digital identity initiatives.",
+      "out_of_scope_for_v1": "out of scope for v1: A.1 section disposition: overview, implementation-stage caveat, standards navigation and intended audience; no standalone executable requirement."
+    },
+    {
+      "id": "AV-A.2-001",
+      "block_id": "A.2-B001",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "This specification uses the terms\nAttestation Providers (APs), Age Verification App Instances (AVIs), Relying Parties (RPs), Proof of Age attestation, and AVS Unit Attestation (AVSUA) as defined in [Operational, Security, Product, and Architecture Specifications](../../../docs/architecture-and-technical-specifications.md).",
+      "out_of_scope_for_v1": "out of scope for v1: A.2 section disposition: terminology is inherited by reference; this registry does not execute a vocabulary conformance test."
+    },
+    {
+      "id": "AV-A.3-001",
+      "block_id": "A.3-B001",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "The primary focus of this document is on online services, with the intention that\nage verification should be conducted digitally in online environments. The solution\nis specifically designed to enable users to prove their age when accessing online\ncontent, products, or services that are subject to age restrictions. This approach\naddresses the increasing need for robust online age verification mechanisms,\nensuring that age-restricted content is accessed only by individuals who meet\nthe required legal age, and supporting compliance with relevant regulatory\nrequirements for online platforms.",
+      "out_of_scope_for_v1": "out of scope for v1: Scope declaration or introductory text; retained for complete source accounting, with no standalone executable assertion."
+    },
+    {
+      "id": "AV-A.3-002",
+      "block_id": "A.3-B002",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "The following aspects are in scope of this interoperability profile:",
+      "out_of_scope_for_v1": "out of scope for v1: Scope declaration or introductory text; retained for complete source accounting, with no standalone executable assertion."
+    },
+    {
+      "id": "AV-A.3-003",
+      "block_id": "A.3-B003",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- Profile of OpenID4VCI to issue ISO mDoc Proof of Age attestations",
+      "out_of_scope_for_v1": "out of scope for v1: Issuance flow profiling is inventoried here; profile-specific issuance fixtures and AVSUA-equivalent issuance belong to later stories."
+    },
+    {
+      "id": "AV-A.3-004",
+      "block_id": "A.3-B004",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- Profile of OpenID4VP to present ISO mDoc Proof of Age attestation",
+      "out_of_scope_for_v1": "out of scope for v1: No complete plain ISO mdoc OpenID4VP fallback coverage. The unofficial mso_mdoc_zk transport is not AV-profile conformance."
+    },
+    {
+      "id": "AV-A.3-005",
+      "block_id": "A.3-B005",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- Crypto Suites",
+      "out_of_scope_for_v1": "out of scope for v1: Scope declaration or introductory text; retained for complete source accounting, with no standalone executable assertion."
+    },
+    {
+      "id": "AV-A.3-006",
+      "block_id": "A.3-B006",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- Data model examples",
+      "out_of_scope_for_v1": "out of scope for v1: Scope declaration or introductory text; retained for complete source accounting, with no standalone executable assertion."
+    },
+    {
+      "id": "AV-A.3-007",
+      "block_id": "A.3-B007",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "The following assumptions are made:",
+      "out_of_scope_for_v1": "out of scope for v1: Scope declaration or introductory text; retained for complete source accounting, with no standalone executable assertion."
+    },
+    {
+      "id": "AV-A.3-008",
+      "block_id": "A.3-B008",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- The APs and RPs cannot pre-discover Age Verification App’s capability",
+      "out_of_scope_for_v1": "out of scope for v1: Capability-discovery and AVI-invocation assumptions lack an end-to-end profile-specific test."
+    },
+    {
+      "id": "AV-A.3-009",
+      "block_id": "A.3-B009",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- The AP is talking to the AVI supporting the features defined in this profile (via AVI invocation mechanism)",
+      "out_of_scope_for_v1": "out of scope for v1: Capability-discovery and AVI-invocation assumptions lack an end-to-end profile-specific test."
+    },
+    {
+      "id": "AV-A.3-010",
+      "block_id": "A.3-B010",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- Support for mDoc only as the Proof of Age attestation format",
+      "out_of_scope_for_v1": "out of scope for v1: The profile permits only mdoc; repository format-wide restriction and interoperability have not been tested as an AV conformance property."
+    },
+    {
+      "id": "AV-A.3-011",
+      "block_id": "A.3-B011",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- No personal data, especially no information from personal identification documents\nsuch as national ID card, is stored within an AVI. Only the Proof of Age attestation,\nspecifically indicating \"older than 18\", is utilized for age verification purposes",
+      "out_of_scope_for_v1": "out of scope for v1: No AVI storage audit proves the absence of personal identification data and exclusive Proof of Age storage."
+    },
+    {
+      "id": "AV-A.3-012",
+      "block_id": "A.3-B012",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "The following items are out of scope for the current version of this document, but might be added in future versions:",
+      "out_of_scope_for_v1": "out of scope for v1: Scope declaration or introductory text; retained for complete source accounting, with no standalone executable assertion."
+    },
+    {
+      "id": "AV-A.3-013",
+      "block_id": "A.3-B013",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- Support for Level of Assurance (LoA) \"high\".",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly excludes this item; inherited external definitions/editions are not expanded or independently verified here."
+    },
+    {
+      "id": "AV-A.3-014",
+      "block_id": "A.3-B014",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- Proof of Age attestation re-issuance (using refresh tokens) and revocation.",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly excludes this item; inherited external definitions/editions are not expanded or independently verified here."
+    },
+    {
+      "id": "AV-A.3-015",
+      "block_id": "A.3-B015",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- RP registration and trusted lists of RPs.",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly excludes this item; inherited external definitions/editions are not expanded or independently verified here."
+    },
+    {
+      "id": "AV-A.3-016",
+      "block_id": "A.3-B016",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- Trusted lists of Age Verification App providers under the envisaged EU Age Verification Scheme (the interim publication of provider certificates by the Commission is described in the Operational, Security, Product, and Architecture Specifications, Section 4.2).",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly excludes this item; inherited external definitions/editions are not expanded or independently verified here."
+    },
+    {
+      "id": "AV-A.3-017",
+      "block_id": "A.3-B017",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- Proof of Age attestation presentation using proximity.",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly excludes this item; inherited external definitions/editions are not expanded or independently verified here."
+    },
+    {
+      "id": "AV-A.3-018",
+      "block_id": "A.3-B018",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "- Profile of OpenID4VCI to issue ISO mDoc [ISO.18013-5] is defined in ISO 23220-3.",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly excludes this item; inherited external definitions/editions are not expanded or independently verified here."
+    },
+    {
+      "id": "AV-A.3-019",
+      "block_id": "A.3-B019",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "This specification enables interoperable implementations of the following flows:",
+      "out_of_scope_for_v1": "out of scope for v1: Scope declaration or introductory text; retained for complete source accounting, with no standalone executable assertion."
+    },
+    {
+      "id": "AV-A.3-020",
+      "block_id": "A.3-B020",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- Issuance of ISO mDoc Proof of Age attestation using OpenID4VCI",
+      "out_of_scope_for_v1": "out of scope for v1: Issuance flow profiling is inventoried here; profile-specific issuance fixtures and AVSUA-equivalent issuance belong to later stories."
+    },
+    {
+      "id": "AV-A.3-021.1",
+      "block_id": "A.3-B021",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- Presentation of ISO mDoc Proof of Age attestation using OpenID4VP\n",
+      "out_of_scope_for_v1": "out of scope for v1: Flow-implementation permission and inherited optional-parameter rule are retained; no test verifies optionality across the referenced standards."
+    },
+    {
+      "id": "AV-A.3-021.2",
+      "block_id": "A.3-B021",
+      "normative_strength": [
+        "permission"
+      ],
+      "excerpt": "Implementations of this specification do not have to implement all of the flows listed above.\n",
+      "out_of_scope_for_v1": "out of scope for v1: Flow-implementation permission and inherited optional-parameter rule are retained; no test verifies optionality across the referenced standards."
+    },
+    {
+      "id": "AV-A.3-021.3",
+      "block_id": "A.3-B021",
+      "normative_strength": [
+        "declarative",
+        "permission"
+      ],
+      "excerpt": "A parameter that is listed as optional to be implemented in a specification that is\nbeing profiled (i.e., OpenID4VCI, OpenID4VP and ISO mDoc) remains optional unless it is stated otherwise in this specification.",
+      "out_of_scope_for_v1": "out of scope for v1: Flow-implementation permission and inherited optional-parameter rule are retained; no test verifies optionality across the referenced standards."
+    },
+    {
+      "id": "AV-A.4-001",
+      "block_id": "A.4-B001",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "The data model for the Proof of Age attestation is defined as a profile of\nthe attribute schema specified in \\[ISO/IEC 18013-5\\]\nand \\[ISO/IEC 23220-2\\]. A Proof of Age attestation SHALL comply with this data model.",
+      "out_of_scope_for_v1": "out of scope for v1: Inherited ISO attribute-schema compliance is not fully tested; this registry does not expand or verify the referenced ISO standards."
+    },
+    {
+      "id": "AV-A.4-002",
+      "block_id": "A.4-B002",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "The document type for Proof of Age attestation SHALL be `eu.europa.ec.av.1`.",
+      "out_of_scope_for_v1": "out of scope for v1: Existing request tests supply this doctype but do not assert it or prove issuance/presentation enforcement of the AV document type."
+    },
+    {
+      "id": "AV-A.4-003",
+      "block_id": "A.4-B003",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "The Proof of Age attestation attribute set SHALL be composed of attributes defined in the following\nTable. All attributes belong to namespace `eu.europa.ec.av.1`",
+      "out_of_scope_for_v1": "out of scope for v1: No profile-specific attribute-set/namespace enforcement test. The mint adds issuing_country, so it cannot evidence strict AV attribute allowlisting."
+    },
+    {
+      "id": "AV-A.4-004",
+      "block_id": "A.4-B004",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "| Identifier | Meaning | Presence in issuance | Presence in verification | Encoding format |",
+      "out_of_scope_for_v1": "out of scope for v1: Table structure or age-scope explanatory context; retained alongside its conditional requirements."
+    },
+    {
+      "id": "AV-A.4-005",
+      "block_id": "A.4-B005",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "| :---- | :---- | :---- | :---- | :---- |",
+      "out_of_scope_for_v1": "out of scope for v1: Table structure or age-scope explanatory context; retained alongside its conditional requirements."
+    },
+    {
+      "id": "AV-A.4-006",
+      "block_id": "A.4-B006",
+      "normative_strength": [
+        "SHALL",
+        "conditional"
+      ],
+      "excerpt": "| age\\_over\\_18 | This attribute is present in all Proof of Age attestations and indicates whether the user is above 18\\. | Mandatory | Conditional mandatory (either age\\_over\\_18 or one of age\\_over\\_NN attributes SHALL be requested) | bool |",
+      "out_of_scope_for_v1": "out of scope for v1: No strict AV fixture asserts mandatory age_over_18 issuance, conditional selection of an age attribute at verification and boolean encoding together."
+    },
+    {
+      "id": "AV-A.4-007",
+      "block_id": "A.4-B007",
+      "normative_strength": [
+        "MAY",
+        "SHALL",
+        "conditional"
+      ],
+      "excerpt": "| age\\_over\\_NN | Confirming whether the Proof of Age attestation user is currently over NN years of age. Multiple entries MAY be provided as separate attributes. | Optional | Conditional mandatory (either age\\_over\\_18 or one of age\\_over\\_NN attributes SHALL be requested)  | bool |",
+      "out_of_scope_for_v1": "out of scope for v1: Optional multiple age_over_NN attributes, conditional verification selection and boolean encoding have no profile-specific conformance test."
+    },
+    {
+      "id": "AV-A.4-008",
+      "block_id": "A.4-B008",
+      "normative_strength": [
+        "SHALL NOT"
+      ],
+      "excerpt": "A Proof of Age Attestation SHALL NOT include any other attribute.",
+      "out_of_scope_for_v1": "out of scope for v1: The mint includes issuing_country. No strict AV attestation attribute-allowlist test exists, and runtime policy is not changed in this story."
+    },
+    {
+      "id": "AV-A.4-009",
+      "block_id": "A.4-B009",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "**Note on Age Attribute Scope**",
+      "out_of_scope_for_v1": "out of scope for v1: Table structure or age-scope explanatory context; retained alongside its conditional requirements."
+    },
+    {
+      "id": "AV-A.4-010",
+      "block_id": "A.4-B010",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "While the technical architecture and data model (based on \\[ISO/IEC 18013-5\\]\nand \\[ISO/IEC 23220-2\\]) inherently support the age\\_over\\_NN attribute schema\nfor arbitrary age thresholds (e.g., age\\_over\\_14, age\\_over\\_65), this\nspecification explicitly focuses on age\\_over\\_18 to address the most common\nregulatory requirement for age-restricted online services in the EU.",
+      "out_of_scope_for_v1": "out of scope for v1: Table structure or age-scope explanatory context; retained alongside its conditional requirements."
+    },
+    {
+      "id": "AV-A.4-011",
+      "block_id": "A.4-B011",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "Extending the solution to additional age thresholds would require:",
+      "out_of_scope_for_v1": "out of scope for v1: Table structure or age-scope explanatory context; retained alongside its conditional requirements."
+    },
+    {
+      "id": "AV-A.4-012",
+      "block_id": "A.4-B012",
+      "normative_strength": [
+        "declarative",
+        "conditional"
+      ],
+      "excerpt": "1. Validation of enrolment methods for the target age group.",
+      "out_of_scope_for_v1": "out of scope for v1: Additional-threshold enrolment-method validation is a conditional programme requirement with no repository evidence."
+    },
+    {
+      "id": "AV-A.4-013",
+      "block_id": "A.4-B013",
+      "normative_strength": [
+        "declarative",
+        "conditional"
+      ],
+      "excerpt": "2. Alignment with jurisdictional legal frameworks governing the specific age-based restrictions.",
+      "out_of_scope_for_v1": "out of scope for v1: Additional-threshold jurisdictional alignment is a conditional legal assessment with no verified programme evidence."
+    },
+    {
+      "id": "AV-A.4-014",
+      "block_id": "A.4-B014",
+      "normative_strength": [
+        "recommendation"
+      ],
+      "excerpt": "Section 7.2.5 \\[ISO/IEC 18013-5\\] of specification 'Age attestation: nearest “true”\nattestation above request' may be considered in implementations making use of\nthe optional age_over_NN attribute.",
+      "out_of_scope_for_v1": "out of scope for v1: Optional nearest-true age attestation behaviour is not implemented/tested as an AV-profile property; the inherited ISO clause is not expanded."
+    },
+    {
+      "id": "AV-A.5-001",
+      "block_id": "A.5-B001",
+      "normative_strength": [
+        "SHOULD"
+      ],
+      "excerpt": "Issuance of Proof of Age attestations SHOULD follow the issuance framework\ndefined for the EUDI Wallet in the [EUDI Wallet ARF](https://eu-digital-identity-wallet.github.io/eudi-doc-architecture-and-reference-framework/),\nwhich is based on OpenID for Verifiable Credential Issuance. ",
+      "out_of_scope_for_v1": "out of scope for v1: The recommended EUDI Wallet issuance framework has no complete AV-profile issuance test; inherited ARF/OpenID4VCI requirements are not expanded."
+    },
+    {
+      "id": "AV-A.5-002",
+      "block_id": "A.5-B002",
+      "normative_strength": [
+        "MAY",
+        "conditional"
+      ],
+      "excerpt": "An Attestation Provider and an Age Verification App Provider MAY instead agree on an internal\nissuance interface (for example, where both roles are performed by the same or\naffiliated entities), provided that it achieves equivalent assurance, in\nparticular regarding the verification of the legitimacy of the requesting AVI\n(see AVS Unit Attestation below).",
+      "out_of_scope_for_v1": "out of scope for v1: An internal issuance interface is permitted only with equivalent assurance and AVI legitimacy verification; mock issuance does not prove those conditions."
+    },
+    {
+      "id": "AV-A.5-003",
+      "block_id": "A.5-B003",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "- As a way to invoke the AVI, at least a custom URL scheme av-vci:// MUST be supported.",
+      "out_of_scope_for_v1": "out of scope for v1: The av-vci:// invocation requirement is reserved for Story 1.4, not implemented by this registry story."
+    },
+    {
+      "id": "AV-A.5-004",
+      "block_id": "A.5-B004",
+      "normative_strength": [
+        "SHOULD",
+        "conditional"
+      ],
+      "excerpt": "When following the EUDI Wallet issuance framework, the AVI SHOULD present an AVS Unit\nAttestation (AVSUA) to the AP during issuance. The AVSUA comprises an Age Verification App\nInstance Attestation (AVIA), attesting to the integrity of the AVI, and a Key Attestation\n(KA), attesting to the security of the keys the AVI uses in the issuance flow. Both are\nissued and signed by the provider of the Age Verification solution, which performs for the\nAVI the role that [TS3] assigns to the Wallet Provider.",
+      "out_of_scope_for_v1": "out of scope for v1: Conditional AVSUA presentation, AVIA/KA composition and provider signatures lack AV-specific evidence; equivalent issuance is reserved for Story 1.5."
+    },
+    {
+      "id": "AV-A.5-005",
+      "block_id": "A.5-B005",
+      "normative_strength": [
+        "MAY"
+      ],
+      "excerpt": "The AVSUA is the Age Verification instantiation of the Wallet Unit Attestation mechanism\nspecified in [TS3]: the AVIA corresponds to the Wallet Instance Attestation (WIA) and the KA\nto the Key Attestation of that specification. Implementations MAY reuse Wallet Unit\nAttestation implementations for this purpose. The [ARF] provides the wider context.",
+      "out_of_scope_for_v1": "out of scope for v1: AVSUA-to-TS3 correspondence and permission to reuse Wallet Unit Attestation implementations are inventoried without an issuance conformance claim."
+    },
+    {
+      "id": "AV-A.5-006",
+      "block_id": "A.5-B006",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "Note (informative): on the trust anchor for AVSUA validation and its evolution under the\nenvisaged EU Age Verification Scheme, see Section 3.4.4 of the Operational, Security,\nProduct, and Architecture Specifications.",
+      "out_of_scope_for_v1": "out of scope for v1: The source explicitly labels this trust-anchor navigation note informative; external scheme trust publication is not verified here."
+    },
+    {
+      "id": "AV-A.6-001",
+      "block_id": "A.6-B001",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "Presentation involves two choices: the presentation mechanism and the transport. The two are not independent, since the Zero-Knowledge Proof mechanism is available only over the W3C Digital Credentials API transport.",
+      "out_of_scope_for_v1": "out of scope for v1: DC API default, fallback transport selection and ZK transport restrictions lack a complete AVI-to-RP fallback-policy test."
+    },
+    {
+      "id": "AV-A.6-002",
+      "block_id": "A.6-B002",
+      "normative_strength": [
+        "SHALL",
+        "conditional"
+      ],
+      "excerpt": "- **Presentation mechanism.** The preferred mechanism is a Zero-Knowledge Proof defined in Section A.8. A plain ISO mDoc presentation SHALL be used as the fallback where, and only where, either (a) the User's device does not support Zero-Knowledge Proof generation, or (b) the OpenID for Verifiable Presentations transport is used.",
+      "out_of_scope_for_v1": "out of scope for v1: Plain ISO mdoc fallback is missing from the ZK-only verifier path; neither device-capability fallback nor the only-where condition is evidenced."
+    },
+    {
+      "id": "AV-A.6-003",
+      "block_id": "A.6-B003",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "- **Transport.** The default transport is the W3C Digital Credentials API. OpenID for Verifiable Presentations is used as a transport fallback when the Digital Credentials API is not available.",
+      "out_of_scope_for_v1": "out of scope for v1: DC API default, fallback transport selection and ZK transport restrictions lack a complete AVI-to-RP fallback-policy test."
+    },
+    {
+      "id": "AV-A.6-004",
+      "block_id": "A.6-B004",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "Presentation as a Zero-Knowledge Proof over the W3C Digital Credentials API SHALL follow Section A.8, which specifies the normative request and response format by reference; a non-normative example is provided in Section A.11 (\"W3C Digital Credentials API with ZKP\"). The plain ISO mDoc presentation described below is the fallback mechanism, used under the conditions set out at the beginning of this section.\nThe W3C Digital Credentials API is used as specified in \\[ISO/IEC 18013-7\\], Annex C.",
+      "out_of_scope_for_v1": "out of scope for v1: Inherited A.8/ISO Annex C requirements and plain fallback conditions are not fully evidenced. DC API primitive tests do not establish complete profile presentation conformance."
+    },
+    {
+      "id": "AV-A.6-005",
+      "block_id": "A.6-B005",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "The Relying Party builds a request which consists of two parts: `encryptionInfo`\nand `deviceRequest`.",
+      "out_of_scope_for_v1": "out of scope for v1: No assertion jointly validates the complete RP request containing both encryptionInfo and deviceRequest as an AV-profile request."
+    },
+    {
+      "id": "AV-A.6-006",
+      "block_id": "A.6-B006",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "**Encryption info**\n`encryptionInfo` is the base64-url without padding encoding of the cbor\nencoded `EncryptionInfo` object defined below",
+      "out_of_scope_for_v1": "out of scope for v1: EncryptionInfo shape tests do not assert the required unpadded base64url encoding of CBOR; no encoding-completeness claim is made."
+    },
+    {
+      "id": "AV-A.6-007",
+      "block_id": "A.6-B007",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "```cddl\nEncryptionInfo = [\n  \"dcapi\",\n  EncryptionParameters\n]\n\nEncryptionParameters = {\n  \"nonce\" : bstr,\n  \"recipientPublicKey\" : COSE_Key\n}\n```",
+      "test": {
+        "id": "verifier/go/oid4vp/isodcapi_test.go::TestEncryptionInfoShape",
+        "coverage": "partial",
+        "scope": "Selected EncryptionInfo CDDL structure: dcapi discriminator, nonce key and bare recipientPublicKey COSE_Key map.",
+        "limits": "Does not assert nonce byte-string type or every COSE_Key member; the surrounding wire encoding and full ISO/DC API behaviour remain unverified."
+      }
+    },
+    {
+      "id": "AV-A.6-008",
+      "block_id": "A.6-B008",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "**Device Request**\n`deviceRequest` is the base64-url without padding encoding of the cbor encoded\n`DeviceRequest` defined in \\[ISO/IEC 18013-5\\] §8.3.2.1.2.1",
+      "test": {
+        "id": "verifier/go/oid4vp/isodcapi_test.go::TestDeviceRequestBuild",
+        "coverage": "partial",
+        "scope": "Constructed CBOR DeviceRequest selected fields and committed-vector stability, exercised with AV doctype inputs.",
+        "limits": "No assertion of unpadded base64url wire encoding, complete inherited ISO DeviceRequest schema, plain mdoc fallback or AV parameter-tuple conformance."
+      }
+    },
+    {
+      "id": "AV-A.6-009",
+      "block_id": "A.6-B009",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "The response is the base64-url without padding encoding of the cbor\nencoded `EncryptedResponse` object defined below:",
+      "out_of_scope_for_v1": "out of scope for v1: No scoped test asserts all unpadded base64url and CBOR EncryptedResponse encoding requirements."
+    },
+    {
+      "id": "AV-A.6-010",
+      "block_id": "A.6-B010",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "```cddl\nEncryptedResponse = [\n  \"dcapi\",\n  EncryptedResponseData\n]\nEncryptedResponseData = {\n  \"enc\" : bstr,\n  \"cipherText\" : bstr\n}\n```",
+      "out_of_scope_for_v1": "out of scope for v1: No mapped assertion fully checks the EncryptedResponse CDDL wrapper, discriminator and byte-string field types."
+    },
+    {
+      "id": "AV-A.6-011",
+      "block_id": "A.6-B011",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "`enc` is the public key used for the generation of the ciphertext, which is used\nin the decryption process, and `cipherText` is the encrypted response, which is\na `DeviceResponse`, defined in Section 8.3.2.1.2.3 of ISO/IEC 18013-5, encrypted\nusing Hybrid Public Key Encryption (HPKE) defined in RFC 9180.",
+      "test": {
+        "id": "verifier/go/oid4vp/isodcapi_test.go::TestHPKERoundTrip",
+        "coverage": "partial",
+        "scope": "Local HPKE encryption/decryption round trip using a transcript, with ciphertext-tampering rejection.",
+        "limits": "Arbitrary plaintext is used. DeviceResponse structure, enc wrapper interpretation and full RFC 9180 interoperability are not established."
+      }
+    },
+    {
+      "id": "AV-A.6-012",
+      "block_id": "A.6-B012",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "Reader authentication is not required and therefore is out of scope of this profile",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly places this authentication mechanism out of scope; omission is not a test pass."
+    },
+    {
+      "id": "AV-A.6-013",
+      "block_id": "A.6-B013",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "OpenID for Verifiable Presentations is used as a transport fallback when W3C\nDigital Credentials API is not available. Zero-Knowledge Proofs are not supported over OpenID for Verifiable Presentations in this version of the profile, since no standardized DCQL query for requesting Zero-Knowledge Proof is available. This transport is for ISO mDoc format attestations only. This transport will be revisited once the relevan standardisation work has concluded.",
+      "out_of_scope_for_v1": "out of scope for v1: OpenID4VP is restricted to plain ISO mdoc fallback; the repository unofficial mso_mdoc_zk carrier is not counted as profile evidence."
+    },
+    {
+      "id": "AV-A.6-014",
+      "block_id": "A.6-B014",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "- As a way to invoke the Age Verification App, at least a custom URL scheme av:// MUST be supported.",
+      "out_of_scope_for_v1": "out of scope for v1: The av:// invocation path lacks an AV-profile invocation test."
+    },
+    {
+      "id": "AV-A.6-015",
+      "block_id": "A.6-B015",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "- Response type MUST be `vp_token`",
+      "out_of_scope_for_v1": "out of scope for v1: No AV plain-mdoc fallback test asserts response_type=vp_token; existing ZK carrier tests do not establish this profile path."
+    },
+    {
+      "id": "AV-A.6-016",
+      "block_id": "A.6-B016",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "- `response_mode` MUST be `direct_post`",
+      "out_of_scope_for_v1": "out of scope for v1: The Android HAIP policy requires direct_post.jwt, differing from this profile direct_post requirement; no runtime downgrade is introduced here."
+    },
+    {
+      "id": "AV-A.6-017",
+      "block_id": "A.6-B017",
+      "normative_strength": [
+        "MUST",
+        "MUST NOT"
+      ],
+      "excerpt": "- RP MUST send the request as URL-encoded query parameters. The `request` and `request_uri` parameters MUST NOT be used (i.e., support for JAR is not required)",
+      "out_of_scope_for_v1": "out of scope for v1: URL-query transport and prohibition of request/request_uri/JAR lack a profile-specific fallback test; the wallet HAIP request-object path is not evidence."
+    },
+    {
+      "id": "AV-A.6-018",
+      "block_id": "A.6-B018",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "- The client identifier scheme MUST be `redirect_uri` followed by the `response_uri`",
+      "out_of_scope_for_v1": "out of scope for v1: No profile-specific fallback test asserts redirect_uri client identification followed by response_uri."
+    },
+    {
+      "id": "AV-A.6-019",
+      "block_id": "A.6-B019",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "- A request MUST specify the nonce parameter",
+      "out_of_scope_for_v1": "out of scope for v1: ZK transcript nonce tests do not establish nonce presence in an AV plain-mdoc OpenID4VP fallback request."
+    },
+    {
+      "id": "AV-A.6-020",
+      "block_id": "A.6-B020",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "- The DCQL query and response as defined in Section 6 of [OID4VP] MUST be used",
+      "out_of_scope_for_v1": "out of scope for v1: No full Section 6 DCQL query/response fallback conformance test. Unofficial ZK DCQL and local boolean checks do not cover the inherited requirement."
+    },
+    {
+      "id": "AV-A.6-021",
+      "block_id": "A.6-B021",
+      "normative_strength": [
+        "permission"
+      ],
+      "excerpt": "- The `state` parameter as defined in Section 4.1.1 of [OID4VP] is optional",
+      "out_of_scope_for_v1": "out of scope for v1: Optional state support in AV fallback has no profile-specific presence/absence test."
+    },
+    {
+      "id": "AV-A.6-022",
+      "block_id": "A.6-B022",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "Client authentication is not required and is therefore out of scope of this profile.",
+      "out_of_scope_for_v1": "out of scope for v1: The pinned profile explicitly places this authentication mechanism out of scope; omission is not a test pass."
+    },
+    {
+      "id": "AV-A.7-001.1.1",
+      "block_id": "A.7-B001",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "All entities MUST support P-256 (secp256r1) as a key type",
+      "test": {
+        "id": "verifier/go/internal/jose/jwk_test.go::TestGenerateKeyProducesUsableP256",
+        "coverage": "partial",
+        "scope": "Generated local verifier JWK EC/P-256 labels and key-coordinate length.",
+        "limits": "Primitive coverage only; does not prove algorithm support by every AP, AVI and RP or all profile signing/validation operations."
+      }
+    },
+    {
+      "id": "AV-A.7-001.1.2",
+      "block_id": "A.7-B001",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": " with ES256 JWT algorithm for signing and signature validation\nwhenever this profile requires to do so.\n",
+      "test": {
+        "id": "verifier/go/internal/jose/jws_test.go::TestJWSSignVerifyRoundTrip",
+        "coverage": "partial",
+        "scope": "Local verifier JWS signing/verification payload round trip with P-256/ES256.",
+        "limits": "Primitive coverage only; does not prove algorithm support by every AP, AVI and RP or all profile signing/validation operations."
+      }
+    },
+    {
+      "id": "AV-A.7-001.2",
+      "block_id": "A.7-B001",
+      "normative_strength": [
+        "MUST"
+      ],
+      "excerpt": "SHA256 MUST be supported by all the entities as the hash algorithm to generate and validate the digests in the MDOC VC.\n",
+      "out_of_scope_for_v1": "out of scope for v1: No test establishes all-entity MDOC digest generation/validation or the recommendation for explicitly assigned alternative cryptosuites."
+    },
+    {
+      "id": "AV-A.7-001.3",
+      "block_id": "A.7-B001",
+      "normative_strength": [
+        "recommendation"
+      ],
+      "excerpt": "Note: When using this profile with other cryptosuites, it is recommended to be explicit about which entity is required\nto support which curve for signing and/or signature validation.",
+      "out_of_scope_for_v1": "out of scope for v1: No test establishes all-entity MDOC digest generation/validation or the recommendation for explicitly assigned alternative cryptosuites."
+    },
+    {
+      "id": "AV-A.8-001",
+      "block_id": "A.8-B001",
+      "normative_strength": [
+        "SHALL",
+        "conditional"
+      ],
+      "excerpt": "Where the User's device provides the necessary platform support, the AVI SHALL support the generation of Zero-Knowledge Proofs using the solution detailed in: *\"Matteo Frigo and abhi shelat, Anonymous credentials from ECDSA,\nIACR Communications in Cryptology, vol. 3, no. 1, 2026, available at [https://doi.org/10.62056/a3qjmpgxq](https://doi.org/10.62056/a3qjmpgxq)\"* [Fri2024].\nAn open-source implementation of this solution has been released [here](https://github.com/google/longfellow-zk). A Zero-Knowledge Proof is the preferred mechanism for presenting a Proof of Age attestation. It is requested and returned over the W3C Digital Credentials API.",
+      "out_of_scope_for_v1": "out of scope for v1: Conditional device-platform generation support and inherited proof-system definition lack AV-specific fixtures and execution; publication details beyond this pin remain [UNVERIFIED]."
+    },
+    {
+      "id": "AV-A.8-002",
+      "block_id": "A.8-B002",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "For this version of the profile, the only Zero-Knowledge Proof system in scope is the system identified by `longfellow-libzk-v1`, as defined in [Fri2024] and specified in [draft-google-cfrg-libzk](https://datatracker.ietf.org/doc/draft-google-cfrg-libzk/), using the circuit and parameters identified by the ZkSystemSpec parameters (`circuit_hash`, `version`, `num_attributes`, `block_enc_hash`, `block_enc_sig`) as defined in ISO/IEC DIS 18013-5 (Second Edition), Section 10.2.7. An implementation SHALL use that system. Support for any other Zero-Knowledge Proof system does not constitute conformance with this profile. The system identifier is versioned, and future versions of this profile may add or replace the systems in scope. The set of circuits accepted for the purposes of this profile, identified by their circuit hashes, is published and maintained by the scheme owner separately from this document.",
+      "out_of_scope_for_v1": "out of scope for v1: No full AV ZkSystemSpec parameter-tuple and mandatory-system test. Local circuit policy is not the scheme-owner accepted set; accepted-set publication/authority and external standards editions remain [UNVERIFIED]."
+    },
+    {
+      "id": "AV-A.8-003",
+      "block_id": "A.8-B003",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "The request and response structure of a Zero-Knowledge Proof presentation SHALL follow the ZkSystemSpec mechanism defined in ISO/IEC 18013-5 (Second Edition), Section 10.2.7, transported over the W3C Digital Credentials API as specified in ISO/IEC 18013-7, Annex C. The proof format SHALL follow [draft-google-cfrg-libzk]; a non-normative example is provided in Section A.11 (\"W3C Digital Credentials API with ZKP\").",
+      "out_of_scope_for_v1": "out of scope for v1: Inherited ISO ZkSystemSpec request/response and draft-google-cfrg-libzk proof-format requirements are not expanded or fully verified; dedicated fixtures are a later story."
+    },
+    {
+      "id": "AV-A.8-004",
+      "block_id": "A.8-B004",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "Such a proof SHALL demonstrate that:",
+      "out_of_scope_for_v1": "out of scope for v1: Requirement-group introduction; the following individual proof/verification obligations carry their own dispositions."
+    },
+    {
+      "id": "AV-A.8-005",
+      "block_id": "A.8-B005",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "- The Proof of Age attestation includes a signature that can be verified using the public key of the AP",
+      "out_of_scope_for_v1": "out of scope for v1: No AV-profile fixture isolates issuer-signature/public-key binding; local demo ZK verification does not prove the full inherited AV proof property."
+    },
+    {
+      "id": "AV-A.8-006",
+      "block_id": "A.8-B006",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "- The Proof of Age attestation includes the requested attribute and its value is true",
+      "out_of_scope_for_v1": "out of scope for v1: No AV-profile fixture independently exercises proof inclusion and true-value binding with the profile parameter tuple; unofficial OpenID4VP ZK tests are not profile evidence."
+    },
+    {
+      "id": "AV-A.8-007",
+      "block_id": "A.8-B007",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "- The AVI can generate a signature of the nonce that is verifiable using the\npublic key included in the Proof of attestation",
+      "out_of_scope_for_v1": "out of scope for v1: No AV-profile fixture independently exercises nonce signature possession using the attestation public key."
+    },
+    {
+      "id": "AV-A.8-008",
+      "block_id": "A.8-B008",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "- The Proof of Age attestation is within its validity period",
+      "out_of_scope_for_v1": "out of scope for v1: No AV-profile fixture independently tests attestation validity-period proof semantics; timestamp-window tests are a different property."
+    },
+    {
+      "id": "AV-A.8-009",
+      "block_id": "A.8-B009",
+      "normative_strength": [
+        "informative"
+      ],
+      "excerpt": "Verification requirements:",
+      "out_of_scope_for_v1": "out of scope for v1: Requirement-group introduction; the following individual proof/verification obligations carry their own dispositions."
+    },
+    {
+      "id": "AV-A.8-010",
+      "block_id": "A.8-B010",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "- An RP SHALL be able to verify these Zero-Knowledge Proofs.",
+      "out_of_scope_for_v1": "out of scope for v1: Existing multipaz response integration tests use local circuit fixtures; AV-specific parameter-tuple and conformance execution belong to later stories."
+    },
+    {
+      "id": "AV-A.8-011",
+      "block_id": "A.8-B011",
+      "normative_strength": [
+        "SHALL"
+      ],
+      "excerpt": "- An RP SHALL verify that the Zero-Knowledge Proof was generated using an accepted circuit, by verifying the circuit hash against the set of circuits accepted for the purposes of this profile, before verifying the proof. An RP SHALL reject a presentation generated using a circuit that is not among the accepted circuits.",
+      "test": {
+        "id": "verifier/go/zk/zk_test.go::TestRegistryRejectsUnlisted",
+        "coverage": "partial",
+        "scope": "Negative control for an unlisted circuit in the repository local circuit registry.",
+        "limits": "The scheme-owner accepted set is [UNVERIFIED]. This test does not establish accepted-set authority, full profile circuit acceptance or presentation-level rejection before proof verification."
+      }
+    },
+    {
+      "id": "AV-A.8-012.1",
+      "block_id": "A.8-B012",
+      "normative_strength": [
+        "SHALL",
+        "conditional"
+      ],
+      "excerpt": "- Where the User's device does not support Zero-Knowledge Proof generation, the AVI SHALL fall back to the plain ISO mDoc presentation defined in Section A.6. ",
+      "out_of_scope_for_v1": "out of scope for v1: The verifier parses ZK documents only; device-driven plain mdoc fallback generation and RP support for both mechanisms remain gaps."
+    },
+    {
+      "id": "AV-A.8-012.2",
+      "block_id": "A.8-B012",
+      "normative_strength": [
+        "SHALL",
+        "conditional"
+      ],
+      "excerpt": "The RP SHALL be able to verify both a Zero-Knowledge Proof presentation and the plain ISO mDoc fallback presentation.",
+      "out_of_scope_for_v1": "out of scope for v1: The verifier parses ZK documents only; device-driven plain mdoc fallback generation and RP support for both mechanisms remain gaps."
+    },
+    {
+      "id": "AV-A.9-001",
+      "block_id": "A.9-B001",
+      "normative_strength": [
+        "declarative",
+        "conditional"
+      ],
+      "excerpt": "The security considerations in [OID4VCI] and [OID4VP] apply when compatible with Level of Assurance substantial only.",
+      "out_of_scope_for_v1": "out of scope for v1: Inherited OpenID4VCI/OpenID4VP security considerations conditional on substantial assurance are retained without expanding unverified external requirements."
+    },
+    {
+      "id": "AV-A.9-002.1",
+      "block_id": "A.9-B002",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "Because Relying Parties cannot pre-discover the capabilities of an Age Verification App Instance, a Relying Party cannot distinguish a User device that lacks Zero-Knowledge Proof support from a presentation that has been downgraded to the fallback mechanism. ",
+      "out_of_scope_for_v1": "out of scope for v1: No AV plain mdoc fallback acceptance/non-rejection test; the repository ZK-only verifier does not prove this. Main-spec batch issuance/single-use linkability mitigations are not independently verified here."
+    },
+    {
+      "id": "AV-A.9-002.2",
+      "block_id": "A.9-B002",
+      "normative_strength": [
+        "SHALL NOT"
+      ],
+      "excerpt": "A Relying Party SHALL NOT reject a presentation solely on the ground that it uses the plain ISO mDoc fallback mechanism. ",
+      "out_of_scope_for_v1": "out of scope for v1: No AV plain mdoc fallback acceptance/non-rejection test; the repository ZK-only verifier does not prove this. Main-spec batch issuance/single-use linkability mitigations are not independently verified here."
+    },
+    {
+      "id": "AV-A.9-002.3",
+      "block_id": "A.9-B002",
+      "normative_strength": [
+        "declarative"
+      ],
+      "excerpt": "Note that the plain ISO mDoc presentation does not provide the unlinkability properties of the Zero-Knowledge Proof mechanism (see Annex B); the residual linkability risk is mitigated by the batch issuance and single-use requirements of the main specification.",
+      "out_of_scope_for_v1": "out of scope for v1: No AV plain mdoc fallback acceptance/non-rejection test; the repository ZK-only verifier does not prove this. Main-spec batch issuance/single-use linkability mitigations are not independently verified here."
+    }
+  ]
+}

@@ -10,6 +10,9 @@ on:
       - 'issuer/**'
       - 'wallet/**'
       - 'tests/**'
+      - 'docs/profiles/av/**'
+      - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
+      - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
       - 'tools/**'
@@ -22,6 +25,9 @@ on:
       - 'issuer/**'
       - 'wallet/**'
       - 'tests/**'
+      - 'docs/profiles/av/**'
+      - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
+      - 'docs/README.md'
       - 'demo/**'
       - 'scripts/**'
       - 'tools/**'
@@ -101,6 +107,11 @@ jobs:
 
       - name: python compiles
         run: python3 -m compileall -q issuer verifier wallet tests sandbox
+
+      - name: AV profile registry (offline traceability and mutation controls)
+        run: |
+          python3 tests/check_av_registry.py
+          python3 -m unittest discover -s tests -p 'test_av_registry.py'
 
       - name: ruff
         # F (pyflakes) and E9 catch undefined names, unused imports and syntax

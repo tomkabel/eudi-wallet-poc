@@ -5,10 +5,32 @@ Every test and check in this repository, where it lives, and what it proves.
 [`docs/DEVELOPMENT.md`](../docs/DEVELOPMENT.md) ("Running the checks locally").
 
 Unit tests sit beside the code they test — Go under `verifier/go/`, the
-cross-language transcript check in `wallet/`. This directory holds only the
-end-to-end and load harnesses. Do not move or rename anything here: ci.yml
+cross-language transcript check in `wallet/`. This directory holds the
+end-to-end and load harnesses and offline registry checks. Do not move or rename anything here: ci.yml
 invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
 `tests/*.sh`, `tools/*.sh` and `demo/*.sh`.
+
+## AV Profile registry checks (Python standard library, offline)
+
+- `python3 tests/check_av_registry.py` validates the public Annex A revision/date
+  and digest pins, retained excerpt/license bytes, complete ordered source-block
+  and clause accounting, exactly one scoped test mapping or explicit v1 exclusion,
+  and real referenced Go test files/symbols. It derives source blocks directly
+  from retained Markdown, including declarative/inherited requirements and table
+  rows. It prints mapped/excluded counts and exits nonzero on drift.
+- `python3 -m unittest discover -s tests -p 'test_av_registry.py'` runs malformed
+  input controls for missing coverage (even when block and clause entries are
+  removed together), duplicate IDs, changed order/text/pins, empty or conflicting
+  dispositions, dangling mappings, missing files/symbols and orphan tests.
+- Both commands run through `make test-av-registry`, `make check` and the fast CI
+  job. They require no network, Go/Rust build or third-party Python dependencies.
+  They establish traceability structure, not executed AV conformance. Mapped
+  protocol tests have their own build requirements and are not run by this
+  validator. The full original digest is checked against fixed metadata; only
+  the normative excerpt and license bytes are retained for offline hashing.
+
+The [registry guide](../docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md) documents the
+schema, source pin, six partial mappings, exclusions and refresh procedure.
 
 ## Unit tests beside the code
 
@@ -95,6 +117,9 @@ package without linking, covering every package), `go test ./oid4vp/...
 ./internal/... ./circuits/...` with `-race`,
 `python3 -m compileall -q issuer verifier wallet tests sandbox`, `ruff check
 --isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .` (ruff 0.16.6),
+`python3 tests/check_av_registry.py` and
+`python3 -m unittest discover -s tests -p 'test_av_registry.py'` (offline AV
+traceability and mutation controls),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
 step installs the pinned `tests/requirements-ci.txt`, since `present.py` imports
 `cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`,
