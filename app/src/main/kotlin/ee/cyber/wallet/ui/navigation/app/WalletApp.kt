@@ -1,15 +1,13 @@
 package ee.cyber.wallet.ui.navigation.app
 
-import android.content.Intent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -17,6 +15,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import ee.cyber.wallet.BuildConfig
+import ee.cyber.wallet.domain.credentials.InvocationRefusal
+import ee.cyber.wallet.domain.credentials.InvocationRefusalReason
+import ee.cyber.wallet.domain.credentials.WalletInvocation
+import ee.cyber.wallet.ui.screens.issuance.AvVciInvocationDialog
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.fullName
 import ee.cyber.wallet.domain.provider.wallet.WalletInstanceCredentials
@@ -24,8 +26,6 @@ import ee.cyber.wallet.ui.AppRoute
 import ee.cyber.wallet.ui.model.UserData
 import ee.cyber.wallet.ui.navigation.boarding.boardingNavGraph
 import ee.cyber.wallet.ui.navigation.main.mainNavGraph
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.filterNotNull
 import org.slf4j.LoggerFactory
 
 data class WalletAppState(
@@ -61,7 +61,9 @@ fun rememberAppState(
 private val logger = LoggerFactory.getLogger("WalletApp")
 
 @Composable
-fun WalletApp(viewModel: WalletAppViewModel, intent: Intent?) {
+fun WalletApp(viewModel: WalletAppViewModel, invocations: WalletInvocationViewModel) {
+    val entries by invocations.entries.collectAsStateWithLifecycle()
+    val active = entries.firstOrNull()
     val walletCredentials by viewModel.walletCredentials.collectAsStateWithLifecycle()
     val userData by viewModel.userData.collectAsStateWithLifecycle()
     val documents by viewModel.documents.collectAsStateWithLifecycle()
@@ -82,20 +84,17 @@ fun WalletApp(viewModel: WalletAppViewModel, intent: Intent?) {
     }
 
     if (appState.isLoaded) {
-        val currentIntent = rememberUpdatedState(newValue = intent)
-        LaunchedEffect(Unit) {
-            snapshotFlow { currentIntent.value }.filterNotNull()
-                .collect {
-                    it.dataString?.toUri()?.also { deeplink ->
-                        delay(300)
-                        runCatching {
-                            // handleDeepLink does not
-                            appState.navController.navigate(deeplink)
-                        }.onFailure { e ->
-                            logger.warn("could not navigate to a deeplink: $deeplink", e)
-                        }
-                    }
+        LaunchedEffect(active?.id, active?.invocation) {
+            val current = active ?: return@LaunchedEffect
+            val link = current.invocation as? WalletInvocation.ExistingLink
+            if (link != null) {
+                try {
+                    appState.navController.navigate(link.uri.toUri())
+                    invocations.dismiss(current.id)
+                } catch (_: Exception) {
+                    invocations.navigationRefused(current.id, InvocationRefusal("invocation", InvocationRefusalReason.NAVIGATION))
                 }
+            }
         }
         NavHost(
             navController = appState.navController,
@@ -105,6 +104,15 @@ fun WalletApp(viewModel: WalletAppViewModel, intent: Intent?) {
         ) {
             boardingNavGraph(appState)
             mainNavGraph(appState)
+        }
+        if (active != null) key(active.id) {
+            AvVciInvocationDialog(
+                offer = (active.invocation as? WalletInvocation.AvIssuance)?.offer,
+                refusal = (active.invocation as? WalletInvocation.Refused)?.refusal,
+                providerUnavailable = active.providerUnavailable,
+                onContinue = { invocations.providerUnavailable(active.id) },
+                onDismiss = { invocations.dismiss(active.id) }
+            )
         }
     }
 }

@@ -39,7 +39,7 @@ development_status:
   1-1-av-profile-clause-registry: done
   1-2-av-profile-fixtures: done
   1-3-av-conformance-runner: awaiting-operator
-  1-4-av-vci-invocation: backlog
+  1-4-av-vci-invocation: done
   1-5-avsua-equivalent-issuance-path: backlog
   1-6-published-av-report-and-external-reproduction: backlog
   epic-1-retrospective: optional

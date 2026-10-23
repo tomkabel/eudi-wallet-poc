@@ -1,6 +1,6 @@
 name: App
 
-# The Android app's unit tests. Kept apart from ci.yml so app pushes don't pay
+# The Android app's unit and invocation surface tests. Kept apart from ci.yml so app pushes don't pay
 # for the ZK spine's Rust build, and ZK pushes don't pay for Gradle.
 on:
   push:
@@ -10,6 +10,7 @@ on:
       - '*.gradle.kts'
       - 'gradle.properties'
       - 'zk-conformance/**'
+      - 'tests/test_av_vci_android.py'
       - '.github/workflows/app.yml'
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - '*.gradle.kts'
       - 'gradle.properties'
       - 'zk-conformance/**'
+      - 'tests/test_av_vci_android.py'
       - '.github/workflows/app.yml'
 
 concurrency:
@@ -48,3 +50,39 @@ jobs:
         run: ./gradlew :zk-conformance:test
       - name: Unit tests (local_mocks)
         run: ./gradlew :app:testLocal_mocksUnitTest
+
+  invocation-surface:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - name: Prepare Android 35 runtime
+        run: |
+          sudo chmod a+rw /dev/kvm
+          sdkmanager 'emulator' 'system-images;android-35;google_apis;x86_64'
+          echo no | avdmanager create avd --name invocation --package 'system-images;android-35;google_apis;x86_64' --device pixel_6
+          "$ANDROID_HOME/emulator/emulator" -avd invocation -no-window -no-audio -no-snapshot -gpu swiftshader > "$RUNNER_TEMP/invocation-emulator.log" 2>&1 &
+          adb wait-for-device
+          for _ in $(seq 1 120); do
+            if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ]; then
+              adb shell input keyevent 82
+              exit 0
+            fi
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/invocation-emulator.log"
+          exit 1
+      - name: Install local_mocks
+        run: ./gradlew :app:installLocal_mocks
+      - name: AV invocation Android surface (English and Estonian)
+        run: python3 -u tests/test_av_vci_android.py
+      - name: Stop runtime
+        if: always()
+        run: adb emu kill || true

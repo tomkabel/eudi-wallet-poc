@@ -266,4 +266,19 @@
     <string name="mock_auth_mobile_id_pin1">Enter Mobiil-ID PIN1</string>
     <string name="mock_auth_mobile_id_sucess">Identification using Mobile ID was successful</string>
 
+    <!-- External AV issuance entry: the provider is not integrated. -->
+    <string name="av_invocation_title">Age verification issuance</string>
+    <string name="av_invocation_document">Offered document: %1$s</string>
+    <string name="av_invocation_issuer">Offered issuer: %1$s</string>
+    <string name="av_invocation_unverified_issuer">This issuer was supplied in the link. Its trust has not been verified.</string>
+    <string name="av_invocation_provider_unavailable">Provider integration unavailable. External AV issuance is not integrated; no attestation has been obtained.</string>
+    <string name="av_invocation_continue">Continue</string>
+    <string name="av_invocation_cancel">Cancel</string>
+    <string name="av_invocation_close">Close</string>
+    <string name="invocation_refused_title">Invocation refused</string>
+    <string name="invocation_missing">Missing parameter: %1$s</string>
+    <string name="invocation_malformed">Malformed parameter: %1$s</string>
+    <string name="invocation_unsupported">Unsupported parameter or invocation: %1$s</string>
+    <string name="invocation_capacity">Invocation queue full: %1$d incoming invocation(s) refused. Close this message before retrying.</string>
+    <string name="invocation_navigation_failed">Unable to open %1$s: no supported destination accepted this link.</string>
 </resources>

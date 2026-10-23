@@ -266,4 +266,19 @@
     <string name="mock_auth_mobile_id_pin1">Sisesta Mobiil-ID PIN1</string>
     <string name="mock_auth_mobile_id_sucess">Mobiil-ID abil tuvastamine õnnestus</string>
 
+    <!-- External AV issuance entry -->
+    <string name="av_invocation_title">Vanuse tõendamise väljastamine</string>
+    <string name="av_invocation_document">Pakutud dokument: %1$s</string>
+    <string name="av_invocation_issuer">Pakutud väljastaja: %1$s</string>
+    <string name="av_invocation_unverified_issuer">See väljastaja on antud lingis. Tema usaldusväärsust ei ole kontrollitud.</string>
+    <string name="av_invocation_provider_unavailable">Teenusepakkuja integratsioon pole saadaval. Väline vanusetõendi väljastamine ei ole integreeritud; tõendit ei ole saadud.</string>
+    <string name="av_invocation_continue">Jätka</string>
+    <string name="av_invocation_cancel">Loobu</string>
+    <string name="av_invocation_close">Sulge</string>
+    <string name="invocation_refused_title">Käivitusest keelduti</string>
+    <string name="invocation_missing">Puuduv parameeter: %1$s</string>
+    <string name="invocation_malformed">Vigane parameeter: %1$s</string>
+    <string name="invocation_unsupported">Toetamata parameeter või käivitus: %1$s</string>
+    <string name="invocation_navigation_failed">Käivitust %1$s ei saa avada: ükski toetatud sihtkoht ei võtnud seda linki vastu.</string>
+    <string name="invocation_capacity">Käivituste järjekord on täis: %1$d saabunud käivitusest keelduti. Enne uuesti proovimist sulge see teade.</string>
 </resources>

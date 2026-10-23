@@ -57,6 +57,57 @@ version 7. Encrypted examples stay opaque and the copied minted proof retains
 its OpenID4VPHandover binding. These tests do not verify proofs or establish AV
 transport conformance, scheme-owner circuit acceptance or certification.
 
+## AV issuance invocation (Android JVM and adb surface)
+
+- `AvVciInvocationTest` in `app/src/test/kotlin/ee/cyber/wallet/domain/credentials/`
+  exercises the pure parser and the actual shared dispatch callbacks used by
+  WalletApp: valid offers, inert public grants, missing/empty offers, strict JSON
+  and duplicate keys, invalid percent escapes/UTF-8, query duplicates/conflicts,
+  encoded separators and one-pass decoding, invalid issuer/configuration IDs,
+  authority/path/fragment refusals, unsupported query parameters and schemes,
+  preserved presentation/onboarding generic callbacks and visible navigation
+  failures. Every refusal asserts its full parameter/reason and that the entry
+  callback was never invoked; Unicode percent-hex digits are rejected.
+  Regressions also cover issuer query/empty-port/bidi-control refusals, bounded
+  JSON depth and exact-limit/oversized AV offers.
+- `WalletInvocationViewModelTest` in `app/src/test/kotlin/ee/cyber/wallet/ui/navigation/app/`
+  covers retained typed/provider state, FIFO refusals, repeated-offer reset,
+  stale callback protection, bounded capacity/counting and oversized AV/existing
+  links without retained raw data. These two classes run with the unit command
+  below; use `--tests ee.cyber.wallet.domain.credentials.AvVciInvocationTest
+  --tests ee.cyber.wallet.ui.navigation.app.WalletInvocationViewModelTest` to
+  select only invocation coverage.
+  Run `JAVA_HOME=/usr/lib/jvm/java-17-openjdk ./gradlew :app:testLocal_mocksUnitTest`
+  (the Android CI unit suite). JVM Android methods are stubbed; this establishes
+  parser/dispatch behavior, not manifest or Compose surface evidence.
+- `python3 tests/test_av_vci_android.py --help` documents the standard-library
+  adb smoke harness. Install the current `:app:installLocal_mocks` APK on an
+  unlocked Android 31+ emulator/device and run
+  `python3 tests/test_av_vci_android.py --serial emulator-5554`. The test verifies
+  VIEW/BROWSABLE manifest resolution, cold/warm valid entry with distinct issuers,
+  visible `eu.europa.ec.av.1`, Cancel and provider-unavailable Continue, named
+  missing/malformed/unsupported explanations, known-scheme unmatched navigation,
+  and an unknown explicit intent. Night-mode recreation checks cold/warm valid,
+  provider-unavailable and refusal state; queued refusals must precede the next
+  valid offer. Existing onboarding/presentation links reach NavController and
+  destination UI. Cancel/Close must actually dismiss the previous dialog.
+  Recreation must change the local Activity instance before restored UI is
+  accepted. A full inbox followed by five excess arrivals must eventually show
+  the exact localized capacity count and allow dismissal. Duplicate query
+  parameters and malformed percent input are also checked on Android.
+  API33+ executes English and Estonian and restores the original app locale and
+  night mode in `finally`. API31/32 require two separately configured language
+  passes with `--legacy-locale en` and `--legacy-locale et`; no unsupported locale
+  shell command is issued. The harness force-stops without clearing app data.
+  An unavailable runtime is a verification gap, never a surface-test pass.
+  The App workflow runs this harness on Android 35 for app and harness changes;
+  it installs `local_mocks` and checks both languages in an emulator job.
+
+See [the invocation guide](../docs/profiles/AV-VCI-INVOCATION.md) for grammar,
+example generation and the normative `av-vci://` versus public-example `av://`
+discrepancy. These checks cover external issuance entry only; the provider is
+not integrated, no mock is minted and no AVSUA/conformance claim follows.
+
 ## Unit tests beside the code
 
 ### `verifier/go/oid4vp/` — package oid4vp (Go, no Rust toolchain)
