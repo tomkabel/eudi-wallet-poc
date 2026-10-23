@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-23-2026 04:42
-last_updated: 10-23-2026 06:30
+last_updated: 10-23-2026 14:31
 project: eudi-wallet-poc
 project_key: NOKEY
 tracking_system: file-system
@@ -42,7 +42,7 @@ development_status:
   1-4-av-vci-invocation: done
   1-5-avsua-equivalent-issuance-path: done
   1-6-published-av-report-and-external-reproduction: awaiting-operator
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   epic-2: backlog
   2-1-carrier-runner-over-existing-cases: backlog
@@ -150,3 +150,66 @@ development_status:
   12-3-consent-gate-resists-guessing: backlog
   12-4-proximity-share-carries-consent: backlog
   epic-12-retrospective: optional
+action_items:
+  - id: "epic-1-retro-independent-candidate"
+    epic: 1
+    action: "Execute an independent wallet or verifier through the documented adapter
+      at a recorded revision and retain every mapped clause outcome; close Story 1.3
+      only after evidence review."
+    owner: "Maintainer / interoperability operator"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-independent-reproduction"
+    epic: 1
+    action: "Publish the reviewed implementation and evidence through fork, arrange
+      an independent clean-checkout reproduction, retain host/commands/timings/transcript/artifacts
+      and publish the attributed discrepancies before closing Story 1.6."
+    owner: "Maintainer / independent reproduction operator"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-text"
+    epic: 1
+    action: "Convert invalid adapter stdout/stderr encoding into per-clause ERROR
+      diagnostics and preserve JSON/HTML reports; cover malformed bytes at the subprocess
+      boundary."
+    owner: "Conformance-runner maintainer"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-duplicate-keys"
+    epic: 1
+    action: "Reject duplicate JSON object keys in external adapter evidence and add
+      raw conflicting-state controls proving no FAIL can be overwritten by PASS."
+    owner: "Conformance-runner maintainer"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-timeout-cleanup"
+    epic: 1
+    action: "Terminate and reap adapter descendant processes on timeout and add a
+      child-process cleanup regression with an observable marker."
+    owner: "Conformance-runner maintainer"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-startup-state"
+    epic: 1
+    action: "Distinguish candidate startup failure as NOT_EXECUTED from executed-candidate
+      ERROR, reconcile the shell adapter contract and add a nonexistent-executable
+      control."
+    owner: "Conformance-runner maintainer"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-success-verdict-test"
+    epic: 1
+    action: "Add an all-passing synthetic local/external audit regression asserting
+      exit0, matching JSON verdict, sufficient thresholds, zero failed results and
+      both artifacts."
+    owner: "Conformance-runner maintainer"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-external-dependency-wording"
+    epic: 1
+    action: "Reconcile Epic 1 overview wording that says no external party is needed
+      with Stories 1.3 and 1.6 external acceptance prerequisites; keep local implementation
+      and external evidence gates explicit."
+    owner: "Product owner / backlog maintainer"
+    status: open
+    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
