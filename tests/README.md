@@ -30,7 +30,7 @@ invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
   the normative excerpt and license bytes are retained for offline hashing.
 
 The [registry guide](../docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md) documents the
-schema, source pin, nine partial mappings, exclusions and refresh procedure.
+schema, source pin, 20 partial mappings, exclusions and refresh procedure.
 
 ## AV Profile fixture checks (Python standard library and Go, no Rust)
 
@@ -133,6 +133,30 @@ unlisted-circuit POST case; unlisted-circuit rejection is covered only by
 - Asserts: the verifier process is still alive; every response is `200` or `503` (a dropped connection is recorded as `ERROR ...` and fails); peak OS thread count is below the request count and below 1,000 (Go aborts the process at 10,000 threads); at least one request was shed with `503`, so the admission limit was genuinely exercised.
 - Demonstrates why the limit exists: `zk.Verify` is a cgo call that pins an OS thread for its duration, so without shed-load behaviour 200 simultaneous proofs would walk the process toward Go's thread cap — a remote kill switch, one HTTP request per thread.
 - Mints and proves once (~15 s the first time); `--work DIR` reuses a previous run's proof; `--max-concurrent-verify` is passed to the verifier (0 leaves it at its default). Not invoked by ci.yml; run it by hand against a built prover and verifier.
+
+## AV conformance runner
+
+`python3 tests/run_av_conformance.py --json av-conformance.json` executes the
+repository verifier's Go tests mapped by `docs/profiles/av/clause-registry.json`
+and the dedicated `TestAVConformance*` probes. It prints per-clause results and
+writes a machine-readable report. The pinned registry denominator remains the
+94 retained clauses; this run maps 20 distinct clauses and records negative
+controls separately. The audit is expected to exit nonzero while known AV
+fallback mismatches remain and while no independent candidate is configured.
+Do not interpret partial primitive checks as complete AV or ISO conformance.
+
+An external adapter is invoked with `--candidate-command '<command>'` and must
+print one JSON object to stdout with `schema_version: 1`, a `candidate` object
+containing nonempty `name` and `revision`, and a `results` array. Each result
+must identify a registry `test_id`, a named `property`, a state (`PASS`, `FAIL`,
+`ERROR`, or `NOT_EXECUTED`), and execution evidence. Missing or invalid evidence
+must remain unavailable/error evidence. Independent candidate setup is not
+available in this checkout; the report lists the operator actions instead of
+inventing a result. `--timeout` bounds each local Go command.
+
+`python3 -m unittest discover -s tests -p 'test_av_conformance.py'` tests local
+coverage accounting, negative-control accounting, known failures, external
+unavailability and the CLI. It runs in fast CI; the full audit is separate.
 
 ## What CI runs, and where the Rust toolchain matters
 

@@ -1032,6 +1032,105 @@
       "limits": "Non-normative external container examples only. Ciphertexts are retained without decryption, diagnostics are literal text and no external proof is verified. Full inherited ISO/proof schemas, DC API end-to-end operation and scheme acceptance remain unevidenced.",
       "command": "cd verifier/go && go test ./oid4vp -run ^TestAVProfileExternalContainers$",
       "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceRequestParts",
+      "path": "verifier/go/oid4vp/av_conformance_test.go",
+      "symbol": "TestAVConformanceRequestParts",
+      "asserts": "Calls NewHPKEKeyPair and DeviceRequest for the AV doctype and confirms both returned request components are populated.",
+      "limits": "Only primitive component construction is covered; no complete outer request, wire transport, device support or standards-complete request schema is established.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestAVConformanceRequestParts$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEncryptionEncoding",
+      "path": "verifier/go/oid4vp/av_conformance_test.go",
+      "symbol": "TestAVConformanceEncryptionEncoding",
+      "asserts": "Checks NewHPKEKeyPair encryptionInfo is unpadded base64url and decodes to nonempty encoded bytes.",
+      "limits": "Does not validate every nested CBOR/COSE field or complete ISO/DC API behavior.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestAVConformanceEncryptionEncoding$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceResponseEncoding",
+      "path": "verifier/go/oid4vp/av_conformance_test.go",
+      "symbol": "TestAVConformanceResponseEncoding",
+      "asserts": "Checks BuildDCAPIEnvelope output round trips through unpadded base64url encoding.",
+      "limits": "Uses a minimal envelope; does not establish a complete DeviceResponse or inherited wire schema.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestAVConformanceResponseEncoding$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEnvelope",
+      "path": "verifier/go/oid4vp/av_conformance_test.go",
+      "symbol": "TestAVConformanceEnvelope",
+      "asserts": "Checks ParseEnvelope extracts enc and cipherText and rejects malformed discriminator, field type, truncation and missing-field cases.",
+      "limits": "Selected parser structure only; no complete CDDL validation or base64url endpoint behavior.",
+      "command": "cd verifier/go && go test ./oid4vp -run ^TestAVConformanceEnvelope$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/av_conformance_test.go::TestAVConformanceResponseType",
+      "path": "verifier/go/av_conformance_test.go",
+      "symbol": "TestAVConformanceResponseType",
+      "asserts": "Inspects presenter.request and asserts response_type is vp_token.",
+      "limits": "Only local request-object construction; no externally served AV fallback interoperability.",
+      "command": "cd verifier/go && go test . -run ^TestAVConformanceResponseType$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/av_conformance_test.go::TestAVConformanceResponseMode",
+      "path": "verifier/go/av_conformance_test.go",
+      "symbol": "TestAVConformanceResponseMode",
+      "asserts": "Inspects presenter.request against the AV profile direct_post requirement.",
+      "limits": "Known candidate mismatch is reported as FAIL; no production policy is changed.",
+      "command": "cd verifier/go && go test . -run ^TestAVConformanceResponseMode$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/av_conformance_test.go::TestAVConformanceQueryTransport",
+      "path": "verifier/go/av_conformance_test.go",
+      "symbol": "TestAVConformanceQueryTransport",
+      "asserts": "Inspects handleNew response wallet URI for request_uri transport against AV URL-query requirements.",
+      "limits": "Known candidate mismatch is reported as FAIL; complete URI/query semantics are not implemented.",
+      "command": "cd verifier/go && go test . -run ^TestAVConformanceQueryTransport$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/av_conformance_test.go::TestAVConformanceClientID",
+      "path": "verifier/go/av_conformance_test.go",
+      "symbol": "TestAVConformanceClientID",
+      "asserts": "Checks request client_id follows redirect_uri identification and matches response_uri.",
+      "limits": "Known candidate mismatch is reported as FAIL; certificate identity and endpoint trust are outside scope.",
+      "command": "cd verifier/go && go test . -run ^TestAVConformanceClientID$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/av_conformance_test.go::TestAVConformanceNonce",
+      "path": "verifier/go/av_conformance_test.go",
+      "symbol": "TestAVConformanceNonce",
+      "asserts": "Asserts the generated presentation request contains a nonce.",
+      "limits": "Local session request only; no independent wallet echo/binding property is asserted.",
+      "command": "cd verifier/go && go test . -run ^TestAVConformanceNonce$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/av_conformance_test.go::TestAVConformanceDCQL",
+      "path": "verifier/go/av_conformance_test.go",
+      "symbol": "TestAVConformanceDCQL",
+      "asserts": "Validates the candidate DCQL request and checks the requested fallback format is mso_mdoc.",
+      "limits": "Known candidate mismatch is reported as FAIL; no full OpenID4VP response conformance.",
+      "command": "cd verifier/go && go test . -run ^TestAVConformanceDCQL$",
+      "requires": "Go toolchain; no Rust staticlib"
+    },
+    {
+      "id": "verifier/go/av_conformance_test.go::TestAVConformanceState",
+      "path": "verifier/go/av_conformance_test.go",
+      "symbol": "TestAVConformanceState",
+      "asserts": "Checks emitted state retains the session identifier.",
+      "limits": "State is optional in the profile; this checks only candidate behavior when emitted.",
+      "command": "cd verifier/go && go test . -run ^TestAVConformanceState$",
+      "requires": "Go toolchain; no Rust staticlib"
     }
   ],
   "clauses": [
@@ -1551,7 +1650,12 @@
         "declarative"
       ],
       "excerpt": "The Relying Party builds a request which consists of two parts: `encryptionInfo`\nand `deviceRequest`.",
-      "out_of_scope_for_v1": "out of scope for v1: No assertion jointly validates the complete RP request containing both encryptionInfo and deviceRequest as an AV-profile request."
+      "test": {
+        "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceRequestParts",
+        "coverage": "partial",
+        "scope": "Calls NewHPKEKeyPair and DeviceRequest for the AV doctype and confirms both returned request components are populated.",
+        "limits": "Only primitive component construction is covered; no complete outer request, wire transport, device support or standards-complete request schema is established."
+      }
     },
     {
       "id": "AV-A.6-006",
@@ -1560,7 +1664,12 @@
         "declarative"
       ],
       "excerpt": "**Encryption info**\n`encryptionInfo` is the base64-url without padding encoding of the cbor\nencoded `EncryptionInfo` object defined below",
-      "out_of_scope_for_v1": "out of scope for v1: EncryptionInfo shape tests do not assert the required unpadded base64url encoding of CBOR; no encoding-completeness claim is made."
+      "test": {
+        "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEncryptionEncoding",
+        "coverage": "partial",
+        "scope": "Checks NewHPKEKeyPair encryptionInfo is unpadded base64url and decodes to nonempty encoded bytes.",
+        "limits": "Does not validate every nested CBOR/COSE field or complete ISO/DC API behavior."
+      }
     },
     {
       "id": "AV-A.6-007",
@@ -1597,7 +1706,12 @@
         "declarative"
       ],
       "excerpt": "The response is the base64-url without padding encoding of the cbor\nencoded `EncryptedResponse` object defined below:",
-      "out_of_scope_for_v1": "out of scope for v1: No scoped test asserts all unpadded base64url and CBOR EncryptedResponse encoding requirements."
+      "test": {
+        "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceResponseEncoding",
+        "coverage": "partial",
+        "scope": "Checks BuildDCAPIEnvelope output round trips through unpadded base64url encoding.",
+        "limits": "Uses a minimal envelope; does not establish a complete DeviceResponse or inherited wire schema."
+      }
     },
     {
       "id": "AV-A.6-010",
@@ -1606,7 +1720,12 @@
         "declarative"
       ],
       "excerpt": "```cddl\nEncryptedResponse = [\n  \"dcapi\",\n  EncryptedResponseData\n]\nEncryptedResponseData = {\n  \"enc\" : bstr,\n  \"cipherText\" : bstr\n}\n```",
-      "out_of_scope_for_v1": "out of scope for v1: No mapped assertion fully checks the EncryptedResponse CDDL wrapper, discriminator and byte-string field types."
+      "test": {
+        "id": "verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEnvelope",
+        "coverage": "partial",
+        "scope": "Checks ParseEnvelope extracts enc and cipherText and rejects malformed discriminator, field type, truncation and missing-field cases.",
+        "limits": "Selected parser structure only; no complete CDDL validation or base64url endpoint behavior."
+      }
     },
     {
       "id": "AV-A.6-011",
@@ -1656,7 +1775,12 @@
         "MUST"
       ],
       "excerpt": "- Response type MUST be `vp_token`",
-      "out_of_scope_for_v1": "out of scope for v1: No AV plain-mdoc fallback test asserts response_type=vp_token; existing ZK carrier tests do not establish this profile path."
+      "test": {
+        "id": "verifier/go/av_conformance_test.go::TestAVConformanceResponseType",
+        "coverage": "partial",
+        "scope": "Inspects presenter.request and asserts response_type is vp_token.",
+        "limits": "Only local request-object construction; no externally served AV fallback interoperability."
+      }
     },
     {
       "id": "AV-A.6-016",
@@ -1665,7 +1789,12 @@
         "MUST"
       ],
       "excerpt": "- `response_mode` MUST be `direct_post`",
-      "out_of_scope_for_v1": "out of scope for v1: The Android HAIP policy requires direct_post.jwt, differing from this profile direct_post requirement; no runtime downgrade is introduced here."
+      "test": {
+        "id": "verifier/go/av_conformance_test.go::TestAVConformanceResponseMode",
+        "coverage": "partial",
+        "scope": "Inspects presenter.request against the AV profile direct_post requirement.",
+        "limits": "Known candidate mismatch is reported as FAIL; no production policy is changed."
+      }
     },
     {
       "id": "AV-A.6-017",
@@ -1675,7 +1804,12 @@
         "MUST NOT"
       ],
       "excerpt": "- RP MUST send the request as URL-encoded query parameters. The `request` and `request_uri` parameters MUST NOT be used (i.e., support for JAR is not required)",
-      "out_of_scope_for_v1": "out of scope for v1: URL-query transport and prohibition of request/request_uri/JAR lack a profile-specific fallback test; the wallet HAIP request-object path is not evidence."
+      "test": {
+        "id": "verifier/go/av_conformance_test.go::TestAVConformanceQueryTransport",
+        "coverage": "partial",
+        "scope": "Inspects handleNew response wallet URI for request_uri transport against AV URL-query requirements.",
+        "limits": "Known candidate mismatch is reported as FAIL; complete URI/query semantics are not implemented."
+      }
     },
     {
       "id": "AV-A.6-018",
@@ -1684,7 +1818,12 @@
         "MUST"
       ],
       "excerpt": "- The client identifier scheme MUST be `redirect_uri` followed by the `response_uri`",
-      "out_of_scope_for_v1": "out of scope for v1: No profile-specific fallback test asserts redirect_uri client identification followed by response_uri."
+      "test": {
+        "id": "verifier/go/av_conformance_test.go::TestAVConformanceClientID",
+        "coverage": "partial",
+        "scope": "Checks request client_id follows redirect_uri identification and matches response_uri.",
+        "limits": "Known candidate mismatch is reported as FAIL; certificate identity and endpoint trust are outside scope."
+      }
     },
     {
       "id": "AV-A.6-019",
@@ -1693,7 +1832,12 @@
         "MUST"
       ],
       "excerpt": "- A request MUST specify the nonce parameter",
-      "out_of_scope_for_v1": "out of scope for v1: ZK transcript nonce tests do not establish nonce presence in an AV plain-mdoc OpenID4VP fallback request."
+      "test": {
+        "id": "verifier/go/av_conformance_test.go::TestAVConformanceNonce",
+        "coverage": "partial",
+        "scope": "Asserts the generated presentation request contains a nonce.",
+        "limits": "Local session request only; no independent wallet echo/binding property is asserted."
+      }
     },
     {
       "id": "AV-A.6-020",
@@ -1702,7 +1846,12 @@
         "MUST"
       ],
       "excerpt": "- The DCQL query and response as defined in Section 6 of [OID4VP] MUST be used",
-      "out_of_scope_for_v1": "out of scope for v1: No full Section 6 DCQL query/response fallback conformance test. Unofficial ZK DCQL and local boolean checks do not cover the inherited requirement."
+      "test": {
+        "id": "verifier/go/av_conformance_test.go::TestAVConformanceDCQL",
+        "coverage": "partial",
+        "scope": "Validates the candidate DCQL request and checks the requested fallback format is mso_mdoc.",
+        "limits": "Known candidate mismatch is reported as FAIL; no full OpenID4VP response conformance."
+      }
     },
     {
       "id": "AV-A.6-021",
@@ -1711,7 +1860,12 @@
         "permission"
       ],
       "excerpt": "- The `state` parameter as defined in Section 4.1.1 of [OID4VP] is optional",
-      "out_of_scope_for_v1": "out of scope for v1: Optional state support in AV fallback has no profile-specific presence/absence test."
+      "test": {
+        "id": "verifier/go/av_conformance_test.go::TestAVConformanceState",
+        "coverage": "partial",
+        "scope": "Checks emitted state retains the session identifier.",
+        "limits": "State is optional in the profile; this checks only candidate behavior when emitted."
+      }
     },
     {
       "id": "AV-A.6-022",

@@ -122,6 +122,9 @@ jobs:
           python3 tools/build_av_fixtures.py --check
           python3 -m unittest discover -s tests -p 'test_av_fixtures.py'
 
+      - name: AV conformance runner regressions
+        run: python3 -m unittest discover -s tests -p 'test_av_conformance.py'
+
       - name: ruff
         # F (pyflakes) and E9 catch undefined names, unused imports and syntax
         # errors — the things that are wrong rather than merely unfashionable.

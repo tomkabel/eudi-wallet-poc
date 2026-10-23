@@ -115,7 +115,7 @@ honesty still require review.
 
 ## What the current mappings establish
 
-There are **86 source blocks, 94 clause rows, nine partial test mappings and 85
+There are **86 source blocks, 94 clause rows, 20 partial test mappings and 74
 explicit exclusions**. Counts include explanatory and non-obligation text, so they
 are not a count of independent normative obligations or a coverage percentage.
 
