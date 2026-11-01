@@ -84,6 +84,9 @@ pre-authorised proceeding.
 | 10 | Issuance, trust and revocation completeness | L4, S2, S9, S11 | 10.1–10.5 | pilot prerequisite |
 | 11 | Production readiness for a pilot relying party | A3 R1 | 11.1–11.8 | pilot prerequisite |
 | 12 | Consent integrity and user-presence gates | PRD §4.7 (FR-45–FR-48), audit findings | 12.1–12.4 | v1 requirement |
+| 13 | Plain mdoc verification on the Annex C endpoint | ee-eudiw step 2b (Epic 1 there) | 13.1–13.5 | moved from ee-eudiw, 1 Nov 2026 |
+| 14 | The registry and the holder pointer say what is true | ee-eudiw Epic 2 | 14.1–14.2 | moved from ee-eudiw, 1 Nov 2026 |
+| 15 | Specification revision 1.8: implementation findings | ee-eudiw Epic 3 | 15.1–15.5 (15.3 already done) | moved from ee-eudiw, 1 Nov 2026 |
 
 ## Requirements Inventory
 
@@ -159,6 +162,7 @@ FR67: A requester name shown on the consent screen is authenticated: the `reader
 FR68: Credential keys require user presence: the platform's user verification is bound to the key operation itself, so proof generation, plain presentation and signing each carry the gate or the ungated path is removed (PRD FR-46).
 FR69: The consent gate resists guessing: failed attempts are counted in state that survives process restart, with a lockout threshold and an escalation path stated where it is published (PRD FR-47).
 FR70: A proximity share carries the same consent as a remote one: the share passes the consent gate before a document is emitted, and the screen states what is shared and with whom on the same terms as the remote path (PRD FR-48).
+FR71–FR83: Plain mdoc verification, registry fields, holder pointer and the rev 1.8 spec findings. Stated in full under Epics 13–15, which were moved here from ee-eudiw on 1 Nov 2026.
 
 ### Non-Functional Requirements
 
@@ -273,6 +277,9 @@ specification work: FR19 (Topic 19 / DASH_03 presentation-log fields, Epic 4) an
 | FR68 | 12.2 |
 | FR69 | 12.3 |
 | FR70 | 12.4 |
+| FR71–FR75 | 13.1–13.5 |
+| FR76–FR77 | 14.1–14.2 |
+| FR78–FR83 | 15.1–15.5 |
 
 _Rows deliberately left without a story, and the specification requirements this backlog does not
 carry, are listed in `Deliberately not made into stories` under Sequencing._
@@ -1983,6 +1990,261 @@ So that the proximity path is not a way around the gate the remote path applies.
 - **And** the relation to Story 4.7 is stated: this story gates the share; Story 4.7 decides whether a ZKP-capable device answers at all.
 
 **Covers:** FR70. **Source:** PRD §4.7 FR-48.
+
+## Epics 13–15: moved from ee-eudiw (1 November 2026)
+
+These three epics were planned in ee-eudiw on 1 November 2026 (its Epics 1–3) and moved here
+because code and spec changes for the ZK spine are made on this branch. Each story was re-checked
+against this tree at `9d9f12a`. Paths, verification commands and the spec revision are this
+tree's. One story (15.3) was already done here and is recorded as done with its evidence. A
+reference to an ee-eudiw document that is not published here is plain text, never a link, per
+`AGENTS.md`.
+
+Shared rules for Epics 13–15:
+
+- **Fast-job scope.** Pure-Go logic goes in `verifier/go/oid4vp/` or `verifier/go/internal/`, so
+  `make check` (CI's `fast` job) covers it. Package `main` and `./zk/...` link the Rust staticlib
+  and run under `make test-go-zk` after `make deps`.
+- **Zero dependencies.** `verifier/go/go.mod` keeps no `require` block.
+- **Fail closed** on holder-supplied bytes: strict decoding, hard limits, every deviation a
+  refusal, no fallback (ADR-002).
+- **Guard order** on every response endpoint stays concurrency slot → `Claim` (replay = 410) →
+  work (`verifier/go/present.go`, `verifier/go/iso.go`).
+- **Vector provenance.** A vector is never made by the code it tests. Go-side plain-mdoc fixtures
+  are made by the Python issuer/wallet (`issuer/mint_ee_poa.py`, `wallet/present.py`
+  `resign_device_auth`) or by `:zk-conformance`, and carry a `GENERATED-BY` file.
+- **Evidence discipline** (`docs/DEVELOPMENT.md`): versions, dates, identifiers and legal
+  citations are checked against primary sources; what cannot be checked is `[UNVERIFIED]` and
+  collected in spec §23.
+- **Requirement count** (spec stories). A story that adds or removes an `EE-*` requirement re-runs
+  `grep -oE '\*\*EE-[A-Z]{2,4}-[0-9]{3}[a-z]? \(' spec/EE-EUDIW-TS-1.0.md | sort -u | wc -l`
+  (211 at rev 1.7) and updates every copy: the spec header's revision row, Annex E's count
+  sentence and the comment on its grep line, and `docs/ARCHITECTURE.md` line ~21 (which still says
+  193 and is corrected by the first spec story that lands). Dated files under `docs/research/` keep
+  their figures.
+
+## Epic 13: Plain mdoc verification on the Annex C endpoint
+
+`zkverify` has never verified a plain mdoc. `verifier/go/` contains no `issuerAuth`,
+`valueDigests` or `DeviceAuthentication` handling (checked at `9d9f12a`), `internal/cborsub`
+rejects negative integers (`cbor.go`, major type 1), and `iso.go` `isoCheck` skips plain
+documents (`oid4vp/isodcapi.go` `ParseZkDocuments`). `EE-ZKP-050` obliges a relying party to accept
+a plain mdoc, and `EE-ZKP-062` puts the plain path's validity check on the relying party's clock.
+Without this epic the wallet's `PLAIN_*` presentation tiers cannot be exercised end to end. This
+epic is verifier-side only and does not change the wallet rules of `EE-ZKP-055`/`055a` (Story 4.7).
+
+### Story 13.1: Decode the CBOR that COSE and the MSO need
+
+As a relying-party operator,
+I want the strict CBOR subset decoder to accept negative integers and the tags a plain mdoc carries, and nothing more,
+So that COSE_Sign1 headers and the MSO can be parsed without adding a dependency or loosening ADR-002.
+
+**Acceptance Criteria:**
+
+- **Given** `verifier/go/internal/cborsub/cbor.go`, which today rejects negative integers and every tag except 0 and 24,
+- **When** major type 1 (negative integer, shortest form, within int64) and tag 1004 (full-date over a tstr) are added, plus tag 18 if Story 13.2's fixture shows a tagged COSE_Sign1,
+- **Then** a COSE protected header `{1: -7}` decodes, and the `issuerAuth` array in `verifier/go/zk/testdata/step6-device-pubkey/mdoc.bin` decodes end to end,
+- **And** every other ADR-002 rejection still holds (non-minimal heads, indefinite lengths, floats, duplicate keys, other tags, the depth / item / size limits), with table tests for each new accept and each new reject (nint beyond int64, tag 1004 over a non-tstr),
+- **And** `FuzzDecode`'s seed corpus gains an issuerAuth sample, and `cd verifier/go && go test ./internal/cborsub/ -run '^$' -fuzz FuzzDecode -fuzztime 10s` finds nothing,
+- **And** `docs/decisions/ADR-002-STRICT-CBOR-SUBSET-DECODER.md` gains a dated amendment naming the added items and why, and `go.mod` still has no `require` block.
+
+**Verify:** `make check`.
+
+### Story 13.2: Verify issuerAuth against the trust store
+
+As a relying-party operator,
+I want each plain document's `issuerAuth` COSE_Sign1 verified with an issuer key from my trust store,
+So that only attestations from trusted issuers are accepted and a holder cannot supply the key.
+
+**Acceptance Criteria:**
+
+- **Given** a plain `Document` (`issuerSigned.issuerAuth` = `[protected bstr, unprotected map, payload bstr, signature bstr]`, payload = tag 24 over the MSO),
+- **When** the new verification function (in `verifier/go/oid4vp/` or a new `verifier/go/internal/mdoc/`) runs with the session's docType and an `oid4vp.TrustStore`,
+- **Then** it rebuilds `Sig_structure = ["Signature1", protected, h'', payload]` (RFC 9052 §4.4), requires `alg` = ES256 (−7) in the protected header, and verifies the 64-byte r‖s signature with `crypto/ecdsa` against the keys the store holds for that docType,
+- **And** an `x5chain` (label 33) leaf key not in the store is refused, as is a missing or non-ES256 `alg` or a failing signature; a chain only *selects* among trusted keys, as `TrustStore.Select` (`oid4vp/trust.go`) already does for `msoX5chain`,
+- **And** the positive case uses `verifier/go/zk/testdata/step6-device-pubkey/mdoc.bin` with its `issuers.json`, and a one-byte flip in the payload or the signature fails,
+- **And** the function returns the decoded MSO for Story 13.3.
+
+**Verify:** `make check`.
+
+### Story 13.3: Check the MSO's digests, docType and validity
+
+As a relying-party operator,
+I want every disclosed element checked against the issuer-signed digests, and the attestation's validity checked on my clock,
+So that a holder cannot alter a value, swap a doctype or present an expired attestation.
+
+**Acceptance Criteria:**
+
+- **Given** the MSO returned by Story 13.2 and the document's `issuerSigned.nameSpaces` (arrays of tag 24 `IssuerSignedItemBytes`),
+- **When** the check runs,
+- **Then** for each item, SHA-256 over the full tag-24 bytes equals `valueDigests[namespace][digestID]`, and `digestAlgorithm` must be `SHA-256`,
+- **And** `MSO.docType` and `Document.docType` both equal the session's docType,
+- **And** `validityInfo.validFrom <= now <= validityInfo.validUntil` on the verifier's clock (injectable for tests), never from the wire, with at most the 60 s tolerance `EE-ZKP-062` allows for the plain path,
+- **And** each failure has its own negative test: altered `elementValue`, unknown digestID, wrong namespace, docType mismatch, not-yet-valid, expired (each just outside the tolerance), non-SHA-256 algorithm,
+- **And** the disclosed elements come back as `{namespace: {element: value}}` for the result.
+
+**Verify:** `make check`.
+
+### Story 13.4: Verify device binding over the verifier's own transcript
+
+As a relying-party operator,
+I want `deviceSigned.deviceAuth.deviceSignature` verified over a `DeviceAuthentication` built from my own session state,
+So that a presentation cannot be replayed or relayed from another session.
+
+**Acceptance Criteria:**
+
+- **Given** a session transcript from `oid4vp.ISOTranscript` (`oid4vp/isodcapi.go`) or the redirect session's transcript, never from the wire,
+- **When** the check runs,
+- **Then** it builds `DeviceAuthentication = ["DeviceAuthentication", SessionTranscript, docType, DeviceNameSpacesBytes]` (the structure `wallet/present.py` `resign_device_auth` signs), wraps it as tag 24, and verifies a detached-payload COSE_Sign1 ES256 signature with the key from `MSO.deviceKeyInfo.deviceKey` (COSE_Key EC2/P-256),
+- **And** a `deviceMac` is refused as unsupported, a device key on another curve is refused, and a signature over a different transcript fails (negative test with a second session),
+- **And** the positive vector is produced outside Go: a Python helper (e.g. `tests/make_plain_fixture.py`, or an extension of `wallet/present.py`) re-signs the step 6 `mdoc.bin` with a fresh holder key over a fixed transcript; the holder private key is not committed; the fixture is committed under `verifier/go/zk/testdata/step2b-plain-mdoc/` with `GENERATED-BY`,
+- **And** the helper passes `make lint` (ruff `F,E9`, `compileall`) and uses the pinned `tests/requirements-ci.txt` dependencies.
+
+**Verify:** `make check`, plus running the helper twice to confirm the committed `GENERATED-BY` command reproduces a fixture that verifies.
+
+### Story 13.5: Accept plain answers on the Annex C endpoint and report the tier
+
+As a relying party,
+I want `/present/dcapi/*` to verify a plain `documents[]` answer when the session allows it, and to tell me which tier I got,
+So that I meet `EE-ZKP-050` and can tell a ZK presentation from a linkable one.
+
+**Acceptance Criteria:**
+
+- **Given** `verifier/go/iso.go` `isoCheck`, which today skips plain documents,
+- **When** a session is created with plain answers allowed (a new query parameter or flag on `/present/dcapi/new`; default unchanged: ZK required, `zkRequired: true`),
+- **Then** a `DeviceResponse` whose `documents[]` holds one plain document for the session's docType runs Stories 13.2 → 13.3 → 13.4 and returns `valid: true`, with a result field `tier` of `"ZERO_KNOWLEDGE"` or `"PLAIN"`, named to match the wallet's `PresentationTier` values (`app/…/domain/presentation/`) where they map,
+- **And** when ZK is required, a plain-only answer is `valid: false`, as today; when both kinds arrive for one docType, the response is refused as ambiguous,
+- **And** the guard order stays slot → `Claim` → transcript → HPKE → decode → checks, and a replay returns 410,
+- **And** `verifier/go/iso_test.go` (package main, `make test-go-zk`) covers: plain positive; flipped `elementValue` → `valid: false`; untrusted issuer → 403; expired → refused; wrong-session transcript → `valid: false`; ZK-required session receiving plain → `valid: false`. The test seals the Story 13.4 fixture with `crypto/hpke` to a pinned session key; if the ISO store cannot pin keys and nonce, add a test-only constructor analogous to `Store.NewWith` (`oid4vp/session.go`),
+- **And** the carrier and AV conformance runners still pass (`make check` runs their unit suites; `make e2e` runs the carrier runner end to end),
+- **And** `verifier/README.md` (API section and "What this does not do yet") and `docs/ARCHITECTURE.md` say plain mdocs are verified, citing file names rather than line numbers,
+- **And** `docs/planning/STEP2B-RECORD.md` records what landed, the verification output and the PENDING-DEVICE item (plain tier on a real device), and has a line in `docs/README.md`.
+
+**Verify:** `make check`; `make deps && make test-go-zk`; `make e2e`.
+
+## Epic 14: The registry and the holder pointer say what is true
+
+### Story 14.1: Carry the remaining EE-ZKP-030 fields in the registry
+
+As a relying-party operator,
+I want each accepted circuit to record its upstream commit and claimed soundness with the source,
+So that the registry stand-in carries everything `EE-ZKP-030` names.
+
+**Acceptance Criteria:**
+
+- **Given** `verifier/circuits.json` and `Circuit` in `verifier/go/circuits/registry.go`, where the commit appears only inside the `upstream_tag` string and soundness is absent (checked at `9d9f12a`),
+- **When** the fields `upstream_commit` (40-hex) and `soundness_bits` plus `soundness_source` are added,
+- **Then** the 7/1 entry carries `61a8a735964d1b22bccf79bf14ef6767249cdf92`, which must equal `verifier/zkverify-ffi/longfellow-rev.txt` and `LONGFELLOW_REV` in `.github/workflows/ci.yml`; a registry test reads both files and asserts this, so the three cannot drift,
+- **And** `soundness_bits: 109` cites `lib/circuits/mdoc/mdoc_zk.h` `kLigeroNreqv7` at that revision and spec §10.5; the value is re-read from `../longfellow-zk` if `make deps` has placed it, and if it cannot be read, `soundness_source` says `[UNVERIFIED]`,
+- **And** loading fails closed if `upstream_commit` is not 40 lowercase hex, and a registry test pins both the field values and the failure,
+- **And** `SpecID()` is unchanged, and the committed `device_request.cbor` vector stays byte-identical (the build test without `-update` passes),
+- **And** the fields are reconciled with `docs/decisions/ADR-006-CIRCUIT-LIST-DOCUMENT.md` (Epic 5's signed circuit list): the same names are used, or the ADR gets a dated note mapping them,
+- **And** `verifier/README.md` "The circuit registry" lists the new fields.
+
+**Dropped from the ee-eudiw version:** correcting the `upstream_tag` citation of
+`verifier/zkverify-ffi/longfellow-rev.txt`. The file exists in this tree.
+
+**Verify:** `make check`.
+
+### Story 14.2: Point the holder references at a fetchable revision
+
+As a reader of this repository,
+I want the Android-holder pointers to name a revision that exists on this public repository,
+So that I can check the claims they make.
+
+**Acceptance Criteria:**
+
+- **Given** the pointers to `step8-measurement-harness @ 2396245` and its branch chain in `docs/ARCHITECTURE.md` (~line 411 and ~428), `verifier/README.md` (~335), `issuer/README.md` (~110) and `wallet/README.md` (~73) (find every one with `grep -rn "2396245\|step8-measurement-harness\|910ddc4" --include='*.md' .`),
+- **When** they are re-pinned,
+- **Then** each says the holder is this repository's `app/`, and names `master` at a full commit hash from `git ls-remote fork refs/heads/master` (`c292ae6413fcd19368741a21036144987650a5c9` on 1 Nov 2026; re-check on the day) together with the merged PRs that carried each step (#2 step 1, #5 step 3, #6 step 5, #7 step 4, #8 step 6, #9 step 7, #10 harness, #11 review fixes, #12/#13 §8.7), checked with `gh pr list -R tomkabel/eudi-wallet-poc --state merged`,
+- **And** they say the step branches were squash-merged and deleted, so the hashes in `docs/planning/STEP7-RECORD.md`/`STEP8-RECORD.md` are historical; the records are not rewritten, a dated note in each is enough,
+- **And** the relation between `master` and this branch (`ee-eudiw-zk-import`) is stated once in `docs/ARCHITECTURE.md`, so the two pointers do not contradict each other.
+
+**Verify:** `grep -rn "2396245" --include='*.md' . | grep -v 'docs/planning/STEP' | grep -v '_bmad'` is empty, and every hash cited resolves with `gh api repos/tomkabel/eudi-wallet-poc/commits/<hash>`.
+
+## Epic 15: Specification revision 1.8: implementation findings
+
+The spec here is at revision 1.7 (header row "Changes in 1.7", 211 requirements). All Epic 15
+stories go into **revision 1.8**: the first story to land opens a "Changes in 1.8" header row and
+later stories add to it. Each added requirement gets an Annex E row tracing it to its ARF HLR or
+source. Primary sources: the `eudi-arf` submodule at `6373eee` (run
+`git submodule update --init eudi-arf` first; the directory is empty in a fresh worktree), and web
+reads through the tools the agent has. Anything not read is `[UNVERIFIED]`.
+
+### Story 15.1: Restate OIA_08e/08f as an EE requirement
+
+As a wallet implementer,
+I want an `EE-*` requirement that forbids handing attribute presence or values to the platform for request matching,
+So that the duty is visible to a reader of this spec alone.
+
+**Acceptance Criteria:**
+
+- **Given** ARF `OIA_08e`/`OIA_08f` in `eudi-arf/…/annex-2.03-high-level-requirements-by-category.md` at `6373eee` (the spec cites only `OIA_08c`/`OIA_08d` today, Annex E row `EE-PRO-010a/013`),
+- **When** a SHALL requirement is added in §11 (DC API registration) with the next free identifier in its area,
+- **Then** its text quotes the HLRs it restates verbatim, with file and commit, covering: no disclosure of attribute presence or values to the OS/platform, and no global off-switch,
+- **And** the requirement states the duty only; it does not say whether any named wallet meets it (a finding on that is handled outside this repository and is not published here),
+- **And** an Annex E row traces it to `OIA_08e`/`OIA_08f`,
+- **And** the requirement-count rule above is applied, and the "Changes in 1.8" row names the addition.
+
+**Verify:** the count grep returns 212 (or 211 + the number added); `grep -c "OIA_08e" spec/EE-EUDIW-TS-1.0.md` ≥ 2; the copies agree.
+
+### Story 15.2: State the readings of EE-ZKP-051 and EE-PRO-013
+
+As a conformance assessor,
+I want the spec to say which reading of "capable" `EE-ZKP-051` means, and whether Annex C's origin-in-transcript satisfies `EE-PRO-013`,
+So that a downgrade by advertising an unheld circuit is non-conformant, and the Annex C path is not judged by OpenID4VP wording.
+
+**Acceptance Criteria:**
+
+- **Given** `EE-ZKP-051` (§10.8; "where the device is capable of the ZKP path") and `EE-PRO-013` (§11.3; `expected_origins` on a signed DC API request, OpenID4VP 1.0 Annex A.2),
+- **When** clarifying text is added,
+- **Then** `EE-ZKP-051` states the strict reading: an advertised ZKP request whose circuits the wallet does not hold is refused with a distinguishable error, not answered in plain; the text cites `docs/planning/STEP3-RECORD.md` and the wallet's `PresentationTier.PLAIN_NO_MATCHING_CIRCUIT` handling as the implemented reading, and is consistent with `EE-ZKP-055`/`055a`,
+- **And** `EE-PRO-013` gets a sentence on Annex C: the origin enters the `dcapi` handover (`oid4vp.ISOTranscript`), so a relayed request fails at verification; the sentence states, as a decision, whether the wallet must also refuse before proving on an origin mismatch, and if no source settles that, the question becomes a new numbered §23 item marked `[UNVERIFIED]`,
+- **And** no requirement identifier is added or removed (the count grep is unchanged), and the "Changes in 1.8" row lists both clarifications.
+
+**Verify:** the count grep returns the same number as before the story.
+
+### Story 15.3: Bound the holder-chosen ZK timestamp — already done
+
+**Status: done before the move.** Spec §10.5 **EE-ZKP-062** (added in rev 1.6, marked as this
+document's choice in rev 1.7; `spec/EE-EUDIW-TS-1.0.md` ~line 709) requires the validity check of
+`EE-ZKP-021`(d), and the same check on the plain path, to be evaluated on the relying party's clock
+with at most 60 seconds' tolerance. The implementation it rests on is `CheckTimestampWindow`
+(`verifier/go/oid4vp/isodcapi.go`) with `TestISOTimestampWindowNegative`
+(`verifier/go/iso_test.go`). Nothing to port. Story 13.3 applies the same rule to the plain path.
+
+### Story 15.4: Name the mso_mdoc_zk carrier and record the msoX5chain linkability
+
+As a specification reader,
+I want Annex B.1 to name the emerging OpenID4VP ZK carrier, and §23 to record the issuer-certificate linkability,
+So that the spec matches what the ecosystem ships and does not hide an open privacy question.
+
+**Acceptance Criteria:**
+
+- **Given** Annex B.1's "out of band" sentence (spec ~line 1384), `docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md`, `docs/analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md` and `docs/profiles/DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md` (the spec mentions `mso_mdoc_zk` and `msoX5chain` nowhere today),
+- **When** the text is revised,
+- **Then** Annex B.1 names `mso_mdoc_zk` in DCQL as a de-facto carrier that is in no specification (OpenID4VP 1.0, HAIP 1.0, DCHP #17 open), points to the profile, and states that the conformance slice's ZK path stays ISO 18013-7 Annex C; shipping claims carry the analysis doc's verification status,
+- **And** §10.5 or §9.5 gains a sentence that `ZkDocumentData.msoX5chain` shows the document-signer certificate to every verifier and is a linking handle under small cohorts; a new §23 item records that no cohort-size rule exists and that whether the DIS makes the field mandatory is `[UNVERIFIED]`,
+- **And** the wording is consistent with Story 8.4's per-path unlinkability statement if that has landed (it names the same `msoX5chain` residue),
+- **And** no requirement identifier is added unless the story writes a SHALL; if it does, the count rule applies.
+
+**Verify:** the count grep; `grep -n "mso_mdoc_zk" spec/EE-EUDIW-TS-1.0.md` hits Annex B.1.
+
+### Story 15.5: Settle or mark the Annex V disagreement
+
+As a specification reader,
+I want spec §14.1 to rest on the current text of CIR 2024/2979 Annex V,
+So that the pseudonym requirements cite an annex that exists.
+
+**Acceptance Criteria:**
+
+- **Given** spec §14.1 (WebAuthn Level 2 pinned by CIR 2024/2979 Annex V, `EE-PRI-017`) and the contrary claim that CIR 2026/1731 deleted Annex V (made in ee-eudiw `docs/analysis/CROSS-DEVICE-LOGIN-GAP-ANALYSIS.md` §5(c), which is not published here; this tree's spec header describes 2026/1731 only as amending the annexes "as regards applicable standards"),
+- **When** the consolidated text of CIR 2024/2979 and the text of CIR 2026/1731 are read on EUR-Lex,
+- **Then** if Annex V was deleted or replaced, §14.1, `EE-PRI-017` and the 2026/1731 row of the instruments table are corrected with the CELEX identifier and the amending article; if it stands, §14.1 gains the CELEX citation that shows it, and the ee-eudiw claim is reported as wrong in the story's completion notes (not fixed here),
+- **And** if neither text can be read in this session, nothing changes in substance and a §23 item records the disagreement as `[UNVERIFIED]`, naming both claims and the source needed,
+- **And** no `EE-PRI-*` requirement is reworded without the primary source in hand.
+
+**Verify:** the count grep is unchanged unless a requirement was deliberately changed; the correction cites a CELEX number, or the §23 item exists.
 
 ## Sequencing and recorded decisions
 
