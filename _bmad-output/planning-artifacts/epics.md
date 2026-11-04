@@ -773,10 +773,11 @@ So that a route can be gated on a verified predicate without custom code, and St
 - **And** the adapter fails closed: verifier unreachable, session store unavailable and expired session each deny, one test per case,
 - **And** the adapter log names the circuit id, circuit hash and list version of the accepting presentation and no identifier of the holder,
 - **And** refusal, cancellation and technical failure reach the proxy as distinct outcomes,
-- **And** before implementation the maintainer confirms in writing that the adapter is an integration surface and not a new predicate, ZK system or carrier, so it is not the scope widening NFR16 and Story 7.8 rule out,
+- **And** the maintainer confirmed on 2026-11-04 that the adapter is an integration surface and not a new predicate, ZK system, carrier or attestation, so it is not the scope widening NFR16 rules out and Story 7.8's scope statement is unchanged,
+- **And** the adapter's documentation and the integrator README carry the narrow claim of NFR14 (one boolean predicate, one attestation, two carriers, and the stated limits),
 - **And** the integrator README (Story 3.7) shows this path and its timed result is reported with its method (Story 6.6).
 
-**Covers:** FR71. **Source:** zero-trust analysis 2026-11-04 (the Go ExtAuthz gateway pattern in zero-trust-octagon `docs/engineering/`, as pattern only); Stories 3.1 and 3.7. **Depends on:** 3.1, 3.7. **Decision gate:** maintainer confirmation against Story 7.8.
+**Covers:** FR71. **Source:** zero-trust analysis 2026-11-04 (the Go ExtAuthz gateway pattern in zero-trust-octagon `docs/engineering/`, as pattern only); Stories 3.1 and 3.7. **Depends on:** 3.1, 3.7. **Decision:** kept, with the NFR14 criterion above (maintainer, 2026-11-04).
 
 ## Epic 4: Registration-certificate-aware request policy engine
 
@@ -2108,12 +2109,14 @@ So that the question is answered with evidence and the failing rows are shown.
 - **Given** the verdict path: credential-key attestation (Android Keystore attestation roots), Wallet Unit Attestation (Story 10.3), issuer signing and its HSM, the circuit-list signer (Epic 5), the RP-register (Story 3.3), status lists, and the hosts that serve them,
 - **When** each chain is traced to its root and the legal entity operating that root is named,
 - **Then** each row is classed GRANT-capable (cryptographically verifiable and revocable by a supervisory or trust-list body) or DENY-only (a contract, a declaration or a revocable administrative act), with the reason,
-- **And** the published verdict is `true` or `false` for a claim whose text is fixed before the inventory starts, with a falsification list; a row whose operator cannot be established is listed as unknown and never inferred,
+- **And** the published verdict is `true` or `false` for this claim, fixed on 2026-11-04 before the inventory starts: "Every key and attestation root in the wallet ecosystem's verdict path has a named operating entity, with that entity's jurisdiction of incorporation and ultimate parent stated, for the device set and date the report names." A row whose operator, jurisdiction or parent cannot be established is listed as unknown and never inferred, and any unknown makes the verdict `false`,
+- **And** the report pins the date and the device set it covers, because Android Remote Key Provisioning issues short-lived per-app attestation certificates (Android documentation, updated 2026-09-30), so a verdict does not outlive its inventory,
+- **And** the report states, as a labelled finding and not as the claim, which roots chain to an EU trusted list,
 - **And** the report states its boundary: it establishes technical facts and the compulsion surface, and whether a given law reaches a given entity is a legal conclusion for counsel,
 - **And** the grant/deny classification links to zero-trust-octagon Appendix F rather than copying it, and the predicate version used is cited,
 - **And** every legal, jurisdictional and "no EU scheme certifies X" proposition carries `[UNVERIFIED]` until checked against a primary source, and the report is indexed in `docs/README.md`.
 
-**Covers:** FR75. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Appendices F and G; its verification-practice plan). **Depends on:** 5.6, 10.3. **Decision gate:** the claim text. **External gate:** counsel review before publication.
+**Covers:** FR75. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Appendices F and G; its verification-practice plan). **Depends on:** 5.6, 10.3. **Decision:** claim text fixed (maintainer, 2026-11-04). **External gate:** counsel review before publication.
 
 ### Story 13.2: Threshold-signed circuit list
 
@@ -2133,7 +2136,7 @@ So that no single signer, stolen key or court order can change which circuits ve
 - **And** signer rotation and removal are specified, and whether one signer may withdraw a circuit alone (fail-safe) is decided and recorded in an ADR addendum,
 - **And** the Story 5.4 two-instance agreement test runs against a t-of-n document.
 
-**Covers:** FR76. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Axioms 6 and 10; its audit finding X3 on what a quorum does and does not tolerate). **Depends on:** 5.1, 5.2, 5.4. **Decision gate:** naming real independent signers is a maintainer and community decision; until then synthetic keys prove the mechanism only and the report says one operator holds every key.
+**Covers:** FR76. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Axioms 6 and 10; its audit finding X3 on what a quorum does and does not tolerate). **Depends on:** 5.1, 5.2, 5.4. **Decision (maintainer, 2026-11-04):** the first tests and the report use synthetic keys with a 2-of-3 default, `t` and `n` parameterised, and the fixtures also run one other pair (for example 3-of-5) to show both are parameters. **Decision gate:** naming real independent signers stays a maintainer and community decision, and no institution or community has agreed to sign; until then synthetic keys prove the mechanism only and the report says one operator holds every key.
 
 ### Story 13.3: Qualified-timestamped evidence reports
 
@@ -2145,14 +2148,14 @@ So that "this report existed in this form on this date" is checkable without tru
 
 - **Given** the published AV report (Story 1.6), carrier result (Story 2.4) and measurement report (Story 6.6),
 - **When** a report is published,
-- **Then** its hash is time-stamped by a qualified trust service provider chosen in this story, and the token is published beside the report,
+- **Then** its hash is time-stamped by a qualified trust service provider, SK ID Solutions AS (SK-TSA), chosen 2026-11-04, and the token is published beside the report,
 - **And** an offline script verifies the token against the report and the provider's certificate chain and prints pass or fail, with a test on a deliberately altered report,
-- **And** the story records the provider, the price and the issuance time found, and that the provider's qualified status was checked against the EU trusted list on a stated date; each is `[UNVERIFIED]` until recorded,
+- **And** the story records the price and the issuance time found, and re-checks the provider's qualified status and the list's signature on the date of first use; on 2026-11-04 the Estonian trusted list (sequence 73, issued 2026-05-20, next update 2026-11-20) showed granted qualified time-stamp services for SK ID Solutions AS, read from a rendered copy with the list signature not verified, and price and issuance time stay `[UNVERIFIED]` until recorded,
 - **And** the legal effect claimed is only what Regulation (EU) 2024/1183 (amending Regulation (EU) No 910/2014) gives, cited from the primary text at execution time (`[UNVERIFIED]` here),
 - **And** a time stamp evidences date and integrity only: no report calls itself certified or compliant (NFR1),
 - **And** the timestamp does not come from the hosting repository, so repository metadata is never the anchor.
 
-**Covers:** FR77. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon verification-practice plan, correction 0.1: a qualified seal and timestamp from an EU provider instead of a public transparency log). **Depends on:** 1.6 (the mechanism can be proven on that report; 2.4 and 6.6 follow as they publish). **Decision gate:** provider choice and cost.
+**Covers:** FR77. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon verification-practice plan, correction 0.1: a qualified seal and timestamp from an EU provider instead of a public transparency log). **Depends on:** 1.6 (the mechanism can be proven on that report; 2.4 and 6.6 follow as they publish). **Decision:** provider chosen (maintainer, 2026-11-04); cost stays open.
 
 ## Epic 14: Test honesty
 
@@ -2210,7 +2213,7 @@ stable handle for traceability; the execution order below is the ordering signal
    cost almost nothing and are preconditions for showing any artefact to an evaluator; they run alongside
    the start of Epic 1, not after it.
 2. **Epic 6 runs in parallel from the start.** It gates every performance claim but blocks no other epic.
-3. **Epic 14 and Story 13.3 join the cheap prerequisites (added 2026-11-04).** Neither needs an external party. Then Story 4.8 and Story 13.2, then Story 13.1 once Stories 5.6 and 10.3 supply its inputs, then Stories 3.9, 6.7 and 8.10. None of these displaces Stories 2.1, 2.2 or Epic 7 Stories 1–4. Decision gates they bring: the maintainer's confirmation of Story 3.9 against Story 7.8, the signer set of Story 13.2, the claim text of Story 13.1, and the time-stamp provider of Story 13.3.
+3. **Epic 14 and Story 13.3 join the cheap prerequisites (added 2026-11-04).** Neither needs an external party. Then Story 4.8 and Story 13.2, then Story 13.1 once Stories 5.6 and 10.3 supply its inputs, then Stories 3.9, 6.7 and 8.10. None of these displaces Stories 2.1, 2.2 or Epic 7 Stories 1–4. Decisions taken 2026-11-04 with the tiltrank rubric: Story 3.9 stays with an NFR14 criterion, Story 13.1's claim text is fixed, Story 13.2 starts on synthetic keys at 2-of-3, and Story 13.3 uses SK ID Solutions AS. Gates still open: real independent signers for Story 13.2, counsel review before Story 13.1 is published, and the price and turnaround of Story 13.3.
 
 **Primary sequence, as the source documents order it.** Epic 1 (O1, accepted first: it is the only work
 that converts existing code into an EU-recognised capability, needing no external party and no hardware),
