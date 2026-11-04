@@ -17,6 +17,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.detekt)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -174,7 +175,12 @@ dependencyLocking {
     lockAllConfigurations()
 }
 
+// C7: ktlint blocks new violations only. Spotless ratchets by git: a file that changed since the
+// ref below must be ktlint-clean, an untouched file is not looked at. (Old files hold 33 findings;
+// `spotlessApply` on the whole tree would touch 30 files.) The ref is the commit before this gate
+// landed; CI needs history for it (fetch-depth: 0). Move it forward only when the tree is clean.
 spotless {
+    ratchetFrom("223b1db3169473e651521c66590f779f6fdbc9d0")
     kotlin {
         target("**/*.kt")
         targetExclude("${layout.buildDirectory}/**/*.kt")
@@ -185,6 +191,17 @@ spotless {
     kotlinGradle {
         ktlint(libs.versions.ktlint.get())
     }
+}
+
+// C7: detekt with the default rules; what it finds today is frozen in detekt-baseline.xml, so only
+// new findings fail `./gradlew :app:detekt`. Regenerate with `:app:detektBaseline` only to pay a
+// finding down (the file must shrink in review).
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom("detekt.yml")
+    baseline = file("detekt-baseline.xml")
+    source.setFrom("src/main/kotlin", "src/local_mocks/kotlin", "src/real/kotlin", "src/test/kotlin", "src/testLocal_mocks/kotlin")
+    parallel = true
 }
 
 // Setup protobuf configuration, generating lite Java and Kotlin classes
@@ -516,8 +533,31 @@ android.sourceSets.getByName("main").resources.srcDir("../verifier/go/internal/a
 // mints them, plus the throwaway IACA root they chain to, into the gitignored src/local_mocks/assets/keys.
 // It is a no-op once they exist; `make keys` runs the same script by hand.
 val generateMockKeys by tasks.registering(Exec::class) {
-    commandLine("bash", "${rootDir}/tools/gen-mock-keys.sh")
+    commandLine("bash", "$rootDir/tools/gen-mock-keys.sh")
     environment("KEYTOOL", File(System.getProperty("java.home"), "bin/keytool").path)
 }
 tasks.matching { it.name.startsWith("merge") && it.name.contains("Local_mocks") && it.name.endsWith("Assets") }
     .configureEach { dependsOn(generateMockKeys) }
+
+// C9: `debug` is built for the TEST environment, whose hosts are placeholders (*.example.com), so
+// an app installed from it passes PIN entry and then fails onboarding. `local_mocks` is the
+// development variant (isDefault above). The check hangs off preDebugBuild, so every debug task
+// (assemble, install, unit test) stops here instead of producing an app that cannot onboard.
+// release also carries example.com hosts, but it is never installed for development.
+val failOnPlaceholderHosts by tasks.registering {
+    group = "verification"
+    description = "Fails the debug variant while its BuildConfig hosts are *.example.com placeholders."
+    doLast {
+        val placeholders = android.buildTypes.getByName("debug").buildConfigFields
+            .filterValues { it.value.toString().contains(".example.com") }
+            .map { (name, field) -> "$name = ${field.value}" }
+        if (placeholders.isNotEmpty()) {
+            throw GradleException(
+                "The debug variant points at placeholder hosts, so onboarding fails after PIN entry:\n  " +
+                    placeholders.joinToString("\n  ") +
+                    "\nBuild and install the local_mocks variant instead: ./gradlew :app:installLocal_mocks"
+            )
+        }
+    }
+}
+tasks.matching { it.name == "preDebugBuild" }.configureEach { dependsOn(failOnPlaceholderHosts) }

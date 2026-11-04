@@ -1,0 +1,8 @@
+# Overrides on top of detekt's defaults (buildUponDefaultConfig). Only what contradicts the repo's
+# own conventions: .editorconfig allows 180 columns and Composable functions are PascalCase.
+style:
+  MaxLineLength:
+    maxLineLength: 180
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable', 'Test']
