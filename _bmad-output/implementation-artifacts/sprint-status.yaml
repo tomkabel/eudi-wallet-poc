@@ -173,7 +173,7 @@ action_items:
       only after evidence review."
     owner: "Maintainer / interoperability operator"
     status: open
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-independent-reproduction"
     epic: 1
     action: "Publish the reviewed implementation and evidence through fork, arrange
@@ -181,7 +181,7 @@ action_items:
       and publish the attributed discrepancies before closing Story 1.6."
     owner: "Maintainer / independent reproduction operator"
     status: open
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-adapter-text"
     epic: 1
     action: "Convert invalid adapter stdout/stderr encoding into per-clause ERROR
@@ -189,21 +189,21 @@ action_items:
       boundary."
     owner: "Conformance-runner maintainer"
     status: done
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-adapter-duplicate-keys"
     epic: 1
     action: "Reject duplicate JSON object keys in external adapter evidence and add
       raw conflicting-state controls proving no FAIL can be overwritten by PASS."
     owner: "Conformance-runner maintainer"
     status: done
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-adapter-timeout-cleanup"
     epic: 1
     action: "Terminate and reap adapter descendant processes on timeout and add a
       child-process cleanup regression with an observable marker."
     owner: "Conformance-runner maintainer"
     status: done
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-adapter-startup-state"
     epic: 1
     action: "Distinguish candidate startup failure as NOT_EXECUTED from executed-candidate
@@ -211,7 +211,7 @@ action_items:
       control."
     owner: "Conformance-runner maintainer"
     status: done
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-success-verdict-test"
     epic: 1
     action: "Add an all-passing synthetic local/external audit regression asserting
@@ -219,7 +219,7 @@ action_items:
       both artifacts."
     owner: "Conformance-runner maintainer"
     status: done
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-external-dependency-wording"
     epic: 1
     action: "Reconcile Epic 1 overview wording that says no external party is needed
@@ -227,4 +227,4 @@ action_items:
       and external evidence gates explicit."
     owner: "Product owner / backlog maintainer"
     status: done
-    ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"

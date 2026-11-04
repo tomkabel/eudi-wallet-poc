@@ -44,3 +44,26 @@ Taken 2026-11-04 through the tiltrank rubric plus a user ask. Each answer was th
 | 4 | `_bmad-output/` | Retire to a read-only archive branch | Ranking was contested. Probe: no CI, Makefile, test or tool reads it; BMAD config, `AGENTS.md` and `docs/README.md` do. |
 | 5 | Dependency updater | **Renovate** (user overrode the recommendation, Dependabot with `cooldown`) | Dependabot has a native `cooldown` option, so the plan's stated reason for Renovate no longer holds; the user chose Renovate anyway. Needs the Renovate app installed on the repo by an admin. |
 | 6 | Repo settings | Private vulnerability reporting and CODEOWNERS now; branch protection and required checks after CI is green | |
+
+## Phase 2 results (2026-11-04)
+
+**C2 re-scoped: nothing to dedupe.** `.agents/skills` is a tracked symlink to `../.claude/skills` (the 1 vs 238 count in finding 4 is one symlink against 238 files under 34 skill directories), so there is a single skill tree and no mirror script or CI drift check was added. `.codex/hooks.json` (bmad-loop relay hooks) and `.claude/CLAUDE.md` (the `/graphify` trigger) do not repeat `AGENTS.md`; both stay.
+
+**C3: root state files.** Writers identified from file content, timestamps and tool help:
+
+| Entries | Writer | Action |
+|---|---|---|
+| `antibodies.json`, `auto_ingest_state.json`, `boot_*.json`, `calibration_state.json`, `checkpoint-working-set-v1.json`, `daemon_*.json`, `document_*.json`, `graph_snapshot.json`, `ingest_roots.json`, `plasticity_state.json`, `temporal_state_v1.json`, `tremor_state.json`, `trust_state.json`, `checkpoint-store/`, `.m1nd-checkpoint-namespace-*.lease/` | `m1nd` (`m1nd-mcp`, one run on 2026-10-23; not running now, not configured for this repo in any MCP config). It exposes `--runtime-dir` and `--registry-dir` flags but no env var or settings file, and nothing launches it with them here. | Moved (20 entries) to `$XDG_STATE_HOME/eudi-wallet-poc/m1nd/` (`~/.local/state/eudi-wallet-poc/m1nd/`). |
+| `brag-output/` (2 MB video, plan, share copy) | `brag-slim` skill run on 2026-10-04 | Moved to `~/.local/state/eudi-wallet-poc/brag-output/`. |
+| `.benchmarks/` | `pytest-benchmark`; empty directory | Removed (empty). It returns when pytest runs. |
+| `.decisions.log` | `tiltrank` skill, by design in the working directory; it rejects a log path outside the working directory or `$TILTRANK_LOG_BASE` | Kept: it is the user's decision record (39 KB). Setting `TILTRANK_LOG_BASE` would be user-level and affect every project. |
+
+`.gitignore` lines are kept: m1nd and tiltrank write to the working directory with no per-repo setting, so they will reappear. `ls -A` at the root now shows only tracked entries plus tool directories that were already ignored (`.bmad-loop`, `.code-review-graph`, `.gradle`, `.hermes`, `.kotlin`, `.playwright-mcp`, `.pytest_cache`, `.ruff_cache`, `.venv`, `build`, `graphify-out`) and `.decisions.log`. Those are outside the plan's list.
+
+**C4: `_bmad-output/` retired.** Branch `archive/bmad-output-2026-11-04` (pushed to `fork`) holds the full tree: 123 files under `_bmad-output/`. The working tree removed 121 and kept `planning-artifacts/epics.md` and `implementation-artifacts/sprint-status.yaml`. `docs/README.md` (14 rows replaced by one archive row), `AGENTS.md`, and the 11 in-file path mentions in `epics.md` and `sprint-status.yaml` now point to `archive/bmad-output-2026-11-04:<path>`. `_bmad/*.yaml` output folders still resolve (both kept directories exist). Pending user confirmation: GitHub Issues and a Project for the backlog (public, outward-facing; not created).
+
+Not rewritten, by design: 170 mentions of removed paths in `docs/profiles/av/follow-through-2026-10-23/provisional-agent-local-report.{json,html}` (a captured `git status` inside a frozen evidence report, hashed by `audit-record.json`) and 2 in `.bmad-loop/operator/*.json` (run records). Neither is a link.
+
+**T4.** Root tracked files: 21 before, 21 after (`git ls-files | grep -vc /`; `eudi-arf` is a submodule). Nothing at the root was misplaced and unreferenced; `SECURITY_ANALYSIS_REPORT.md` is left for Phase 7.
+
+**Judges.** `make check` exit 0; `make publish-guard` exit 0; `gitleaks detect` no leaks (247 commits); `lychee --offline` over `docs`, `AGENTS.md`, `README.md`, `spec`, `_bmad-output`: the only errors are `README.md` root-relative links and one link to the absent `docs/architecture-and-technical-specifications.md` in `docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md`, both older than this phase.

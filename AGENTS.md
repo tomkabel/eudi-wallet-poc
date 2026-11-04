@@ -14,7 +14,7 @@ Independent fork of open-eid's EE Wallet PoC: an Android wallet (Kotlin, Gradle,
 ## Where things are
 
 - ZK spine build, run and troubleshooting: `docs/DEVELOPMENT.md`; every test and check: `tests/README.md`.
-- The sprint backlog lives in `_bmad-output/implementation-artifacts/sprint-status.yaml`; the epics and stories behind it are in `_bmad-output/planning-artifacts/epics.md`, sourced from the research corpus in `docs/research/`. Read the story before implementing it.
+- The sprint backlog lives in `_bmad-output/implementation-artifacts/sprint-status.yaml`; the epics and stories behind it are in `_bmad-output/planning-artifacts/epics.md`, sourced from the research corpus in `docs/research/`. Read the story before implementing it. The retired BMAD artefacts (PRD, story drafts, specs, retrospectives) live on the read-only branch `archive/bmad-output-2026-11-04` of `fork`.
 - Wallet vs OpenID4VP 1.0 / HAIP 1.0, requirement by requirement: `docs/CONFORMITY.md`.
 
 ## Running and verifying

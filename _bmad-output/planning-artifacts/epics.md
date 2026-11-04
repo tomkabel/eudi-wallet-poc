@@ -10,7 +10,7 @@ inputDocuments:
   - docs/MEASUREMENTS.md
   - PRODUCT.md
     - docs/planning/EE-EUDIW-ZK-IMPORT-PLAN.md
-  - _bmad-output/planning-artifacts/prds/prd-eudi-wallet-poc-2026-10-23/prd.md
+  - archive/bmad-output-2026-11-04:_bmad-output/planning-artifacts/prds/prd-eudi-wallet-poc-2026-10-23/prd.md
   - docs/sota-audit-ROLLUP.md
 excludedDocuments: []
 ---
@@ -49,7 +49,7 @@ unresolved question; `L2` and `E1` are requirements-matrix rows in the legislati
 blocks.
 
 **Reviewed 2026-10-23.** Findings and what was done about them:
-`_bmad-output/reviews/2026-10-23-epics-review.md`.
+`archive/bmad-output-2026-11-04:_bmad-output/reviews/2026-10-23-epics-review.md`.
 
 **Extended 2026-11-04.** Epics 13 and 14 and Stories 3.9, 4.8, 6.7 and 8.10 were added from an analysis
 of the maintainer's public sibling repository [zero-trust-octagon](https://github.com/tomkabel/zero-trust-octagon). They are not derived from the
@@ -2196,7 +2196,7 @@ So that a guard no test reads cannot ship as protection.
 - **Given** the named fail-closed guards that exist when the story runs (circuit allowlist, `stale-list`, register fail-closed, certificate-absent default, plain-fallback guard, revocation check, consent lockout),
 - **When** a scripted mutation removes or inverts a guard,
 - **Then** at least one test fails,
-- **And** CI lists the surviving mutants per guard, and a survivor is a recorded finding in `_bmad-output/implementation-artifacts/deferred-work.md` or a story, never a pass,
+- **And** CI lists the surviving mutants per guard, and a survivor is a recorded finding in `archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/deferred-work.md` or a story, never a pass,
 - **And** the tooling per language (Kotlin, Python, Go, Rust) is chosen in the story with its reason, and where no tool fits, hand-written mutation scripts over a guard list are acceptable,
 - **And** the guard list lives in one file, so a new fail-closed claim is added together with its mutation.
 
