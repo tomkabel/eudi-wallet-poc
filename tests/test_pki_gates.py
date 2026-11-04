@@ -141,6 +141,23 @@ class PkiGatesTest(unittest.TestCase):
         self.tree.write("demo-data/device_key.pem.txt", b"x")
         self.assertOnly("key-material")
 
+    def test_history_only_entry_matching_a_tracked_file(self):
+        self.tree.write(".gitleaks.toml", (GITLEAKS + '''
+[[allowlists]]
+description = "History-only key material (removed from HEAD)"
+paths = ['^keys/test\\.pem$']
+''').encode())
+        self.tree.save()
+        self.assertIn("key-material", self.tree.failures())
+
+    def test_other_allowlist_naming_a_private_key(self):
+        self.tree.write(".gitleaks.toml", b'''[[allowlists]]
+description = "Example tokens"
+paths = ['^keys/test\\.pem$']
+''')
+        self.tree.save()
+        self.assertIn("key-material", self.tree.failures())
+
     def test_digest_is_sha256_of_bytes(self):
         e = json.loads((self.tree.root / gates.MANIFEST).read_text())["artifacts"][1]
         self.assertEqual(e["sha256"], hashlib.sha256((self.tree.root / "certs/root.pem").read_bytes()).hexdigest())

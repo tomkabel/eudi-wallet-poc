@@ -1,0 +1,14 @@
+# Install: pre-commit install   (CI runs the same scanners; see .github/workflows/security.yml)
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e  # v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: publish-guard
+        name: publish guard (no tracked private key, keystore or demo-data)
+        entry: python3 tools/publish_guard.py
+        language: system
+        pass_filenames: false
+        always_run: true

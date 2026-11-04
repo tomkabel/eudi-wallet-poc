@@ -32,7 +32,8 @@ jobs:
           go-version: '1.26'
           cache: false
       - name: install gitleaks
-        run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
+        # v8.30.1, pinned by commit (a tag can move); .pre-commit-config.yaml pins the same commit.
+        run: go install github.com/zricethezav/gitleaks/v8@83d9cd684c87d95d656c1458ef04895a7f1cbd8e
       - name: the gate turns red on a seeded key
         # Proves the scanner and config still catch a PRIVATE KEY block before
         # trusting their silence on the real tree. The key is generated here and
@@ -45,6 +46,21 @@ jobs:
           fi
       - name: gitleaks over every commit
         run: "$(go env GOPATH)/bin/gitleaks git --no-banner --redact --config .gitleaks.toml ."
+
+  publish-guard:
+    name: publish guard (no tracked private key, keystore or demo-data)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - run: python3 tools/publish_guard.py
+      - name: the guard turns red on a planted key
+        run: python3 -m unittest discover -s tests -p 'test_publish_guard.py'
 
   pki-gates:
     name: PKI gates (trust-all, mocks, freshness flag, trust manifest, key material)

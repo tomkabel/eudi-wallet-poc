@@ -13,6 +13,7 @@ on:
       - 'tests/test_av_vci_android.py'
       - 'tests/vectors/trust/**'
       - 'verifier/go/internal/algpolicy/policy/**'
+      - 'tools/gen-mock-keys.sh'
       - '.github/workflows/app.yml'
   pull_request:
     paths:
@@ -24,6 +25,7 @@ on:
       - 'tests/test_av_vci_android.py'
       - 'tests/vectors/trust/**'
       - 'verifier/go/internal/algpolicy/policy/**'
+      - 'tools/gen-mock-keys.sh'
       - '.github/workflows/app.yml'
 
 concurrency:
@@ -53,6 +55,8 @@ jobs:
       - name: ZK conformance (byte-identical fixtures)
         run: ./gradlew :zk-conformance:test
       - name: Unit tests (local_mocks)
+        # The local_mocks issuer keys are not tracked: the Gradle task generateMockKeys
+        # (tools/gen-mock-keys.sh, the same script as `make keys`) mints them before asset merge.
         # Includes SharedTrustVectorsTest: the differential half of the Go
         # verifier's TestSharedTrustVectors (PKI plan NEW-S2-4).
         run: ./gradlew :app:testLocal_mocksUnitTest

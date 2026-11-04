@@ -1,4 +1,4 @@
-.PHONY: deps lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
+.PHONY: deps keys publish-guard lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -23,6 +23,15 @@ deps:
 	rev="$$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" && \
 		cd verifier/go && go build -ldflags "-X main.longfellowRev=$$rev" -o ../zkverify .
 
+# local_mocks issuer keys (gitignored); Gradle runs the same script before asset merge.
+keys:
+	./tools/gen-mock-keys.sh
+
+# Fails when a private key, a keystore or demo-data/ is tracked outside tools/publish-guard.allow.
+publish-guard:
+	python3 tools/publish_guard.py
+	python3 -m unittest discover -s tests -p 'test_publish_guard.py'
+
 lint:
 	cd verifier/go && unformatted="$$(gofmt -l .)" && if [ -n "$$unformatted" ]; then \
 		echo "not gofmt-clean:"; echo "$$unformatted"; exit 1; fi
@@ -45,7 +54,7 @@ test-py:
 	python3 sandbox/test_age.py
 
 # CI's fast job: no Rust toolchain needed.
-check: lint pki-gates test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
+check: lint pki-gates publish-guard test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
 
 # PKI plan gates and their seeded failures (security.yml runs the same).
 pki-gates:

@@ -18,6 +18,8 @@ target/
 verifier/zkverify
 out/
 demo-data/
+# local_mocks issuer keys and their throwaway root: `make keys` (tools/gen-mock-keys.sh) mints them
+app/src/local_mocks/assets/keys/
 __pycache__/
 *.pyc
 .ruff_cache/

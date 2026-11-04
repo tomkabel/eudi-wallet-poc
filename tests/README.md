@@ -113,6 +113,8 @@ transport conformance, scheme-owner circuit acceptance or certification.
   and cancellation, and preserves EE-PoA issuance
   without AVSUA. The platform keystore and actual platform integrity are outside
   JVM coverage; generated JVM issuer keys replace Android asset loading only.
+- The `local_mocks` issuer keys are not tracked: Gradle runs `tools/gen-mock-keys.sh` (also `make keys`) before the asset merge and writes
+  them, with a throwaway IACA root they chain to, into the gitignored `app/src/local_mocks/assets/keys/`.
 - Run `JAVA_HOME=/usr/lib/jvm/java-17-openjdk ANDROID_HOME=/opt/android-sdk ./gradlew :app:testLocal_mocksUnitTest :app:assembleLocal_mocks`.
   To select this test class use the unit task alone with
   `--tests ee.cyber.wallet.domain.provider.wallet.AvsuaIssuanceTest`.
@@ -180,11 +182,12 @@ gate has a seeded failure that proves it turns red.
 
 | Check | What fails it | Run |
 |---|---|---|
-| `tests/check_pki_gates.py` | trust-all switch back in the wallet; `*Mock` class or mock status URI outside `local_mocks`; `-ignore-trust-freshness` outside a `devflags` build; trust material unlisted in `trust/MANIFEST.json`, changed without `--update`, or under 30 days from `notAfter`; a private key not marked test-only; a mirrored Maven file unpinned or without a licence | `make pki-gates` |
+| `tests/check_pki_gates.py` | a `.gitleaks.toml` allowlist naming a path that holds a private key at HEAD; trust-all switch back in the wallet; `*Mock` class or mock status URI outside `local_mocks`; `-ignore-trust-freshness` outside a `devflags` build; trust material unlisted in `trust/MANIFEST.json`, changed without `--update`, or under 30 days from `notAfter`; a private key not marked test-only; a mirrored Maven file unpinned or without a licence | `make pki-gates` |
 | `tests/test_pki_gates.py` | a gate that stays green on its seeded defect | `make pki-gates` |
 | `tests/vectors/trust/cases.json` | Go (`oid4vp.TestSharedTrustVectors`) or Kotlin (`SharedTrustVectorsTest`) disagreeing with a case's `expect`: IACA→DS profile, path length, expiry, algorithm policy. Regenerate with `tools/build_trust_vectors.py` | both unit suites |
 | `issuer/test_mint_custody.py` | a self-signed DSC; an unencrypted persisted issuer key outside `--test-mode` | `make test-py` |
-| `security.yml` | gitleaks over full history (and a seeded key it must flag), pip-audit, govulncheck, gosec outside `verifier/go/.gosec-baseline.json` | CI |
+| `tools/publish_guard.py`, `tests/test_publish_guard.py` | a tracked `demo-data/` path, `*.p12`/`*.jks`/`*.keystore`, or PEM with a `PRIVATE KEY` header outside `tools/publish-guard.allow`; the test plants a key in a throwaway repo and asserts the guard fails | `make publish-guard` |
+| `security.yml` | gitleaks (pinned by commit) over full history and a seeded key it must flag, the publish guard, pip-audit, govulncheck, gosec outside `verifier/go/.gosec-baseline.json` | CI |
 | `app.yml` | `:app:lintRelease` security checks outside `app/lint-baseline.xml`; a `*Mock` class in release bytecode | CI |
 | `codeql.yml` | CodeQL `security-extended` alerts for Go, Python, Kotlin | CI |
 

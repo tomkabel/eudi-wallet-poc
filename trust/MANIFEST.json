@@ -48,32 +48,6 @@
    "private_key": false
   },
   {
-   "path": "app/src/local_mocks/assets/keys/doc_signer_mdl_issuer.p12",
-   "purpose": "mock mDL issuer signing key (local_mocks build type only)",
-   "source": "upstream open-eid; DS under TEST IACA Root CA",
-   "owner": "maintainer",
-   "test_only": true,
-   "store_password": "changeit",
-   "note": "Never signed a real credential.",
-   "sha256": "915cc99652d2782551b708616c963d59294a4aa9ab32f82c5a028029c5860933",
-   "not_before": "2026-05-25T14:59:32Z",
-   "not_after": "2036-05-22T14:59:32Z",
-   "private_key": true
-  },
-  {
-   "path": "app/src/local_mocks/assets/keys/doc_signer_pid_issuer.p12",
-   "purpose": "mock PID issuer signing key (local_mocks build type only)",
-   "source": "upstream open-eid; DS under TEST IACA Root CA",
-   "owner": "maintainer",
-   "test_only": true,
-   "store_password": "changeit",
-   "note": "Never signed a real credential.",
-   "sha256": "ee6aa957224c09d2d6d137bd16a8efd6b8fd208d945a37c2a6d2589464701084",
-   "not_before": "2026-05-25T14:59:32Z",
-   "not_after": "2036-05-22T14:59:32Z",
-   "private_key": true
-  },
-  {
    "path": "app/debug.keystore",
    "purpose": "Android debug APK signing key",
    "source": "upstream open-eid",
@@ -109,18 +83,6 @@
    "not_before": "2026-09-22T00:00:00Z",
    "not_after": "2026-12-22T00:00:00Z",
    "private_key": false
-  },
-  {
-   "path": "verifier/go/zk/testdata/step0-rust-prover/device_key.pem",
-   "purpose": "golden fixture: holder device key that re-signs the step 0 vector",
-   "source": "issuer/mint_ee_poa.py; see the directory README",
-   "owner": "maintainer",
-   "test_only": true,
-   "note": "Committed on purpose; never bound to a real credential.",
-   "sha256": "6cb541401a7695bb014710b3822e7b5407d73ea88bad2ea1dd93da40fad147fd",
-   "not_before": null,
-   "not_after": null,
-   "private_key": true
   },
   {
    "path": "verifier/go/zk/testdata/step6-device-pubkey/issuer_dsc.pem",

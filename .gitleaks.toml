@@ -1,28 +1,36 @@
-# Secret scanning (PKI plan NEW-P0-2). Default rules plus an allowlist where every
-# entry names why it is not a secret. Key material listed here must also appear in
-# trust/MANIFEST.yaml with test_only: true; tests/check_pki_gates.py enforces that.
-# A new allowlist entry needs the same review as a new key.
+# Secret scanning (PKI plan NEW-P0-2, hardening Phase 1). Default rules plus allowlists where
+# every entry names its file or commit and why it is not a secret. No allowlist may name a
+# path that holds a private key at HEAD: tests/check_pki_gates.py and tools/publish_guard.py
+# enforce that. A new allowlist entry needs the same review as a new key.
 
 [extend]
 useDefault = true
 
+# History only. This key was tracked until the commit that removed it; the history scan
+# (`gitleaks git`) still sees it in older commits. tests/check_pki_gates.py fails if this
+# path matches a tracked file, so the entry can never excuse a key at HEAD.
 [[allowlists]]
-description = "Test-only key material; each file is listed in trust/MANIFEST.yaml"
+description = "History-only key material (removed from HEAD)"
 paths = [
+  # Holder device key of the step 0 Rust-prover fixture. Declared test material in that
+  # directory's old README; bound no real credential. No decision to purge history (D1, 2026-11-04).
   '''^verifier/go/zk/testdata/step0-rust-prover/device_key\.pem$''',
-  '''^app/src/local_mocks/assets/keys/doc_signer_(mdl|pid)_issuer\.p12$''',
-  '''^app/src/main/assets/certs/lotl-keystore\.p12$''',
 ]
 
 [[allowlists]]
 description = "Example tokens in specification text and wire-capture test vectors"
 paths = [
+  # Spec text: sample access tokens and nonces in the profile's worked examples.
   '''^docs/profiles/av/annex-a-examples\.md$''',
-  '''^tests/vectors/av-profile/external/[^/]+\.http$''',
+  # Wire captures of the AV profile's token and credential responses (sample tokens, no live issuer).
+  '''^tests/vectors/av-profile/external/11-token-response\.http$''',
+  '''^tests/vectors/av-profile/external/13-credential-response\.http$''',
+  # JWE test vectors: RFC 3394 / RFC 7520 published key material, public by definition.
   '''^verifier/go/internal/jose/jwe_test\.go$''',
+  # Generator note carrying a public-key thumbprint, not a secret.
   '''^verifier/go/zk/testdata/step6-device-pubkey/GENERATED-BY$''',
   # Token Status List JWTs: public by design (draft-ietf-oauth-status-list).
-  '''^statuslists/[0-9]+$''',
+  '''^statuslists/[12]$''',
 ]
 
 [[allowlists]]

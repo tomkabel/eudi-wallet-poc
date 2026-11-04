@@ -511,3 +511,13 @@ fun readLocalProperties(): Properties =
 // PKI plan NEW-S1-2: the certificate algorithm policy is one file, embedded by the Go verifier and
 // packaged here as the Java resource `algorithms.json`, so both engines refuse the same algorithms.
 android.sourceSets.getByName("main").resources.srcDir("../verifier/go/internal/algpolicy/policy")
+
+// The local_mocks issuer keystores are not tracked (a private key in a public repo). tools/gen-mock-keys.sh
+// mints them, plus the throwaway IACA root they chain to, into the gitignored src/local_mocks/assets/keys.
+// It is a no-op once they exist; `make keys` runs the same script by hand.
+val generateMockKeys by tasks.registering(Exec::class) {
+    commandLine("bash", "${rootDir}/tools/gen-mock-keys.sh")
+    environment("KEYTOOL", File(System.getProperty("java.home"), "bin/keytool").path)
+}
+tasks.matching { it.name.startsWith("merge") && it.name.contains("Local_mocks") && it.name.endsWith("Assets") }
+    .configureEach { dependsOn(generateMockKeys) }

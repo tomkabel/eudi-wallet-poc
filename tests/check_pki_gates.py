@@ -140,15 +140,23 @@ def gate_key_material(root, files):
     entries = {e["path"]: e for e in json.loads((root / MANIFEST).read_text())["artifacts"]}
     cfg = tomllib.loads((root / ".gitleaks.toml").read_text())
     for al in cfg.get("allowlists", []):
-        if not al.get("description", "").startswith("Test-only key material"):
-            continue
+        desc = al.get("description", "")
         for rx in al.get("paths", []):
             hits = [f for f in files if re.search(rx, f)]
-            if not hits:
-                bad.append(f".gitleaks.toml allowlists {rx!r}, which matches no tracked file; drop it")
-            for f in hits:
-                if not entries.get(f, {}).get("test_only"):
-                    bad.append(f".gitleaks.toml excuses {f}, which is not a test_only manifest entry")
+            if desc.startswith("History-only key material"):
+                # Excuses a key that earlier commits carry; at HEAD the path must be gone.
+                bad += [f".gitleaks.toml history-only entry {rx!r} matches tracked {f}" for f in hits]
+            elif desc.startswith("Test-only key material"):
+                if not hits:
+                    bad.append(f".gitleaks.toml allowlists {rx!r}, which matches no tracked file; drop it")
+                for f in hits:
+                    if not entries.get(f, {}).get("test_only"):
+                        bad.append(f".gitleaks.toml excuses {f}, which is not a test_only manifest entry")
+            else:
+                # Any other allowlisted path must not hold a private key (the corrected T1 judge).
+                for f in hits:
+                    if b"PRIVATE KEY-----" in (root / f).read_bytes():
+                        bad.append(f".gitleaks.toml allowlists {f}, which holds a private key")
     for f in files:
         if f.startswith("demo-data/"):
             bad.append(f"{f}: demo-data/ holds the holder's device key and must never be tracked")

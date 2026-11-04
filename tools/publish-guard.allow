@@ -1,0 +1,4 @@
+# One tracked path per line, then "# reason". Every line is a reviewed exception to
+# tools/publish_guard.py; a new line needs the same review as a new key.
+app/debug.keystore  # Android's well-known debug signing key (password android); signs nothing that ships
+app/src/main/assets/certs/lotl-keystore.p12  # trusted-certificate entry only, no private key (trust/MANIFEST.json private_key: false)

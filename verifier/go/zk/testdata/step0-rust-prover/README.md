@@ -2,7 +2,10 @@
 
 Minted by `issuer/mint_ee_poa.py` with a throwaway issuer key.
 
-`device_key.pem` is a real P-256 private key (PKCS#8), committed on purpose:
-the holder key the fixture's mdoc binds, so tests can re-sign `deviceAuth`.
-It is test material only. It protects nothing, and nothing outside this
-directory trusts it. Never reuse it.
+The holder's device private key is not committed. No test reads it: the Go test
+(`../../step0_cross_verify_test.go`) verifies `proof.bin` against the committed
+`mdoc.bin`, which binds only the device public key. A commit before this
+change carried the key as `device_key.pem` (test material, never bound to a real
+credential); it remains in git history. To re-sign `deviceAuth`, mint a fresh
+fixture with `issuer/mint_ee_poa.py`, which writes the key under the gitignored
+`demo-data/`.
