@@ -15,7 +15,7 @@ dependencyResolutionManagement {
         maven("https://maven.waltid.dev/releases")
         maven("https://maven.waltid.dev/snapshots") {
             // C8: cose-java 1.1.1-WALT-SNAPSHOT resolves exclusively from the
-            // committed mirror below — upstream republishing the snapshot must
+            // mirror below (served from .github/maven-mirror/vendored/) — upstream republishing the snapshot must
             // never change the bytes we build against. The mirror pins both the
             // artifacts and the maven-metadata.xml by sha256.
             mavenContent { excludeGroup("org.cose") }
@@ -32,8 +32,8 @@ dependencyResolutionManagement {
         // by .github/maven-mirror/manifest.json. Static HTTPS, no credentials — fork
         // PRs build without secrets.
         maven {
-            // -PmirrorLocalDir=<dir> serves the mirror from the committed site/
-            // tree (used to verify mirror republishes before the gh-pages push);
+            // -PmirrorLocalDir=<dir> serves the mirror from a local fetch.py output
+            // (MIRROR_SITE_DIR/maven; verifies republishes before the gh-pages push);
             // the default stays the published gh-pages URL.
             url = uri(providers.gradleProperty("mirrorLocalDir").getOrElse(
                 "https://tomkabel.github.io/eudi-wallet-poc/maven"

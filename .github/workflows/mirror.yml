@@ -14,10 +14,12 @@ name: Maven mirror
 # and .github/maven-mirror/manifest.json pins every file's sha256; fetch.py
 # verifies bytes and fails the run rather than publishing an unverified mirror.
 #
-# Seeding: the mirror was seeded once from .github/maven-mirror/site/ (committed),
-# so Gradle resolves even before this workflow ever runs. Keep this workflow on
-# a schedule so the mirror survives upstream republishing; run it manually
-# (workflow_dispatch) right after bumping the pinned versions in manifest.json.
+# Source of truth: manifest.json (URLs and sha256) plus .github/maven-mirror/vendored/
+# (the cose-java 1.1.1-WALT snapshot, which upstream no longer serves). No built
+# tree is committed: this workflow rebuilds the whole site with fetch.py and
+# publishes it with keep_files: false, so a publish can never drop artifacts that
+# manifest.json lists. Run it manually (workflow_dispatch) right after changing
+# manifest.json; the weekly schedule re-verifies upstream.
 #
 # NOTE: needs GitHub Pages enabled for the repository with the gh-pages branch
 # as source (Settings -> Pages, or POST /repos/{owner}/{repo}/pages once).

@@ -5,7 +5,8 @@
    "sha256": "f69dbdabcf8ead0b78d6d36098538f0febbfa38b07114b1965816741b671419e",
    "sources": [
     "central",
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -14,7 +15,8 @@
    "sha256": "3638b3a4df74a42dc455204a657c7b96af759650cabfc49009bf5fa5e8de2654",
    "sources": [
     "central",
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -23,7 +25,8 @@
    "sha256": "8fc17a7c02b21a2d5326853986840ad098dfc51a53b21a5f1468c001685142a3",
    "sources": [
     "central",
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -32,7 +35,8 @@
    "sha256": "57fb75ba33792d6c47fe320369eba077dcad08f2205ed5d1443f2a29a75d5332",
    "sources": [
     "central",
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -40,7 +44,8 @@
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/maven-metadata.xml",
    "sha256": "b83d95eb3f83fe126a6e571c53c775f4ff897c587b1d9aee48e182965a9ef993",
    "sources": [
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -48,7 +53,8 @@
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT.jar",
    "sha256": "f69dbdabcf8ead0b78d6d36098538f0febbfa38b07114b1965816741b671419e",
    "sources": [
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -56,7 +62,8 @@
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT.pom",
    "sha256": "3638b3a4df74a42dc455204a657c7b96af759650cabfc49009bf5fa5e8de2654",
    "sources": [
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -64,7 +71,8 @@
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT-sources.jar",
    "sha256": "8fc17a7c02b21a2d5326853986840ad098dfc51a53b21a5f1468c001685142a3",
    "sources": [
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },
@@ -72,7 +80,8 @@
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT-javadoc.jar",
    "sha256": "57fb75ba33792d6c47fe320369eba077dcad08f2205ed5d1443f2a29a75d5332",
    "sources": [
-    "waltid"
+    "waltid",
+    "vendored"
    ],
    "licence": "BSD3"
   },

@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.android.navigation.safeargs) apply false
     alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.spotless) apply false
+    // SBOM (CycloneDX): `./gradlew cyclonedxBom` writes build/reports/cyclonedx/bom.{json,xml}; CI uploads it.
+    id("org.cyclonedx.bom") version "3.5.1"
 }
 
 // Commented out - causing configuration issues with single-module project
