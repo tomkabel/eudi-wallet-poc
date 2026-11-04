@@ -35,6 +35,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 | [`analysis/ZKP08-ANALYSIS.md`](analysis/ZKP08-ANALYSIS.md) | *ee-eudiw.* ARF `ZKP_08` against the Agreed Cryptographic Mechanisms |
 | [`planning/EE-EUDIW-ZK-IMPORT-PLAN.md`](planning/EE-EUDIW-ZK-IMPORT-PLAN.md) | The plan that brought the specification and the ZK spine into this repository |
 | [`planning/LOCAL-ECOSYSTEM-LAB-TODO.md`](planning/LOCAL-ECOSYSTEM-LAB-TODO.md) | TODO: run EC reference services locally so externally blocked stories get `reference-impl@commit` evidence |
+| [`planning/REPO-HARDENING-PLAN.md`](planning/REPO-HARDENING-PLAN.md) | Phased plan for the 13 repository critique findings (C1–C13), with hard targets, judges and decisions needed; not yet executed |
 | `planning/STEP*-RECORD.md` | Execution records of the conformance plan's steps. The wallet-side ones were written here; `STEP0-CROSS-VERIFY`, `STEP1-FORK`, `STEP2A`, `STEP6-VERIFIER`, `STEP7`, `STEP8` and `STEP8-7` are *ee-eudiw* |
 | [`research/2026-10-23-innovation-assessment.md`](research/2026-10-23-innovation-assessment.md) | Innovation assessment of this fork against upstream and ten comparators, with scored opportunities |
 | [`research/2026-10-23-estonia-alignment-assessment.md`](research/2026-10-23-estonia-alignment-assessment.md) | Estonia and EU alignment assessment: requirements traceability matrix, use cases, integration pathways, quantified effects |
