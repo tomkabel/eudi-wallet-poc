@@ -20,14 +20,13 @@ Independent fork of open-eid's EE Wallet PoC: an Android wallet (Kotlin, Gradle,
 ## Running and verifying
 
 - `.github/workflows/ci.yml` (ZK spine) and `app.yml` (Android) define green. `make check` is CI's fast job; `make test-go-zk` and `make e2e` cover the e2e job.
-- Install Python deps with `pip install -r tests/requirements-ci.txt`, not unpinned `cbor2`/`cryptography`: the transcript vectors are golden and an encoder change shifts their bytes.
-- Go packages `.` and `./zk/...` link the Rust staticlib and fail at the linker until `make deps` has run. `make deps` places `google/longfellow-zk` as the sibling `../longfellow-zk`; keep that directory name.
-- Build the prover through `make deps`, or with `RUSTFLAGS="-C target-cpu=x86-64-v3"` — Longfellow's `target-cpu=native` produces SIGILL binaries on virtualised hosts.
+- Install Python deps with `pip install -r tests/requirements-ci.txt`, not unpinned `cbor2`/`cryptography`: the transcript vectors are golden and an encoder change shifts their bytes. `make doctor` flags drift from the pins.
+- Go packages `.` and `./zk/...` link the Rust staticlib and fail at the linker until `make deps` has run. `make deps` places `google/longfellow-zk` as the sibling `../longfellow-zk` at the revision in `verifier/zkverify-ffi/longfellow-rev.txt`; keep that directory name.
+- `make doctor` is the first thing to run when a build misbehaves: it checks the toolchain versions (pinned in `mise.toml`), the prover with `test -x` and its recorded checksum, the sibling revision, the `target-cpu=x86-64-v3` pin (Longfellow's own `native` produces SIGILL binaries on virtualised hosts) and the Android SDK, one line per failure. `make bootstrap` sets it all up inside the devcontainer.
 - `./gradlew :zk-conformance:test` writes to `zk-conformance/build/`; only `-Dzk.regenerate=true` rewrites committed fixtures, after which rerun the Go `./zk/...` tests to cross-verify.
 - Android unit tests: `./gradlew :app:testLocal_mocksUnitTest` (what CI runs), JDK 17.
 
 ## Known pitfalls
 
 - On a phone, install `:app:installLocal_mocks`, not `installDebug`: `debug` targets the TEST environment's placeholder `*.example.com` backends and onboarding fails after PIN entry. App slf4j logs don't reach logcat — diagnose by driving the UI.
-- `cargo build --examples` exits 0 with no binary when `examples/` is missing or empty; always `test -x` the prover afterwards.
 <!-- /bmad:context -->

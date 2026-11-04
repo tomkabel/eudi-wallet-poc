@@ -371,7 +371,12 @@ step installs the pinned `tests/requirements-ci.txt`, since `present.py` imports
 `cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`,
 `python3 sandbox/test_age.py` (the sandbox issuer's age reckoning, EE-POA-027), and
 `shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh`.
-`make check` runs the same set.
+`python3 -m unittest discover -s tests -p 'test_doctor.py'` (`make test-doctor`: `tools/doctor.py`
+fails, one line per check, with no prover and no longfellow checkout). `make check` runs the same set.
+
+CI is path-scoped: a `changes` job (`dorny/paths-filter`) gates `fast` and `e2e` in `ci.yml` and the
+two Android jobs in `app.yml`; `ci-ok` and `app-ok` are the checks to require, and they treat a
+skipped job as success.
 
 `e2e` (needs a Rust toolchain): checks out `google/longfellow-zk` as a sibling
 of this repository at the revision committed in `verifier/zkverify-ffi/longfellow-rev.txt`
@@ -401,7 +406,7 @@ committed in `verifier/zkverify-ffi/longfellow-rev.txt` and builds the prover an
 verifier (expanded form: `docs/DEVELOPMENT.md` "Build both"):
 
 ```bash
-make deps
+make deps           # also records the prover's sha256 and revision; `make doctor` re-checks them
 make test-go-zk     # go test -race . ./zk/..., with EE_BENCH_SKIP=1 as in CI
 make e2e            # tests/e2e.sh against the built prover and verifier
 ```

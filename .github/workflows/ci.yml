@@ -1,46 +1,14 @@
 name: CI
 
-# Only the ZK spine is built here; the Android app has no CI job. Kotlin-only
-# pushes would otherwise pay for the e2e job's Rust build.
+# The ZK spine (Go, Rust, Python). The Android app is built by app.yml.
+#
+# Every push and pull request starts this workflow; the `changes` job (dorny/paths-filter) decides
+# which jobs run. Path filters on `on:` would leave a required check "Expected, waiting" forever
+# when they skip the whole workflow, so the filtering is per job and `ci-ok` is the one check to
+# require in branch protection: it passes when every job it needs succeeded or was skipped.
 on:
   push:
-    paths:
-      - 'verifier/**'
-      - 'zk-age-poc/**'
-      - 'issuer/**'
-      - 'wallet/**'
-      - 'tests/**'
-      - 'docs/profiles/av/**'
-      - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
-      - 'docs/profiles/AV-PROFILE-FIXTURES.md'
-      - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
-      - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
-      - 'docs/README.md'
-      - 'demo/**'
-      - 'scripts/**'
-      - 'tools/**'
-      - 'Makefile'
-      - '.gitattributes'
-      - '.github/workflows/ci.yml'
   pull_request:
-    paths:
-      - 'verifier/**'
-      - 'zk-age-poc/**'
-      - 'issuer/**'
-      - 'wallet/**'
-      - 'tests/**'
-      - 'docs/profiles/av/**'
-      - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
-      - 'docs/profiles/AV-PROFILE-FIXTURES.md'
-      - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
-      - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
-      - 'docs/README.md'
-      - 'demo/**'
-      - 'scripts/**'
-      - 'tools/**'
-      - 'Makefile'
-      - '.gitattributes'
-      - '.github/workflows/ci.yml'
 
 # A PR from a branch in this repo triggers both `push` and `pull_request`. Keying
 # on head_ref for PRs puts both in the same group so the newer one cancels the
@@ -64,8 +32,61 @@ defaults:
     working-directory: eudi-wallet-poc
 
 jobs:
+  changes:
+    name: changes (which paths moved)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read   # the filter lists a PR's files through the API
+    outputs:
+      go_rust: ${{ steps.filter.outputs.go_rust }}
+      python: ${{ steps.filter.outputs.python }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            go_rust: &go_rust
+              - 'verifier/**'
+              - 'zk-age-poc/**'
+              - 'scripts/**'
+              - 'Makefile'
+              - 'mise.toml'
+              - '.gitattributes'
+              - '.github/workflows/ci.yml'
+            python: &python
+              - 'issuer/**'
+              - 'wallet/**'
+              - 'tests/**'
+              - 'sandbox/**'
+              - 'tools/**'
+              - 'demo/**'
+              - 'docs/profiles/av/**'
+              - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
+              - 'docs/profiles/AV-PROFILE-FIXTURES.md'
+              - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
+              - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
+              - 'docs/README.md'
+              - 'Makefile'
+              - '.github/workflows/ci.yml'
+            # The prover/verifier build, plus the Python that drives it end to end.
+            e2e:
+              - *go_rust
+              - 'issuer/**'
+              - 'wallet/**'
+              - 'tests/run_carrier_conformance.py'
+              - 'tests/e2e.sh'
+              - 'tests/requirements-ci.txt'
+
   fast:
     name: fast (lint, vet, unit tests)
+    needs: changes
+    if: needs.changes.outputs.go_rust == 'true' || needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -173,6 +194,9 @@ jobs:
         # issuers.json; persisted keys are encrypted outside --test-mode.
         run: python3 issuer/test_mint_custody.py
 
+      - name: the doctor fails when the toolchain or prover is missing
+        run: python3 -m unittest discover -s tests -p 'test_doctor.py'
+
       - name: the sandbox's age reckoning
         # EE-POA-027: Europe/Tallinn, and 28 February for a 29 February birthday.
         run: python3 sandbox/test_age.py
@@ -187,6 +211,8 @@ jobs:
 
   e2e:
     name: carrier conformance (prover + verifier)
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -227,7 +253,7 @@ jobs:
           # The pinned longfellow revision (read from the file in this step) plus
           # the lockfile, the manifests and the copied-in example sources are what
           # decide what gets built.
-          key: e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-${{ hashFiles('eudi-wallet-poc/verifier/zkverify-ffi/Cargo.lock', 'eudi-wallet-poc/verifier/zkverify-ffi/Cargo.toml', 'eudi-wallet-poc/verifier/zkverify-ffi/.cargo/config.toml', 'eudi-wallet-poc/zk-age-poc/*.rs') }}
+          key: e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-${{ hashFiles('eudi-wallet-poc/verifier/zkverify-ffi/Cargo.lock', 'eudi-wallet-poc/verifier/zkverify-ffi/Cargo.toml', 'eudi-wallet-poc/verifier/zkverify-ffi/.cargo/config.toml', 'eudi-wallet-poc/zk-age-poc/*.rs', 'eudi-wallet-poc/zk-age-poc/prover.Cargo.lock') }}
           restore-keys: |
             e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-
 
@@ -239,7 +265,7 @@ jobs:
           RUSTFLAGS: -C target-cpu=x86-64-v3
         run: |
           ./scripts/prover-examples-install.sh
-          cargo build --release --examples --features testonly \
+          cargo build --locked --release --examples --features testonly \
             --manifest-path ../longfellow-zk/rust/applications/mdoc_zk/runtime/Cargo.toml
 
       - name: the prover binary exists
@@ -294,3 +320,23 @@ jobs:
         run: |
           pip install -r tests/requirements-ci.txt
           python3 tests/run_carrier_conformance.py --json carrier-conformance-report.json
+
+  ci-ok:
+    name: ci-ok
+    # The one check to require in branch protection. `if: always()` makes it run when a needed
+    # job failed or was skipped; skipped (no matching paths) counts as success, failure or
+    # cancelled does not.
+    if: always()
+    needs: [changes, fast, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: every needed job succeeded or was skipped
+        working-directory: ${{ github.workspace }}
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) echo "::error::a needed job ended $r"; exit 1 ;; esac
+          done

@@ -1,0 +1,13 @@
+# Tool versions for local work and the devcontainer (.devcontainer/Dockerfile runs `mise install`).
+# tools/doctor.py reads the minimums from here; Go's comes from verifier/go/go.mod.
+#   python, ruff, go : what .github/workflows/ci.yml installs (python 3.12, ruff==0.16.6, go.mod).
+#   java             : app.yml uses temurin 17. mise-java.jdx.dev was unreachable during the image build,
+#                      so the image takes openjdk-17-jdk-headless from apt and tools/doctor.py looks
+#                      for any JDK 17. Not pinned here.
+#   rust             : CI installs none and takes ubuntu-latest's. 1.95.0 is the toolchain that built
+#                      the prover and verifier this repo's tests last ran against.
+[tools]
+go = "1.26"
+python = "3.12"
+ruff = "0.16.6"
+rust = "1.95.0"

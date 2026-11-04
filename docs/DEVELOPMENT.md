@@ -30,9 +30,10 @@ checkout; `verifier/` is `zkverify`, a Go HTTP server over a Rust staticlib in
   `go 1.26`); CI reads it from that file. The module has no third-party dependencies and
   no `go.sum`. Its `zk` package is cgo linking a Rust staticlib, so the build also needs a C
   toolchain.
-- **A Rust toolchain** for the prover and the FFI. Nothing here pins one, and CI installs
-  none of its own — it uses what the `ubuntu-latest` image carries. `zk-age-poc/REPRODUCE.md`
-  records rustc/cargo 1.97.0 for its measured run; a record, not a requirement.
+- **A Rust toolchain** for the prover and the FFI. CI installs none of its own — it uses what
+  the `ubuntu-latest` image carries — so `mise.toml` pins the one the local and devcontainer builds
+  use (1.95.0, the minimum `make doctor` accepts). `zk-age-poc/REPRODUCE.md` records rustc/cargo
+  1.97.0 for its measured run; a record, not a requirement.
 - **Tools**: `jq` and `ip` (iproute2) for `demo/demo.sh`; `curl` for `tests/e2e.sh`;
   `shellcheck` for the checks below.
 - **Submodule**: `git submodule update --init` fetches `eudi-arf`, the ARF the specification
@@ -50,6 +51,39 @@ dependency has no lockfile entry, so that file is the single source of truth.
 asserts what it got, and builds the prover, the staticlib and the verifier; CI's e2e job
 runs the same script. Either way the directory name must be `longfellow-zk`.
 
+This is a pinned sibling checkout, not a git submodule: a submodule lives inside the
+repository, which would move the crate every `../../../longfellow-zk` path dependency and the
+`EE_PROVER` defaults in the Makefile, the demo scripts and CI would then have to follow. After
+building, `make deps` writes `ee_poa_demo.built` next to the prover: the binary's sha256 and the
+revision it was built from. `make doctor` re-checks both, so a prover that was rebuilt by hand,
+replaced or built from another revision is reported. The sha256 is not committed: Rust builds are
+not byte-reproducible across toolchains, so it proves "unchanged since `make deps`", not "equal to
+CI's binary".
+
+Longfellow gitignores its own `Cargo.lock`, so a plain clone resolves crates.io at build time. The
+prover's dependencies are therefore pinned here: `zk-age-poc/prover.Cargo.lock` is copied over the
+sibling's `rust/Cargo.lock` by `scripts/prover-examples-install.sh`, and the prover builds run with
+`--locked` (Makefile and `ci.yml`). Regenerate it by deleting the sibling's `Cargo.lock`, building, and
+copying the result back, after the golden tests pass.
+
+## `make doctor` and the devcontainer
+
+`make doctor` (`tools/doctor.py`) prints one line per failed check and exits 1 on any: Go
+(from `verifier/go/go.mod`), Python, Rust and ruff minimums (from `mise.toml`), shellcheck, the pinned
+Python packages of `tests/requirements-ci.txt`, `RUSTFLAGS` and the `target-cpu=x86-64-v3` pin, JDK 17,
+the Android SDK, the prover and the verifier with `test -x`, `libzkverify.a`, the prover checksum record,
+and the sibling's revision and cleanliness. `DOCTOR_SKIP="android java"` skips groups
+(`toolchain java android prover longfellow`); `DOCTOR_VERBOSE=1` also prints passing checks.
+
+`.devcontainer/` builds an image from `ubuntu:24.04` pinned by digest, with the tools of `mise.toml`
+and JDK 17 from apt (no Android SDK; the container sets `DOCTOR_SKIP=android`). Inside it,
+`make bootstrap` installs the pinned Python packages, runs `make deps` and then `make doctor`; it refuses
+to run outside a container unless `BOOTSTRAP_HOST=1`. Then `make check`.
+
+CI runs path-scoped: `changes` jobs (`dorny/paths-filter`) decide which jobs run. Require `ci-ok`
+(ci.yml) and `app-ok` (app.yml) in branch protection, not the individual jobs: both treat a skipped job
+as success, so a PR that touches no matching path is not left waiting.
+
 ## Build both
 
 `make deps` runs the sequence below (scripts/bootstrap-longfellow.sh +
@@ -60,8 +94,10 @@ expanded form, for reading:
 # prover — the zk-age-poc examples, built inside the Longfellow tree
 mkdir -p ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples
 cp zk-age-poc/*.rs ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples/
+# Longfellow gitignores its Cargo.lock; this repo's copy is what the prover is verified with
+cp zk-age-poc/prover.Cargo.lock ../longfellow-zk/rust/Cargo.lock
 # RUSTFLAGS: see Troubleshooting for why this baseline
-(cd ../longfellow-zk/rust/applications/mdoc_zk/runtime && RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --release --examples --features testonly)
+(cd ../longfellow-zk/rust/applications/mdoc_zk/runtime && RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --locked --release --examples --features testonly)
 test -x ../longfellow-zk/rust/target/release/examples/ee_poa_demo
 
 # verifier — the Rust staticlib, then the server binary

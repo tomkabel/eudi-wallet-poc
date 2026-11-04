@@ -1,0 +1,9 @@
+{
+  "name": "eudi-wallet-poc",
+  "build": { "dockerfile": "Dockerfile", "context": ".." },
+  "remoteUser": "ubuntu",
+  // The workspace lands in /workspaces/eudi-wallet-poc, so make deps puts longfellow-zk at
+  // /workspaces/longfellow-zk, inside the container: nothing is installed on the host.
+  "postCreateCommand": "mise trust /workspaces/eudi-wallet-poc/mise.toml && make bootstrap",
+  "containerEnv": { "DOCTOR_SKIP": "android" }
+}

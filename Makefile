@@ -1,4 +1,4 @@
-.PHONY: deps keys publish-guard lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
+.PHONY: deps doctor bootstrap test-doctor keys publish-guard lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -12,8 +12,14 @@ RUSTFLAGS := -C target-cpu=x86-64-v3
 deps:
 	./scripts/bootstrap-longfellow.sh
 	./scripts/prover-examples-install.sh
-	RUSTFLAGS='$(RUSTFLAGS)' cargo build --release --examples --features testonly \
+	RUSTFLAGS='$(RUSTFLAGS)' cargo build --locked --release --examples --features testonly \
 		--manifest-path ../longfellow-zk/rust/applications/mdoc_zk/runtime/Cargo.toml
+	# cargo --examples exits 0 with no binary when examples/ is empty; then record what was
+	# built (sha256 and source revision) for `make doctor` to re-check.
+	test -x ../longfellow-zk/rust/target/release/examples/ee_poa_demo
+	echo "$$(sha256sum < ../longfellow-zk/rust/target/release/examples/ee_poa_demo | cut -d' ' -f1)" \
+		"$$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" \
+		> ../longfellow-zk/rust/target/release/examples/ee_poa_demo.built
 	# cd rather than --manifest-path: cargo discovers .cargo/config.toml from the
 	# working directory, and zkverify-ffi's is what pins its target-cpu.
 	(cd verifier/zkverify-ffi && cargo build --release)
@@ -22,6 +28,25 @@ deps:
 	test -f verifier/zkverify-ffi/target/release/libzkverify.a
 	rev="$$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" && \
 		cd verifier/go && go build -ldflags "-X main.longfellowRev=$$rev" -o ../zkverify .
+
+# One line per failed check; exit 1 on any. See tools/doctor.py for the checks and DOCTOR_SKIP.
+doctor:
+	python3 tools/doctor.py
+
+# Devcontainer only (mise.toml pins the tools the image already carries): installs the pinned
+# Python deps, builds everything, then runs the doctor. Android is not in the image.
+bootstrap:
+	@if [ ! -f /.dockerenv ] && [ ! -f /run/.containerenv ] && [ -z "$$BOOTSTRAP_HOST" ]; then \
+		echo "make bootstrap installs packages: run it inside the devcontainer (BOOTSTRAP_HOST=1 to override)" >&2; \
+		exit 1; fi
+	if command -v mise >/dev/null; then mise install; fi
+	python3 -m pip install -r tests/requirements-ci.txt
+	$(MAKE) deps
+	DOCTOR_SKIP=android $(MAKE) doctor
+
+# The doctor must fail on a machine without the prover, so this points it at an empty sibling.
+test-doctor:
+	python3 -m unittest discover -s tests -p 'test_doctor.py'
 
 # local_mocks issuer keys (gitignored); Gradle runs the same script before asset merge.
 keys:
@@ -54,7 +79,7 @@ test-py:
 	python3 sandbox/test_age.py
 
 # CI's fast job: no Rust toolchain needed.
-check: lint pki-gates publish-guard test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
+check: lint test-doctor pki-gates publish-guard test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
 
 # PKI plan gates and their seeded failures (security.yml runs the same).
 pki-gates:
