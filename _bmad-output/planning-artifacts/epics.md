@@ -51,6 +51,14 @@ blocks.
 **Reviewed 2026-10-23.** Findings and what was done about them:
 `_bmad-output/reviews/2026-10-23-epics-review.md`.
 
+**Extended 2026-11-04.** Epics 13 and 14 and Stories 3.9, 4.8, 6.7 and 8.10 were added from an analysis
+of the maintainer's public sibling repository [zero-trust-octagon](https://github.com/tomkabel/zero-trust-octagon). They are not derived from the
+23 October research corpus: each `Source:` line cites the analysis and the zero-trust-octagon file it
+borrows a *method* from. No zero-trust-octagon text or code is copied. Its own audit
+(`AUDIT_REPORT_2026-10-04.md`) records about 320 findings and an engineering layer that does not match its
+`src/`, so nothing there counts as evidence for a claim in this repository. Every legal, jurisdictional and
+sovereignty proposition in the new stories is `[UNVERIFIED]` until checked against a primary source.
+
 **Readiness gate: CONCERNS (proceed).** An architecture record does not exist yet: `bmad-architecture` has not run, which is why
 Stories 3.1, 4.1 and 5.1 each open by making their own decision. The PRD landed after this
 document was written (see `Reconciliation with the PRD` below), so these stories are
@@ -74,16 +82,18 @@ pre-authorised proceeding.
 |---|---|---|---|---|
 | 1 | EU AV-Profile conformance kit | O1 (4.75), D1+M1, R1 | 1.1–1.6 | initial release |
 | 2 | ZK carrier conformance suite | O5 (3.95), M2, R1 | 2.1–2.4 | initial release |
-| 3 | Estonian relying-party acceptance kit | O2 (4.30), D3+P1, R2 | 3.1–3.8 | initial release |
-| 4 | Registration-certificate-aware request policy engine | O3 (4.10), P2 | 4.1–4.7 | second wave |
+| 3 | Estonian relying-party acceptance kit | O2 (4.30), D3+P1, R2 | 3.1–3.9 | initial release |
+| 4 | Registration-certificate-aware request policy engine | O3 (4.10), P2 | 4.1–4.8 | second wave |
 | 5 | Circuit-hash registry and distribution service | O4 (4.05), P3 | 5.1–5.6 | second wave |
-| 6 | Measurement programme | D2, M3, §7.1, R4 | 6.1–6.6 | parallel with Epics 1–3 |
+| 6 | Measurement programme | D2, M3, §7.1, R4 | 6.1–6.7 | parallel with Epics 1–3 |
 | 7 | Documentation honesty | R3, risk R12 | 7.1–7.11 | cheap prerequisite |
-| 8 | Standards watch and open-risk reporting | R5, A9–A12, A14–A16, risks R1–R3, R7, R10, R11, R14 | 8.1–8.9 | continuous |
+| 8 | Standards watch and open-risk reporting | R5, A9–A12, A14–A16, risks R1–R3, R7, R10, R11, R14 | 8.1–8.10 | continuous |
 | 9 | Statutory age-threshold toolkit | O6 (3.80), A3 R2 | 9.1–9.6 | gated on Epic 5 |
 | 10 | Issuance, trust and revocation completeness | L4, S2, S9, S11 | 10.1–10.5 | pilot prerequisite |
 | 11 | Production readiness for a pilot relying party | A3 R1 | 11.1–11.8 | pilot prerequisite |
 | 12 | Consent integrity and user-presence gates | PRD §4.7 (FR-45–FR-48), audit findings | 12.1–12.4 | v1 requirement |
+| 13 | Compellability dossier | zero-trust analysis 2026-11-04 | 13.1–13.3 | 13.3 early; 13.2 and 13.1 second wave |
+| 14 | Test honesty | zero-trust analysis 2026-11-04 | 14.1–14.2 | cheap prerequisite |
 
 ## Requirements Inventory
 
@@ -159,6 +169,15 @@ FR67: A requester name shown on the consent screen is authenticated: the `reader
 FR68: Credential keys require user presence: the platform's user verification is bound to the key operation itself, so proof generation, plain presentation and signing each carry the gate or the ungated path is removed (PRD FR-46).
 FR69: The consent gate resists guessing: failed attempts are counted in state that survives process restart, with a lockout threshold and an escalation path stated where it is published (PRD FR-47).
 FR70: A proximity share carries the same consent as a remote one: the share passes the consent gate before a document is emitted, and the screen states what is shared and with whom on the same terms as the remote path (PRD FR-48).
+FR71: The relying-party kit answers a standard reverse-proxy external-authorization call (nginx `auth_request` or Envoy ExtAuthz), so a route is gated on a verified predicate without custom verifier-side code; the adapter fails closed.
+FR72: Every input to the request-policy decision is typed GRANT-capable or DENY-only, and no DENY-only input can turn a refusal into an allow.
+FR73: The BLE round-trip distribution is measured direct and relayed, with a stated separability result or a stated negative result.
+FR74: The fork is assessed against the eight axioms of the Zero-Trust Octagon, with a verdict and a falsification list per axiom.
+FR75: A published trust-path verdict names the operator behind every key and attestation chain a verdict depends on, classified GRANT-capable or DENY-only, for a claim fixed in advance.
+FR76: The circuit list requires t valid signatures from n pinned signers in different legal domains.
+FR77: Published evidence reports carry an EU qualified electronic time stamp that an offline script verifies.
+FR78: Each mock-to-real seam has a contract test showing the mock and the real counterpart agree per case.
+FR79: Each fail-closed guard is shown necessary by a scripted mutation that makes a test fail.
 
 ### Non-Functional Requirements
 
@@ -273,6 +292,15 @@ specification work: FR19 (Topic 19 / DASH_03 presentation-log fields, Epic 4) an
 | FR68 | 12.2 |
 | FR69 | 12.3 |
 | FR70 | 12.4 |
+| FR71 | 3.9 |
+| FR72 | 4.8 |
+| FR73 | 6.7 |
+| FR74 | 8.10 |
+| FR75 | 13.1 |
+| FR76 | 13.2 |
+| FR77 | 13.3 |
+| FR78 | 14.1 |
+| FR79 | 14.2 |
 
 _Rows deliberately left without a story, and the specification requirements this backlog does not
 carry, are listed in `Deliberately not made into stories` under Sequencing._
@@ -730,6 +758,26 @@ authentication route, not as EUDI presentation routes.
 
 **Covers:** FR10. **Source:** §6 integration pathways (X-Road, e-Residency, Smart-ID rows); §5.1 P4.
 
+### Story 3.9: Gateway adapter for the rp-kit
+
+As a site operator who fronts a service with nginx or Envoy,
+I want the rp-kit verifier to answer the proxy's external-authorization call,
+So that a route can be gated on a verified predicate without custom code, and Story 3.7's timed onboarding includes this path.
+
+**Acceptance Criteria:**
+
+- **Given** a route configured with nginx `auth_request` (or Envoy ExtAuthz) pointing at the adapter,
+- **When** a request arrives without a verified-predicate session,
+- **Then** the proxy receives a refusal that leads to the presentation flow, and a request carrying a valid session passes,
+- **And** the allow or deny is the verifier's existing result, not a second implementation of it,
+- **And** the adapter fails closed: verifier unreachable, session store unavailable and expired session each deny, one test per case,
+- **And** the adapter log names the circuit id, circuit hash and list version of the accepting presentation and no identifier of the holder,
+- **And** refusal, cancellation and technical failure reach the proxy as distinct outcomes,
+- **And** before implementation the maintainer confirms in writing that the adapter is an integration surface and not a new predicate, ZK system or carrier, so it is not the scope widening NFR16 and Story 7.8 rule out,
+- **And** the integrator README (Story 3.7) shows this path and its timed result is reported with its method (Story 6.6).
+
+**Covers:** FR71. **Source:** zero-trust analysis 2026-11-04 (the Go ExtAuthz gateway pattern in zero-trust-octagon `docs/engineering/`, as pattern only); Stories 3.1 and 3.7. **Depends on:** 3.1, 3.7. **Decision gate:** maintainer confirmation against Story 7.8.
+
 ## Epic 4: Registration-certificate-aware request policy engine
 
 The wallet currently refuses any request that would disclose more than one age predicate, because it cannot
@@ -874,6 +922,24 @@ the UI,
 - **And** the `EE-ZKP-055a` row in `docs/CONFORMITY.md` is cited as the behaviour's evidence,
 
 **Covers:** FR66. **Source:** risk R7 mitigation; the corpus's disclosure-control requirement sits with the certificate policy because both decide what the wallet may present, and `EE-ZKP-055a`'s own condition is certified by Story 4.3's fixture.
+
+### Story 4.8: Evidence-class typing of policy inputs
+
+As a wallet policy maintainer,
+I want every input to the request-policy decision typed GRANT-capable or DENY-only,
+So that a declared or unattested input can add friction or refuse, and can never be the reason a request is allowed.
+
+**Acceptance Criteria:**
+
+- **Given** the inputs the Story 4.3 decision reads (registration-certificate fields, plain request fields such as a declared purpose, the relying-party name as presented, the register lookup result, cache state),
+- **When** each is classified,
+- **Then** a table beside the decision code records its class and reason, GRANT-capable only for an input that is cryptographically verified and revocable by a body the wallet trusts, and DENY-only for anything declared or merely cached, and ADR-005 gains an addendum citing it,
+- **And** a property test over generated input combinations shows monotonicity: changing a DENY-only input never turns a refusal into an allow,
+- **And** reclassifying one input as GRANT-capable in a scripted mutation makes that test fail,
+- **And** the Story 4.7 plain fallback is covered by the same property: the fallback never grants,
+- **And** an input with no class fails the build or the suite instead of defaulting to GRANT.
+
+**Covers:** FR72. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Appendix F grant/deny table and Axiom 7, as method only; its legal claims are not imported); Stories 4.3, 4.5, 4.7. **Depends on:** 4.1, 4.3, 4.5.
 
 ## Epic 5: Circuit-hash registry and distribution service
 
@@ -1129,6 +1195,24 @@ So that no estimate is read as a measurement.
 - **And** unmeasured items are labelled explicitly rather than omitted.
 
 **Covers:** FR26, FR27. **Source:** NFR2; NFR7; A5.1 measurements row; risk R15.
+
+### Story 6.7: Proximity relay separability
+
+As a security reviewer of the proximity path,
+I want the round-trip time of the BLE exchange measured directly and through a relay,
+So that any claim that timing detects relay rests on a measured separation or is withdrawn.
+
+**Acceptance Criteria:**
+
+- **Given** the proximity transfer measured in Story 6.3, on at least the device models of Story 6.1,
+- **When** round-trip times are recorded for a direct exchange and for the same exchange relayed through a second phone over a network link, with N per condition stated,
+- **Then** the report gives both distributions (p50, p95, p99), the relay overhead, and whether one threshold separates them at a stated false-reject rate on the direct path,
+- **And** a negative result, no separating threshold, is reported as such and the proximity documentation then says timing does not detect relay,
+- **And** no threshold is taken from another project's documents,
+- **And** the method states devices, OS versions, distance, radio interference and relay set-up (Story 6.6), and an unmeasured row says so,
+- **And** this story adds no timing check to the wallet; adding one is a separate decision that uses this result.
+
+**Covers:** FR73. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon `docs/engineering/nfc-relay-threat-defense.md` and `anti-relay-cryptographic-channel-binding.md` as a source of hypotheses only; its own audit, finding X5, records contradictory thresholds of 25 ms and 40 ms). **Depends on:** 6.1, 6.3. **External gate:** devices (`PENDING-DEVICE`).
 
 ## Epic 7: Documentation honesty
 
@@ -1503,6 +1587,24 @@ not as a published policy),
 - **And** the absence of a second maintainer is named rather than glossed.
 
 **Covers:** FR47. **Source:** risk R10.
+
+### Story 8.10: Octagon assessment of the fork
+
+As the maintainer,
+I want this fork assessed against the eight axioms of the Zero-Trust Octagon, with a falsification list for each,
+So that the fork's trust claims meet an external structured method and what fails is published.
+
+**Acceptance Criteria:**
+
+- **Given** the axioms and the architecture validation checklist (Appendix B) of zero-trust-octagon, pinned by commit,
+- **When** each axiom is applied to the wallet, verifier, registry and rp-kit as they stand,
+- **Then** the document gives a per-axiom verdict (holds, fails or not applicable, with reason) and a falsification list: the evidence that would show the verdict wrong,
+- **And** Axiom 3 (unbypassable mediation) is assessed against the plain fallback and the plain `direct_post` flag, and Axiom 4 (continuous verification) against status-list and registry freshness, and each outcome is recorded whichever way it falls,
+- **And** where the document speaks of quorum or fault tolerance it states n and f, and does not call a voting scheme that tolerates f = 0 Byzantine (zero-trust-octagon audit, finding X3),
+- **And** no verdict is worded as compliance or certification (NFR1),
+- **And** each failing verdict becomes a story or a recorded risk, and the document is indexed in `docs/README.md`.
+
+**Covers:** FR74. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Octagon and Appendix B). **Depends on:** 4.7, 7.8.
 
 ## Epic 9: Statutory age-threshold toolkit
 
@@ -1984,6 +2086,117 @@ So that the proximity path is not a way around the gate the remote path applies.
 
 **Covers:** FR70. **Source:** PRD §4.7 FR-48.
 
+## Epic 13: Compellability dossier
+
+A buyer or pilot owner asks who can lawfully compel the keys behind a verdict, not where the bytes sit.
+Nothing in Epics 1 to 12 answers that. This epic publishes the answer as evidence, makes the one registry
+that decides which circuits verifiers accept resistant to a single signer, and timestamps the evidence the
+programme publishes. The method comes from [zero-trust-octagon](https://github.com/tomkabel/zero-trust-octagon): a verdict is `true` or `false` for
+a claim fixed in advance, with a falsification list, and inputs are classed GRANT-capable or DENY-only. The
+analysis behind it argues the compellability question, not geography, is what a sovereignty claim must
+test. That argument and every legal proposition in this epic are `[UNVERIFIED]` here.
+Source: zero-trust analysis 2026-11-04.
+
+### Story 13.1: Trust-path verdict for the wallet ecosystem
+
+As a procurement or pilot owner asking who can lawfully compel the keys behind this system's verdicts,
+I want a published inventory of every key and attestation chain a verdict depends on, classified by what it can do,
+So that the question is answered with evidence and the failing rows are shown.
+
+**Acceptance Criteria:**
+
+- **Given** the verdict path: credential-key attestation (Android Keystore attestation roots), Wallet Unit Attestation (Story 10.3), issuer signing and its HSM, the circuit-list signer (Epic 5), the RP-register (Story 3.3), status lists, and the hosts that serve them,
+- **When** each chain is traced to its root and the legal entity operating that root is named,
+- **Then** each row is classed GRANT-capable (cryptographically verifiable and revocable by a supervisory or trust-list body) or DENY-only (a contract, a declaration or a revocable administrative act), with the reason,
+- **And** the published verdict is `true` or `false` for a claim whose text is fixed before the inventory starts, with a falsification list; a row whose operator cannot be established is listed as unknown and never inferred,
+- **And** the report states its boundary: it establishes technical facts and the compulsion surface, and whether a given law reaches a given entity is a legal conclusion for counsel,
+- **And** the grant/deny classification links to zero-trust-octagon Appendix F rather than copying it, and the predicate version used is cited,
+- **And** every legal, jurisdictional and "no EU scheme certifies X" proposition carries `[UNVERIFIED]` until checked against a primary source, and the report is indexed in `docs/README.md`.
+
+**Covers:** FR75. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Appendices F and G; its verification-practice plan). **Depends on:** 5.6, 10.3. **Decision gate:** the claim text. **External gate:** counsel review before publication.
+
+### Story 13.2: Threshold-signed circuit list
+
+As a verifier operator,
+I want the circuit list to require t valid signatures from n named signers in different legal domains,
+So that no single signer, stolen key or court order can change which circuits verifiers accept.
+
+**Acceptance Criteria:**
+
+- **Given** the document format of ADR-006 and the verifier fetch of Story 5.2,
+- **When** a list is issued with t-of-n signatures and the verifier holds the pinned set of n keys,
+- **Then** the verifier accepts it only with at least t valid signatures from distinct pinned keys, and logs n and t,
+- **And** a test with t−1 valid signatures observes refusal, and so does a test with t signatures of which two come from one key,
+- **And** a test where one signer's key is compromised and signs an altered list observes refusal (t ≥ 2),
+- **And** the document records n, t, and each signer's operating entity and jurisdiction,
+- **And** the report says plainly that forging needs t compromised signers and issuing needs t available signers, and it makes no Byzantine-fault-tolerance claim,
+- **And** signer rotation and removal are specified, and whether one signer may withdraw a circuit alone (fail-safe) is decided and recorded in an ADR addendum,
+- **And** the Story 5.4 two-instance agreement test runs against a t-of-n document.
+
+**Covers:** FR76. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon Axioms 6 and 10; its audit finding X3 on what a quorum does and does not tolerate). **Depends on:** 5.1, 5.2, 5.4. **Decision gate:** naming real independent signers is a maintainer and community decision; until then synthetic keys prove the mechanism only and the report says one operator holds every key.
+
+### Story 13.3: Qualified-timestamped evidence reports
+
+As a third party relying on a published report,
+I want each published evidence report to carry an EU qualified electronic time stamp,
+So that "this report existed in this form on this date" is checkable without trusting the repository host.
+
+**Acceptance Criteria:**
+
+- **Given** the published AV report (Story 1.6), carrier result (Story 2.4) and measurement report (Story 6.6),
+- **When** a report is published,
+- **Then** its hash is time-stamped by a qualified trust service provider chosen in this story, and the token is published beside the report,
+- **And** an offline script verifies the token against the report and the provider's certificate chain and prints pass or fail, with a test on a deliberately altered report,
+- **And** the story records the provider, the price and the issuance time found, and that the provider's qualified status was checked against the EU trusted list on a stated date; each is `[UNVERIFIED]` until recorded,
+- **And** the legal effect claimed is only what Regulation (EU) 2024/1183 (amending Regulation (EU) No 910/2014) gives, cited from the primary text at execution time (`[UNVERIFIED]` here),
+- **And** a time stamp evidences date and integrity only: no report calls itself certified or compliant (NFR1),
+- **And** the timestamp does not come from the hosting repository, so repository metadata is never the anchor.
+
+**Covers:** FR77. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon verification-practice plan, correction 0.1: a qualified seal and timestamp from an EU provider instead of a public transparency log). **Depends on:** 1.6 (the mechanism can be proven on that report; 2.4 and 6.6 follow as they publish). **Decision gate:** provider choice and cost.
+
+## Epic 14: Test honesty
+
+Epic 7 makes the documents honest. This epic does the same for the tests. The zero-trust-octagon audit
+found that its 89 passing tests proved little, because they mocked an API shape the installed library no
+longer used, and that a revocation key was written but never read, so revocation silently did nothing
+(`AUDIT_REPORT_2026-10-04.md`, findings C-1 and X8). This backlog has the same exposure: it leans on
+mock-to-real seams (`architecture.md`) and on fail-closed claims in Stories 3.3, 4.5, 10.4 and 12.3.
+Source: zero-trust analysis 2026-11-04.
+
+### Story 14.1: Mock-drift contract tests
+
+As a maintainer who relies on mocks for the RP-register, issuer, Wallet Unit Attestation and status list,
+I want each mock shown equivalent to its real counterpart on a shared case set,
+So that a green suite does not prove only that a mock agrees with itself.
+
+**Acceptance Criteria:**
+
+- **Given** each mock-to-real seam listed in `architecture.md`, named in this story with its file,
+- **When** one case set runs against the mock and against the real client, a recorded fixture or the vendored library's own types,
+- **Then** both give the same outcome for every case, refusal outcomes included,
+- **And** a deliberate change to a mock's shape (a renamed field) fails the contract test,
+- **And** a seam with no real counterpart yet is listed as such with the story that will supply it (3.3, 10.1, 10.3, 10.4), never skipped silently,
+- **And** the suite is catalogued in `tests/README.md` and wired into `make check` or the matching CI job.
+
+**Covers:** FR78. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon audit finding C-1). **Depends on:** none for the seams that exist today; each later seam adds its cases when its story lands.
+
+### Story 14.2: Mutation guard for fail-closed paths
+
+As a reviewer of fail-closed claims,
+I want each fail-closed guard shown necessary by removing it,
+So that a guard no test reads cannot ship as protection.
+
+**Acceptance Criteria:**
+
+- **Given** the named fail-closed guards that exist when the story runs (circuit allowlist, `stale-list`, register fail-closed, certificate-absent default, plain-fallback guard, revocation check, consent lockout),
+- **When** a scripted mutation removes or inverts a guard,
+- **Then** at least one test fails,
+- **And** CI lists the surviving mutants per guard, and a survivor is a recorded finding in `_bmad-output/implementation-artifacts/deferred-work.md` or a story, never a pass,
+- **And** the tooling per language (Kotlin, Python, Go, Rust) is chosen in the story with its reason, and where no tool fits, hand-written mutation scripts over a guard list are acceptable,
+- **And** the guard list lives in one file, so a new fail-closed claim is added together with its mutation.
+
+**Covers:** FR79. **Source:** zero-trust analysis 2026-11-04 (zero-trust-octagon audit finding X8). **Depends on:** 14.1 is optional; each guard is covered once its owning story exists.
+
 ## Sequencing and recorded decisions
 
 **Epic numbering follows the order the work appears in the corpus, not a single ranking.** Epics
@@ -1997,6 +2210,7 @@ stable handle for traceability; the execution order below is the ordering signal
    cost almost nothing and are preconditions for showing any artefact to an evaluator; they run alongside
    the start of Epic 1, not after it.
 2. **Epic 6 runs in parallel from the start.** It gates every performance claim but blocks no other epic.
+3. **Epic 14 and Story 13.3 join the cheap prerequisites (added 2026-11-04).** Neither needs an external party. Then Story 4.8 and Story 13.2, then Story 13.1 once Stories 5.6 and 10.3 supply its inputs, then Stories 3.9, 6.7 and 8.10. None of these displaces Stories 2.1, 2.2 or Epic 7 Stories 1–4. Decision gates they bring: the maintainer's confirmation of Story 3.9 against Story 7.8, the signer set of Story 13.2, the claim text of Story 13.1, and the time-stamp provider of Story 13.3.
 
 **Primary sequence, as the source documents order it.** Epic 1 (O1, accepted first: it is the only work
 that converts existing code into an EU-recognised capability, needing no external party and no hardware),
