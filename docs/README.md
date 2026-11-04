@@ -33,6 +33,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 | [`analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md`](analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md) | *ee-eudiw.* The de-facto `mso_mdoc_zk` carrier in OpenID4VP |
 | [`analysis/REV-1.6-OPEN-ITEMS-RESEARCH.md`](analysis/REV-1.6-OPEN-ITEMS-RESEARCH.md) | Research on spec rev 1.6's open items: the 29 February rule and the external anchors of the 18 new requirements |
 | [`analysis/ZKP08-ANALYSIS.md`](analysis/ZKP08-ANALYSIS.md) | *ee-eudiw.* ARF `ZKP_08` against the Agreed Cryptographic Mechanisms |
+| [`planning/APP-STORE-DISTRIBUTION-TODO.md`](planning/APP-STORE-DISTRIBUTION-TODO.md) | TODO: Play Store feasibility (demo-only), blockers in the repo, and the path to a store-acceptable `sandbox` build |
 | [`planning/EE-EUDIW-ZK-IMPORT-PLAN.md`](planning/EE-EUDIW-ZK-IMPORT-PLAN.md) | The plan that brought the specification and the ZK spine into this repository |
 | [`planning/LOCAL-ECOSYSTEM-LAB-TODO.md`](planning/LOCAL-ECOSYSTEM-LAB-TODO.md) | TODO: run EC reference services locally so externally blocked stories get `reference-impl@commit` evidence |
 | [`planning/REPO-HARDENING-PLAN.md`](planning/REPO-HARDENING-PLAN.md) | Phased plan for the 13 repository critique findings (C1–C13), with hard targets, judges and decisions needed; not yet executed |
