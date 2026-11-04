@@ -144,6 +144,8 @@ def verify_jar(signed: dict, pinned_pem) -> dict:
         ec.SECP256R1()).public_key()
     if pinned_pem:
         pinned = serialization.load_pem_public_key(open(pinned_pem, "rb").read())
+        if not isinstance(pinned, ec.EllipticCurvePublicKey):
+            sys.exit("--request-key is not an EC public key")
         if pinned.public_numbers() != key.public_numbers():
             sys.exit("the request object is signed by a key other than --request-key")
     else:

@@ -41,7 +41,9 @@ def main() -> int:
         assert iaca.extensions.get_extension_for_class(x509.BasicConstraints).value.ca
         eku = dsc.extensions.get_extension_for_class(x509.ExtendedKeyUsage).value
         assert x509.ObjectIdentifier("1.0.18013.5.1.2") in eku, "DSC lacks the mdlDS EKU"
-        nums = dsc.public_key().public_numbers()
+        dsc_key = dsc.public_key()
+        assert isinstance(dsc_key, ec.EllipticCurvePublicKey), "DSC key is not EC"
+        nums = dsc_key.public_numbers()
         assert (f"0x{nums.x:064x}", f"0x{nums.y:064x}") == (entry["pkx"], entry["pky"])
 
         keys = dict(issuer=str(tmp / "issuer.pem"), iaca=str(tmp / "iaca.pem"))
