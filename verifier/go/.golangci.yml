@@ -1,0 +1,11 @@
+# golangci-lint v2. `make lint` runs it from verifier/go. The standard set (errcheck, govet,
+# ineffassign, staticcheck, unused) plus two cheap extras. errorlint, gosec and copyloopvar were
+# tried and left out: errorlint wants %v -> %w in jose/jwe.go, which changes what callers can
+# unwrap in security code (27 gosec findings on test and demo code are noise); add them family by
+# family with a justification, not by suppression.
+version: "2"
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - misspell

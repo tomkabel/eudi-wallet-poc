@@ -85,20 +85,6 @@ func readStep6FixtureIssuer(t *testing.T) (meta struct {
 	return meta
 }
 
-// upper/lowerPairs mints a 64-hex-char coordinate pair in both cases, so the
-// case-insensitivity test can use keys that pass the P-256 shape check.
-func upperLowerPairs(t *testing.T, seed byte) (upper, lower [2]string) {
-	t.Helper()
-	x := make([]byte, 32)
-	y := make([]byte, 32)
-	x[0], y[0] = seed, seed+0x40
-	ux := "0x" + strings.ToUpper(hex.EncodeToString(x))
-	lx := "0x" + hex.EncodeToString(x)
-	uy := "0x" + strings.ToUpper(hex.EncodeToString(y))
-	ly := "0x" + hex.EncodeToString(y)
-	return [2]string{ux, uy}, [2]string{lx, ly}
-}
-
 // Hex case is not identity: an uppercase store entry must still match the
 // lowercase coordinates the presentation path derives, and vice versa.
 func TestTrustStoreSelectIgnoresHexCase(t *testing.T) {

@@ -698,8 +698,10 @@ func main() {
 		} else {
 			log.Printf("zkverify: drained cleanly")
 		}
-		// ListenAndServe returns ErrServerClosed once Shutdown completes; the
-		// goroutine's send lands in the buffered channel and is dropped.
-		<-serveErr
+		// ListenAndServe returns ErrServerClosed once Shutdown completes; anything
+		// else is worth a line.
+		if err := <-serveErr; err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("zkverify: server stopped with: %v", err)
+		}
 	}
 }

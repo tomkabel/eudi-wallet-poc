@@ -24,8 +24,12 @@ func mintStatusList(t *testing.T, k jose.JWK, statuses []byte, bits int, claims 
 	}
 	var z bytes.Buffer
 	w := zlib.NewWriter(&z)
-	w.Write(packed)
-	w.Close()
+	if _, err := w.Write(packed); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
 	c := map[string]any{"sub": listURI, "iat": time.Now().Unix(), "exp": time.Now().Add(time.Hour).Unix(), "ttl": 300,
 		"status_list": map[string]any{"bits": bits, "lst": base64.RawURLEncoding.EncodeToString(z.Bytes())}}
 	for k, v := range claims {
