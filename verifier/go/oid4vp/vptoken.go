@@ -24,6 +24,11 @@ type ZKPresentation struct {
 	AttrID        string `json:"attr_id"`
 	AttrCBORHex   string `json:"attr_cbor_hex"`
 	ProofB64      string `json:"proof_b64"`
+	// IssuerKID is the holder's optional hint naming the issuer key (Issuer
+	// KeyID: hex SHA-256 of its DER SPKI). It only selects among the trust
+	// store's keys for the doctype — never adds one — so the verifier runs
+	// one ZK verification instead of one per trusted issuer.
+	IssuerKID string `json:"issuer_kid,omitempty"`
 }
 
 // VPToken is the OpenID4VP 1.0 vp_token: DCQL credential id -> presentations.

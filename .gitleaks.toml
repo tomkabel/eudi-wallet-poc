@@ -1,0 +1,45 @@
+# Secret scanning (PKI plan NEW-P0-2). Default rules plus an allowlist where every
+# entry names why it is not a secret. Key material listed here must also appear in
+# trust/MANIFEST.yaml with test_only: true; tests/check_pki_gates.py enforces that.
+# A new allowlist entry needs the same review as a new key.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test-only key material; each file is listed in trust/MANIFEST.yaml"
+paths = [
+  '''^verifier/go/zk/testdata/step0-rust-prover/device_key\.pem$''',
+  '''^app/src/local_mocks/assets/keys/doc_signer_(mdl|pid)_issuer\.p12$''',
+  '''^app/src/main/assets/certs/lotl-keystore\.p12$''',
+]
+
+[[allowlists]]
+description = "Example tokens in specification text and wire-capture test vectors"
+paths = [
+  '''^docs/profiles/av/annex-a-examples\.md$''',
+  '''^tests/vectors/av-profile/external/[^/]+\.http$''',
+  '''^verifier/go/internal/jose/jwe_test\.go$''',
+  '''^verifier/go/zk/testdata/step6-device-pubkey/GENERATED-BY$''',
+  # Token Status List JWTs: public by design (draft-ietf-oauth-status-list).
+  '''^statuslists/[0-9]+$''',
+]
+
+[[allowlists]]
+description = "BMAD story identifiers, not credentials"
+regexTarget = "match"
+regexes = ['''story_key"?:\s*"?[0-9]+-[0-9]+-''', '''key-screens\.md''']
+
+[[allowlists]]
+# Upstream open-eid release commits carried a Firebase client API key in
+# app/google-services.json. It is upstream's key, public in upstream's history, and
+# was removed from this fork at 7d171e2. Rotation is upstream's call (RIA); a history
+# purge is decision D5 in docs/planning/PKI-REMEDIATION-PLAN.md.
+description = "Upstream Firebase key in pre-fork history"
+commits = [
+  "0866e946874f666caa40e85acf8fc8fb22d71fc0",
+  "5952d0c8e92e9bb618dc3fdd9ac193cba8749ad3",
+  "859df451144f9921421afbd885a3c9e56b4a349a",
+  "95a056656992c1402b9b928d8baabe1fcfaecf42",
+  "cb33a7d21dd6ac4cb6bbd56dd74ba49b0e77e8cc",
+]

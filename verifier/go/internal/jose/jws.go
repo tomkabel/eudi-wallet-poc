@@ -38,10 +38,16 @@ const (
 	JWSTypObject = "JWT"
 	// JWSTypTrustStore rides on the signed trust store document (B3).
 	JWSTypTrustStore = "trust-store+json"
+	// JWSTypStatusList rides on Token Status List JWTs (PKI plan NEW-S3-2).
+	JWSTypStatusList = "statuslist+jwt"
 
 	jwsTypObject     = JWSTypObject
 	jwsTypTrustStore = JWSTypTrustStore
 )
+
+func profileTyp(typ string) bool {
+	return typ == jwsTypObject || typ == jwsTypTrustStore || typ == JWSTypStatusList
+}
 
 // SignJWS produces a compact ES256 JWS over payload with the private key in
 // k (a JWK carrying d, as GenerateKey and LoadPEMKey produce). The protected
@@ -55,7 +61,7 @@ func SignJWS(k JWK, typ, payload string) (string, error) {
 	if k.Kty != "EC" || k.Crv != "P-256" {
 		return "", fmt.Errorf("%w: key is %s/%s, want EC/P-256", ErrUnsupportedAlgorithm, k.Kty, k.Crv)
 	}
-	if typ != jwsTypObject && typ != jwsTypTrustStore {
+	if !profileTyp(typ) {
 		return "", fmt.Errorf("%w: typ %q is not a profile typ", ErrUnsupportedAlgorithm, typ)
 	}
 	priv, err := k.PrivateECDHKey()
@@ -117,7 +123,7 @@ func parseJWS(token string) (payload []byte, typ string, err error) {
 	if h.Alg != jwsAlg {
 		return nil, "", fmt.Errorf("%w: alg %q, want ES256", ErrUnsupportedAlgorithm, h.Alg)
 	}
-	if h.Typ != jwsTypObject && h.Typ != jwsTypTrustStore {
+	if !profileTyp(h.Typ) {
 		return nil, "", fmt.Errorf("%w: typ %q is not a profile typ", ErrUnsupportedAlgorithm, h.Typ)
 	}
 	sig, err := base64.RawURLEncoding.DecodeString(parts[2])

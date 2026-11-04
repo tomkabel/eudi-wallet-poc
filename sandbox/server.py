@@ -76,6 +76,7 @@ class Sandbox:
     def __init__(self, prover: str, verifier: str, work: str):
         self.prover, self.work = prover, work
         self.issuer_key = os.path.join(work, "issuer.pem")
+        self.iaca_key = os.path.join(work, "iaca.pem")
         self.holders: "OrderedDict[str, dict]" = OrderedDict()
         self.sessions: dict[str, dict] = {}
         self.lock = threading.Lock()
@@ -120,7 +121,8 @@ class Sandbox:
 
     def _mint(self, out: str, over: list, under: list) -> str:
         cmd = [sys.executable, os.path.join(REPO, "issuer", "mint_ee_poa.py"), "--out", out,
-               "--issuer-key", self.issuer_key, "--over", *map(str, over)]
+               "--issuer-key", self.issuer_key, "--iaca-key", self.iaca_key, "--test-mode",
+               "--over", *map(str, over)]
         if under:
             cmd += ["--under", *map(str, under)]
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)

@@ -1,0 +1,976 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.9.2" type="baseline" client="gradle" dependencies="false" name="AGP (8.9.2)" variant="all" version="8.9.2">
+
+    <issue
+        id="UnusedAttribute"
+        message="Attribute `localeConfig` is only used in API level 33 and higher (current min is 31)"
+        errorLine1="        android:localeConfig=&quot;@xml/locales_config&quot;"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="39"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 8.9.2 is available: 9.5.0. (There is also a newer version of 8.9.𝑥 available, if upgrading to 9.5.0 is difficult: 8.9.3)"
+        errorLine1="agp = &quot;8.9.2&quot;"
+        errorLine2="      ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="2"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.application than 8.9.2 is available: 9.5.0. (There is also a newer version of 8.9.𝑥 available, if upgrading to 9.5.0 is difficult: 8.9.3)"
+        errorLine1="agp = &quot;8.9.2&quot;"
+        errorLine2="      ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="2"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.bouncycastle:bcprov-jdk18on than 1.80 is available: 1.80.2"
+        errorLine1="bouncyCastle = &quot;1.80&quot;"
+        errorLine2="               ~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="3"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.bouncycastle:bcprov-jdk18on than 1.80 is available: 1.80.2"
+        errorLine1="bouncyCastle = &quot;1.80&quot;"
+        errorLine2="               ~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="3"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.fasterxml.jackson.core:jackson-databind than 2.18.2 is available: 2.21.5"
+        errorLine1="jacksonCore = &quot;2.18.2&quot;"
+        errorLine2="              ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="5"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.fasterxml.jackson.core:jackson-databind than 2.18.2 is available: 2.21.5"
+        errorLine1="jacksonCore = &quot;2.18.2&quot;"
+        errorLine2="              ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="5"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlin:kotlin-test than 2.1.20 is available: 2.1.21"
+        errorLine1="kotlin = &quot;2.1.20&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="7"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlin:kotlin-test than 2.1.20 is available: 2.1.21"
+        errorLine1="kotlin = &quot;2.1.20&quot;"
+        errorLine2="         ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="7"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.16.0 is available: 1.19.1"
+        errorLine1="core-ktx = &quot;1.16.0&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="9"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-ktx than 1.16.0 is available: 1.19.1"
+        errorLine1="core-ktx = &quot;1.16.0&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="9"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of io.ktor:ktor-client-core than 3.3.2 is available: 3.3.3"
+        errorLine1="ktor-client = &quot;3.3.2&quot;"
+        errorLine2="              ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="10"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of io.ktor:ktor-client-core than 3.3.2 is available: 3.3.3"
+        errorLine1="ktor-client = &quot;3.3.2&quot;"
+        errorLine2="              ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="10"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0"
+        errorLine1="lifecycle-runtime-ktx = &quot;2.8.7&quot;"
+        errorLine2="                        ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="11"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.8.7 is available: 2.11.0"
+        errorLine1="lifecycle-runtime-ktx = &quot;2.8.7&quot;"
+        errorLine2="                        ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="11"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.10.1 is available: 1.13.0"
+        errorLine1="activity-compose = &quot;1.10.1&quot;"
+        errorLine2="                   ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="12"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.activity:activity-compose than 1.10.1 is available: 1.13.0"
+        errorLine1="activity-compose = &quot;1.10.1&quot;"
+        errorLine2="                   ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="12"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2025.04.01 is available: 2026.09.00"
+        errorLine1="compose-bom = &quot;2025.04.01&quot;"
+        errorLine2="              ~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="13"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2025.04.01 is available: 2026.09.00"
+        errorLine1="compose-bom = &quot;2025.04.01&quot;"
+        errorLine2="              ~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="13"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation.safeargs.kotlin than 2.7.7 is available: 2.10.2"
+        errorLine1="navigation = &quot;2.7.7&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="15"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation.safeargs.kotlin than 2.7.7 is available: 2.10.2"
+        errorLine1="navigation = &quot;2.7.7&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="15"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.7.7 is available: 2.10.2"
+        errorLine1="navigation = &quot;2.7.7&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="15"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.7.7 is available: 2.10.2"
+        errorLine1="navigation = &quot;2.7.7&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="15"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-runtime-ktx than 2.7.7 is available: 2.10.2"
+        errorLine1="navigation = &quot;2.7.7&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="15"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-runtime-ktx than 2.7.7 is available: 2.10.2"
+        errorLine1="navigation = &quot;2.7.7&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="15"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.hilt:hilt-navigation-compose than 1.2.0 is available: 1.4.0"
+        errorLine1="hiltNavigationCompose = &quot;1.2.0&quot;"
+        errorLine2="                        ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="16"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.hilt:hilt-navigation-compose than 1.2.0 is available: 1.4.0"
+        errorLine1="hiltNavigationCompose = &quot;1.2.0&quot;"
+        errorLine2="                        ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="16"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-splashscreen than 1.0.1 is available: 1.2.0"
+        errorLine1="coreSplashscreen = &quot;1.0.1&quot;"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="17"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.core:core-splashscreen than 1.0.1 is available: 1.2.0"
+        errorLine1="coreSplashscreen = &quot;1.0.1&quot;"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="17"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-datetime than 0.6.2 is available: 0.7.1"
+        errorLine1="kotlinx-datetime = &quot;0.6.2&quot;"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="18"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-datetime than 0.6.2 is available: 0.7.1"
+        errorLine1="kotlinx-datetime = &quot;0.6.2&quot;"
+        errorLine2="                   ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="18"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore than 1.1.5 is available: 1.3.0"
+        errorLine1="dataStore = &quot;1.1.5&quot;"
+        errorLine2="            ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="23"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.datastore:datastore than 1.1.5 is available: 1.3.0"
+        errorLine1="dataStore = &quot;1.1.5&quot;"
+        errorLine2="            ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="23"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-compiler than 2.7.1 is available: 2.8.5"
+        errorLine1="room = &quot;2.7.1&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="24"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-compiler than 2.7.1 is available: 2.8.5"
+        errorLine1="room = &quot;2.7.1&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="24"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-ktx than 2.7.1 is available: 2.8.5"
+        errorLine1="room = &quot;2.7.1&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="24"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-ktx than 2.7.1 is available: 2.8.5"
+        errorLine1="room = &quot;2.7.1&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="24"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-runtime than 2.7.1 is available: 2.8.5"
+        errorLine1="room = &quot;2.7.1&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="24"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.room:room-runtime than 2.7.1 is available: 2.8.5"
+        errorLine1="room = &quot;2.7.1&quot;"
+        errorLine2="       ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="24"
+            column="8"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.10.1 is available: 1.10.2"
+        errorLine1="coroutines = &quot;1.10.1&quot;"
+        errorLine2="             ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="29"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.10.1 is available: 1.10.2"
+        errorLine1="coroutines = &quot;1.10.1&quot;"
+        errorLine2="             ~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="29"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-camera2 than 1.4.2 is available: 1.6.2"
+        errorLine1="cameraVersion = &quot;1.4.2&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="30"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-camera2 than 1.4.2 is available: 1.6.2"
+        errorLine1="cameraVersion = &quot;1.4.2&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="30"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-lifecycle than 1.4.2 is available: 1.6.2"
+        errorLine1="cameraVersion = &quot;1.4.2&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="30"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-lifecycle than 1.4.2 is available: 1.6.2"
+        errorLine1="cameraVersion = &quot;1.4.2&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="30"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-view than 1.4.2 is available: 1.6.2"
+        errorLine1="cameraVersion = &quot;1.4.2&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="30"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-view than 1.4.2 is available: 1.6.2"
+        errorLine1="cameraVersion = &quot;1.4.2&quot;"
+        errorLine2="                ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="30"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.appcompat:appcompat than 1.7.0 is available: 1.8.0"
+        errorLine1="appcompat = &quot;1.7.0&quot;"
+        errorLine2="            ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="46"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.appcompat:appcompat than 1.7.0 is available: 1.8.0"
+        errorLine1="appcompat = &quot;1.7.0&quot;"
+        errorLine2="            ~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="46"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-digitalcredentials-mdoc than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-digitalcredentials-mdoc than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-digitalcredentials-openid than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-digitalcredentials-openid than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-provider than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-provider than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-provider-play-services than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.credentials.registry:registry-provider-play-services than 1.0.0-alpha03 is available: 1.0.0-alpha05"
+        errorLine1="registry-digital-credentials = &quot;1.0.0-alpha03&quot;"
+        errorLine2="                               ~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="49"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.gms:play-services-identity-credentials than 16.0.0-alpha08 is available: 16.0.0-alpha12"
+        errorLine1="play-services-identity-credentials = &quot;16.0.0-alpha08&quot;"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="50"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.gms:play-services-identity-credentials than 16.0.0-alpha08 is available: 16.0.0-alpha12"
+        errorLine1="play-services-identity-credentials = &quot;16.0.0-alpha08&quot;"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~">
+        <location
+            file="$HOME/Documents/eudi-wallet-poc/gradle/libs.versions.toml"
+            line="50"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenHeightDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="                if (configuration.screenHeightDp.dp > 640.dp) {"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/ui/screens/pin/PinEntryScreen.kt"
+            line="211"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="Typos"
+        message="Did you mean &quot;PIN!&quot; instead of &quot;PIN1&quot;?"
+        errorLine1="    &lt;string name=&quot;mock_auth_mobile_id_pin1&quot;>Enter Mobiil-ID PIN1&lt;/string>"
+        errorLine2="                                                            ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="264"
+            column="61"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;certificates&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;settings_lotl_status_synced&quot;>%1$d certificates loaded&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="183"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;incoming&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;invocation_capacity&quot;>Invocation queue full: %1$d incoming invocation(s) refused. Close this message before retrying.&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="280"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnusedTranslation"
+        message="The language `ru (Russian)` is present in this project, but not declared in the `localeConfig` resource"
+        errorLine1="        android:localeConfig=&quot;@xml/locales_config&quot;"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="39"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers"
+        errorLine1="    override fun checkClientTrusted(chain: Array&lt;X509Certificate>, authType: String) {}"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/util/Certificates.kt"
+            line="24"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkServerTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers"
+        errorLine1="    override fun checkServerTrusted(chain: Array&lt;X509Certificate>, authType: String) {}"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/util/Certificates.kt"
+            line="25"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkServerTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers">
+        <location
+            file="$GRADLE_USER_HOME/caches/modules-2/files-2.1/org.bouncycastle/bcpkix-jdk18on/1.80/5277dfaaef2e92ce1d802499599a0ca7488f86e6/bcpkix-jdk18on-1.80.jar"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        message="`checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers">
+        <location
+            file="$GRADLE_USER_HOME/caches/modules-2/files-2.1/com.unboundid/unboundid-ldapsdk/6.0.5/34ca11ed3b36f945c48ceb8e601cc4e590dd4564/unboundid-ldapsdk-6.0.5.jar"/>
+    </issue>
+
+    <issue
+        id="CustomX509TrustManager"
+        message="Implementing a custom `X509TrustManager` is error-prone and likely to be insecure. It is likely to disable certificate validation altogether, and is non-trivial to implement correctly without calling Android&apos;s default implementation."
+        errorLine1="private class TrustAllX509TrustManager : X509TrustManager {"
+        errorLine2="              ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/util/Certificates.kt"
+            line="23"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v26`) is unnecessary; `minSdkVersion` is 31. Merge all the resources in this folder into `mipmap-anydpi`.">
+        <location
+            file="src/main/res/mipmap-anydpi-v26"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.mipmap.ic_launcher_round` appears to be unused">
+        <location
+            file="src/main/res/mipmap-hdpi/ic_launcher_round.webp"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.portrait_38001085718` appears to be unused">
+        <location
+            file="src/main/res/raw/portrait_38001085718.jpg"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.portrait_47101010033` appears to be unused">
+        <location
+            file="src/main/res/raw/portrait_47101010033.jpg"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.raw.portrait_50801139731` appears to be unused">
+        <location
+            file="src/main/res/raw/portrait_50801139731.jpg"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.dashboard_show_qr_code` appears to be unused"
+        errorLine1="    &lt;string name=&quot;dashboard_show_qr_code&quot;>Show QR code&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.dashboard_to_the_verifier` appears to be unused"
+        errorLine1="    &lt;string name=&quot;dashboard_to_the_verifier&quot;>to the verifier&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="39"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.my_documents_add_pid_sd_jwt` appears to be unused"
+        errorLine1="    &lt;string name=&quot;my_documents_add_pid_sd_jwt&quot;>Add PID (sd-jwt)&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="54"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.my_documents_add_pid_mdoc` appears to be unused"
+        errorLine1="    &lt;string name=&quot;my_documents_add_pid_mdoc&quot;>Add PID (mdoc)&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="55"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.my_documents_add_mdl_mdoc` appears to be unused"
+        errorLine1="    &lt;string name=&quot;my_documents_add_mdl_mdoc&quot;>Add MDL (mdoc)&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="56"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.my_documents_add_age_verification` appears to be unused"
+        errorLine1="    &lt;string name=&quot;my_documents_add_age_verification&quot;>Add Age Verification Card&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="57"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.my_documents_error_while_adding_a_new_document` appears to be unused"
+        errorLine1="    &lt;string name=&quot;my_documents_error_while_adding_a_new_document&quot;>Error while adding a new document.\n%1$s&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="60"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.attr_user_pseudonym` appears to be unused"
+        errorLine1="    &lt;string name=&quot;attr_user_pseudonym&quot;>Pseudonym&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="120"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="MonochromeLauncherIcon"
+        message="The application adaptive icon is missing a monochrome tag"
+        errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
+        errorLine2="^">
+        <location
+            file="src/main/res/mipmap-anydpi-v26/ic_launcher.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/funding_logo.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/funding_logo.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/logo.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/logo.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/placeholder_logo.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/placeholder_logo.png"/>
+    </issue>
+
+    <issue
+        id="UnnecessaryRequiredFeature"
+        message="Consider whether this feature (`android.hardware.camera.autofocus`) really is required for the app to function; you can set `android:required=&quot;false&quot;` to indicate that the feature is used but not required"
+        errorLine1="    &lt;uses-feature android:name=&quot;android.hardware.camera.autofocus&quot; />"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="6"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnnecessaryRequiredFeature"
+        message="Consider whether this feature (`android.hardware.nfc`) really is required for the app to function; you can set `android:required=&quot;false&quot;` to indicate that the feature is used but not required"
+        errorLine1="    &lt;uses-feature android:name=&quot;android.hardware.nfc&quot; android:required=&quot;true&quot; />"
+        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="7"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="            data = Uri.parse(&quot;package:$packageName&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/ui/components/CameraSettings.kt"
+            line="55"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="            data = Uri.parse(&quot;package:$packageName&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/ui/components/CameraSettings.kt"
+            line="55"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX function `createBitmap` instead?"
+        errorLine1="        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/ui/util/QRCode.kt"
+            line="16"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Bitmap.set` instead?"
+        errorLine1="                bitmap.setPixel(i, j, if (bitMapMatrix[i, j]) Color.BLACK else Color.WHITE)"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ee/cyber/wallet/ui/util/QRCode.kt"
+            line="22"
+            column="17"/>
+    </issue>
+
+</issues>

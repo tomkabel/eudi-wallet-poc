@@ -173,6 +173,21 @@ example generation and the normative `av-vci://` versus public-example `av://`
 discrepancy. These checks cover external issuance entry only; the provider is
 not integrated, no mock is minted and no AVSUA/conformance claim follows.
 
+## PKI gates and trust vectors
+
+From [the PKI remediation plan](../docs/planning/PKI-REMEDIATION-PLAN.md). Each
+gate has a seeded failure that proves it turns red.
+
+| Check | What fails it | Run |
+|---|---|---|
+| `tests/check_pki_gates.py` | trust-all switch back in the wallet; `*Mock` class or mock status URI outside `local_mocks`; `-ignore-trust-freshness` outside a `devflags` build; trust material unlisted in `trust/MANIFEST.json`, changed without `--update`, or under 30 days from `notAfter`; a private key not marked test-only; a mirrored Maven file unpinned or without a licence | `make pki-gates` |
+| `tests/test_pki_gates.py` | a gate that stays green on its seeded defect | `make pki-gates` |
+| `tests/vectors/trust/cases.json` | Go (`oid4vp.TestSharedTrustVectors`) or Kotlin (`SharedTrustVectorsTest`) disagreeing with a case's `expect`: IACA→DS profile, path length, expiry, algorithm policy. Regenerate with `tools/build_trust_vectors.py` | both unit suites |
+| `issuer/test_mint_custody.py` | a self-signed DSC; an unencrypted persisted issuer key outside `--test-mode` | `make test-py` |
+| `security.yml` | gitleaks over full history (and a seeded key it must flag), pip-audit, govulncheck, gosec outside `verifier/go/.gosec-baseline.json` | CI |
+| `app.yml` | `:app:lintRelease` security checks outside `app/lint-baseline.xml`; a `*Mock` class in release bytecode | CI |
+| `codeql.yml` | CodeQL `security-extended` alerts for Go, Python, Kotlin | CI |
+
 ## Unit tests beside the code
 
 ### `verifier/go/oid4vp/` — package oid4vp (Go, no Rust toolchain)

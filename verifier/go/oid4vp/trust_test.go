@@ -8,6 +8,11 @@ package oid4vp
 // which is the rule the store exists to enforce.
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -195,28 +200,57 @@ func TestTrustStoreRejectsBadHex(t *testing.T) {
 	}
 }
 
-// TestTrustStoreCapsIssuersPerDocType: a fifth key for one doctype is a load
-// error — every key runs a ~2.5s ZK verify before Select rejects it, so an
-// unbounded list stretches presentations toward the write timeout.
-func TestTrustStoreCapsIssuersPerDocType(t *testing.T) {
+// TestTrustStoreLoadsManyIssuersPerDocType: the load-time issuer cap is gone
+// (NEW-S2-3) — Select indexes by key id, so 50 keys for one doctype load and
+// each is selectable by coordinates and by key id.
+func TestTrustStoreLoadsManyIssuersPerDocType(t *testing.T) {
 	var entries []string
-	for i := 0; i < maxIssuersPerDocType+1; i++ {
+	for i := 0; i < 50; i++ {
 		x := "0x" + strings.Repeat(fmt.Sprintf("%02x", i+1), 32)
 		y := "0x" + strings.Repeat(fmt.Sprintf("%02x", 0x80+i), 32)
 		entries = append(entries, issuerJSON(fmt.Sprintf("iss-%d", i), "d", x, y))
 	}
-	_, err := LoadTrustStore(writeIssuers(t, `{"issuers":[`+strings.Join(entries, ",")+`]}`))
-	if err == nil {
-		t.Fatalf("LoadTrustStore accepted %d issuers for one doctype", maxIssuersPerDocType+1)
+	ts, err := LoadTrustStore(writeIssuers(t, `{"issuers":[`+strings.Join(entries, ",")+`]}`))
+	if err != nil {
+		t.Fatalf("LoadTrustStore with 50 issuers for one doctype: %v", err)
 	}
-	if !strings.Contains(err.Error(), "cap") {
-		t.Errorf("error %q does not name the cap", err)
+	if is, _ := ts.For("d"); len(is) != 50 {
+		t.Fatalf("For(d) = %d issuers, want 50", len(is))
 	}
+	x := "0x" + strings.Repeat("20", 32)
+	y := "0x" + strings.Repeat(fmt.Sprintf("%02x", 0x80+31), 32)
+	got, err := ts.Select("d", "0x"+strings.ToUpper(x[2:]), y)
+	if err != nil || got.Name != "iss-31" {
+		t.Fatalf("Select(iss-31) = %q, %v", got.Name, err)
+	}
+	if got, err := ts.SelectByKeyID("d", strings.ToUpper(got.KeyID())); err != nil || got.Name != "iss-31" {
+		t.Fatalf("SelectByKeyID(iss-31) = %q, %v", got.Name, err)
+	}
+	if _, err := ts.SelectByKeyID("d", strings.Repeat("0", 64)); err == nil {
+		t.Fatal("SelectByKeyID accepted an unknown key id")
+	}
+	if _, err := ts.SelectByKeyID("other", got.KeyID()); err == nil {
+		t.Fatal("SelectByKeyID crossed doctypes")
+	}
+}
 
-	// At the cap it still loads.
-	entries = entries[:maxIssuersPerDocType]
-	if _, err := LoadTrustStore(writeIssuers(t, `{"issuers":[`+strings.Join(entries, ",")+`]}`)); err != nil {
-		t.Fatalf("LoadTrustStore at the cap failed: %v", err)
+// TestKeyIDIsSPKIDigest pins KeyIDOf to SHA-256 of the stdlib's DER
+// SubjectPublicKeyInfo encoding of the same key.
+func TestKeyIDIsSPKIDigest(t *testing.T) {
+	k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	der, err := x509.MarshalPKIXPublicKey(&k.PublicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := sha256.Sum256(der)
+	pt, _ := k.PublicKey.ECDH()
+	b := pt.Bytes()
+	got, err := KeyIDOf("0x"+hex.EncodeToString(b[1:33]), "0x"+hex.EncodeToString(b[33:]))
+	if err != nil || got != hex.EncodeToString(want[:]) {
+		t.Fatalf("KeyIDOf = %q, %v; want %x", got, err, want)
 	}
 }
 
@@ -263,7 +297,7 @@ func writeSignedTrustStore(t *testing.T, k *jose.JWK, issuers []Issuer) string {
 // batteryIssuers is a minimal valid store: one issuer, well-formed keys.
 func batteryIssuers() []Issuer {
 	return []Issuer{{Name: "battery-issuer", DocType: "d", Namespace: "d",
-		PKx: "0x" + strings.Repeat("aa", 32), PKy: "0x" + strings.Repeat("bb", 32)}}
+		PKx: "0x" + strings.Repeat("aa", 32), PKy: "0x" + strings.Repeat("bb", 32), IACA: testIACA()}}
 }
 
 // TestSignedTrustStoreGoodSignatureLoads: the verified store behaves exactly
@@ -320,7 +354,7 @@ func TestSignedTrustStoreRemovedEntryFails(t *testing.T) {
 	k := signedKey(t)
 	full := batteryIssuers()
 	full = append(full, Issuer{Name: "battery-issuer-2", DocType: "d2", Namespace: "d2",
-		PKx: "0x" + strings.Repeat("cc", 32), PKy: "0x" + strings.Repeat("dd", 32)})
+		PKx: "0x" + strings.Repeat("cc", 32), PKy: "0x" + strings.Repeat("dd", 32), IACA: testIACA()})
 	prior, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, full), k, nil, time.Now, false)
 	if err != nil {
 		t.Fatalf("prior load: %v", err)

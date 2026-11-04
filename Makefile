@@ -1,4 +1,4 @@
-.PHONY: deps lint test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
+.PHONY: deps lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -41,10 +41,16 @@ test-go-fast:
 test-py:
 	python3 wallet/test_transcript.py
 	python3 issuer/test_mint_device_key.py
+	python3 issuer/test_mint_custody.py
 	python3 sandbox/test_age.py
 
 # CI's fast job: no Rust toolchain needed.
-check: lint test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
+check: lint pki-gates test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
+
+# PKI plan gates and their seeded failures (security.yml runs the same).
+pki-gates:
+	python3 tests/check_pki_gates.py
+	python3 -m unittest discover -s tests -p 'test_pki_gates.py'
 
 # Offline traceability validation and its malformed-input controls use stdlib only.
 test-av-registry:

@@ -85,6 +85,10 @@ type CheckedPresentation struct {
 	// carrier leaves them 0: its circuit identity is CircuitSpecID, resolved
 	// against the registry).
 	Version, NumAttributes uint32
+	// IssuerKID is the interim envelope's optional issuer_kid hint (empty on
+	// the CBOR carrier, which selects by MSOX5Chain). It may select among
+	// trusted issuers, never supply one.
+	IssuerKID string
 }
 
 // ErrNoZkDocument marks the legal empty answer on the CBOR carrier: the wallet
@@ -136,6 +140,7 @@ func (InterimJSON) Parse(raw []byte, q CredentialQuery) (*CheckedPresentation, e
 		TranscriptFlow: FlowRedirectB261,
 		Version:        p.Version,
 		NumAttributes:  p.NumAttributes,
+		IssuerKID:      p.IssuerKID,
 	}, nil
 }
 

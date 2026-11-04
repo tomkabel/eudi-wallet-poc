@@ -177,8 +177,6 @@
     <string name="settings_bluetooth_mode_title">Bluetooth Mode</string>
     <string name="settings_bluetooth_peripheral_mode">Peripheral Server</string>
     <string name="settings_bluetooth_central_mode">Central Client</string>
-    <string name="settings_trust_all_validator_title">Trust all validator</string>
-    <string name="settings_trust_all_validator_description">Skip certificate chain validation (for testing only)</string>
     <string name="settings_dc_api_disclosure_title">Share documents with requesting websites</string>
     <string name="settings_dc_api_disclosure_description">Let this device offer your documents to websites that request them. Turn off to stop offering documents through the device\'s request system.</string>
     <string name="settings_lotl_status_title">Trusted List Status</string>

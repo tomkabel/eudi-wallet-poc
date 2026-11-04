@@ -7,6 +7,7 @@ import ee.cyber.wallet.domain.credentials.Namespace
 import ee.cyber.wallet.domain.documents.mdoc.value
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.security.CertificateChainValidator
+import ee.cyber.wallet.security.ChainProfile
 import ee.cyber.wallet.ui.screens.documents.asCredentialAttribute
 import ee.cyber.wallet.ui.screens.documents.docType
 import eu.europa.ec.eudi.sdjwt.DefaultSdJwtOps
@@ -108,7 +109,7 @@ class CredentialToDocumentMapper(
             false
         }
         if (!signatureOk) return false
-        val chainOk = CertificateChainValidator.validateCertificateChain(chain, issuerAnchors)
+        val chainOk = CertificateChainValidator.validateCertificateChain(chain, issuerAnchors, profile = ChainProfile.MDOC_DS)
         if (!chainOk) logger.error("issuerAuth x5chain does not anchor at the configured IACA roots (docType=${docType.value})")
         return chainOk
     }

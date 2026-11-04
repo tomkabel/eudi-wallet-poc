@@ -22,6 +22,7 @@ package main
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/x509"
 	"embed"
 	"encoding/hex"
 	"encoding/json"
@@ -354,7 +355,7 @@ func (p *presenter) verifyZkDocument(s *oid4vp.Session, ext *oid4vp.ISOExtension
 	// so Now must be that value — d.Timestamp, already window-checked above —
 	// and never this session's ExpectedNow, which would fail every real
 	// device response.
-	err = zk.Verify(zk.Request{
+	err = zkVerify(zk.Request{
 		Version:       circuit.Version,
 		NumAttributes: circuit.NumAttributes,
 		PKx:           issuer.PKx,
@@ -400,5 +401,20 @@ func (p *presenter) selectIssuer(chains [][]byte, docType string) (oid4vp.Issuer
 	}
 	pkx := "0x" + hex.EncodeToString(marshalled.Bytes()[1:33])
 	pky := "0x" + hex.EncodeToString(marshalled.Bytes()[33:65])
-	return p.trust.Select(docType, pkx, pky)
+	issuer, err := p.trust.Select(docType, pkx, pky)
+	if err != nil {
+		return oid4vp.Issuer{}, err
+	}
+	// NEW-S2-1: the key pin says which issuer; the chain says the certificate
+	// carrying that key is a live document signer under the issuer's IACA.
+	iaca, err := issuer.IACACert()
+	if err != nil {
+		return oid4vp.Issuer{}, err
+	}
+	if iaca != nil {
+		if _, err := oid4vp.VerifyChain(chains[:1], []*x509.Certificate{iaca}, time.Now(), oid4vp.ProfileMdocDS); err != nil {
+			return oid4vp.Issuer{}, fmt.Errorf("document signer of %q: %w", issuer.Name, err)
+		}
+	}
+	return issuer, nil
 }

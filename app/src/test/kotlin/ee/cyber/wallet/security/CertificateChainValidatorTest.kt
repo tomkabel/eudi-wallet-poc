@@ -1,6 +1,5 @@
 package ee.cyber.wallet.security
 
-import ee.cyber.wallet.test.TestCryptoUtils.generateECKeyPair
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x509.BasicConstraints
 import org.bouncycastle.asn1.x509.Extension
@@ -26,21 +25,21 @@ import java.util.Date
  * real PKIX [CertificateChainValidator] with locally minted chains — no Android, no network.
  *
  * Notes on the environment this pins:
- *  - unit tests run with `isReturnDefaultValues = true`, so `BuildConfig.DEBUG` reads `false`
- *    here — exactly the production (non-debug) reading. The `setTrustAll(true)` case below
- *    therefore pins the FALSE path: the dev escape hatch must be inert outside debuggable
- *    builds whatever a stored preference says.
  *  - the validator is a process-wide singleton; `resetValidatorState()` in the setup returns
- *    the LOTL-union and trust-all fields to their defaults so tests are order-independent.
+ *    the LOTL union to its default so tests are order-independent.
  */
 class CertificateChainValidatorTest {
+
+    // P-256: the algorithm policy (NEW-S1-2) refuses P-521, which the shared test helper mints.
+    private fun generateECKeyPair(): KeyPair = java.security.KeyPairGenerator.getInstance("EC").apply {
+        initialize(java.security.spec.ECGenParameterSpec("secp256r1"))
+    }.generateKeyPair()
 
     private val now = System.currentTimeMillis()
 
     @Before
     fun resetValidatorState() {
         CertificateChainValidator.updateLOTLCertificates(emptyList())
-        CertificateChainValidator.setTrustAll(false)
     }
 
     // ---- local chain minting (custom validity periods; TestCertificateUtils' fixed 1h
@@ -73,7 +72,7 @@ class CertificateChainValidatorTest {
                 true,
                 if (isCa) KeyUsage(KeyUsage.keyCertSign or KeyUsage.cRLSign) else KeyUsage(KeyUsage.digitalSignature)
             )
-        }.build(JcaContentSignerBuilder("SHA512withECDSA").build(signerKey))
+        }.build(JcaContentSignerBuilder("SHA256withECDSA").build(signerKey))
         return JcaX509CertificateConverter().getCertificate(holder) to subjectKeyPair
     }
 
@@ -159,12 +158,31 @@ class CertificateChainValidatorTest {
     }
 
     @Test
-    fun `lotl anchors participate when the static anchor set is empty`() {
+    fun `lotl anchors participate in the RP domain when the static anchor set is empty`() {
         val lotlRoot = trustedRoot()
         val leaf = leafUnder(lotlRoot)
         CertificateChainValidator.updateLOTLCertificates(listOf(lotlRoot.first))
         assertTrue(
-            CertificateChainValidator.validateCertificateChain(listOf(leaf), emptyList())
+            CertificateChainValidator.validateCertificateChain(listOf(leaf), emptyList(), domain = TrustDomain.STATIC_AND_LOTL)
+        )
+    }
+
+    @Test
+    fun `lotl-only anchor cannot validate a reader certificate under static-only policy`() {
+        // PKI plan NEW-S2-2 (C5): LOTL anchors are RP-access CAs. Before the split they were
+        // unioned into every call site, so an RP-access CA could vouch for an issuer chain.
+        val lotlRoot = trustedRoot()
+        val readerLeaf = leafUnder(lotlRoot)
+        CertificateChainValidator.updateLOTLCertificates(listOf(lotlRoot.first))
+        val staticRoot = foreignRoot().first
+        assertFalse(
+            CertificateChainValidator.validateCertificateChain(listOf(readerLeaf), listOf(staticRoot))
+        )
+        assertFalse(
+            CertificateChainValidator.validateCertificateChain(listOf(readerLeaf), emptyList())
+        )
+        assertTrue(
+            CertificateChainValidator.validateCertificateChain(listOf(readerLeaf), listOf(staticRoot), domain = TrustDomain.STATIC_AND_LOTL)
         )
     }
 
@@ -174,33 +192,22 @@ class CertificateChainValidatorTest {
         val foreignLeaf = leafUnder(foreignRoot())
         CertificateChainValidator.updateLOTLCertificates(listOf(staticRoot.first))
         assertFalse(
-            CertificateChainValidator.validateCertificateChain(listOf(foreignLeaf), listOf(staticRoot.first))
+            CertificateChainValidator.validateCertificateChain(listOf(foreignLeaf), listOf(staticRoot.first), domain = TrustDomain.STATIC_AND_LOTL)
         )
     }
 
     @Test
-    fun `trustAll cannot mask a bad chain when the gate is closed`() {
-        // The dev escape hatch is hard-gated by `BuildConfig.DEBUG` inside setTrustAll()
-        // (validator.kt:61). The local/dLocal unit-test variant compiles BuildConfig.DEBUG =
-        // true (debug-type build), so the gate reads OPEN here and setTrustAll(true) DOES
-        // take effect — this test pins the other half of the contract: with the preference
-        // OFF (the @Before default), validation stays strict; and once toggled, setTrustAll
-        // (false) restores strictness. The gate itself (false && enabled) is a compile-time
-        // constant expression — the production reading — and is covered by review, not by
-        // this suite: unit tests cannot re-link a different BuildConfig constant.
-        CertificateChainValidator.setTrustAll(false)
-        val foreign = foreignRoot()
-        val leaf = leafUnder(foreign)
-        val staticRoot = trustedRoot().first
+    fun `validator has no trust-all switch in any build`() {
+        // PKI plan C0: a debug-only, preference-driven trust-all once skipped validation. It is
+        // removed rather than gated, so it is unreachable with BuildConfig.DEBUG true or false.
+        // This fails if any field or method named like it comes back.
+        val members = CertificateChainValidator::class.java.declaredFields.map { it.name } +
+            CertificateChainValidator::class.java.declaredMethods.map { it.name }
+        val offenders = members.filter { it.contains("trustall", ignoreCase = true) }
+        assertTrue("trust-all members found: $offenders", offenders.isEmpty())
+        val foreignLeaf = leafUnder(foreignRoot())
         assertFalse(
-            "trust-all preference OFF must validate strictly",
-            CertificateChainValidator.validateCertificateChain(listOf(leaf), listOf(staticRoot))
-        )
-        // Toggle on, then off: the stored preference alone must not leave the hatch open.
-        CertificateChainValidator.setTrustAll(true)
-        CertificateChainValidator.setTrustAll(false)
-        assertFalse(
-            CertificateChainValidator.validateCertificateChain(listOf(leaf), listOf(staticRoot))
+            CertificateChainValidator.validateCertificateChain(listOf(foreignLeaf), listOf(trustedRoot().first))
         )
     }
 
@@ -240,7 +247,7 @@ class CertificateChainValidatorTest {
             builder.addCRLEntry(revokedSerial, Date(now - MINUTES), org.bouncycastle.asn1.x509.CRLReason.keyCompromise)
         }
         builder.setNextUpdate(Date(now + HOURS))
-        val signer = JcaContentSignerBuilder("SHA512withECDSA").build(issuer.second.private)
+        val signer = JcaContentSignerBuilder("SHA256withECDSA").build(issuer.second.private)
         val crlHolder = builder.build(signer)
         crlFile.writeBytes(crlHolder.encoded)
     }
@@ -284,7 +291,7 @@ class CertificateChainValidatorTest {
                     )
                 )
             )
-        }.build(JcaContentSignerBuilder("SHA512withECDSA").build(issuer.second.private))
+        }.build(JcaContentSignerBuilder("SHA256withECDSA").build(issuer.second.private))
         return JcaX509CertificateConverter().getCertificate(holder)
     }
 

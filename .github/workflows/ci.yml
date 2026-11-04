@@ -168,6 +168,11 @@ jobs:
         # cryptography are installed by the step above.
         run: python3 issuer/test_mint_device_key.py
 
+      - name: the mint's IACA chain and key custody
+        # PKI plan NEW-S2-1 and NEW-S4-2: the DSC chains to the IACA in
+        # issuers.json; persisted keys are encrypted outside --test-mode.
+        run: python3 issuer/test_mint_custody.py
+
       - name: the sandbox's age reckoning
         # EE-POA-027: Europe/Tallinn, and 28 February for a 29 February birthday.
         run: python3 sandbox/test_age.py

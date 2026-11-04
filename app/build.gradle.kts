@@ -24,14 +24,8 @@ android {
     namespace = "ee.cyber.wallet"
     compileSdk = 35
 
-    androidComponents {
-        beforeVariants {
-            // Disable release build
-            if (it.buildType == "release") {
-                it.enable = false
-            }
-        }
-    }
+    // The release variant stays enabled so its code can be compiled and linted (mock-class gate,
+    // lint gate). Signing still needs the RELEASE_* properties, so assembleRelease fails without them.
     defaultConfig {
         applicationId = "ee.tomkabel.walletpoc"
         minSdk = 31
@@ -108,6 +102,26 @@ android {
             boolBuildConfig("DEV", true)
             boolBuildConfig("USE_MOCKS", true)
         }
+    }
+    // C11: mock services live in src/local_mocks only; every other build type gets the real
+    // bindings from src/real, so no *Mock class is compiled into release, debug or local.
+    sourceSets {
+        listOf("release", "debug", "local").forEach { getByName(it).kotlin.srcDir("src/real/kotlin") }
+    }
+    // C14: lint is a security gate. These checks fail the build; findings already in the tree are
+    // frozen in lint-baseline.xml, so only new ones fail. CI runs :app:lintRelease.
+    lint {
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
+        fatal += setOf(
+            "TrustAllX509TrustManager", "BadHostnameVerifier", "SSLCertificateSocketFactoryCreateSocket",
+            "SSLCertificateSocketFactoryGetInsecure", "AllowAllHostnameVerifier", "SetJavaScriptEnabled",
+            "AddJavascriptInterface", "HardcodedDebugMode", "PackagedPrivateKey", "SecureRandom", "TrulyRandom",
+            "UnsafeDynamicallyLoadedCode", "ExportedService", "ExportedReceiver", "ExportedContentProvider",
+            "GrantAllUris", "WorldReadableFiles", "WorldWriteableFiles", "UseCheckPermission",
+            "UnprotectedSMSBroadcastReceiver", "AllowBackup", "InsecureBaseConfiguration",
+            "UnsafeProtectedBroadcastReceiver"
+        )
     }
     kotlin {
         kotlinOptions {
@@ -493,3 +507,7 @@ fun readLocalProperties(): Properties =
             load(FileInputStream(file))
         }
     }
+
+// PKI plan NEW-S1-2: the certificate algorithm policy is one file, embedded by the Go verifier and
+// packaged here as the Java resource `algorithms.json`, so both engines refuse the same algorithms.
+android.sourceSets.getByName("main").resources.srcDir("../verifier/go/internal/algpolicy/policy")

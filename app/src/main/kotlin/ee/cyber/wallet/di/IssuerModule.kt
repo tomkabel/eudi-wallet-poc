@@ -6,23 +6,17 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.data.datastore.WalletInstanceCredentialsDataSource
 import ee.cyber.wallet.data.repository.WalletCredentialsRepository
 import ee.cyber.wallet.domain.credentials.CredentialIssuanceService
-import ee.cyber.wallet.domain.credentials.CredentialIssuanceServiceMock
-import ee.cyber.wallet.domain.credentials.RpcCredentialIssuanceService
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.provider.IssuePidUseCase
-import ee.cyber.wallet.domain.provider.ageverification.AgeVerificationProviderServiceMock
+import ee.cyber.wallet.domain.provider.MockIssuance
 import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
 import ee.cyber.wallet.domain.provider.ageverification.WalletProviderBatchAgeIssuer
-import ee.cyber.wallet.domain.provider.mdl.MdlProviderServiceMock
 import ee.cyber.wallet.domain.provider.pid.PidProviderService
-import ee.cyber.wallet.domain.provider.wallet.AvsuaVerifier
-import ee.cyber.wallet.domain.provider.wallet.WalletProviderServiceMock
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.security.SecureAreaBatchKeyManager
@@ -42,37 +36,17 @@ class IssuerModule {
         @ApplicationContext context: Context,
         userPreferencesDataSource: UserPreferencesDataSource,
         walletProviderService: WalletProviderService
-    ): CredentialIssuanceService {
-        return if (AppConfig.useMocks) {
-            CredentialIssuanceServiceMock(
-                context, dispatcher, userPreferencesDataSource,
-                // Explicit local demo trust: never infer trust from AVSUA token headers.
-                AvsuaVerifier({ (walletProviderService as? WalletProviderServiceMock)?.avsuaTrustKey() })
-            )
-        } else {
-            RpcCredentialIssuanceService(AppConfig.walletProviderRpcUrl, dispatcher)
-        }
-    }
+    ): CredentialIssuanceService =
+        VariantServices.credentialIssuanceService(context, dispatcher, userPreferencesDataSource, walletProviderService)
 
     @Singleton
     @Provides
-    fun providesMdlProviderServiceMock(
+    fun providesMockIssuance(
         @ApplicationContext
         context: Context,
         cryptoProviderFactory: CryptoProvider.Factory,
         credentialIssuanceService: CredentialIssuanceService
-    ): MdlProviderServiceMock {
-        return MdlProviderServiceMock(context, cryptoProviderFactory, credentialIssuanceService)
-    }
-
-    @Singleton
-    @Provides
-    fun providesAgeVerificationProviderServiceMock(
-        @ApplicationContext
-        context: Context
-    ): AgeVerificationProviderServiceMock {
-        return AgeVerificationProviderServiceMock(context)
-    }
+    ): MockIssuance = VariantServices.mockIssuance(context, cryptoProviderFactory, credentialIssuanceService)
 
     /**
      * The EE-POA-003 batch transaction's key/mint plumbing: SecureArea batch keys attested by

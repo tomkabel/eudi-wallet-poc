@@ -542,21 +542,47 @@ func interimOfChecked(cp *oid4vp.CheckedPresentation, carrier oid4vp.Carrier) (*
 		AttrID:        cp.AttrID,
 		AttrCBORHex:   "f5",
 		ProofB64:      base64.RawStdEncoding.EncodeToString(cp.Proof),
+		IssuerKID:     cp.IssuerKID,
 	}, cp.Proof, nil
 }
 
+// zkVerify is zk.Verify; a variable only so tests can count FFI calls.
+var zkVerify = zk.Verify
+
+// maxPlainIssuerScan bounds how many trusted issuers the plain path tries when
+// the envelope carries no issuer_kid. Each try is a ~2.5s ZK verification, so
+// 4 keys ≈ 10s worst case against the 60s WriteTimeout. A doctype with more
+// keys is refused unless the holder names its issuer by issuer_kid.
+const maxPlainIssuerScan = 4
+
 // verifyPlain runs the plain-path verification on a parsed interim envelope:
-// trust store, circuit allowlist, transcript, zk.Verify over every trusted
-// issuer for the doctype.
+// trust store, circuit allowlist, transcript, then zk.Verify once against the
+// issuer named by issuer_kid — or, without the hint, against each trusted
+// issuer for the doctype, up to maxPlainIssuerScan of them.
 func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, proof []byte) (bool, string, int) {
 	if s.ExpectedNow == "" {
 		return false, "session has no expected_now", http.StatusInternalServerError
 	}
 
-	// The issuer key comes from the trust store, never from the presentation.
-	issuers, err := p.trust.For(pres.DocType)
-	if err != nil {
-		return false, err.Error(), http.StatusForbidden
+	// The issuer key comes from the trust store, never from the presentation;
+	// issuer_kid can only pick one of the store's keys.
+	var issuers []oid4vp.Issuer
+	if pres.IssuerKID != "" {
+		is, err := p.trust.SelectByKeyID(pres.DocType, pres.IssuerKID)
+		if err != nil {
+			return false, err.Error(), http.StatusForbidden
+		}
+		issuers = []oid4vp.Issuer{is}
+	} else {
+		var err error
+		issuers, err = p.trust.For(pres.DocType)
+		if err != nil {
+			return false, err.Error(), http.StatusForbidden
+		}
+		if len(issuers) > maxPlainIssuerScan {
+			return false, fmt.Sprintf("doctype %q has %d trusted issuers, more than the %d this verifier tries without a hint; send issuer_kid (hex SHA-256 of the issuer key's DER SubjectPublicKeyInfo)",
+				pres.DocType, len(issuers), maxPlainIssuerScan), http.StatusBadRequest
+		}
 	}
 	// EE-ZKP-023: circuit allowlist first — it is ~200x cheaper than verifying.
 	if hash, err := zk.CheckCircuit(p.registry, pres.Version, pres.NumAttributes); err != nil {
@@ -577,7 +603,7 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 	// Any trusted issuer for this doctype may have issued it.
 	var lastErr error
 	for _, is := range issuers {
-		err := zk.Verify(zk.Request{
+		err := zkVerify(zk.Request{
 			Version: pres.Version, NumAttributes: pres.NumAttributes,
 			PKx: is.PKx, PKy: is.PKy,
 			DocType: pres.DocType, Namespace: pres.Namespace,
@@ -602,8 +628,8 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 // carrying zkDocuments, the proof binds the B.2.6.1 OpenID4VPHandover
 // transcript this session's request was issued under, and the circuit
 // allowlist is resolved here from the session's own (verifier-built)
-// zk_system_type. The caller must hold a verification slot: this may call
-// zk.Verify once per trusted issuer for the doctype.
+// zk_system_type. The caller must hold a verification slot: this calls
+// zk.Verify at most once, against the issuer msoX5chain selects.
 //
 // Rule order mirrors the ISO path: the advertised-circuit allowlist (EE-ZKP-023,
 // before any FFI work), then the per-zkDocument rules, then zk.Verify.
@@ -690,7 +716,7 @@ func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.Credential
 		return false, "verifier configuration error", http.StatusInternalServerError
 	}
 
-	err = zk.Verify(zk.Request{
+	err = zkVerify(zk.Request{
 		Version:       circuit.Version,
 		NumAttributes: circuit.NumAttributes,
 		PKx:           issuer.PKx,

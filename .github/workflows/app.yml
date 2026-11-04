@@ -11,6 +11,8 @@ on:
       - 'gradle.properties'
       - 'zk-conformance/**'
       - 'tests/test_av_vci_android.py'
+      - 'tests/vectors/trust/**'
+      - 'verifier/go/internal/algpolicy/policy/**'
       - '.github/workflows/app.yml'
   pull_request:
     paths:
@@ -20,6 +22,8 @@ on:
       - 'gradle.properties'
       - 'zk-conformance/**'
       - 'tests/test_av_vci_android.py'
+      - 'tests/vectors/trust/**'
+      - 'verifier/go/internal/algpolicy/policy/**'
       - '.github/workflows/app.yml'
 
 concurrency:
@@ -49,7 +53,21 @@ jobs:
       - name: ZK conformance (byte-identical fixtures)
         run: ./gradlew :zk-conformance:test
       - name: Unit tests (local_mocks)
+        # Includes SharedTrustVectorsTest: the differential half of the Go
+        # verifier's TestSharedTrustVectors (PKI plan NEW-S2-4).
         run: ./gradlew :app:testLocal_mocksUnitTest
+      - name: Lint security gate (release; new findings only)
+        # PKI plan NEW-S1-1: security checks are fatal; app/lint-baseline.xml
+        # freezes what was in the tree when the gate landed.
+        run: ./gradlew :app:lintRelease
+      - name: No mock class in the release build (PKI plan NEW-S1-4)
+        run: |
+          ./gradlew :app:compileReleaseKotlin :app:compileReleaseJavaWithJavac
+          test -d app/build/tmp/kotlin-classes/release
+          if find app/build/tmp/kotlin-classes/release app/build/intermediates/javac/release \
+               \( -name '*Mock.class' -o -name '*Mock$*.class' \) 2>/dev/null | grep .; then
+            echo "::error::mock classes compiled into release"; exit 1
+          fi
 
   invocation-surface:
     runs-on: ubuntu-latest

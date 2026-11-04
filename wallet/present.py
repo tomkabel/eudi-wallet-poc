@@ -53,6 +53,20 @@ def session_transcript(client_id: str, nonce: str, jwk_thumbprint, response_uri:
     return cbor2.dumps([None, None, ["OpenID4VPHandover", digest]], canonical=True)
 
 
+P256_SPKI_PREFIX = bytes.fromhex("3059301306072a8648ce3d020106082a8648ce3d030107034200")
+
+
+def issuer_kid(pkx: str, pky: str) -> str:
+    """Hex SHA-256 of the issuer key's DER SubjectPublicKeyInfo.
+
+    The interim envelope's issuer_kid hint; must match KeyIDOf in
+    verifier/go/oid4vp/trust.go. It only selects among the verifier's trusted
+    keys, so the verifier runs one ZK verification instead of one per issuer.
+    """
+    point = b"\x04" + bytes.fromhex(pkx.removeprefix("0x")) + bytes.fromhex(pky.removeprefix("0x"))
+    return hashlib.sha256(P256_SPKI_PREFIX + point).hexdigest()
+
+
 def resign_device_auth(mdoc: bytes, device_key, transcript: bytes, doc_type: str) -> bytes:
     """Replace deviceSignature so it covers this session's transcript."""
     doc = cbor2.loads(mdoc)
@@ -300,6 +314,7 @@ def main() -> None:
                 "attr_id": element,
                 "attr_cbor_hex": request_json["attr_cbor_hex"],
                 "proof_b64": base64.b64encode(proof).decode(),
+                "issuer_kid": issuer_kid(params[0], params[1]),
             },
         })
 

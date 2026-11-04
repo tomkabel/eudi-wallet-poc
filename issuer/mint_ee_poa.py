@@ -27,7 +27,7 @@ batch would make its attestations linkable, which EE-POA-010 forbids.
 Output (default ./out, or ./out/000 .. ./out/NNN with --batch):
   mdoc.bin        DeviceResponse, CBOR
   transcript.bin  SessionTranscript, CBOR
-  issuer_dsc.pem  self-signed document signer certificate
+  issuer_dsc.pem  document signer certificate, issued by the run's IACA
   device_key.pem  the holder's device key, for re-signing at presentation time
                   (with --device-public-key: device_public_key.pem instead —
                   the public half the attestation binds; the mint never sees
@@ -36,9 +36,15 @@ Output (default ./out, or ./out/000 .. ./out/NNN with --batch):
   params.txt      the same four values the prover needs, one per line
 
 and, once per run, out/issuers.json — the trust-store entry a verifier needs in
-order to accept attestations from this issuer.
+order to accept attestations from this issuer: the DS key it pins and the IACA
+root the DS certificate must chain to (PKI plan NEW-S2-1).
+
+Key custody (PKI plan NEW-S4-2): --issuer-key and --iaca-key persist keys on
+disk, which only a test issuer may do. Outside --test-mode a persisted key must
+be an encrypted PKCS#8 PEM, its passphrase in EE_MINT_KEY_PASSPHRASE. Without
+either option the keys live only in this process.
 """
-import argparse, datetime as dt, hashlib, json, os, re, secrets
+import argparse, base64, datetime as dt, hashlib, json, os, re, secrets
 import cbor2
 from cryptography import x509
 from cryptography.x509.oid import NameOID
@@ -173,16 +179,44 @@ def load_device_public_key(text: str) -> ec.EllipticCurvePublicKey:
     return key
 
 
-def self_signed_dsc(key: ec.EllipticCurvePrivateKey, now: dt.datetime) -> x509.Certificate:
+IACA_NAME = x509.Name([
+    x509.NameAttribute(NameOID.COUNTRY_NAME, "EE"),
+    x509.NameAttribute(NameOID.ORGANIZATION_NAME, "EE-EUDIW demo issuer"),
+    x509.NameAttribute(NameOID.COMMON_NAME, "EE-PoA IACA (TEST)"),
+])
+MDL_DS_EKU = x509.ObjectIdentifier("1.0.18013.5.1.2")   # ISO/IEC 18013-5 id-mdl-kp-mdlDS
+
+
+def _key_usage(**on) -> x509.KeyUsage:
+    flags = dict(digital_signature=False, content_commitment=False, key_encipherment=False,
+                 data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                 crl_sign=False, encipher_only=False, decipher_only=False)
+    return x509.KeyUsage(**{**flags, **on})
+
+
+def iaca_certificate(key: ec.EllipticCurvePrivateKey, now: dt.datetime) -> x509.Certificate:
+    """The demo issuer's IACA root: CA, pathLen 0, keyCertSign and cRLSign.
+    A persisted IACA key yields the same subject and key identifier every run,
+    so DS certificates from later runs still chain to an earlier root."""
+    return (x509.CertificateBuilder()
+            .subject_name(IACA_NAME).issuer_name(IACA_NAME)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - dt.timedelta(days=1))
+            .not_valid_after(now + dt.timedelta(days=3 * 365))
+            .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
+            .add_extension(_key_usage(key_cert_sign=True, crl_sign=True), critical=True)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+            .sign(key, hashes.SHA256()))
+
+
+def document_signer(key: ec.EllipticCurvePrivateKey, iaca_key: ec.EllipticCurvePrivateKey,
+                    now: dt.datetime) -> x509.Certificate:
     """
-    Create a self-signed document-signer certificate for the EE-PoA demo issuer.
-    
-    Parameters:
-        key: Private P-256 key used as the certificate's public key source and to sign it.
-        now: Reference time for the certificate validity period.
-    
-    Returns:
-        A certificate valid from one day before `now` through 90 days after `now`.
+    Create the EE-PoA document signer certificate, issued by the IACA.
+
+    ISO/IEC 18013-5 DS profile: not a CA, keyUsage digitalSignature, EKU
+    id-mdl-kp-mdlDS. Valid from one day before `now` through 90 days after.
     """
     name = x509.Name([
         x509.NameAttribute(NameOID.COUNTRY_NAME, "EE"),
@@ -190,18 +224,50 @@ def self_signed_dsc(key: ec.EllipticCurvePrivateKey, now: dt.datetime) -> x509.C
         x509.NameAttribute(NameOID.COMMON_NAME, "EE-PoA Document Signer (TEST)"),
     ])
     return (x509.CertificateBuilder()
-            .subject_name(name).issuer_name(name)
+            .subject_name(name).issuer_name(IACA_NAME)
             .public_key(key.public_key())
             .serial_number(x509.random_serial_number())
             .not_valid_before(now - dt.timedelta(days=1))
             .not_valid_after(now + dt.timedelta(days=90))
             .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-            .add_extension(x509.KeyUsage(digital_signature=True, content_commitment=False,
-                                         key_encipherment=False, data_encipherment=False,
-                                         key_agreement=False, key_cert_sign=False,
-                                         crl_sign=False, encipher_only=False, decipher_only=False),
-                           critical=True)
-            .sign(key, hashes.SHA256()))
+            .add_extension(_key_usage(digital_signature=True), critical=True)
+            .add_extension(x509.ExtendedKeyUsage([MDL_DS_EKU]), critical=True)
+            .add_extension(x509.SubjectKeyIdentifier.from_public_key(key.public_key()), critical=False)
+            .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(iaca_key.public_key()),
+                           critical=False)
+            .sign(iaca_key, hashes.SHA256()))
+
+
+def load_or_create_key(path, test_mode: bool, what: str) -> ec.EllipticCurvePrivateKey:
+    """A P-256 key from path, created there when missing; a fresh in-process key
+    when path is None. Persisted keys are encrypted unless test_mode (NEW-S4-2)."""
+    if not path:
+        return ec.generate_private_key(ec.SECP256R1())
+    passphrase = os.environ.get("EE_MINT_KEY_PASSPHRASE", "").encode() or None
+    if not test_mode and passphrase is None:
+        raise SystemExit(f"--{what}: a persisted key needs EE_MINT_KEY_PASSPHRASE "
+                         "(or --test-mode for a throwaway test issuer)")
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            pem = f.read()
+        encrypted = b"ENCRYPTED" in pem
+        if not encrypted and not test_mode:
+            raise SystemExit(f"--{what}: {path} is an unencrypted private key; outside --test-mode "
+                             "the mint only loads encrypted PKCS#8")
+        try:
+            key = serialization.load_pem_private_key(pem, password=passphrase if encrypted else None)
+        except (TypeError, ValueError) as exc:
+            raise SystemExit(f"--{what}: cannot load {path}: {exc}") from exc
+        if not isinstance(key, ec.EllipticCurvePrivateKey) or key.curve.name != "secp256r1":
+            raise SystemExit(f"--{what} must hold a P-256 private key")
+        return key
+    key = ec.generate_private_key(ec.SECP256R1())
+    enc = (serialization.BestAvailableEncryption(passphrase) if passphrase
+           else serialization.NoEncryption())
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        f.write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, enc))
+    return key
 
 
 def build_transcript() -> bytes:
@@ -253,6 +319,11 @@ def main() -> None:
                     help="sign with this issuer key (PKCS#8 PEM) so separate runs share one "
                          "trust-store entry; generated and written there when the file is "
                          "missing (default: a fresh key per run)")
+    ap.add_argument("--iaca-key", metavar="PEM",
+                    help="the IACA root key, same semantics as --issuer-key; pass both so "
+                         "separate runs share one trust-store entry")
+    ap.add_argument("--test-mode", action="store_true",
+                    help="this is a throwaway test issuer: allow unencrypted persisted keys")
     args = ap.parse_args()
 
     if args.batch < 1:
@@ -280,20 +351,13 @@ def main() -> None:
     now = dt.datetime.now(dt.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     valid_until = now + dt.timedelta(days=args.validity_days)
 
-    if args.issuer_key and os.path.exists(args.issuer_key):
-        with open(args.issuer_key, "rb") as f:
-            issuer_key = serialization.load_pem_private_key(f.read(), password=None)
-        if not isinstance(issuer_key, ec.EllipticCurvePrivateKey) or issuer_key.curve.name != "secp256r1":
-            ap.error("--issuer-key must hold a P-256 private key")
-    else:
-        issuer_key = ec.generate_private_key(ec.SECP256R1())
-        if args.issuer_key:
-            fd = os.open(args.issuer_key, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            with os.fdopen(fd, "wb") as f:
-                f.write(issuer_key.private_bytes(serialization.Encoding.PEM,
-                                                 serialization.PrivateFormat.PKCS8,
-                                                 serialization.NoEncryption()))
-    dsc = self_signed_dsc(issuer_key, now)
+    if bool(args.issuer_key) != bool(args.iaca_key):
+        ap.error("--issuer-key and --iaca-key go together: a persisted DS key under a "
+                 "fresh IACA would not chain to the trust store an earlier run wrote")
+    issuer_key = load_or_create_key(args.issuer_key, args.test_mode, "issuer-key")
+    iaca_key = load_or_create_key(args.iaca_key, args.test_mode, "iaca-key")
+    iaca = iaca_certificate(iaca_key, now)
+    dsc = document_signer(issuer_key, iaca_key, now)
     dsc_der = dsc.public_bytes(serialization.Encoding.DER)
 
     elements = ([(f"age_over_{n}", True) for n in sorted(args.over)] +
@@ -397,8 +461,10 @@ def main() -> None:
     # this doctype. The verifier takes issuer keys from here, never from a
     # presentation (EE-GOV-010).
     os.makedirs(args.out, exist_ok=True)
+    iaca_b64 = base64.b64encode(iaca.public_bytes(serialization.Encoding.DER)).decode()
     json.dump({"issuers": [{"name": "EE-EUDIW demo issuer", "doc_type": DOCTYPE,
-                            "namespace": NAMESPACE, "pkx": pkx, "pky": pky}]},
+                            "namespace": NAMESPACE, "pkx": pkx, "pky": pky,
+                            "iaca": iaca_b64}]},
               open(os.path.join(args.out, "issuers.json"), "w"), indent=2)
 
     sigs, validity_bytes = set(), set()

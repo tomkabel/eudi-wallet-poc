@@ -1,6 +1,5 @@
 package ee.cyber.wallet.security
 
-import ee.cyber.wallet.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,11 +10,13 @@ import java.security.cert.CertPathValidator
 import java.security.cert.CertStore
 import java.security.cert.CollectionCertStoreParameters
 import java.security.cert.PKIXBuilderParameters
+import java.security.cert.PKIXCertPathBuilderResult
 import java.security.cert.TrustAnchor
 import java.security.cert.X509CRL
 import java.security.cert.X509CertSelector
 import java.security.cert.X509Certificate
 import java.security.cert.CertificateFactory
+import java.util.Date
 
 /**
  * Represents the current state of LOTL certificates.
@@ -25,24 +26,22 @@ data class LotlStatus(
     val certificateCount: Int = 0
 )
 
+/** Certificate profile a chain is validated against (PKI plan NEW-S2-1). */
+enum class ChainProfile { GENERIC, MDOC_DS }
+
 /**
- * Validates an X.509 certificate chain.
- *
- * @param certificateChain The certificate chain with the leaf certificate as the first element.
- * @param lotlCertificates A list of trusted root certificates (must not be empty).
- * @param enableRevocationCheck Flag to enable or disable certificate revocation checking.
- * @return `true` if the certificate chain is valid, `false` otherwise.
- * @throws IllegalArgumentException if certificateChain or trustedRootCertificates is empty.
+ * Which anchors a call site may use (PKI plan NEW-S2-2). LOTL anchors are synced for the
+ * relying-party access service type only, so only RP authentication may use them.
  */
+enum class TrustDomain { STATIC, STATIC_AND_LOTL }
+
+/** Validates X.509 certificate chains; see [validateCertificateChain]. */
 object CertificateChainValidator {
 
     private val logger = LoggerFactory.getLogger(CertificateChainValidator::class.java)
 
     @Volatile
     private var lotlCertificates: List<X509Certificate> = emptyList()
-
-    @Volatile
-    private var trustAll: Boolean = false
 
     private val _lotlStatus = MutableStateFlow(LotlStatus())
 
@@ -60,12 +59,6 @@ object CertificateChainValidator {
         logger.info("Updated trusted root certificates with ${certificates.size} certificates")
     }
 
-    /** Development aid; ignored outside debuggable builds, whatever the stored preference says. */
-    fun setTrustAll(enabled: Boolean) {
-        trustAll = enabled && BuildConfig.DEBUG
-        logger.info("Trust all validator mode: $enabled")
-    }
-
     /**
      * Returns the number of LOTL certificates currently loaded.
      */
@@ -77,63 +70,56 @@ object CertificateChainValidator {
     fun isLOTLSynced(): Boolean = lotlCertificates.isNotEmpty()
 
     /**
-     * Centralized revocation-policy entry point (B4, codesec CS-M5 step 1; E4, CS-M5 step 2):
-     * both production call sites validate through this overload so the revocation decision is
-     * made — and logged — in exactly one place, and any flip is inherently simultaneous (the
-     * invariant "both call sites flip together, never one alone" is structural here).
+     * The one trust decision for every X.509 chain the wallet accepts.
      *
-     * E4 policy decision (verified against the live infrastructure, 2026-09):
-     *  - the ONLY CRL distribution point on the in-tree issuer chains points at the
-     *    eudi-qeaa-issuer-poc dev branch's iaca.crl, whose nextUpdate expired 2025-05-20 —
-     *    a hard-fail flip against it would refuse EVERY chain in every path today;
-     *  - revocation is therefore wired but SOFT-FAIL: CRLs reachable from each chain's
-     *    distribution points are fetched into the CertStore, an OCSP/CRL PKIXRevocationChecker
-     *    runs with SOFT_FAIL, and a revoked certificate is still refused outright — soft-fail
-     *    covers only the *availability* failures (expired/unreachable CRL), which log loudly;
-     *  - the hard flip (NO_FALLBACK, expired-CRL = refuse) is a one-line change here once the
-     *    DP serves a live CRL — and because both call sites route through this overload, the
-     *    flip cannot land asymmetrically.
+     * - [profile]: [ChainProfile.MDOC_DS] adds the ISO/IEC 18013-5 document signer rules
+     *   (PKI plan NEW-S2-1); [ChainProfile.GENERIC] is RFC 5280 path validation.
+     * - [domain]: LOTL-derived anchors are relying-party access CAs, so only
+     *   [TrustDomain.STATIC_AND_LOTL] call sites (OpenID4VP client and reader authentication)
+     *   may use them. Issuer chains stay on their static anchors (NEW-S2-2).
+     * - Every supplied certificate must meet the shared algorithm policy (NEW-S1-2).
+     * - [at] fixes the validation instant for the shared trust vectors; null means now.
+     *
+     * Revocation (E4) is soft-fail on availability: a verified CRL that names a chain
+     * certificate refuses the chain; an expired, unreachable or unverifiable CRL is logged and
+     * does not. The in-tree dev CRL's nextUpdate passed on 2025-05-20, so hard-fail would refuse
+     * every chain today. Tightening this is decision D1 of docs/planning/PKI-REMEDIATION-PLAN.md.
      */
     fun validateCertificateChain(
         certificateChain: List<X509Certificate>,
-        trustedRootCertificates: List<X509Certificate>
-    ): Boolean {
-        logger.debug("Certificate chain validation: revocation=soft-fail (CRL DP fetch; availability failures logged, revoked certs refused)")
-        return validateCertificateChain(certificateChain, trustedRootCertificates, true)
-    }
-
-    fun validateCertificateChain(
-        certificateChain: List<X509Certificate>,
         trustedRootCertificates: List<X509Certificate>,
-        enableRevocationCheck: Boolean = true
+        enableRevocationCheck: Boolean = true,
+        profile: ChainProfile = ChainProfile.GENERIC,
+        domain: TrustDomain = TrustDomain.STATIC,
+        at: Date? = null
     ): Boolean {
         return runCatching {
-            if (trustAll) {
-                logger.warn("### Trust all validator mode is enabled - skipping certificate chain validation ###")
-                if (certificateChain.isNotEmpty()) {
-                    val cert = certificateChain.first()
-                    logger.warn(
-                        "Trusting certificate - Subject: ${cert.subjectX500Principal}, Issuer: ${cert.issuerX500Principal}, " +
-                            "Serial: ${cert.serialNumber}, NotBefore: ${cert.notBefore}, NotAfter: ${cert.notAfter}"
-                    )
-                }
-                return true
-            }
             require(certificateChain.isNotEmpty()) { "Certificate chain cannot be empty" }
-            val allTrustAnchors = buildList {
-                addAll(trustedRootCertificates)
-                if (lotlCertificates.isNotEmpty()) {
-                    addAll(lotlCertificates)
-                }
-            }
+            val lotl = if (domain == TrustDomain.STATIC_AND_LOTL) lotlCertificates else emptyList()
+            val allTrustAnchors = trustedRootCertificates + lotl
 
             require(allTrustAnchors.isNotEmpty()) {
-                "At least one trusted root certificate is required (static or LOTL)"
+                "At least one trusted root certificate is required (static, or LOTL where the domain allows it)"
+            }
+            certificateChain.firstNotNullOfOrNull { cert ->
+                AlgorithmPolicy.violation(cert)?.let { "${cert.subjectX500Principal}: $it" }
+            }?.let { reason ->
+                logger.warn("Algorithm policy refuses the chain: {}", reason)
+                return false
+            }
+            if (profile == ChainProfile.MDOC_DS) {
+                mdocDsViolation(certificateChain.first())?.let { reason ->
+                    logger.warn("Document signer profile refuses the chain: {}", reason)
+                    return false
+                }
             }
 
             logger.debug(
-                "Validating certificate chain with ${trustedRootCertificates.size} static + " +
-                    "${lotlCertificates.size} LOTL trust anchors"
+                "Validating certificate chain ({}, {}) with {} static + {} LOTL trust anchors",
+                profile,
+                domain,
+                trustedRootCertificates.size,
+                lotl.size
             )
 
             val pkixParams = PKIXBuilderParameters(
@@ -141,6 +127,7 @@ object CertificateChainValidator {
                 X509CertSelector().apply { certificate = certificateChain.first() }
             ).apply {
                 isRevocationEnabled = false
+                at?.let { date = it }
                 addCertStore(
                     CertStore.getInstance(
                         "Collection",
@@ -151,16 +138,13 @@ object CertificateChainValidator {
                     // E4: revocation runs as an EXPLICIT post-build check, not via a
                     // PKIXRevocationChecker wired into PKIXBuilderParameters — empirically
                     // (verified in the E1 test battery) SunCertPathBuilder cannot integrate
-                    // an external revocation checker: path building itself fails with
-                    // "unable to find valid certification path" even when the checker
-                    // should soft-fail. The policy below is the SOFT_FAIL semantic made
-                    // explicit and testable:
+                    // an external revocation checker. The policy below is the SOFT_FAIL
+                    // semantic made explicit and testable:
                     //  - a fetched, signature-verified CRL that NAMES a chain certificate
                     //    refuses the chain outright (revoked = refuse, always);
                     //  - a CRL that cannot be fetched, is expired, or fails signature
                     //    verification is an AVAILABILITY failure: logged loudly, never
-                    //    treated as proof of revocation (an attacker who can serve
-                    //    garbage CRLs must not gain a denial-of-service).
+                    //    treated as proof of revocation.
                     val crls = fetchCrlsFor(certificateChain)
                     val trusted = crls.filter { crl -> crlSignatureVerifiable(crl, certificateChain, allTrustAnchors) }
                     val revoked = trusted.any { crl ->
@@ -175,12 +159,33 @@ object CertificateChainValidator {
                     logger.debug("Revocation check: {} verified CRL(s), no revocations; availability failures (if any) were logged by the fetcher", trusted.size)
                 }
             }
-            CertPathBuilder.getInstance("PKIX").build(pkixParams)
+            val built = CertPathBuilder.getInstance("PKIX").build(pkixParams) as PKIXCertPathBuilderResult
+            // RFC 5280 treats an anchor as a bare name and key, so the JDK ignores the anchor
+            // certificate's own pathLenConstraint. An IACA with pathLen 0 must still forbid a
+            // sub-CA (ISO/IEC 18013-5); Go's x509 enforces it, and the shared vectors caught
+            // the difference (pathlen_violated).
+            val anchorPathLen = built.trustAnchor.trustedCert?.basicConstraints ?: -1
+            val intermediates = built.certPath.certificates.size - 1
+            if (anchorPathLen in 0 until intermediates) {
+                logger.warn("Anchor pathLenConstraint {} forbids {} intermediate CA(s) — refusing", anchorPathLen, intermediates)
+                return false
+            }
             true
         }.onFailure {
             logger.error("Failed to validate certificate chain", it)
         }.getOrDefault(false)
     }
+
+    /** ISO/IEC 18013-5 document signer rules: not a CA, digitalSignature, the mdlDS EKU. */
+    private fun mdocDsViolation(leaf: X509Certificate): String? = when {
+        leaf.basicConstraints != -1 -> "${leaf.subjectX500Principal} is marked CA"
+        leaf.keyUsage?.getOrNull(0) != true -> "${leaf.subjectX500Principal} lacks keyUsage digitalSignature"
+        leaf.extendedKeyUsage?.contains(OID_MDL_DS) != true -> "${leaf.subjectX500Principal} lacks the mdlDS EKU $OID_MDL_DS"
+        else -> null
+    }
+
+    /** id-mdl-kp-mdlDS, ISO/IEC 18013-5. */
+    private const val OID_MDL_DS = "1.0.18013.5.1.2"
 
     /**
      * E4: fetch CRLs for every chain certificate that advertises CRL distribution points.

@@ -18,6 +18,7 @@ import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.HaipResponsePolicy
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.security.CertificateChainValidator
+import ee.cyber.wallet.security.TrustDomain
 import ee.cyber.wallet.security.FetchLOTLCertificatesDSS
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.util.JsonSupport
@@ -141,12 +142,9 @@ object OpenId4VPAndVCModule {
 //    )
 
     private fun simpleCertificateChainValidator(trustAnchors: List<X509Certificate>) = X509CertificateTrust {
-        // B4: both production call sites route through the centralized overload with
-        // the revocation policy logged at a single place. Revocation stays OFF until
-        // E4 lands a CRL source (both call sites then flip together, never one).
-        // Policy log (CS-M5 step 1): revocation=disabled — no CRL distribution source
-        // wired yet; see CertificateChainValidator.validateCertificateChain javadoc.
-        CertificateChainValidator.validateCertificateChain(it, trustAnchors)
+        // Verifier (RP) authentication: the one place, with reader auth, where LOTL-derived
+        // RP-access anchors apply (PKI plan NEW-S2-2).
+        CertificateChainValidator.validateCertificateChain(it, trustAnchors, domain = TrustDomain.STATIC_AND_LOTL)
     }
 
     private val httpLogger = LoggerFactory.getLogger("HTTP")

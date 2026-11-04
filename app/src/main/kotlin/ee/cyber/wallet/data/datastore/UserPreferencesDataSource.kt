@@ -56,14 +56,6 @@ class UserPreferencesDataSource(
         }
     }.onFailure { if (it is CancellationException) throw it }
 
-    suspend fun setTrustAllValidator(trustAll: Boolean) = runCatching {
-        dataStore.updateData {
-            it.copy {
-                this.trustAllValidator = trustAll
-            }
-        }
-    }.onFailure { if (it is CancellationException) throw it }
-
     /**
      * ARF OIA_08f: the global user setting to disable the disclosure of stored attestations to
      * the Digital Credentials API framework. Default is enabled (OIA_08e's "by default").
@@ -91,7 +83,6 @@ class UserPreferencesDataSource(
                 IssuerKeyTypeProto.ISSUER_KEY_TYPE_UNTRUSTED -> IssuerKeyType.UNTRUSTED
                 else -> IssuerKeyType.IACA_TRUSTED
             },
-            trustAllValidator = trustAllValidator,
             // The proto stores "disabled", so an unset field reads as OIA_08e's default-on.
             dcApiDisclosureEnabled = !dcApiDisclosureDisabled
         )

@@ -370,8 +370,9 @@ func main() {
 	trustRootFile := flag.String("trust-root", "",
 		"PEM file holding the EC P-256 key that signs the trust store (B3); "+
 			"empty disables signature verification (development)")
-	ignoreTrustFreshness := flag.Bool("ignore-trust-freshness", false,
-		"skip the signed trust store's not_before/not_after windows (development)")
+	// Registered only in `-tags devflags` builds (devflags_on.go); a release
+	// binary rejects the flag as undefined and exits 2.
+	ignoreTrustFreshness := ignoreTrustFreshnessFlag()
 	baseURL := flag.String("base-url", "http://127.0.0.1:8080", "externally reachable base URL")
 	clientID := flag.String("client-id", "x509_san_dns:verifier.example.ee", "OpenID4VP client identifier")
 	docType := flag.String("doctype", "ee.riik.poa.1", "doctype to request")

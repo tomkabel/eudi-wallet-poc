@@ -22,7 +22,6 @@ import javax.inject.Inject
 data class UiState(
     val language: LanguageResource,
     val blePeripheralMode: Boolean = true,
-    val trustAllValidator: Boolean = false,
     // ARF OIA_08f: the global DC API disclosure switch, shown in Settings.
     val dcApiDisclosureEnabled: Boolean = true,
     val lotlEnabled: Boolean = false,
@@ -54,10 +53,8 @@ class SettingsViewModel @Inject constructor(
             .onEach { prefs ->
                 _state.value = _state.value.copy(
                     blePeripheralMode = prefs.blePeripheralMode,
-                    trustAllValidator = prefs.trustAllValidator,
                     dcApiDisclosureEnabled = prefs.dcApiDisclosureEnabled
                 )
-                CertificateChainValidator.setTrustAll(prefs.trustAllValidator)
             }
             .launchIn(viewModelScope)
 
@@ -79,12 +76,6 @@ class SettingsViewModel @Inject constructor(
     fun toggleBleMode() {
         viewModelScope.launch {
             userPreferencesDataSource.setBlePeripheralMode(!_state.value.blePeripheralMode)
-        }
-    }
-
-    fun toggleTrustAllValidator() {
-        viewModelScope.launch {
-            userPreferencesDataSource.setTrustAllValidator(!_state.value.trustAllValidator)
         }
     }
 

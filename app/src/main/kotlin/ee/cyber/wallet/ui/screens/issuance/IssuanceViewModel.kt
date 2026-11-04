@@ -19,9 +19,8 @@ import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.IssuePidUseCase
-import ee.cyber.wallet.domain.provider.ageverification.AgeVerificationProviderServiceMock
+import ee.cyber.wallet.domain.provider.MockIssuance
 import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
-import ee.cyber.wallet.domain.provider.mdl.MdlProviderServiceMock
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
 import kotlinx.coroutines.CancellationException
@@ -59,8 +58,7 @@ class IssuanceViewModel @Inject constructor(
     private val documentRepository: DocumentRepository,
     private val openId4VCIManager: OpenId4VCIManager,
     private val issuePidUseCase: IssuePidUseCase,
-    private val mdlProviderServiceMock: MdlProviderServiceMock,
-    private val ageVerificationProviderServiceMock: AgeVerificationProviderServiceMock,
+    private val mockIssuance: MockIssuance,
     private val eePoaBatchIssuer: BatchAgeIssuer,
     private val eePoaConsumption: EePoaConsumption,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
@@ -142,7 +140,7 @@ class IssuanceViewModel @Inject constructor(
     }
 
     private suspend fun issueMockMdl() {
-        val mockMdl = mdlProviderServiceMock.issueMdl()
+        val mockMdl = mockIssuance.issueMdl()
         val attestation = Attestation(
             id = UUID.randomUUID().toString(),
             credential = mockMdl.credential,
@@ -157,7 +155,7 @@ class IssuanceViewModel @Inject constructor(
         // EE-POA-003: one transaction mints the EE-PoA batch and the AV attestation together;
         // on-device the batch keys come from SecureAreaKeyManager.batchCreateKey via the DI-wired
         // issuer below, so both doctypes are stored (and consumed) through one flow.
-        val attestations = ageVerificationProviderServiceMock.issueEePoaBatch(eePoaBatchIssuer)
+        val attestations = mockIssuance.issueAgeVerification(eePoaBatchIssuer)
         val documents = attestations.mapNotNull { credentialToDocumentMapper.convert(it) }
         setState { copy(documents = documents) }
     }
