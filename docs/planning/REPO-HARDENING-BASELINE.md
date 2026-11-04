@@ -34,4 +34,13 @@ Measured 2026-11-04 on branch `ee-eudiw-zk-import` by Phase 0 of [REPO-HARDENING
 
 ## Decisions
 
-Recorded only once the user answers; none have been taken. See "Decisions needed" in the plan.
+Taken 2026-11-04 through the tiltrank rubric plus a user ask. Each answer was the user's own pick; the ranking log is `docs/planning/.decisions.log` (gitignored).
+
+| # | Decision | Pick | Notes |
+|---|---|---|---|
+| 1 | Mock `.p12` private keys | Remove from HEAD only; no history rewrite | Both are `test_only` in `trust/MANIFEST.json`; the fork has 0 stars and 0 forks. Treated as public test material. |
+| 2 | Signerry artefacts | gh-pages stays the registry; drop the binaries from main | gh-pages already hosts 152 signerry paths and `settings.gradle.kts` resolves from it without credentials. GitHub Packages excluded: Maven downloads need a token. |
+| 3 | C10 rename | After this branch lands | |
+| 4 | `_bmad-output/` | Retire to a read-only archive branch | Ranking was contested. Probe: no CI, Makefile, test or tool reads it; BMAD config, `AGENTS.md` and `docs/README.md` do. |
+| 5 | Dependency updater | **Renovate** (user overrode the recommendation, Dependabot with `cooldown`) | Dependabot has a native `cooldown` option, so the plan's stated reason for Renovate no longer holds; the user chose Renovate anyway. Needs the Renovate app installed on the repo by an admin. |
+| 6 | Repo settings | Private vulnerability reporting and CODEOWNERS now; branch protection and required checks after CI is green | |
