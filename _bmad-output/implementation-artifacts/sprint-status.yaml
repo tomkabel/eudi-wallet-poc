@@ -35,7 +35,7 @@ project_key: NOKEY
 tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts/stories
 development_status:
-  epic-1: backlog
+  epic-1: in-progress
   1-1-av-profile-clause-registry: done
   1-2-av-profile-fixtures: done
   1-3-av-conformance-runner: awaiting-operator
@@ -46,7 +46,7 @@ development_status:
 
   epic-2: in-progress
   2-1-carrier-runner-over-existing-cases: review
-  2-2-binding-property-failure-naming: backlog
+  2-2-binding-property-failure-naming: ready-for-dev
   2-3-version-labelled-carrier-fixtures: backlog
   2-4-external-carrier-run-and-published-result: backlog
   epic-2-retrospective: optional
@@ -61,7 +61,6 @@ development_status:
   3-7-integrator-readme-and-timed-onboarding: backlog
   3-8-parallel-path-integration-note: backlog
   3-9-gateway-adapter-for-rp-kit: backlog
-  3-9-gateway-adapter-for-rp-kit: backlog
   epic-3-retrospective: optional
 
   epic-4: backlog
@@ -72,7 +71,6 @@ development_status:
   4-5-fail-closed-defaults-and-certificate-property-tests: backlog
   4-6-certificate-fixture-generator: backlog
   4-7-plain-fallback-visibility-guard: backlog
-  4-8-evidence-class-typing-of-policy-inputs: backlog
   4-8-evidence-class-typing-of-policy-inputs: backlog
   epic-4-retrospective: optional
 
@@ -92,7 +90,6 @@ development_status:
   6-4-verification-budget-and-refusal-cost-regression: backlog
   6-5-register-latency-and-availability-profile: backlog
   6-6-honest-measurement-reporting: backlog
-  6-7-proximity-relay-separability: backlog
   6-7-proximity-relay-separability: backlog
   epic-6-retrospective: optional
 
@@ -120,7 +117,6 @@ development_status:
   8-7-missing-zkp_03-zkp_04-acp_03-design-notes: backlog
   8-8-second-zk-family-readiness: backlog
   8-9-upstream-dormancy-maintenance-position: backlog
-  8-10-octagon-assessment-of-the-fork: backlog
   8-10-octagon-assessment-of-the-fork: backlog
   epic-8-retrospective: optional
 
@@ -169,17 +165,6 @@ development_status:
   14-1-mock-drift-contract-tests: backlog
   14-2-mutation-guard-for-fail-closed-paths: backlog
   epic-14-retrospective: optional
-
-  epic-13: backlog
-  13-1-trust-path-verdict-for-the-wallet-ecosystem: backlog
-  13-2-threshold-signed-circuit-list: backlog
-  13-3-qualified-timestamped-evidence-reports: backlog
-  epic-13-retrospective: optional
-
-  epic-14: backlog
-  14-1-mock-drift-contract-tests: backlog
-  14-2-mutation-guard-for-fail-closed-paths: backlog
-  epic-14-retrospective: optional
 action_items:
   - id: "epic-1-retro-independent-candidate"
     epic: 1
@@ -203,21 +188,21 @@ action_items:
       diagnostics and preserve JSON/HTML reports; cover malformed bytes at the subprocess
       boundary."
     owner: "Conformance-runner maintainer"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-adapter-duplicate-keys"
     epic: 1
     action: "Reject duplicate JSON object keys in external adapter evidence and add
       raw conflicting-state controls proving no FAIL can be overwritten by PASS."
     owner: "Conformance-runner maintainer"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-adapter-timeout-cleanup"
     epic: 1
     action: "Terminate and reap adapter descendant processes on timeout and add a
       child-process cleanup regression with an observable marker."
     owner: "Conformance-runner maintainer"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-adapter-startup-state"
     epic: 1
@@ -225,7 +210,7 @@ action_items:
       ERROR, reconcile the shell adapter contract and add a nonexistent-executable
       control."
     owner: "Conformance-runner maintainer"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-success-verdict-test"
     epic: 1
@@ -233,7 +218,7 @@ action_items:
       exit0, matching JSON verdict, sufficient thresholds, zero failed results and
       both artifacts."
     owner: "Conformance-runner maintainer"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
   - id: "epic-1-retro-external-dependency-wording"
     epic: 1
@@ -241,5 +226,5 @@ action_items:
       with Stories 1.3 and 1.6 external acceptance prerequisites; keep local implementation
       and external evidence gates explicit."
     owner: "Product owner / backlog maintainer"
-    status: open
+    status: done
     ref: "_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"

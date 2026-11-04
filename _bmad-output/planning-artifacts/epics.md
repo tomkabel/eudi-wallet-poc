@@ -386,8 +386,10 @@ discrepancy is recorded here so it is corrected in the PRD rather than propagati
 Convert the AV-Profile work already in the tree into an artefact an EU programme can test against. The
 cryptography, the doctype `eu.europa.ec.av.1`, the mandated system `longfellow-libzk-v1` and the
 carrier all exist; what is missing is a clause registry, AV-specific fixtures with the profile's
-parameter tuple, a runner, and a published report a third party can reproduce. It needs no
-external party and no hardware.
+parameter tuple, a runner, and a published report a third party can reproduce. The in-repository
+kit can be prepared without an external participant or device. Completed acceptance requires
+an independent wallet or verifier run for Story 1.3, publication and an independently attributed
+clean-checkout reproduction for Story 1.6; local or synthetic runs do not satisfy those gates.
 Source: Report 1 O1; Report 2 R1; Appendix A3 phases D1 and M1.
 
 ### Story 1.1: AV Profile clause registry
@@ -2215,8 +2217,10 @@ stable handle for traceability; the execution order below is the ordering signal
 2. **Epic 6 runs in parallel from the start.** It gates every performance claim but blocks no other epic.
 3. **Epic 14 and Story 13.3 join the cheap prerequisites (added 2026-11-04).** Neither needs an external party. Then Story 4.8 and Story 13.2, then Story 13.1 once Stories 5.6 and 10.3 supply its inputs, then Stories 3.9, 6.7 and 8.10. None of these displaces Stories 2.1, 2.2 or Epic 7 Stories 1–4. Decisions taken 2026-11-04 with the tiltrank rubric: Story 3.9 stays with an NFR14 criterion, Story 13.1's claim text is fixed, Story 13.2 starts on synthetic keys at 2-of-3, and Story 13.3 uses SK ID Solutions AS. Gates still open: real independent signers for Story 13.2, counsel review before Story 13.1 is published, and the price and turnaround of Story 13.3.
 
-**Primary sequence, as the source documents order it.** Epic 1 (O1, accepted first: it is the only work
-that converts existing code into an EU-recognised capability, needing no external party and no hardware),
+**Primary sequence, as the source documents order it.** Epic 1 (O1, prepared first: it converts
+existing code into an inspectable AV-Profile evidence kit; local preparation needs no external
+participant or device, while Stories 1.3 and 1.6 require independent candidate and reproduction
+evidence plus publication before completed acceptance),
 then Epic 2 (O5, second: the tests exist), then Epic 3 (O2, third: the only recommendation a buyer can act
 on before 2028). Epic 3's interface proposal (Story 3.4) is pulled as early as possible within Epic 3,
 because an awarded procurement would otherwise set the technical direction first.
