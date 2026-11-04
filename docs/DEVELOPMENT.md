@@ -23,8 +23,10 @@ checkout; `verifier/` is `zkverify`, a Go HTTP server over a Rust staticlib in
 ## Prerequisites
 
 - **Python 3.12** — the version CI pins in both jobs. Install the scripts' dependencies
-  with `pip install -r tests/requirements-ci.txt`, the exact versions CI uses: the
-  transcript vectors are golden, and a different `cbor2` can shift the bytes they pin.
+  with `make py-deps` (`uv sync --locked --only-group ci` from `pyproject.toml` and
+  `uv.lock`, every wheel hash-checked), the exact versions CI uses: the transcript
+  vectors are golden, and a different `cbor2` can shift the bytes they pin. To change a
+  pin, edit the `ci` group in `pyproject.toml`, run `uv lock`, then `make test-py`.
   The lint check uses `pip install ruff==0.16.6`.
 - **Go at the version in [`../verifier/go/go.mod`](../verifier/go/go.mod)** (currently
   `go 1.26`); CI reads it from that file. The module has no third-party dependencies and
@@ -70,7 +72,7 @@ copying the result back, after the golden tests pass.
 
 `make doctor` (`tools/doctor.py`) prints one line per failed check and exits 1 on any: Go
 (from `verifier/go/go.mod`), Python, Rust and ruff minimums (from `mise.toml`), shellcheck, the pinned
-Python packages of `tests/requirements-ci.txt`, `RUSTFLAGS` and the `target-cpu=x86-64-v3` pin, JDK 17,
+Python packages of `uv.lock` (and that the lock matches `pyproject.toml`), `RUSTFLAGS` and the `target-cpu=x86-64-v3` pin, JDK 17,
 the Android SDK, the prover and the verifier with `test -x`, `libzkverify.a`, the prover checksum record,
 and the sibling's revision and cleanliness. `DOCTOR_SKIP="android java"` skips groups
 (`toolchain java android prover longfellow`); `DOCTOR_VERBOSE=1` also prints passing checks.
@@ -116,7 +118,7 @@ toolchain and runs in seconds; `make check` runs the same set (`make lint`,
 `make test-go-fast`, `make test-py`):
 
 ```bash
-pip install ruff==0.16.6 -r tests/requirements-ci.txt   # pinned as in ci.yml
+pip install ruff==0.16.6 && make py-deps   # pinned as in ci.yml; py-deps builds .venv from uv.lock
 make check
 ```
 

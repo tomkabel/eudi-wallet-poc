@@ -16,7 +16,7 @@ RUN apt-get update \
  && tar -xzf /tmp/mise.tgz -C /usr/local --strip-components=1 mise/bin/mise \
  && rm /tmp/mise.tgz
 
-# The base image's `ubuntu` user (uid 1000) owns the tools, so `pip install` in make bootstrap works.
+# The base image's `ubuntu` user (uid 1000) owns the tools, so `make py-deps` (uv sync into .venv) in make bootstrap works.
 USER ubuntu
 ENV HOME=/home/ubuntu \
     PATH=/home/ubuntu/.local/share/mise/shims:/home/ubuntu/.cargo/bin:/usr/local/bin:/usr/bin:/bin

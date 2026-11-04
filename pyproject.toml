@@ -1,0 +1,23 @@
+# Python inputs of the ZK spine's helpers and tests. Not an installable package: this file
+# exists so uv can lock the groups below into uv.lock (sha256 of every wheel and sdist).
+#
+# The transcript vectors (wallet/test_transcript.py, issuer/test_mint_device_key.py,
+# tests/e2e.sh) are golden: a cbor2 encoder change can shift the canonical bytes they pin.
+# Bump a version here deliberately, run `uv lock`, and re-run `make test-py`; CI installs
+# with `uv sync --locked`, which fails when this file and uv.lock disagree.
+[project]
+name = "eudi-wallet-poc"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+package = false
+default-groups = []
+
+[dependency-groups]
+ci = [
+    "cbor2==6.1.4",
+    "cryptography==50.0.1",
+    "jwcrypto==1.6.1",
+]

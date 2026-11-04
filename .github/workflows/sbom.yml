@@ -1,0 +1,87 @@
+name: SBOM
+
+# CycloneDX SBOMs for the three dependency sets, uploaded as workflow artefacts (hardening Phase 4;
+# Phase 6 attaches them to releases). Gradle: org.cyclonedx.bom in build.gradle.kts. Rust:
+# cargo-cyclonedx on verifier/zkverify-ffi. Python: cyclonedx-py over the environment `uv sync --locked`
+# builds, so the SBOM lists exactly the locked versions.
+on:
+  push:
+    branches: [master, ee-eudiw-zk-import]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gradle:
+    name: SBOM (Gradle, app)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - name: Generate (dependency verification stays on)
+        run: ./gradlew cyclonedxBom
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom-gradle
+          path: build/reports/cyclonedx/
+          if-no-files-found: error
+
+  rust:
+    name: SBOM (Rust, zkverify-ffi)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # zkverify-ffi path-depends on ../../../longfellow-zk, so the checkout goes in a subdirectory
+      # and scripts/bootstrap-longfellow.sh (the one `make deps` and ci.yml use) clones the sibling.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: eudi-wallet-poc
+          persist-credentials: false
+      - name: Generate
+        run: |
+          ./eudi-wallet-poc/scripts/bootstrap-longfellow.sh
+          cargo install cargo-cyclonedx --version 0.5.9 --locked
+          (cd eudi-wallet-poc/verifier/zkverify-ffi && cargo cyclonedx --format json --spec-version 1.5)
+          mkdir sbom-rust && cp -- eudi-wallet-poc/verifier/zkverify-ffi/*.cdx.json sbom-rust/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom-rust
+          path: sbom-rust/
+          if-no-files-found: error
+
+  python:
+    name: SBOM (Python, uv.lock)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: 0.13.7
+          enable-cache: false
+      - name: Generate
+        run: |
+          uv sync --locked --only-group ci --python 3.12
+          mkdir sbom-python
+          uvx --from cyclonedx-bom==8.0.1 cyclonedx-py environment --pyproject pyproject.toml \
+            --of JSON --sv 1.6 -o sbom-python/python.cdx.json .venv/bin/python
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom-python
+          path: sbom-python/
+          if-no-files-found: error

@@ -1,0 +1,69 @@
+// Renovate replaces Dependabot (hardening Phase 4, decision 5). Needs the Renovate GitHub app
+// installed on the repository by an admin; until then no dependency PRs are opened.
+//
+// The pin rules carried over from the old dependabot.yml:
+//   - org.cose, com.signerry.*, id.walt.* never float. They resolve from the maven mirror
+//     (.github/maven-mirror/manifest.json pins every file by sha256), so a bumped version has
+//     nothing to resolve until the manifest changes. Bump them by hand.
+//   - gradle/libs.versions.toml is CRLF; Renovate keeps the file's existing line endings.
+//   - the gradle ecosystem stays small (prConcurrentLimit).
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended", "helpers:pinGitHubActionDigestsToSemver"],
+  // The four ecosystems Dependabot covered: gradle, cargo, pip (pep621 also rewrites uv.lock),
+  // github-actions.
+  enabledManagers: ["gradle", "cargo", "pep621", "github-actions"],
+  timezone: "UTC",
+  schedule: ["before 6am on monday"],
+  // Cooldown: a release must be this old before Renovate proposes it, and a release that
+  // fails its own checks inside the window is never proposed.
+  minimumReleaseAge: "7 days",
+  internalChecksFilter: "strict",
+  prConcurrentLimit: 4,
+  prHourlyLimit: 2,
+  lockFileMaintenance: { enabled: true, schedule: ["before 6am on the first day of the month"] },
+  packageRules: [
+    {
+      description: "Gradle: everything else, one PR (later rules below override the group name)",
+      matchManagers: ["gradle"],
+      groupName: "gradle dependencies",
+    },
+    {
+      description: "Gradle: group by family, one PR each",
+      matchManagers: ["gradle"],
+      matchPackageNames: ["androidx.**"],
+      groupName: "androidx",
+    },
+    {
+      description: "Gradle: Kotlin, KSP and Compose compiler move together",
+      matchManagers: ["gradle"],
+      matchPackageNames: ["org.jetbrains.kotlin**", "com.google.devtools.ksp**"],
+      groupName: "kotlin toolchain",
+    },
+    {
+      description: "Rust crates: one PR",
+      matchManagers: ["cargo"],
+      groupName: "rust crates",
+    },
+    {
+      description: "Golden-vector inputs: a cbor2 encoder change shifts pinned transcript bytes, so a longer cooldown, a label, and the golden tests must pass before merge",
+      matchManagers: ["pep621"],
+      matchPackageNames: ["cbor2", "cryptography", "jwcrypto"],
+      groupName: "python golden-vector inputs",
+      minimumReleaseAge: "14 days",
+      labels: ["golden-vectors"],
+    },
+    {
+      description: "GitHub Actions: one PR, digest pinned",
+      matchManagers: ["github-actions"],
+      groupName: "github actions",
+      pinDigests: true,
+    },
+    {
+      description: "Mirror-pinned groups: never float (last rule, so it wins over every group above)",
+      matchManagers: ["gradle"],
+      matchPackageNames: ["org.cose:**", "com.signerry:**", "com.signerry.**", "id.walt.**"],
+      enabled: false,
+    },
+  ],
+}

@@ -28,7 +28,7 @@ claim that all 13 assertions exercise both encodings. The second layer runs the
 same-proof committed vectors for `interim-json` and `mso-mdoc-zk-cbor`, whose
 byte hashes and provenance are in `tests/vectors/carrier-v1/manifest.json`.
 The runner requires `make deps` (including the Rust static library, prover and
-verifier) and `pip install -r tests/requirements-ci.txt`; `make e2e` invokes
+verifier) and `make py-deps` (the locked Python inputs); `make e2e` invokes
 it. `make check` runs only its fake-child inventory controls and remains
 Rust-free.
 
@@ -187,7 +187,10 @@ gate has a seeded failure that proves it turns red.
 | `tests/vectors/trust/cases.json` | Go (`oid4vp.TestSharedTrustVectors`) or Kotlin (`SharedTrustVectorsTest`) disagreeing with a case's `expect`: IACA→DS profile, path length, expiry, algorithm policy. Regenerate with `tools/build_trust_vectors.py` | both unit suites |
 | `issuer/test_mint_custody.py` | a self-signed DSC; an unencrypted persisted issuer key outside `--test-mode` | `make test-py` |
 | `tools/publish_guard.py`, `tests/test_publish_guard.py` | a tracked `demo-data/` path, `*.p12`/`*.jks`/`*.keystore`, or PEM with a `PRIVATE KEY` header outside `tools/publish-guard.allow`; the test plants a key in a throwaway repo and asserts the guard fails | `make publish-guard` |
-| `security.yml` | gitleaks (pinned by commit) over full history and a seeded key it must flag, the publish guard, pip-audit, govulncheck, gosec outside `verifier/go/.gosec-baseline.json` | CI |
+| `tools/pin_gate.py`, `tests/test_pin_gate.py` | a `uses:` under `.github/` not pinned to a 40-hex commit SHA, or a Dockerfile `FROM` without `@sha256:`, outside `tools/pin-gate.allow` (one reasoned entry: the sandbox image, Phase 6); the test plants unpinned references in a throwaway repo | `make pin-gate` |
+| `security.yml` | gitleaks (pinned by commit) over full history and a seeded key it must flag, the publish guard, the pin gate, zizmor (blocking, version 1.32.0, online audits), pip-audit over the `uv export` of `uv.lock`, govulncheck, gosec outside `verifier/go/.gosec-baseline.json` | CI |
+| `sbom.yml` | CycloneDX SBOMs, uploaded as artefacts: Gradle (`./gradlew cyclonedxBom`), Rust (`cargo cyclonedx` on `verifier/zkverify-ffi`), Python (`cyclonedx-py` over the `uv sync --locked` environment) | CI |
+| `mirror.yml`, `.github/maven-mirror/` | `fetch.py` rebuilds the whole gh-pages Maven mirror from `manifest.json` (sha256 per file; upstream sources, plus `vendored/` for the cose-java snapshot upstream no longer serves) and fails on any mismatch | CI (weekly, manual) |
 | `app.yml` | `:app:lintRelease` security checks outside `app/lint-baseline.xml`; a `*Mock` class in release bytecode | CI |
 | `codeql.yml` | CodeQL `security-extended` alerts for Go, Python, Kotlin | CI |
 
@@ -367,7 +370,7 @@ traceability and mutation controls),
 `python3 -m unittest discover -s tests -p 'test_av_fixtures.py'` (read-only fixture
 bytes/provenance and corruption controls),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
-step installs the pinned `tests/requirements-ci.txt`, since `present.py` imports
+step installs the locked `ci` group (`uv sync --locked`, hashes in `uv.lock`), since `present.py` imports
 `cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`,
 `python3 sandbox/test_age.py` (the sandbox issuer's age reckoning, EE-POA-027), and
 `shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh`.
@@ -385,8 +388,8 @@ builds the prover examples with `RUSTFLAGS=-C target-cpu=x86-64-v3` and asserts
 `ee_poa_demo` exists (`test -x`), builds the verifier
 (`cargo build --release` in `verifier/zkverify-ffi`, then
 `go build -o ../zkverify .`), runs `go test -race . ./zk/...` and the Python
-`test_av_conformance.py` suite with the actual local audit, then `pip install -r
-tests/requirements-ci.txt` and `tests/e2e.sh` with `EE_PROVER` set. The `zk` and package
+`test_av_conformance.py` suite with the actual local audit, then `uv sync --locked
+--only-group ci` and `tests/e2e.sh` with `EE_PROVER` set. The `zk` and package
 `main` tests are here and not in `fast` because package `zk` links the Rust
 staticlib through cgo and `main` imports it — neither test binary can be linked
 without the Rust build. Between the two jobs
@@ -397,7 +400,7 @@ each package is tested exactly once.
 From the repository root. The `fast` job:
 
 ```bash
-pip install ruff==0.16.6 -r tests/requirements-ci.txt   # pinned as in ci.yml
+pip install ruff==0.16.6 && make py-deps   # pinned as in ci.yml; py-deps builds .venv from uv.lock
 make check          # lint + fast Go/Python tests + AV registry/fixture checks
 ```
 

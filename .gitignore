@@ -70,3 +70,7 @@ _bmad/render/
 /tremor_state.json
 /trust_state.json
 /brag-output/
+
+# Maven mirror build output: fetch.py regenerates it from manifest.json (+ vendored/)
+.github/maven-mirror/site/
+*.cdx.json

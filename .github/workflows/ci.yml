@@ -73,6 +73,8 @@ jobs:
               - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
               - 'docs/README.md'
               - 'Makefile'
+              - 'pyproject.toml'
+              - 'uv.lock'
               - '.github/workflows/ci.yml'
             # The prover/verifier build, plus the Python that drives it end to end.
             e2e:
@@ -81,7 +83,8 @@ jobs:
               - 'wallet/**'
               - 'tests/run_carrier_conformance.py'
               - 'tests/e2e.sh'
-              - 'tests/requirements-ci.txt'
+              - 'pyproject.toml'
+              - 'uv.lock'
 
   fast:
     name: fast (lint, vet, unit tests)
@@ -105,6 +108,14 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: 0.13.7
+          enable-cache: false
+      - name: Python deps (uv.lock; every wheel hash verified)
+        run: |
+          uv sync --locked --only-group ci
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: gofmt
         working-directory: eudi-wallet-poc/verifier/go
@@ -177,11 +188,9 @@ jobs:
         # is pinned from both sides or it is not pinned at all.
         #
         # It loads wallet/present.py, which imports cbor2 and cryptography: the
-        # runner has neither, and without this install the step fails on the
-        # import rather than on the vectors.
-        run: |
-          pip install -r tests/requirements-ci.txt
-          python3 wallet/test_transcript.py
+        # runner has neither, and without the locked install above the step fails
+        # on the import rather than on the vectors.
+        run: python3 wallet/test_transcript.py
 
       - name: the mint's device public key path
         # Nothing else runs --device-public-key: the Go tests read static
@@ -231,6 +240,14 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: 0.13.7
+          enable-cache: false
+      - name: Python deps (uv.lock; every wheel hash verified)
+        run: |
+          uv sync --locked --only-group ci
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: clone longfellow-zk at the pinned revision
         id: longfellow
@@ -317,9 +334,7 @@ jobs:
       - name: carrier runner (E2E assertions + committed carrier vectors)
         env:
           EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
-        run: |
-          pip install -r tests/requirements-ci.txt
-          python3 tests/run_carrier_conformance.py --json carrier-conformance-report.json
+        run: python3 tests/run_carrier_conformance.py --json carrier-conformance-report.json
 
   ci-ok:
     name: ci-ok

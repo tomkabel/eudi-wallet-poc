@@ -72,8 +72,10 @@ def pins():
 
 
 def go():
-    want = re.search(r"^go (\S+)", (ROOT / "verifier/go/go.mod").read_text(), re.M).group(1)
-    return at_least("go", tool_version(["go", "version"], r"go(\d+\.\d+(?:\.\d+)?)"), want)
+    m = re.search(r"^go (\S+)", (ROOT / "verifier/go/go.mod").read_text(), re.M)
+    if not m:
+        return "no `go` directive in verifier/go/go.mod"
+    return at_least("go", tool_version(["go", "version"], r"go(\d+\.\d+(?:\.\d+)?)"), m.group(1))
 
 
 def python():
@@ -108,19 +110,28 @@ def java17():
 
 
 def python_pins():
+    """Installed Python packages must be the ones uv.lock pins (it holds the golden-vector inputs)."""
+    lock = tomllib.loads((ROOT / "uv.lock").read_text())["package"]
     bad = []
-    for ln in (ROOT / "tests/requirements-ci.txt").read_text().splitlines():
-        m = re.match(r"([A-Za-z0-9_.-]+)==(\S+)", ln)
-        if not m:
+    for pkg in lock:
+        if pkg.get("source", {}).get("virtual"):  # the project itself
             continue
         try:
-            have = importlib.metadata.version(m.group(1))
+            have = importlib.metadata.version(pkg["name"])
         except importlib.metadata.PackageNotFoundError:
             have = "missing"
-        if have != m.group(2):
-            bad.append(f"{m.group(1)} {have} != {m.group(2)}")
+        if have != pkg["version"]:
+            bad.append(f"{pkg['name']} {have} != {pkg['version']}")
     if bad:
-        return "; ".join(bad) + " (pip install -r tests/requirements-ci.txt; the transcript vectors are golden)"
+        return "; ".join(bad) + " (make py-deps; the transcript vectors are golden)"
+
+
+def uv_lock_fresh():
+    if not shutil.which("uv"):
+        return "uv not found (make py-deps needs it)"
+    rc, out = run("uv", "lock", "--check", cwd=ROOT)
+    if rc != 0:
+        return "uv.lock is out of date with pyproject.toml (run `uv lock`): " + out.splitlines()[-1] if out else "uv lock --check failed"
 
 
 def android():
@@ -195,7 +206,8 @@ def main():
     check("toolchain", "rust", rust)
     check("toolchain", "ruff", ruff)
     check("toolchain", "shellcheck", shellcheck)
-    check("toolchain", "python pins (tests/requirements-ci.txt)", python_pins)
+    check("toolchain", "python pins (uv.lock)", python_pins)
+    check("toolchain", "uv.lock matches pyproject.toml", uv_lock_fresh)
     check("toolchain", "RUSTFLAGS / target-cpu", rustflags)
     check("java", "java 17", java17)
     check("android", "Android SDK", android)

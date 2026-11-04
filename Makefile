@@ -1,4 +1,4 @@
-.PHONY: deps doctor bootstrap test-doctor keys publish-guard lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
+.PHONY: deps py-deps doctor bootstrap test-doctor keys publish-guard pin-gate lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -8,6 +8,9 @@ SHELL := /bin/bash
 # cargo build needs no RUSTFLAGS here — this pin is for the prover examples,
 # which build inside the longfellow-zk tree.
 RUSTFLAGS := -C target-cpu=x86-64-v3
+
+# `make py-deps` builds .venv from uv.lock; every target below then picks that python3 up.
+export PATH := $(CURDIR)/.venv/bin:$(PATH)
 
 deps:
 	./scripts/bootstrap-longfellow.sh
@@ -29,6 +32,10 @@ deps:
 	rev="$$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" && \
 		cd verifier/go && go build -ldflags "-X main.longfellowRev=$$rev" -o ../zkverify .
 
+# The locked Python inputs (pyproject.toml group `ci`, hashes in uv.lock); fails if the two disagree.
+py-deps:
+	uv sync --locked --only-group ci
+
 # One line per failed check; exit 1 on any. See tools/doctor.py for the checks and DOCTOR_SKIP.
 doctor:
 	python3 tools/doctor.py
@@ -40,7 +47,7 @@ bootstrap:
 		echo "make bootstrap installs packages: run it inside the devcontainer (BOOTSTRAP_HOST=1 to override)" >&2; \
 		exit 1; fi
 	if command -v mise >/dev/null; then mise install; fi
-	python3 -m pip install -r tests/requirements-ci.txt
+	$(MAKE) py-deps
 	$(MAKE) deps
 	DOCTOR_SKIP=android $(MAKE) doctor
 
@@ -57,6 +64,12 @@ publish-guard:
 	python3 tools/publish_guard.py
 	python3 -m unittest discover -s tests -p 'test_publish_guard.py'
 
+# Fails on a `uses:` not pinned to a 40-hex SHA or a Dockerfile FROM without @sha256: (T2);
+# exceptions, each with a reason, live in tools/pin-gate.allow. security.yml also runs zizmor.
+pin-gate:
+	python3 tools/pin_gate.py
+	python3 -m unittest discover -s tests -p 'test_pin_gate.py'
+
 lint:
 	cd verifier/go && unformatted="$$(gofmt -l .)" && if [ -n "$$unformatted" ]; then \
 		echo "not gofmt-clean:"; echo "$$unformatted"; exit 1; fi
@@ -70,8 +83,8 @@ lint:
 test-go-fast:
 	cd verifier/go && go test -race ./oid4vp/... ./internal/... ./circuits/...
 
-# The Python half of the transcript pin and the mint's device-key path. Install
-# tests/requirements-ci.txt, not whatever PyPI serves: the vectors are golden.
+# The Python half of the transcript pin and the mint's device-key path. Run `make py-deps`
+# first, not whatever PyPI serves: the vectors are golden and uv.lock pins their inputs.
 test-py:
 	python3 wallet/test_transcript.py
 	python3 issuer/test_mint_device_key.py
@@ -79,7 +92,7 @@ test-py:
 	python3 sandbox/test_age.py
 
 # CI's fast job: no Rust toolchain needed.
-check: lint test-doctor pki-gates publish-guard test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
+check: lint test-doctor pki-gates publish-guard pin-gate test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
 
 # PKI plan gates and their seeded failures (security.yml runs the same).
 pki-gates:
@@ -118,7 +131,7 @@ test-go-zk:
 
 e2e: deps
 	@python3 -c 'import cbor2, cryptography, jwcrypto' 2>/dev/null || { \
-		echo "make e2e: Python dependencies missing — pip install -r tests/requirements-ci.txt" >&2; exit 1; }
+		echo "make e2e: Python dependencies missing — make py-deps" >&2; exit 1; }
 	EE_PROVER="$$(pwd)/../longfellow-zk/rust/target/release/examples/ee_poa_demo" \
 		EE_VERIFIER="$$(pwd)/verifier/zkverify" python3 tests/run_carrier_conformance.py
 
