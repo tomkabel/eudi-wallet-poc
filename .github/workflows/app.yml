@@ -84,6 +84,8 @@ jobs:
       - name: Prepare Android 35 runtime
         run: |
           sudo chmod a+rw /dev/kvm
+          # The runner image no longer puts the SDK tools on PATH.
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
           sdkmanager 'emulator' 'system-images;android-35;google_apis;x86_64'
           echo no | avdmanager create avd --name invocation --package 'system-images;android-35;google_apis;x86_64' --device pixel_6
           "$ANDROID_HOME/emulator/emulator" -avd invocation -no-window -no-audio -no-snapshot -gpu swiftshader > "$RUNNER_TEMP/invocation-emulator.log" 2>&1 &
