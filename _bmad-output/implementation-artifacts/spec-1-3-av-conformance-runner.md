@@ -64,3 +64,27 @@ No complete AV conformance claim is made. The orchestrator-owned
 Review pass: one verification-gap finding was patched by counting only passing
 executed Go negative subtests. One broken index link was corrected. The report
 records the checkout as `+dirty` while uncommitted changes are tested.
+
+
+## 2026-10-23 — Retrospective follow-through
+
+The [runner hardening record](spec-1-3-av-conformance-runner-hardening.md)
+completes local fixes for retrospective F3–F7: malformed UTF-8 and escaped
+surrogates, conflicting JSON keys, process-group timeout cleanup with bounded
+drain, argv startup-versus-executed failure states, and synthetic full-audit
+success verification. Independent review also added excessive-nesting,
+nonfinite-number and exact schema-version controls. Both public adapter
+contracts describe the changed argv semantics and timeout ownership boundary.
+
+Verification at dirty checkout HEAD
+`6cf84df5806ecd22792eade3b8ced8d14f148202`: runner38/38 PASS and
+`make check` exit0; parent executed Android212/JVM6 tests and Go-ZK race checks
+successfully. The actual local audit still retains its three policy failures;
+synthetic evidence does not establish independent execution. Output quotas
+remain a documented, separately deferred resource-budget issue. All review
+findings and commands are retained in the linked record.
+
+Status stays `awaiting-operator`. Required remaining action: build and execute
+an independent candidate at its recorded revision, retain every mapped clause
+outcome through the documented adapter, and review that evidence. Story1.6 owns
+publication and independent reproduction separately.

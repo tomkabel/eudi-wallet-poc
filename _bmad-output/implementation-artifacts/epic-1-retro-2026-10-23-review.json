@@ -1,0 +1,54 @@
+[
+  {
+    "lens": "adversarial",
+    "location": "tests/run_av_conformance.py:21-28",
+    "trigger_condition": "An external adapter writes invalid UTF-8 to stdout or stderr.",
+    "guard_snippet": "Capture bytes, decode explicitly, and return mapped ERROR for malformed adapter text.",
+    "potential_consequence": "Uncaught UnicodeDecodeError aborts JSON/HTML evidence generation."
+  },
+  {
+    "lens": "adversarial",
+    "location": "tests/run_av_conformance.py:27",
+    "trigger_condition": "Adapter JSON contains duplicate object keys with conflicting result states.",
+    "guard_snippet": "Reject duplicate keys using a strict object_pairs_hook.",
+    "potential_consequence": "A FAIL state can be overwritten by a later PASS state."
+  },
+  {
+    "lens": "adversarial",
+    "location": "tests/run_av_conformance.py:21-23",
+    "trigger_condition": "A shell adapter launches descendants and exceeds its timeout.",
+    "guard_snippet": "Terminate and reap the entire adapter process group on timeout.",
+    "potential_consequence": "Descendants continue work and side effects after timeout is reported."
+  },
+  {
+    "lens": "adversarial",
+    "location": "tests/run_av_conformance.py:21-30",
+    "trigger_condition": "The configured candidate executable does not exist.",
+    "guard_snippet": "Distinguish startup NOT_EXECUTED from executed-candidate ERROR in the adapter contract.",
+    "potential_consequence": "Shell exit127 hides the declared candidate startup distinction."
+  },
+  {
+    "lens": "edge-case-hunter",
+    "location": "tests/run_av_conformance.py:21-28",
+    "trigger_condition": "An external adapter writes invalid UTF-8 to stdout or stderr.",
+    "guard_snippet": "Capture bytes, decode explicitly, and return mapped ERROR for malformed adapter text.",
+    "potential_consequence": "Uncaught UnicodeDecodeError aborts JSON/HTML evidence generation."
+  },
+  {
+    "lens": "edge-case-hunter",
+    "location": "tests/run_av_conformance.py:21-30",
+    "trigger_condition": "The configured candidate executable does not exist.",
+    "guard_snippet": "Distinguish startup NOT_EXECUTED from executed-candidate ERROR in the adapter contract.",
+    "potential_consequence": "Shell exit127 hides the declared candidate startup distinction."
+  },
+  {
+    "lens": "verification-gap",
+    "location": "tests/run_av_conformance.py:209",
+    "trigger_condition": "The all-passing audit verdict branch has no regression assertion.",
+    "guard_snippet": "Exercise main with complete passing synthetic evidence; assert code0, zero failures, thresholds and both artifacts.",
+    "potential_consequence": "A constant failure verdict can pass the existing runner suite.",
+    "gap_shape": "regression-gap",
+    "consumer": "Audit CLI and JSON/HTML report consumers",
+    "evidence": "Repository symbol search and tests/test_av_conformance.py full inventory; parent in-memory main mutation left all 27 tests passing."
+  }
+]

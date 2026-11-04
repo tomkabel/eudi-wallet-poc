@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Run AV-linked Go probes and emit fail-closed JSON/readable evidence."""
-import argparse, hashlib, json, os, re, subprocess, sys
+import argparse, hashlib, json, os, re, shlex, signal, subprocess, sys
 import check_av_registry
 from av_report import OPERATOR_ACTIONS, complete_candidate, git_record, host_record, render_html
 from datetime import datetime, timezone
@@ -13,24 +13,64 @@ PACKAGES = {"verifier/go/oid4vp/av_conformance_test.go": "./oid4vp", "verifier/g
 def symbols(path):
     return re.findall(r"(?m)^func (TestAVConformance\w+)\(t \*testing\.T\)", path.read_text())
 
+def reject_json_constant(value):
+    raise ValueError(f"nonfinite JSON constant: {value}")
+
 def external_results(command, timeout, registry):
     mapped = [c for c in registry.get("clauses", []) if c.get("test")]
     if not command:
         return {"name":"unconfigured external candidate","revision":"unavailable","results":[{"clause_id":c["id"],"test_id":c["test"]["id"],"property":c["test"]["id"].split("::")[-1],"scope":c["test"]["scope"],"limits":c["test"]["limits"],"state":"NOT_EXECUTED","detail":"external candidate unavailable; configure --candidate-command"} for c in mapped],"operator_actions":["Build an independent candidate at a recorded revision.","Implement the JSON adapter contract in tests/README.md.","Rerun with --candidate-command."]}
+    payload = {}
     try:
-        proc=subprocess.run(command,cwd=ROOT,shell=True,text=True,capture_output=True,timeout=timeout)
-    except subprocess.TimeoutExpired:
-        state,detail="ERROR",f"adapter timed out after {timeout}s"; payload={}
-    except OSError as exc:
-        state,detail="NOT_EXECUTED",f"adapter could not start: {exc}"; payload={}
+        argv = shlex.split(command)
+        if not argv:
+            raise ValueError("empty adapter argv")
+        proc = subprocess.Popen(argv, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                start_new_session=True)
+    except (OSError, ValueError) as exc:
+        state, detail = "NOT_EXECUTED", f"adapter could not start: {exc}"
     else:
-        try: payload=json.loads(proc.stdout)
-        except json.JSONDecodeError as exc: payload={};state,detail="ERROR",f"adapter exited {proc.returncode}: {proc.stderr.strip()}" if proc.returncode else f"malformed adapter JSON: {exc}"
+        try:
+            stdout_bytes, stderr_bytes = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # Kill the original process group even after the direct adapter exits.
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            state, detail = "ERROR", f"adapter timed out after {timeout}s; process group terminated"
+            try:
+                proc.communicate(timeout=1)
+            except subprocess.TimeoutExpired:
+                # Deliberately detached sessions can retain pipes outside our group.
+                proc.stdout.close()
+                proc.stderr.close()
+                detail += "; output drain timed out after 1s; detached pipe holders may remain"
+            proc.wait()  # Reap the killed direct adapter, independently of output pipe EOF.
         else:
-            if proc.returncode: state,detail="ERROR",f"adapter exited {proc.returncode}: {proc.stderr.strip()}"
-            elif not isinstance(payload,dict) or payload.get("schema_version")!=1 or not isinstance(payload.get("candidate"),dict) or not isinstance(payload.get("results"),list): state,detail="ERROR","adapter requires schema_version=1, candidate object and results array"
-            elif not all(isinstance(payload["candidate"].get(k),str) and payload["candidate"][k].strip() for k in ("name","revision")): state,detail="ERROR","candidate name and revision are required"
-            else: state,detail="OK","validated adapter results"
+            streams = {}
+            for stream, data in (("stdout", stdout_bytes), ("stderr", stderr_bytes)):
+                try:
+                    streams[stream] = data.decode("utf-8")
+                except UnicodeDecodeError as exc:
+                    state, detail = "ERROR", f"adapter {stream} contains malformed UTF-8: {exc}"
+                    break
+            else:
+                try:
+                    payload = json.loads(streams["stdout"], object_pairs_hook=check_av_registry.unique_object,
+                                         parse_constant=reject_json_constant)
+                    # JSON escapes can introduce surrogates despite valid UTF-8 transport.
+                    json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
+                except (ValueError, UnicodeError, RecursionError) as exc:
+                    payload = {}
+                    state, detail = "ERROR", f"malformed adapter JSON/text: {exc}"
+                    if proc.returncode:
+                        detail = f"adapter exited {proc.returncode}: {streams['stderr'].strip()}; " + detail
+                else:
+                    if proc.returncode: state,detail="ERROR",f"adapter exited {proc.returncode}: {streams['stderr'].strip()}"
+                    elif not isinstance(payload,dict) or type(payload.get("schema_version")) is not int or payload["schema_version"]!=1 or not isinstance(payload.get("candidate"),dict) or not isinstance(payload.get("results"),list): state,detail="ERROR","adapter requires integer schema_version=1, candidate object and results array"
+                    elif not all(isinstance(payload["candidate"].get(k),str) and payload["candidate"][k].strip() for k in ("name","revision")): state,detail="ERROR","candidate name and revision are required"
+                    else: state,detail="OK","validated adapter results"
     candidate=payload.get("candidate",{}) if isinstance(payload,dict) else {}
     if not isinstance(candidate, dict): candidate = {}
     supplied={}

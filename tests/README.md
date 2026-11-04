@@ -278,14 +278,35 @@ controls separately. The audit is expected to exit nonzero while known AV
 fallback mismatches remain and while no independent candidate is configured.
 Do not interpret partial primitive checks as complete AV or ISO conformance.
 
-An external adapter is invoked with `--candidate-command '<command>'` and must
-print one JSON object to stdout with `schema_version: 1`, a `candidate` object
+An external adapter is invoked with `--candidate-command '<command>'`.
+`shlex.split` preserves quoted arguments; the resulting argv executes directly,
+without interpreting shell operators, expansion or globbing. For example,
+`--candidate-command 'python3 "/path with spaces/adapter.py"'` retains the script
+path as one argument. Shell users must explicitly invoke their script or shell
+as the adapter. Missing executables, malformed quoting and empty argv become
+`NOT_EXECUTED` with startup detail; a launched executable exiting nonzero,
+including 126/127, becomes `ERROR` with its diagnostic. A shell/script adapter
+must express failed inner candidate startup as `NOT_EXECUTED` schema results.
+
+Both output streams must be valid UTF-8. The adapter must print one JSON object
+to stdout with integer `schema_version: 1` (not `true` or `1.0`), a `candidate` object
 containing nonempty `name` and `revision`, and a `results` array. Each result
 must identify a registry `test_id`, a named `property`, a state (`PASS`, `FAIL`,
 `ERROR`, or `NOT_EXECUTED`), and execution evidence. Missing or invalid evidence
 must remain unavailable/error evidence. Independent candidate setup is not
 available in this checkout; the report lists the operator actions instead of
-inventing a result. `--timeout` bounds each local Go command.
+inventing a result. Malformed UTF-8 in either stream, malformed JSON/text
+(including unpaired surrogate escapes, nonfinite numbers and excessive
+nesting), duplicate JSON object keys at any
+depth, duplicate test IDs, crashes and timeouts make every external mapped row
+`ERROR`, with the cause retained in JSON and HTML. `--timeout` bounds each
+local Go command and adapter execution. Adapter timeouts kill its original POSIX
+process group, including members holding output pipes open, allow up to one
+additional second to drain output, then close remaining pipes and reap the
+direct adapter before returning. Deliberately detached sessions are outside
+that group and may survive; retained pipes produce a bounded-drain ERROR.
+Host init reaps orphaned children. Captured output has no byte quota, a
+pre-existing limitation.
 
 `python3 -m unittest discover -s tests -p 'test_av_conformance.py'` tests local
 coverage/negative-control accounting and retained known failure assertions;
@@ -294,11 +315,19 @@ literal HTML escaping with no network resources; canonical provenance and
 required baseline/observed configuration, effective Go settings and registry
 validation/fingerprints; supplementary probe verdicts and pass-only qualified
 negative counts; actual clean/modified/untracked Git evidence; skipped, missing,
-malformed, duplicate and timed-out
-evidence; package-specific linker errors, unavailable Go, SIGILL and host/JDK
+malformed UTF-8 in both streams, conflicting raw JSON keys at all depths,
+escaped surrogate text, excessive nesting, nonfinite numbers, exact integer
+schema versions, quoted literal argv, startup versus executed 126/127,
+and independently supervised timeout controls with child readiness, pipe-holding
+process-group members, detached sessions, watchdogs and delayed-write controls;
+package-specific linker errors, unavailable Go, SIGILL and host/JDK
 diagnostics, unavailable Git provenance and unreadable host inputs; explicit
 HTML output and resolved-path/hardlink collisions. These controls use
 synthetic evidence where needed and do not establish independent conformance.
+A successful audit control uses synthetic passing mapped/supplementary Go
+events, eight negative passes, a sufficient host diagnostic baseline and an
+actual synthetic adapter subprocess. It verifies return 0, matching JSON
+verdict/thresholds/zero failures, readable HTML and retained operator actions.
 They run through the existing Makefile/fast-CI target and again in e2e after
 the staticlib build, so the actual local-audit case executes there. Fast CI
 uses synthetic controls and skips only that actual audit when the library is

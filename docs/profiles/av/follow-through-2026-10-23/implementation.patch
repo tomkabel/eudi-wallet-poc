@@ -1,0 +1,367 @@
+diff --git a/tests/run_av_conformance.py b/tests/run_av_conformance.py
+index 7c2b406..018772a 100644
+--- a/tests/run_av_conformance.py
++++ b/tests/run_av_conformance.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+ """Run AV-linked Go probes and emit fail-closed JSON/readable evidence."""
+-import argparse, hashlib, json, os, re, subprocess, sys
++import argparse, hashlib, json, os, re, shlex, signal, subprocess, sys
+ import check_av_registry
+ from av_report import OPERATOR_ACTIONS, complete_candidate, git_record, host_record, render_html
+ from datetime import datetime, timezone
+@@ -13,24 +13,64 @@ PACKAGES = {"verifier/go/oid4vp/av_conformance_test.go": "./oid4vp", "verifier/g
+ def symbols(path):
+     return re.findall(r"(?m)^func (TestAVConformance\w+)\(t \*testing\.T\)", path.read_text())
+ 
++def reject_json_constant(value):
++    raise ValueError(f"nonfinite JSON constant: {value}")
++
+ def external_results(command, timeout, registry):
+     mapped = [c for c in registry.get("clauses", []) if c.get("test")]
+     if not command:
+         return {"name":"unconfigured external candidate","revision":"unavailable","results":[{"clause_id":c["id"],"test_id":c["test"]["id"],"property":c["test"]["id"].split("::")[-1],"scope":c["test"]["scope"],"limits":c["test"]["limits"],"state":"NOT_EXECUTED","detail":"external candidate unavailable; configure --candidate-command"} for c in mapped],"operator_actions":["Build an independent candidate at a recorded revision.","Implement the JSON adapter contract in tests/README.md.","Rerun with --candidate-command."]}
++    payload = {}
+     try:
+-        proc=subprocess.run(command,cwd=ROOT,shell=True,text=True,capture_output=True,timeout=timeout)
+-    except subprocess.TimeoutExpired:
+-        state,detail="ERROR",f"adapter timed out after {timeout}s"; payload={}
+-    except OSError as exc:
+-        state,detail="NOT_EXECUTED",f"adapter could not start: {exc}"; payload={}
++        argv = shlex.split(command)
++        if not argv:
++            raise ValueError("empty adapter argv")
++        proc = subprocess.Popen(argv, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
++                                start_new_session=True)
++    except (OSError, ValueError) as exc:
++        state, detail = "NOT_EXECUTED", f"adapter could not start: {exc}"
+     else:
+-        try: payload=json.loads(proc.stdout)
+-        except json.JSONDecodeError as exc: payload={};state,detail="ERROR",f"adapter exited {proc.returncode}: {proc.stderr.strip()}" if proc.returncode else f"malformed adapter JSON: {exc}"
++        try:
++            stdout_bytes, stderr_bytes = proc.communicate(timeout=timeout)
++        except subprocess.TimeoutExpired:
++            # Kill the original process group even after the direct adapter exits.
++            try:
++                os.killpg(proc.pid, signal.SIGKILL)
++            except ProcessLookupError:
++                pass
++            state, detail = "ERROR", f"adapter timed out after {timeout}s; process group terminated"
++            try:
++                proc.communicate(timeout=1)
++            except subprocess.TimeoutExpired:
++                # Deliberately detached sessions can retain pipes outside our group.
++                proc.stdout.close()
++                proc.stderr.close()
++                detail += "; output drain timed out after 1s; detached pipe holders may remain"
++            proc.wait()  # Reap the killed direct adapter, independently of output pipe EOF.
+         else:
+-            if proc.returncode: state,detail="ERROR",f"adapter exited {proc.returncode}: {proc.stderr.strip()}"
+-            elif not isinstance(payload,dict) or payload.get("schema_version")!=1 or not isinstance(payload.get("candidate"),dict) or not isinstance(payload.get("results"),list): state,detail="ERROR","adapter requires schema_version=1, candidate object and results array"
+-            elif not all(isinstance(payload["candidate"].get(k),str) and payload["candidate"][k].strip() for k in ("name","revision")): state,detail="ERROR","candidate name and revision are required"
+-            else: state,detail="OK","validated adapter results"
++            streams = {}
++            for stream, data in (("stdout", stdout_bytes), ("stderr", stderr_bytes)):
++                try:
++                    streams[stream] = data.decode("utf-8")
++                except UnicodeDecodeError as exc:
++                    state, detail = "ERROR", f"adapter {stream} contains malformed UTF-8: {exc}"
++                    break
++            else:
++                try:
++                    payload = json.loads(streams["stdout"], object_pairs_hook=check_av_registry.unique_object,
++                                         parse_constant=reject_json_constant)
++                    # JSON escapes can introduce surrogates despite valid UTF-8 transport.
++                    json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
++                except (ValueError, UnicodeError, RecursionError) as exc:
++                    payload = {}
++                    state, detail = "ERROR", f"malformed adapter JSON/text: {exc}"
++                    if proc.returncode:
++                        detail = f"adapter exited {proc.returncode}: {streams['stderr'].strip()}; " + detail
++                else:
++                    if proc.returncode: state,detail="ERROR",f"adapter exited {proc.returncode}: {streams['stderr'].strip()}"
++                    elif not isinstance(payload,dict) or type(payload.get("schema_version")) is not int or payload["schema_version"]!=1 or not isinstance(payload.get("candidate"),dict) or not isinstance(payload.get("results"),list): state,detail="ERROR","adapter requires integer schema_version=1, candidate object and results array"
++                    elif not all(isinstance(payload["candidate"].get(k),str) and payload["candidate"][k].strip() for k in ("name","revision")): state,detail="ERROR","candidate name and revision are required"
++                    else: state,detail="OK","validated adapter results"
+     candidate=payload.get("candidate",{}) if isinstance(payload,dict) else {}
+     if not isinstance(candidate, dict): candidate = {}
+     supplied={}
+diff --git a/tests/test_av_conformance.py b/tests/test_av_conformance.py
+index 1cafe19..edc00ff 100644
+--- a/tests/test_av_conformance.py
++++ b/tests/test_av_conformance.py
+@@ -6,9 +6,11 @@ import json
+ import os
+ import re
+ import shlex
++import signal
+ import subprocess
+ import sys
+ import tempfile
++import time
+ import unittest
+ from html.parser import HTMLParser
+ from pathlib import Path
+@@ -59,12 +61,26 @@ class AVConformanceRunnerTests(unittest.TestCase):
+             return code, json.loads(report.read_text()) if report.exists() else None, err.getvalue()
+ 
+     def adapter(self, payload):
+-        return shlex.quote(sys.executable) + " -c " + shlex.quote("print(" + repr(json.dumps(payload)) + ")")
++        return self.python_adapter("print(" + repr(json.dumps(payload)) + ")")
++
++    def python_adapter(self, source):
++        return shlex.join([sys.executable, "-c", source])
++
++    def raw_adapter(self, stdout, stderr=b""):
++        return self.python_adapter(f"import sys; sys.stdout.buffer.write({stdout!r}); sys.stderr.buffer.write({stderr!r})")
++
++    def assert_external_error(self, report, detail, state="ERROR"):
++        self.assertEqual(report["audit_exit_code"], 1)
++        self.assert_complete(report)
++        rows = report["candidates"][1]["results"]
++        self.assertTrue(all(r["state"] == state for r in rows))
++        self.assertTrue(all(detail in r["detail"] for r in rows))
++        self.assertIn(detail, " ".join(HTMLInventory(self.html).text))
+ 
+     def payload(self):
+         ids = list(dict.fromkeys(c["test"]["id"] for c in REGISTRY["clauses"] if c.get("test")))
+-        return {"schema_version": 1, "candidate": {"name": "external example", "revision": "a" * 40},
+-                "results": [{"test_id": tid, "property": "named property", "state": "PASS", "evidence": "executed external probe"} for tid in ids]}
++        return {"schema_version": 1, "candidate": {"name": "synthetic external example", "revision": "a" * 40},
++                "results": [{"test_id": tid, "property": "named property", "state": "PASS", "evidence": "synthetic executed external probe"} for tid in ids]}
+ 
+     def assert_complete(self, report):
+         expected = [c["id"] for c in REGISTRY["clauses"]]
+@@ -194,6 +210,232 @@ class AVConformanceRunnerTests(unittest.TestCase):
+         self.assertTrue(all(r["state"] == "ERROR" for r in report["candidates"][1]["results"]))
+         self.assertIn("adapter timed out", self.html)
+ 
++    def test_invalid_utf8_in_either_stream_preserves_error_artifacts(self):
++        valid = json.dumps(self.payload()).encode("utf-8")
++        for stream, stdout, stderr in (("stdout", b"\xff", b""), ("stderr", valid, b"\xff")):
++            with self.subTest(stream=stream):
++                proc, report = self.run_audit("--skip-local", "--candidate-command", self.raw_adapter(stdout, stderr))
++                self.assertEqual(proc.returncode, 1, proc.stderr)
++                self.assert_external_error(report, f"adapter {stream} contains malformed UTF-8")
++
++    def test_duplicate_json_keys_at_every_depth_reject_overwritten_evidence(self):
++        valid = json.dumps(self.payload())
++        raw_cases = {
++            "top-level": valid.replace('"schema_version": 1', '"schema_version": 0, "schema_version": 1', 1),
++            "candidate": valid.replace('"name":', '"name": "discarded", "name":', 1),
++            "result": valid.replace('"state": "PASS"', '"state": "FAIL", "state": "PASS"', 1),
++            "nested": valid[:-1] + ', "extra": {"deep": {"state": "FAIL", "state": "PASS"}}}',
++        }
++        for depth, raw in raw_cases.items():
++            with self.subTest(depth=depth):
++                proc, report = self.run_audit("--skip-local", "--candidate-command", self.raw_adapter(raw.encode("utf-8")))
++                self.assertEqual(proc.returncode, 1, proc.stderr)
++                self.assert_external_error(report, "duplicate JSON object key")
++
++    def test_json_escaped_surrogates_preserve_error_artifacts(self):
++        payload = self.payload()
++        for location in ("name", "evidence", "key"):
++            with self.subTest(location=location):
++                changed = json.loads(json.dumps(payload))
++                if location == "name": changed["candidate"]["name"] = "\ud800"
++                elif location == "evidence": changed["results"][0]["evidence"] = "\udfff"
++                else: changed["extra"] = {"\ud800": "text"}
++                proc, report = self.run_audit("--skip-local", "--candidate-command", self.raw_adapter(json.dumps(changed).encode("utf-8")))
++                self.assertEqual(proc.returncode, 1, proc.stderr)
++                self.assert_external_error(report, "malformed adapter JSON/text")
++
++    def test_deep_adapter_json_preserves_error_artifacts(self):
++        # Newer Python decoders tolerate thousands of levels; exercise encoding too.
++        command = self.python_adapter("import sys; sys.stdout.write('{\"extra\":' + '[' * 100000 + '0' + ']' * 100000 + '}')")
++        proc, report = self.run_audit("--skip-local", "--candidate-command", command)
++        self.assertEqual(proc.returncode, 1, proc.stderr)
++        self.assert_external_error(report, "malformed adapter JSON/text")
++
++    def test_nonfinite_constants_and_noninteger_schema_versions_are_errors(self):
++        valid = json.dumps(self.payload())
++        cases = [(valid[:-1] + ', "extra": ' + constant + '}', "nonfinite JSON constant")
++                 for constant in ("NaN", "Infinity", "-Infinity")]
++        cases.append((valid[:-1] + ', "extra": 1e999}', "malformed adapter JSON/text"))
++        cases.extend((valid.replace('"schema_version": 1', '"schema_version": ' + value, 1),
++                      "integer schema_version=1") for value in ("true", "1.0"))
++        for raw, detail in cases:
++            with self.subTest(raw=raw[-100:], detail=detail):
++                proc, report = self.run_audit("--skip-local", "--candidate-command", self.raw_adapter(raw.encode("utf-8")))
++                self.assertEqual(proc.returncode, 1, proc.stderr)
++                self.assert_external_error(report, detail)
++
++    def test_adapter_startup_failures_are_not_executed(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            missing = str(Path(tmp) / "missing executable")
++            for command, detail in ((shlex.quote(missing), "No such file"), ("'unterminated", "No closing quotation"), ("   ", "empty adapter argv")):
++                with self.subTest(command=command):
++                    proc, report = self.run_audit("--skip-local", "--candidate-command", command)
++                    self.assertEqual(proc.returncode, 1, proc.stderr)
++                    self.assert_external_error(report, "adapter could not start", "NOT_EXECUTED")
++                    self.assertIn(detail, report["candidates"][1]["results"][0]["detail"])
++
++    def test_executed_exit126_and_exit127_are_errors(self):
++        for status in (126, 127):
++            with self.subTest(status=status):
++                command = self.python_adapter(f'import sys; print("executed adapter diagnostic", file=sys.stderr); sys.exit({status})')
++                proc, report = self.run_audit("--skip-local", "--candidate-command", command)
++                self.assertEqual(proc.returncode, 1, proc.stderr)
++                self.assert_external_error(report, f"adapter exited {status}: executed adapter diagnostic")
++
++    def test_quoted_arguments_are_literal_without_shell_expansion(self):
++        with tempfile.TemporaryDirectory() as tmp:
++            marker = Path(tmp) / "shell-marker"
++            literal = f"space ' quote ; touch {marker} $(echo expanded) $HOME *"
++            source = "import json,sys; p=json.loads(sys.argv[1]); p['candidate']['name']=sys.argv[2]; print(json.dumps(p))"
++            command = shlex.join([sys.executable, "-c", source, json.dumps(self.payload()), literal])
++            proc, report = self.run_audit("--skip-local", "--candidate-command", command)
++            self.assertEqual(proc.returncode, 1, proc.stderr)
++            external = report["candidates"][1]
++            self.assertEqual(external["name"], literal)
++            self.assertTrue(all(r["state"] == "PASS" for r in external["results"]))
++            self.assertFalse(marker.exists())
++
++    def supervised_timeout_audit(self, parent_exits, detached=False):
++        with tempfile.TemporaryDirectory() as tmp:
++            root = Path(tmp)
++            pid_file, parent_pid, armed = root / "child.pid", root / "parent.pid", root / "armed"
++            marker, report = root / "delayed-marker", root / "report.json"
++            child = (
++                "import os,time; from pathlib import Path; "
++                f"Path({str(pid_file)!r}).write_text(str(os.getpid()))\n"
++                f"while not Path({str(armed)!r}).exists(): time.sleep(0.01)\n"
++                f"time.sleep({30 if detached else 1.5}); Path({str(marker)!r}).write_text('survived')"
++            )
++            source = (
++                "import os,subprocess,sys,time; from pathlib import Path; "
++                f"Path({str(parent_pid)!r}).write_text(str(os.getpid())); "
++                f"subprocess.Popen([sys.executable, '-c', {child!r}], start_new_session={detached!r}); "
++                + ("sys.exit(0)" if parent_exits else "time.sleep(30)")
++            )
++            command = self.python_adapter(source)
++            # A separate process supervises main; this test owns an independent watchdog.
++            # Arm the adapter timeout only after the child has confirmed pipe ownership.
++            supervisor = f"""
++import os,sys,time,subprocess
++from pathlib import Path
++from unittest import mock
++sys.path.insert(0, {str(ROOT / 'tests')!r})
++import run_av_conformance as runner
++real_popen = subprocess.Popen
++launched = []
++def launch(argv, **kwargs):
++    proc = real_popen(argv, **kwargs)
++    if argv == {shlex.split(command)!r}:
++        launched.append(proc)
++        communicate = proc.communicate
++        first = True
++        def ready_communicate(*args, **kwargs):
++            nonlocal first
++            if first:
++                first = False
++                deadline = time.monotonic() + 5
++                while not Path({str(pid_file)!r}).exists():
++                    if time.monotonic() >= deadline:
++                        raise RuntimeError('child readiness deadline exceeded')
++                    time.sleep(0.01)
++                Path({str(armed)!r}).write_text('ready')
++            return communicate(*args, **kwargs)
++        proc.communicate = ready_communicate
++    return proc
++sys.argv = [{str(RUNNER)!r}, '--skip-local', '--timeout', '1', '--candidate-command', {command!r}, '--json', {str(report)!r}]
++with mock.patch.object(runner.subprocess, 'Popen', side_effect=launch):
++    code = runner.main()
++assert len(launched) == 1 and launched[0].returncode is not None
++try:
++    os.waitpid(launched[0].pid, os.WNOHANG)
++except ChildProcessError:
++    print('DIRECT_ADAPTER_REAPED')
++else:
++    raise AssertionError('adapter was not reaped')
++sys.exit(code)
++"""
++            outer = subprocess.Popen([sys.executable, "-c", supervisor], cwd=ROOT,
++                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
++                                     text=True, start_new_session=True)
++            try:
++                stdout, stderr = outer.communicate(timeout=12)
++                self.assertEqual(outer.returncode, 1, stdout + stderr)
++                self.assertIn("DIRECT_ADAPTER_REAPED", stdout)
++                self.html = report.with_suffix(".html").read_text()
++                evidence = json.loads(report.read_text())
++                self.assert_external_error(evidence, "adapter timed out")
++                child_pid = int(pid_file.read_text())
++                stat = Path(f"/proc/{child_pid}/stat")
++                if detached:
++                    self.assertIn("detached pipe holders may remain", evidence["candidates"][1]["results"][0]["detail"])
++                    self.assertTrue(stat.exists())  # Escaped child survives until fixture cleanup.
++                else:
++                    if stat.exists():
++                        self.assertEqual(stat.read_text().split(") ", 1)[1].split()[0], "Z")
++                    time.sleep(0.7)  # Past the armed delayed write.
++                    self.assertFalse(marker.exists())
++            finally:
++                # Covers a regressed hung runner, its adapter group and escaped fixture child.
++                for path, group in ((parent_pid, True), (pid_file, False)):
++                    if path.exists():
++                        try:
++                            pid = int(path.read_text())
++                            (os.killpg if group else os.kill)(pid, signal.SIGKILL)
++                        except ProcessLookupError:
++                            pass
++                if outer.poll() is None:
++                    os.killpg(outer.pid, signal.SIGKILL)
++                outer.communicate(timeout=3)
++
++    def test_timeout_kills_pipe_holding_descendant_and_reaps_direct_adapter(self):
++        for parent_exits in (False, True):
++            with self.subTest(parent_exits=parent_exits):
++                self.supervised_timeout_audit(parent_exits)
++
++    def test_timeout_with_detached_pipe_holder_completes_under_outer_watchdog(self):
++        self.supervised_timeout_audit(parent_exits=False, detached=True)
++
++    def test_synthetic_passing_audit_agrees_with_both_artifacts(self):
++        known = {t["symbol"] for t in REGISTRY["tests"]}
++        known.update(s for path in runner.PACKAGES for s in runner.symbols(ROOT / path))
++        execute = subprocess.run
++        def passing_go(command, **kwargs):
++            if command[:2] != ["go", "test"]:
++                return execute(command, **kwargs)
++            selected = [s for s in known if re.fullmatch(command[-1], s)]
++            events = [{"Action": "pass", "Test": symbol} for symbol in selected]
++            if command[4] == "./oid4vp":
++                events.extend({"Action": "pass", "Test": f"TestAVProfileRequiredParameters/negative_synthetic_{index}"} for index in range(8))
++            return subprocess.CompletedProcess(command, 0, "\n".join(map(json.dumps, events)), "")
++        # Synthetic Go outcomes and a sufficient host baseline exercise real aggregation/rendering.
++        host = av_report.host_record(ROOT)
++        host["diagnostics"] = []
++        with mock.patch.object(runner.subprocess, "run", side_effect=passing_go), mock.patch.object(runner, "host_record", return_value=host):
++            code, report, error = self.call_main("--candidate-command", self.adapter(self.payload()))
++        self.assertEqual(code, 0, error)
++        self.assertEqual(report["audit_exit_code"], 0)
++        self.assert_complete(report)
++        summary = report["summary"]
++        self.assertTrue(summary["thresholds_met"])
++        self.assertEqual(summary["unique_local_clauses"], 20)
++        self.assertEqual(summary["negative_controls"], 8)
++        for key in ("failed_results", "supplementary_failed_results", "environment_errors"):
++            self.assertEqual(summary[key], 0)
++        local, external = report["candidates"]
++        self.assertTrue(all(r["state"] == "PASS" for c in (local, external) for r in c["results"]))
++        self.assertTrue(all(r["state"] == "PASS" for r in local["probe_results"]))
++        self.assertEqual(set(local["negative_results"].values()), {"PASS"})
++        self.assertEqual(external["revision"], "a" * 40)
++        self.assertIn("adapter-reported", external["revision_provenance"])
++        text = " ".join(HTMLInventory(self.html).text)
++        self.assertIn("Audit exit: 0", text)
++        self.assertIn('"failed_results": 0', text)
++        self.assertIn("synthetic external example", text)
++        self.assertIn("External reproduction is UNPERFORMED", text)
++        self.assertEqual(report["external_reproduction"]["state"], "UNPERFORMED")
++        self.assertEqual(report["external_reproduction"]["status"], "awaiting-operator")
++        self.assertTrue(report["external_reproduction"]["operator_actions"])
++
+     def test_adapter_process_failure_preserves_diagnostic(self):
+         command = shlex.quote(sys.executable) + " -c " + shlex.quote('import sys; print("adapter startup cause", file=sys.stderr); print("{}"); sys.exit(3)')
+         _, report = self.run_audit("--skip-local", "--candidate-command", command)

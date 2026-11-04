@@ -10,6 +10,12 @@ hashes. The runner validates the registry through the shared offline validator
 before executing probes and records the actual registry SHA-256 and path in
 both artifacts. No separate semantic profile version is invented.
 
+The historical report pair above remains tied to its clean implementation
+revision. The separately retained [23 October follow-through package](av/follow-through-2026-10-23/README.md)
+contains the hardened runner's current **provisional dirty-workspace audit**,
+input/artifact hashes and transcript. It has not been published externally and
+does not replace the historical clean evidence or satisfy independent acceptance.
+
 The Digital Credentials API is the mandated AV ZK presentation path. OpenID4VP
 `mso_mdoc_zk` is a profiled, unofficial carrier. The Go audit checks selected
 containers, request properties and primitives for one boolean age predicate on
@@ -170,6 +176,10 @@ local verification. The JSON records `external_reproduction.status` as
    contract in [tests/README.md](../../tests/README.md), then rerun with
    `--candidate-command '<adapter command>'`. Preserve its named properties and
    all result states. An adapter is an evidence transport, not proof of independence.
+   The [runner contract](AV-CONFORMANCE-RUNNER.md) now executes quoted argv directly:
+   shell operators, expansion and globbing are not interpreted. Put compound setup
+   in an executable adapter script, or explicitly invoke a shell and have the
+   adapter report an inner candidate's startup failure as `NOT_EXECUTED`.
 2. Have an independent human or organization follow the clean-checkout commands
    in one sitting and retain start/end times, elapsed time, host record, exact
    source revision, command transcript, return codes and both generated artifacts.
@@ -202,3 +212,24 @@ records that substitution. Public availability and independent third-party
 reproduction remain outstanding operator work; this timing is one host's local
 measurement and does not establish either independence or a universal duration.
 Artifact hashes in the record identify the retained JSON, HTML and transcript.
+
+## Retrospective follow-through
+
+The [new workspace audit](av/follow-through-2026-10-23/README.md) exercises the
+reviewed adapter-hardening checkout at base commit
+`6cf84df5806ecd22792eade3b8ced8d14f148202`, explicitly dirty. Its 159 input hashes,
+exact command, UTC timing, return code, host metadata and matching JSON/HTML are
+retained separately. It returned 1 in 1.981 seconds with the same pinned
+profile/registry, ordered clause outcomes, summary and named negative-control
+states as the historical audit: local 17 PASS / 3 FAIL, 10 negative controls,
+external 20 NOT_EXECUTED, 74 exclusions per candidate and no environment errors.
+The historical four-file report/reproduction package is unchanged.
+
+Story 1.3's supplied verification separately records 38 runner tests and
+`make check` passing, plus the parent-run 212 Android tests, 6 JVM conformance
+tests and Go-ZK race suite. Those checks prove their local scopes; none is an
+independent reproduction. The uncommitted hardening still needs review, a clean
+committed regeneration and publication through `fork`, followed by independent
+candidate execution and independently attributed clean-checkout reproduction.
+Story 1.6 remains `awaiting-operator`; no public availability, external
+participation or acceptance is inferred from this workspace package.

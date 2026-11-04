@@ -10,7 +10,7 @@ context: [AGENTS.md, DESIGN.md]
 warnings: [oversized]
 deferred: []
 operator_actions:
-  - "Publish the implementation and retained report evidence through the fork remote so the documented public checkout can fetch implementation commit 3cce11df6ec4e9148ebd4859cde95aabf7e650fc."
+  - "Review and commit the hardened implementation, regenerate the provisional follow-through audit from that clean full revision, and publish the implementation and retained evidence through fork; preserve the historical report at 3cce11df6ec4e9148ebd4859cde95aabf7e650fc separately."
   - "Have an independent human or organization run the documented clean-checkout procedure in one sitting and return elapsed times, host metadata, exact commands, return codes, transcript and both report artifacts."
   - "Arrange execution of an independent candidate at a recorded revision through the existing JSON adapter and retain its failures and unavailable evidence alongside the local result."
   - "Review the independent evidence and discrepancies, then publish the attributed report and reproduction record at the chosen public location."
@@ -190,3 +190,30 @@ established. Report publication through the public fork and independent
 execution/attribution remain owed exactly as listed in operator_actions.
 The guide records that source/host/timing variations require comparison and
 that failed artifact-write attempts must not be published as matching pairs.
+
+## 2026-10-23 — Retrospective follow-through
+
+The [follow-through record](spec-1-6-av-report-follow-through.md) retains the
+hardened runner's [new provisional workspace evidence](../../docs/profiles/av/follow-through-2026-10-23/README.md)
+separately from the historical clean report and reproduction. The actual audit
+at dirty base revision `6cf84df5806ecd22792eade3b8ced8d14f148202` returned 1
+in 1.981 seconds: local 17 PASS / 3 FAIL, 10 passing negative controls, external
+20 NOT_EXECUTED, 74 exclusions per candidate and zero environment errors. The new record hashes
+159 source/configuration/profile/fixture inputs before execution and verifies
+unchanged bytes after it, plus both reports and the exact-command transcript.
+Pinned profile/registry, full summary, ordered clause states/mappings and named
+negative-control states match the historical report. All four historical
+report/reproduction files remain byte-for-byte unchanged.
+
+Epic 1's overview and execution sequence now distinguish locally preparable
+kit work from the independent candidate, publication and reproduction gates,
+resolving retrospective F8 without changing acceptance criteria. The guide
+links the hardened argv adapter contract. Documentation indexes the current
+package, both follow-through specs and the deferred output-budget item.
+
+Status remains `awaiting-operator`. No independent candidate or independently
+attributed clean-checkout reproduction was provided, and no publication or
+external contact occurred. The new uncommitted report is provisional;
+review/commit, clean regeneration and publication through `fork` precede
+independent execution and discrepancy review. Earlier clean local reproduction
+remains historical evidence, not proof that these new fixes were cleanly rebuilt.
