@@ -1,4 +1,4 @@
-.PHONY: deps py-deps doctor bootstrap test-doctor keys publish-guard pin-gate lint pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
+.PHONY: deps py-deps doctor bootstrap test-doctor keys publish-guard pin-gate lint lint-go lint-py lint-rust lint-kotlin lint-sh pki-gates test-go-fast test-go-zk test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance check e2e sandbox
 
 SHELL := /bin/bash
 
@@ -32,9 +32,10 @@ deps:
 	rev="$$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" && \
 		cd verifier/go && go build -ldflags "-X main.longfellowRev=$$rev" -o ../zkverify .
 
-# The locked Python inputs (pyproject.toml group `ci`, hashes in uv.lock); fails if the two disagree.
+# The locked Python inputs (pyproject.toml groups `ci` and `lint`, hashes in uv.lock); fails if the two
+# disagree. `lint` pins ruff, pyright and pre-commit so a laptop counts what CI counts.
 py-deps:
-	uv sync --locked --only-group ci
+	uv sync --locked --only-group ci --only-group lint
 
 # One line per failed check; exit 1 on any. See tools/doctor.py for the checks and DOCTOR_SKIP.
 doctor:
@@ -70,12 +71,38 @@ pin-gate:
 	python3 tools/pin_gate.py
 	python3 -m unittest discover -s tests -p 'test_pin_gate.py'
 
-lint:
+# `make lint` is every linter, once: Go, Python, Rust, Kotlin and shell. Violations that predate a
+# gate are held by a baseline that may only shrink (tools/lint-baseline.json, app/detekt-baseline.xml,
+# spotless ratchetFrom in app/build.gradle.kts); anything new fails. Needs `make py-deps` (ruff,
+# pyright), cargo with ../longfellow-zk (clippy), JDK 17 and the Gradle caches (ktlint, detekt).
+lint: lint-go lint-py lint-rust lint-kotlin lint-sh
+
+lint-go:
 	cd verifier/go && unformatted="$$(gofmt -l .)" && if [ -n "$$unformatted" ]; then \
 		echo "not gofmt-clean:"; echo "$$unformatted"; exit 1; fi
 	cd verifier/go && go vet ./...
+	cd verifier/go && golangci-lint run ./...
+
+# `ruff check .` is the blocking set (F, E9 in pyproject.toml); lint_ratchet.py holds the wider rule
+# families, pyright and `ruff format` of new files to the committed baseline.
+lint-py:
 	python3 -m compileall -q issuer verifier wallet tests sandbox
-	ruff check --isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .
+	ruff check .
+	python3 tools/lint_ratchet.py
+
+lint-rust:
+	cd verifier/zkverify-ffi && cargo fmt --check
+	cd verifier/zkverify-ffi && cargo clippy --locked --all-targets -- -D warnings
+
+# Gradle here needs JDK 17: $JAVA_HOME if it is one, else the first /usr/lib/jvm/*17* (as tools/doctor.py).
+GRADLE_JAVA_HOME ?= $(shell for d in "$$JAVA_HOME" /usr/lib/jvm/*17*; do \
+	[ -x "$$d/bin/java" ] && "$$d/bin/java" -version 2>&1 | grep -q '"17\.' && { echo "$$d"; break; }; done)
+
+lint-kotlin:
+	@test -n "$(GRADLE_JAVA_HOME)" || { echo "make lint-kotlin: no JDK 17 found (set JAVA_HOME)" >&2; exit 1; }
+	JAVA_HOME="$(GRADLE_JAVA_HOME)" ./gradlew --console=plain -q :app:spotlessCheck :app:detekt
+
+lint-sh:
 	shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
 
 # -race as in CI: these tests assert concurrency behaviour (session sweeps,
@@ -91,7 +118,8 @@ test-py:
 	python3 issuer/test_mint_custody.py
 	python3 sandbox/test_age.py
 
-# CI's fast job: no Rust toolchain needed.
+# Everything that runs without the prover or an emulator: the lint job and ci.yml's fast job. Needs
+# the toolchains `make lint` lists; `make test-go-zk` and `make e2e` are the rest of CI.
 check: lint test-doctor pki-gates publish-guard pin-gate test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
 
 # PKI plan gates and their seeded failures (security.yml runs the same).

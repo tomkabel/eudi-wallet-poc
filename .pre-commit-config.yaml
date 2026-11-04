@@ -1,9 +1,18 @@
-# Install: pre-commit install   (CI runs the same scanners; see .github/workflows/security.yml)
+# Install: pre-commit install   (CI runs `pre-commit run --all-files`; scanners also in security.yml)
+#
+# The same linters as `make lint`, one hook per language, so a commit is held to what CI holds a
+# push to. The local hooks call the make targets rather than repeating their command lines.
+# Needs `make py-deps` first (ruff, pyright), cargo with ../longfellow-zk, JDK 17 and golangci-lint.
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e  # v8.30.1
     hooks:
       - id: gitleaks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 321478e58f4938179c6b86e4ddfa923d1547a49b  # v0.16.6, same as the `lint` group in pyproject.toml
+    hooks:
+      - id: ruff-check
+        name: ruff (F, E9 from pyproject.toml; blocking)
   - repo: local
     hooks:
       - id: publish-guard
@@ -12,3 +21,33 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: lint-py-ratchet
+        name: python ratchet (wider ruff families, pyright, ruff format of new files)
+        entry: python3 tools/lint_ratchet.py
+        language: system
+        pass_filenames: false
+        files: '\.py$|^pyproject\.toml$|^tools/(lint-baseline\.json|ratchet-base\.txt)$'
+      - id: lint-go
+        name: go (gofmt, go vet, golangci-lint)
+        entry: make lint-go
+        language: system
+        pass_filenames: false
+        files: '^verifier/go/'
+      - id: lint-rust
+        name: rust (cargo fmt --check, clippy -D warnings)
+        entry: make lint-rust
+        language: system
+        pass_filenames: false
+        files: '^verifier/zkverify-ffi/'
+      - id: lint-kotlin
+        name: kotlin (spotless ktlint on changed files, detekt against its baseline)
+        entry: make lint-kotlin
+        language: system
+        pass_filenames: false
+        files: '^(app/|gradle/|build\.gradle\.kts$)'
+      - id: lint-sh
+        name: shellcheck
+        entry: make lint-sh
+        language: system
+        pass_filenames: false
+        files: '\.sh$'

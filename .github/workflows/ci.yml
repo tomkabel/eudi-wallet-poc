@@ -43,6 +43,7 @@ jobs:
       go_rust: ${{ steps.filter.outputs.go_rust }}
       python: ${{ steps.filter.outputs.python }}
       e2e: ${{ steps.filter.outputs.e2e }}
+      lint: ${{ steps.filter.outputs.lint }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -76,6 +77,14 @@ jobs:
               - 'pyproject.toml'
               - 'uv.lock'
               - '.github/workflows/ci.yml'
+            # Every language `make lint` covers, plus the files that configure the linters.
+            lint:
+              - *go_rust
+              - *python
+              - 'app/**'
+              - 'gradle/**'
+              - '*.gradle.kts'
+              - '.pre-commit-config.yaml'
             # The prover/verifier build, plus the Python that drives it end to end.
             e2e:
               - *go_rust
@@ -114,7 +123,7 @@ jobs:
           enable-cache: false
       - name: Python deps (uv.lock; every wheel hash verified)
         run: |
-          uv sync --locked --only-group ci
+          uv sync --locked --only-group ci --only-group lint
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: gofmt
@@ -165,20 +174,12 @@ jobs:
         run: python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'
 
       - name: ruff
-        # F (pyflakes) and E9 catch undefined names, unused imports and syntax
-        # errors — the things that are wrong rather than merely unfashionable.
-        # The wider default set flags this codebase's deliberate compact style
-        # (`if not x: return`, grouped imports) and enforcing it would mean
-        # reformatting working code to satisfy a linter added after the fact.
-        #
-        # The submodule is a separate project with its own lint setup, and a
-        # developer tree has it checked out even where CI leaves it empty.
-        # Keep our linter out of them, or `ruff check .` flags their code.
-        # The same goes for vendored agent tooling (_bmad, .agents, .claude),
-        # which CI never checks out untracked but a developer tree carries.
-        run: |
-          pip install ruff==0.16.6
-          ruff check --isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .
+        # The blocking set is `select` in pyproject.toml: F (pyflakes) and E9 catch undefined names,
+        # unused imports and syntax errors, the things that are wrong rather than merely unfashionable.
+        # The wider families, pyright and the format check of new files are the ratchet in the `lint`
+        # job (tools/lint_ratchet.py); they hold the old code at its baseline instead of reformatting it.
+        # Excludes (the eudi-arf submodule, vendored agent tooling) are `extend-exclude` there too.
+        run: ruff check .
 
       - name: the wallet's half of the transcript pin
         # The Go half of these golden vectors runs in the step above; this is the
@@ -336,13 +337,62 @@ jobs:
           EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
         run: python3 tests/run_carrier_conformance.py --json carrier-conformance-report.json
 
+  lint:
+    name: lint (pre-commit, every linter in make lint)
+    needs: changes
+    if: needs.changes.outputs.lint == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: eudi-wallet-poc
+          # lint_ratchet.py and spotless ratchetFrom diff against a commit that predates the gate.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: eudi-wallet-poc/verifier/go/go.mod
+          cache: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: 0.13.7
+          enable-cache: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - name: Python deps (ruff, pyright and pre-commit come from uv.lock)
+        run: |
+          uv sync --locked --only-group ci --only-group lint
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: clone longfellow-zk at the pinned revision (clippy resolves the path dependency)
+        run: ./scripts/bootstrap-longfellow.sh
+      - name: golangci-lint 2.15.0 (checksum from the release asset digest)
+        run: |
+          f=golangci-lint-2.15.0-linux-amd64.tar.gz
+          curl -fsSL -o "$RUNNER_TEMP/$f" "https://github.com/golangci/golangci-lint/releases/download/v2.15.0/$f"
+          echo "9b7fe6a6bf6334b98decf8d86b11415ea7889afdabdd1959fdce23af2a9ebcea  $RUNNER_TEMP/$f" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$f" -C "$RUNNER_TEMP" --strip-components=1 "golangci-lint-2.15.0-linux-amd64/golangci-lint"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: rustfmt and clippy
+        run: rustup component add rustfmt clippy
+      - name: pre-commit run --all-files
+        # Hook revisions are pinned by SHA in .pre-commit-config.yaml. The local hooks call
+        # `make lint-go|lint-rust|lint-kotlin|lint-sh` and tools/lint_ratchet.py.
+        run: pre-commit run --all-files --show-diff-on-failure
+
   ci-ok:
     name: ci-ok
     # The one check to require in branch protection. `if: always()` makes it run when a needed
     # job failed or was skipped; skipped (no matching paths) counts as success, failure or
     # cancelled does not.
     if: always()
-    needs: [changes, fast, e2e]
+    needs: [changes, fast, lint, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
