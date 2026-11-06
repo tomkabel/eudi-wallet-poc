@@ -1,0 +1,4 @@
+{"choices":[
+{"label":"Relationship facts the PID cannot carry (standing, tenure, role, mandate)","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":60}},
+{"label":"Re-attested identity (issuer vouches it KYC'd the holder)","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":20}},
+{"label":"Both, bundled in one credential","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":60}}]}

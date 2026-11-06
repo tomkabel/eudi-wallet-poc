@@ -1,0 +1,4 @@
+{"question":"FR inventory and coverage map for the new story","choices":[
+ {"label":"Add FR80 and a coverage row FR80 -> 10.6","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":90}},
+ {"label":"Map 10.6 under FR55 alongside 10.1, no new FR","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+ {"label":"No FR, story only","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":20}}]}

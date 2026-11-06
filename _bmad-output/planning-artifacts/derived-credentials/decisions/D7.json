@@ -1,0 +1,5 @@
+{"choices":[
+{"label":"Fold a narrow slice into the backlog via bmad-correct-course, gated behind Stories 3.1 and 10.1","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":60,"precedent":60}},
+{"label":"Park: record the position in docs, no backlog change","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"Drop","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":60}},
+{"label":"Separate product via bmad-spec","evidence":60,"scores":{"fit_to_constraints":20,"reversibility":60,"precedent":20}}]}

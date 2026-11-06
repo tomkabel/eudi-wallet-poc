@@ -1,0 +1,7 @@
+{"context": "recon R2: implication for the decision (pre-authorised, no user answer). Options authored by the lead.", "choices": [
+  {"label": "correct-course: one wallet-side Epic 10 story, nested PID presentation against the self-hosted reference issuer's por.1", "evidence": 90, "scores": {"fit_to_constraints": 90, "reversibility": 90, "precedent": 90}},
+  {"label": "correct-course as forged: in-repo demo issuer with a Paasuke-shaped PuB-EAA mock", "evidence": 90, "scores": {"fit_to_constraints": 60, "reversibility": 90, "precedent": 60}},
+  {"label": "park: record the position, no backlog change", "evidence": 60, "scores": {"fit_to_constraints": 60, "reversibility": 90, "precedent": 60}},
+  {"label": "amend Story 10.1 with a nested-presentation criterion instead of a new story", "evidence": 60, "scores": {"fit_to_constraints": 60, "reversibility": 90, "precedent": 60}},
+  {"label": "spec: a separate derived-credential product via bmad-spec", "evidence": 60, "scores": {"fit_to_constraints": 20, "reversibility": 60, "precedent": 20}}
+]}

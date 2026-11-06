@@ -1,0 +1,5 @@
+{"pick":"Central claim: a derived credential beats re-asking for the PID","escalated":false,"timed_out":false,"note":"D2 first branch; pre-authorised autonomous","choices":[
+{"label":"Central claim: a derived credential beats re-asking for the PID","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":90}},
+{"label":"Economics: who pays to issue and to verify","evidence":60,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"Legal frame: EAA class, RP registration, GDPR, AMLR","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"Project fit: what this repo would build","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":20}}]}

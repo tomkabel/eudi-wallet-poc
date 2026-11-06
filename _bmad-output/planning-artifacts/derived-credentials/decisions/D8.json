@@ -1,0 +1,3 @@
+{"choices":[
+{"label":"Write the brief to forge-brief.md","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":90}},
+{"label":"Leave the memlog as the only record","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":60}}]}

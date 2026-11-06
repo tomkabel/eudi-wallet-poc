@@ -1,0 +1,4 @@
+{"question":"steps 3-5: approve the edit proposals and the complete proposal for implementation","choices":[
+ {"label":"Approve: apply the proposal as written","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":90}},
+ {"label":"Revise: drop the spec 23 entry and only annotate the 8 row","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":60}},
+ {"label":"Revise: hold Story 10.6 until Story 10.1 unblocks","evidence":60,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":60}}]}

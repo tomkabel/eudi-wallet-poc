@@ -59,6 +59,13 @@ borrows a *method* from. No zero-trust-octagon text or code is copied. Its own a
 `src/`, so nothing there counts as evidence for a claim in this repository. Every legal, jurisdictional and
 sovereignty proposition in the new stories is `[UNVERIFIED]` until checked against a primary source.
 
+**Extended 2026-11-06.** Story 10.6 and FR80 were added by a course correction
+(`sprint-change-proposal-2026-11-06.md`) from the derived-credentials recon in
+`derived-credentials/recon-summary.md`, not from the 23 October corpus. The `por.1` attestation is a new
+attestation in the sense of NFR16; the PRD that NFR16 points to lives only on the read-only archive
+branch, so the scope decision is recorded here and in the proposal: the attestation is a labelled mock
+used to exercise the issuance flow, and no claim about the legal model for mandates follows from it.
+
 **Readiness gate: CONCERNS (proceed).** An architecture record does not exist yet: `bmad-architecture` has not run, which is why
 Stories 3.1, 4.1 and 5.1 each open by making their own decision. The PRD landed after this
 document was written (see `Reconciliation with the PRD` below), so these stories are
@@ -89,7 +96,7 @@ pre-authorised proceeding.
 | 7 | Documentation honesty | R3, risk R12 | 7.1–7.11 | cheap prerequisite |
 | 8 | Standards watch and open-risk reporting | R5, A9–A12, A14–A16, risks R1–R3, R7, R10, R11, R14 | 8.1–8.10 | continuous |
 | 9 | Statutory age-threshold toolkit | O6 (3.80), A3 R2 | 9.1–9.6 | gated on Epic 5 |
-| 10 | Issuance, trust and revocation completeness | L4, S2, S9, S11 | 10.1–10.5 | pilot prerequisite |
+| 10 | Issuance, trust and revocation completeness | L4, S2, S9, S11; derived-credentials recon 2026-11-06 | 10.1–10.6 | pilot prerequisite |
 | 11 | Production readiness for a pilot relying party | A3 R1 | 11.1–11.8 | pilot prerequisite |
 | 12 | Consent integrity and user-presence gates | PRD §4.7 (FR-45–FR-48), audit findings | 12.1–12.4 | v1 requirement |
 | 13 | Compellability dossier | zero-trust analysis 2026-11-04 | 13.1–13.3 | 13.3 early; 13.2 and 13.1 second wave |
@@ -178,6 +185,7 @@ FR76: The circuit list requires t valid signatures from n pinned signers in diff
 FR77: Published evidence reports carry an EU qualified electronic time stamp that an offline script verifies.
 FR78: Each mock-to-real seam has a contract test showing the mock and the real counterpart agree per case.
 FR79: Each fail-closed guard is shown necessary by a scripted mutation that makes a test fail.
+FR80: Issuance whose OpenID4VCI authorization step requires a nested OpenID4VP presentation of the PID completes in the wallet against a self-hosted Commission reference issuer, which issues a mock Power of Representation attestation (`eu.europa.ec.eudi.por.1`) carrying no name or birth date; an issuer asking for PID attributes beyond its registered intended use is refused fail-closed.
 
 ### Non-Functional Requirements
 
@@ -301,6 +309,7 @@ specification work: FR19 (Topic 19 / DASH_03 presentation-log fields, Epic 4) an
 | FR77 | 13.3 |
 | FR78 | 14.1 |
 | FR79 | 14.2 |
+| FR80 | 10.6 |
 
 _Rows deliberately left without a story, and the specification requirements this backlog does not
 carry, are listed in `Deliberately not made into stories` under Sequencing._
@@ -313,7 +322,7 @@ bound here by class rather than by story.
 |---|---|---|
 | NFR1 no compliance claim | every story | Story 7.4's vocabulary pass; review of any document a story publishes |
 | NFR2 figures state method | 6.1, 6.2, 6.3, 6.6, 9.6 | Story 6.6's reporting review |
-| NFR3 fail closed | 3.3, 4.1, 4.5, 4.7, 5.2, 5.3 | each story's refusal case |
+| NFR3 fail closed | 3.3, 4.1, 4.5, 4.7, 5.2, 5.3, 10.6 | each story's refusal case |
 | NFR4 version labels | 1.2, 2.3, 4.2, 5.1, 8.2 | Story 2.3's labelling assertion |
 | NFR5 no regression | every code story | Definition of Done below |
 | NFR6 pinned Python inputs | every story that runs the Python helpers | `tests/requirements-ci.txt` review; transcript tests re-run on change |
@@ -1832,6 +1841,51 @@ the CIR article text could not be fetched during research,
 - **And** a requirement row that is verifiable and fails on the named device set is recorded as a
 failure, not as merely unverified, so a device that fails a security requirement is visible,
 **Covers:** FR59. **Source:** L5 required change and verification method.
+
+### Story 10.6: PID-authenticated issuance of a representation attestation
+
+As a holder,
+I want the wallet to complete an issuance whose authorization step asks for a PID presentation,
+So that the spec §11.5 nesting of OpenID4VP inside OpenID4VCI is exercised, and an issuer that asks
+for too much is refused.
+
+**Acceptance Criteria:**
+
+- **Given** a self-hosted Commission reference issuer `eudi-srv-web-issuing-eudiw-py` at a recorded
+revision, with the `eu.europa.ec.eudi.por_mdoc` credential configuration under `PID_login` and a
+`dynamic_issuing` entry naming only the PID attribute its intended use names,
+- **When** the wallet starts authorization-code issuance on the same device,
+- **Then** the issuer's OpenID4VP request re-enters the wallet mid-issuance, the PID presentation
+completes, and issuance completes from the persisted authorization state with an
+`eu.europa.ec.eudi.por.1` attestation stored,
+- **And** an issuer whose nested request asks for PID attributes beyond its registered intended use is
+refused fail-closed through Story 4.1's `IntendedUseSource`, the issuance is aborted and its key
+released,
+- **And** a test asserts that the stored attestation discloses no `family_name` and no `birth_date`,
+- **And** a revoked `por.1` is refused at the verifier through Story 10.4's status-list path,
+- **And** the attestation is labelled a mock wherever it is shown or recorded: its values are
+user-entered, its issuer is the reference issuer's "Test QEAA Issuer", and no Art. 45f or PuB-EAA
+status is claimed for it,
+- **And** the story's record states two limits: the presented PID and the attestation's key are not
+cryptographically linked (OIDF OpenID4VCI issue #742 shows the key/claims split for the 1.1 draft;
+that the 1.0 nested variant shares it is an inference, `[UNVERIFIED]`), and the authorization page and
+the presentation's return URL must share one user agent (variant 2 of OIDF OpenID4VCI issue #730),
+- **And** `credentialConfigurationIds` (hard-coded to `[MDL]` in `OpenId4VCIManager`) and the issuer URL
+are configurable rather than edited for the test.
+
+**Depends on:** 10.1 (interop of the pinned `eudi-lib-jvm-openid4vci-kt` 0.6.1, which targets
+OpenID4VCI draft 14, against a 1.0 issuer; this may force the upgrade to 0.9.0 or later, the first
+release aligned with OpenID4VCI 1.0), 4.1 (the refusal criterion), 10.4 (the revocation criterion).
+**Blocked by:** 10.1. Self-hosting the issuer removes the dependency on the public deployment, whose
+`por.1`-behind-`PID_login` configuration is not public. Where 10.1 stays blocked and self-hosting is
+ruled out, the story is parked rather than closed, with the reason and date recorded.
+**Covers:** FR80. **Source:** derived-credentials recon 2026-11-06
+(`_bmad-output/planning-artifacts/derived-credentials/recon-summary.md`, "Implication for the decision"
+and sources [1]–[13]), which reshaped `forge-brief.md` in the same folder; spec §11.5 "The two protocols
+nest". **Decision:** correct-course with one wallet-side story; no in-repository issuer; `por.1`
+payload with EWC rulebook RB004 "Signatory Rights" as the pilot precedent; the Story 3.1 gate dropped
+because the reference issuer delegates the nested presentation to its own configured verifier
+(tiltrank, 2026-11-06; `sprint-change-proposal-2026-11-06.md`).
 
 ## Epic 11: Production readiness for a pilot relying party
 

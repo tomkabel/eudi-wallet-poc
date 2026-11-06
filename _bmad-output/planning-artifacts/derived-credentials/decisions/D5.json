@@ -1,0 +1,6 @@
+{"choices":[
+{"label":"Private relationship attestation (telco or utility account holder in good standing), non-qualified EAA","evidence":60,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"Mandate or representation from Paasuke and the Business Register, PuB-EAA","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":60}},
+{"label":"Employer-issued role or employment attestation","evidence":60,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"Bank CDD-completed attestation for inter-bank reliance","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":20}}],
+"refit_reason":"escalation probe: spec section 8 catalogue lists 'Powers and mandates (Paasuke) PuB-EAA RIA P2' and no private relationship attestation; eIDAS recital names powers of representation and e-mandates; GSMA KYC Match shows telco facts are already sold as an operator-in-the-loop API. Telco fit moved 90->60, mandate fit 60->90"}

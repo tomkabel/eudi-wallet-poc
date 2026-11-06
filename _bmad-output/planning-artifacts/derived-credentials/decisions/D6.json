@@ -1,0 +1,4 @@
+{"choices":[
+{"label":"Economics blocks a separate product, not a reference slice","evidence":60,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":60}},
+{"label":"Economics kills the idea for this repo outright","evidence":60,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"Verifier-pays-issuer makes a separate product viable","evidence":60,"scores":{"fit_to_constraints":20,"reversibility":60,"precedent":60}}]}

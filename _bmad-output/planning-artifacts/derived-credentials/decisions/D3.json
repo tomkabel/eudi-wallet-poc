@@ -1,0 +1,6 @@
+{"choices":[
+{"label":"Mary (analyst) + generated bank AML officer","evidence":60,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":60}},
+{"label":"Winston (architect) + generated telco product owner","evidence":60,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"John (PM) + generated small verifier (landlord platform)","evidence":60,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+{"label":"Rotate the three pairs by branch","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":90}}],
+"refit_reason":"escalation probe: re-read forge SKILL.md, which requires varying the persona voice every few turns; rotation is that rule, added as its own option"}
