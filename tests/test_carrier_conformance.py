@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 import run_carrier_conformance as runner
@@ -18,6 +19,25 @@ def record(case_id):
         "declared_outcome": outcomes[0],
         "result": "PASS",
     }
+
+
+def write_records(env, last):
+    lines = "".join(json.dumps(record(n)) + "\n" for n in range(1, last + 1))
+    Path(env["EE_E2E_CASES"]).write_text(lines)
+
+
+def passing_output(name):
+    ok = name == "committed-carrier-vectors"
+    return "--- PASS: TestCarrierVectorsVerifyIdentically" if ok else "ok"
+
+
+def problems_of(report):
+    return cast(list[str], report["inventory_problems"])
+
+
+def suite_of(report, name):
+    suites = cast(list[dict[str, str]], report["suites"])
+    return next(s for s in suites if s["name"] == name)
 
 
 def setup_root(root):
@@ -126,18 +146,24 @@ class CarrierConformanceTests(unittest.TestCase):
 
             def fake_runner(name, command, cwd, env):
                 if name == "e2e-assertions":
-                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 16)))
-                output = "--- PASS: TestCarrierVectorsVerifyIdentically" if name == "committed-carrier-vectors" else "ok"
+                    write_records(env, 15)
+                output = passing_output(name)
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-        self.assertTrue(any("case 16" in problem and "no runner metadata" in problem for problem in report["inventory_problems"]))
+        self.assertTrue(
+            any(
+                "case 16" in p and "no runner metadata" in p
+                for p in problems_of(report)
+            )
+        )
         self.assertFalse(runner.report_passed(report))
 
     def test_failing_child_is_reported_as_fail_not_a_crash(self):
         # Go prints "--- FAIL:"; tests/e2e.sh prints "  FAIL  msg". Both exit non-zero.
         for body in ["print('--- FAIL: TestX')", "print('  FAIL  case 3 msg')"]:
-            result = runner.run_command("fail-test", [sys.executable, "-c", body + "; raise SystemExit(1)"], Path.cwd())
+            command = [sys.executable, "-c", body + "; raise SystemExit(1)"]
+            result = runner.run_command("fail-test", command, Path.cwd())
             self.assertEqual(result.status, "FAIL", body)
 
     def test_deleted_numbered_assertion_is_reported(self):
@@ -149,12 +175,13 @@ class CarrierConformanceTests(unittest.TestCase):
 
             def fake_runner(name, command, cwd, env):
                 if name == "e2e-assertions":
-                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 15)))
-                output = "--- PASS: TestCarrierVectorsVerifyIdentically" if name == "committed-carrier-vectors" else "ok"
+                    write_records(env, 14)
+                output = passing_output(name)
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-        self.assertTrue(any("case 15: expected numbered assertion not found" in p for p in report["inventory_problems"]))
+        missing = "case 15: expected numbered assertion not found"
+        self.assertTrue(any(missing in p for p in problems_of(report)))
         self.assertFalse(runner.report_passed(report))
 
     def test_child_timeout_is_bounded_and_reported_as_error(self):
@@ -169,7 +196,8 @@ class CarrierConformanceTests(unittest.TestCase):
 
     def test_child_output_limit_is_bounded_and_reported_as_error(self):
         with patch.object(runner, "COMMAND_OUTPUT_LIMIT_BYTES", 16):
-            result = runner.run_command("output-limit-test", [sys.executable, "-c", "import os; os.write(1, b'x' * 100)"], Path.cwd())
+            command = [sys.executable, "-c", "import os; os.write(1, b'x' * 100)"]
+            result = runner.run_command("output-limit-test", command, Path.cwd())
         self.assertEqual(result.status, "ERROR")
         self.assertIn("byte limit", result.detail)
 
@@ -182,9 +210,8 @@ class CarrierConformanceTests(unittest.TestCase):
             def fake_runner(name, command, cwd, env):
                 events.append(name)
                 if name == "e2e-assertions":
-                    lines = "".join(json.dumps(record(n)) + "\n" for n in range(1, 16))
-                    Path(env["EE_E2E_CASES"]).write_text(lines)
-                output = "--- PASS: TestCarrierVectorsVerifyIdentically" if name == "committed-carrier-vectors" else "ok"
+                    write_records(env, 15)
+                output = passing_output(name)
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
@@ -192,8 +219,9 @@ class CarrierConformanceTests(unittest.TestCase):
                 "carrier-parser-tests", "committed-carrier-vectors", "e2e-assertions"
             ])
             self.assertEqual([item["carrier"] for item in report["carrier_vectors"]], list(runner.EXPECTED_CARRIERS))
-            self.assertEqual(report["external_evidence"]["status"], "BLOCKED")
-            self.assertEqual(report["external_evidence"]["date"], runner.date.today().isoformat())
+            evidence = cast(dict[str, str], report["external_evidence"])
+            self.assertEqual(evidence["status"], "BLOCKED")
+            self.assertEqual(evidence["date"], runner.date.today().isoformat())
             self.assertTrue(runner.report_passed(report))
 
     def test_vector_suite_requires_visible_pass_and_valid_manifest_hashes(self):
@@ -203,34 +231,35 @@ class CarrierConformanceTests(unittest.TestCase):
 
             def fake_runner(name, command, cwd, env):
                 if name == "e2e-assertions":
-                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 16)))
+                    write_records(env, 15)
                 output = "ok\n" if name == "committed-carrier-vectors" else "ok"
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-            vector_suite = next(s for s in report["suites"] if s["name"] == "committed-carrier-vectors")
+            vector_suite = suite_of(report, "committed-carrier-vectors")
             self.assertEqual(vector_suite["status"], "ERROR")
             self.assertIn("without a visible PASS", vector_suite["detail"])
             vector_file = manifest.parent / "device_response.cbor"
             vector_file.write_bytes(b"changed")
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-            vector_suite = next(s for s in report["suites"] if s["name"] == "committed-carrier-vectors")
+            vector_suite = suite_of(report, "committed-carrier-vectors")
             self.assertEqual(vector_suite["status"], "ERROR")
             self.assertIn("SHA-256 mismatch", vector_suite["detail"])
             manifest_data = json.loads(manifest.read_text())
             manifest_data["sha256"].pop("request.json")
             manifest.write_text(json.dumps(manifest_data))
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-            vector_suite = next(s for s in report["suites"] if s["name"] == "committed-carrier-vectors")
+            vector_suite = suite_of(report, "committed-carrier-vectors")
             self.assertEqual(vector_suite["status"], "ERROR")
             self.assertIn("hash inventory", vector_suite["detail"])
             manifest_data["sha256"]["request.json"] = "x"
             manifest_data["source"] = "unverified-source"
             manifest.write_text(json.dumps(manifest_data))
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-            vector_suite = next(s for s in report["suites"] if s["name"] == "committed-carrier-vectors")
+            vector_suite = suite_of(report, "committed-carrier-vectors")
             self.assertEqual(vector_suite["status"], "ERROR")
-            self.assertTrue("provenance" in vector_suite["detail"] or "SHA-256 mismatch" in vector_suite["detail"])
+            detail = vector_suite["detail"]
+            self.assertTrue("provenance" in detail or "SHA-256 mismatch" in detail)
 
     def test_failed_child_without_records_marks_all_cases_not_executed(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -242,7 +271,8 @@ class CarrierConformanceTests(unittest.TestCase):
                 return runner.SuiteResult(name, status, list(command), None if status == "ERROR" else 0)
 
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-            self.assertTrue(all(item["result"] == "NOT_EXECUTED" for item in report["cases"]))
+            cases = cast(list[dict[str, str]], report["cases"])
+            self.assertTrue(all(c["result"] == "NOT_EXECUTED" for c in cases))
             self.assertFalse(runner.report_passed(report))
 
 
