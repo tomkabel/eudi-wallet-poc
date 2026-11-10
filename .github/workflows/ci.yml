@@ -337,6 +337,15 @@ jobs:
           EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
         run: python3 tests/run_carrier_conformance.py --json carrier-conformance-report.json
 
+      - name: upload carrier conformance report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: carrier-conformance-report
+          path: carrier-conformance-report.json
+          if-no-files-found: error
+          retention-days: 14
+
   lint:
     name: lint (pre-commit, every linter in make lint)
     needs: changes

@@ -14,8 +14,8 @@ def record(case_id):
         "case_id": str(case_id),
         "path_label": runner.EXPECTED_PATH,
         "carriers": list(carriers),
-        "response_mode": mode,
-        "outcome": outcomes[0],
+        "declared_response_mode": mode,
+        "declared_outcome": outcomes[0],
         "result": "PASS",
     }
 
@@ -43,7 +43,7 @@ def setup_root(root):
 class CarrierConformanceTests(unittest.TestCase):
     def test_complete_inventory_is_reported_in_case_order(self):
         rows, problems = runner.validate_case_records(
-            [record(n) for n in reversed(range(1, 14))]
+            [record(n) for n in reversed(range(1, 16))]
         )
         self.assertEqual(problems, [])
         self.assertEqual([row["case_id"] for row in rows], list(runner.CASE_IDS))
@@ -52,7 +52,7 @@ class CarrierConformanceTests(unittest.TestCase):
     def test_missing_child_records_remain_not_executed(self):
         rows, problems = runner.validate_case_records([])
         self.assertEqual(problems, [])
-        self.assertEqual(len(rows), 13)
+        self.assertEqual(len(rows), 15)
         self.assertTrue(all(row["result"] == "NOT_EXECUTED" for row in rows))
         self.assertFalse(runner.report_passed({
             "inventory_problems": [],
@@ -68,10 +68,10 @@ class CarrierConformanceTests(unittest.TestCase):
 
     def test_malformed_outcome_is_an_error_not_a_pass(self):
         bad = record(4)
-        bad["outcome"] = "binding-failure"
+        bad["declared_outcome"] = "binding-failure"
         rows, problems = runner.validate_case_records([bad])
         self.assertEqual(rows[3]["result"], "ERROR")
-        self.assertEqual(rows[3]["outcome"], "malformed-case-record")
+        self.assertEqual(rows[3]["declared_outcome"], "malformed-case-record")
         self.assertTrue(any("invalid outcome" in problem for problem in problems))
 
     def test_case_carrier_must_match_observed_inventory(self):
@@ -83,14 +83,14 @@ class CarrierConformanceTests(unittest.TestCase):
 
     def test_case_response_mode_must_match_observed_inventory(self):
         bad = record(7)
-        bad["response_mode"] = "direct_post"
+        bad["declared_response_mode"] = "direct_post"
         rows, problems = runner.validate_case_records([bad])
         self.assertEqual(rows[6]["result"], "ERROR")
         self.assertTrue(any("response_mode" in problem and "observed inventory" in problem for problem in problems))
 
     def test_expected_outcome_is_case_specific(self):
         bad = record(4)
-        bad["outcome"] = "proof-verified"
+        bad["declared_outcome"] = "proof-verified"
         rows, problems = runner.validate_case_records([bad])
         self.assertEqual(rows[3]["result"], "ERROR")
         self.assertTrue(any("outcome" in problem and "expected" in problem for problem in problems))
@@ -122,16 +122,39 @@ class CarrierConformanceTests(unittest.TestCase):
             root = Path(tmp)
             setup_root(root)
             e2e = root / "tests/e2e.sh"
-            e2e.write_text(e2e.read_text() + '\necho "14. added assertion"\n')
+            e2e.write_text(e2e.read_text() + '\necho "16. added assertion"\n')
 
             def fake_runner(name, command, cwd, env):
                 if name == "e2e-assertions":
-                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 14)))
+                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 16)))
                 output = "--- PASS: TestCarrierVectorsVerifyIdentically" if name == "committed-carrier-vectors" else "ok"
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
-        self.assertTrue(any("case 14" in problem and "no runner metadata" in problem for problem in report["inventory_problems"]))
+        self.assertTrue(any("case 16" in problem and "no runner metadata" in problem for problem in report["inventory_problems"]))
+        self.assertFalse(runner.report_passed(report))
+
+    def test_failing_child_is_reported_as_fail_not_a_crash(self):
+        # Go prints "--- FAIL:"; tests/e2e.sh prints "  FAIL  msg". Both exit non-zero.
+        for body in ["print('--- FAIL: TestX')", "print('  FAIL  case 3 msg')"]:
+            result = runner.run_command("fail-test", [sys.executable, "-c", body + "; raise SystemExit(1)"], Path.cwd())
+            self.assertEqual(result.status, "FAIL", body)
+
+    def test_deleted_numbered_assertion_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            setup_root(root)
+            e2e = root / "tests/e2e.sh"
+            e2e.write_text(e2e.read_text().replace('echo "15.', 'echo "x.'))
+
+            def fake_runner(name, command, cwd, env):
+                if name == "e2e-assertions":
+                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 15)))
+                output = "--- PASS: TestCarrierVectorsVerifyIdentically" if name == "committed-carrier-vectors" else "ok"
+                return runner.SuiteResult(name, "PASS", list(command), 0, output)
+
+            report = runner.run_conformance(root, fake_runner, staticlib_built=True)
+        self.assertTrue(any("case 15: expected numbered assertion not found" in p for p in report["inventory_problems"]))
         self.assertFalse(runner.report_passed(report))
 
     def test_child_timeout_is_bounded_and_reported_as_error(self):
@@ -159,7 +182,7 @@ class CarrierConformanceTests(unittest.TestCase):
             def fake_runner(name, command, cwd, env):
                 events.append(name)
                 if name == "e2e-assertions":
-                    lines = "".join(json.dumps(record(n)) + "\n" for n in range(1, 14))
+                    lines = "".join(json.dumps(record(n)) + "\n" for n in range(1, 16))
                     Path(env["EE_E2E_CASES"]).write_text(lines)
                 output = "--- PASS: TestCarrierVectorsVerifyIdentically" if name == "committed-carrier-vectors" else "ok"
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
@@ -180,7 +203,7 @@ class CarrierConformanceTests(unittest.TestCase):
 
             def fake_runner(name, command, cwd, env):
                 if name == "e2e-assertions":
-                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 14)))
+                    Path(env["EE_E2E_CASES"]).write_text("".join(json.dumps(record(n)) + "\n" for n in range(1, 16)))
                 output = "ok\n" if name == "committed-carrier-vectors" else "ok"
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 

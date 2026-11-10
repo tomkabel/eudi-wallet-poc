@@ -355,8 +355,8 @@ func CarrierForBytes(raw []byte, _ CredentialQuery, override Carrier) (Carrier, 
 	if len(sniff) > 0 && sniff[0] == '{' {
 		return InterimJSON{}, nil
 	}
-	if len(raw) > 0 {
-		if raw[0]>>5 == 4 || raw[0]>>5 == 5 { // CBOR major 4 (array) or 5 (map)
+	if len(sniff) > 0 {
+		if sniff[0]>>5 == 4 || sniff[0]>>5 == 5 { // CBOR major 4 (array) or 5 (map)
 			return MsoMdocZkCBOR{}, nil
 		}
 	}

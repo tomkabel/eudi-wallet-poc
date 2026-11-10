@@ -71,8 +71,8 @@ with open(path, "a", encoding="utf-8") as f:
         "case_id": case_id,
         "path_label": "openid4vp-interim-poc",
         "carriers": carrier.split(",") if carrier != "NOT_OBSERVED" else [],
-        "response_mode": response_mode,
-        "outcome": outcome,
+        "declared_response_mode": response_mode,
+        "declared_outcome": outcome,
         "result": result,
     }, sort_keys=True) + "\n")
 PY
@@ -472,12 +472,78 @@ else
 	fail "missing-credential refusal: $missing_check"
 fi
 
+# 14. Bytes that match neither carrier are refused as unknown-carrier; they do
+# not fall through to the JSON parser.
+echo "14. unknown carrier bytes: refused as unknown-carrier, not parsed as JSON"
+unknown_check="$(python3 - "$base" <<'PY'
+import base64, json, sys, urllib.error, urllib.request
+base = sys.argv[1]
+
+def http_json(url, payload=None):
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(url, data=data, method="POST",
+                                 headers={"Content-Type": "application/json"} if data else {})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.read().decode()
+
+started = json.loads(http_json(base + "/present/new", {"element": "age_over_18"}))
+req = json.load(urllib.request.urlopen(started["request_uri"], timeout=30))
+ids = [cq["id"] for cq in req["dcql_query"]["credentials"]]
+junk = base64.urlsafe_b64encode(b"\x01\x02\x03 not a carrier").decode().rstrip("=")
+txt = http_json(req["response_uri"], {"vp_token": {i: [junk] for i in ids}, "expected_now": req["expected_now"]})
+print("OK" if "unknown-carrier" in txt else "BAD " + txt)
+PY
+)" || true
+if [ "$unknown_check" = "OK" ]; then
+	case_record 14 NOT_OBSERVED direct_post unknown-carrier PASS
+	pass "unrecognised vp_token bytes are refused as unknown-carrier"
+else
+	case_record 14 NOT_OBSERVED direct_post unknown-carrier FAIL
+	fail "unknown-carrier refusal: $unknown_check"
+fi
+
+# 15. A JSON-looking envelope that is truncated is malformed-envelope, not
+# unknown-carrier: the '{' sniff keeps it on the interim JSON path.
+echo "15. truncated JSON envelope: refused as malformed-envelope"
+malformed_check="$(python3 - "$base" <<'PY'
+import base64, json, sys, urllib.error, urllib.request
+base = sys.argv[1]
+
+def http_json(url, payload=None):
+    data = json.dumps(payload).encode() if payload is not None else None
+    req = urllib.request.Request(url, data=data, method="POST",
+                                 headers={"Content-Type": "application/json"} if data else {})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.read().decode()
+    except urllib.error.HTTPError as e:
+        return e.read().decode()
+
+started = json.loads(http_json(base + "/present/new", {"element": "age_over_18"}))
+req = json.load(urllib.request.urlopen(started["request_uri"], timeout=30))
+ids = [cq["id"] for cq in req["dcql_query"]["credentials"]]
+truncated = base64.urlsafe_b64encode(b'{"zk_system": "longfellow-libzk-v1", "version":').decode().rstrip("=")
+txt = http_json(req["response_uri"], {"vp_token": {i: [truncated] for i in ids}, "expected_now": req["expected_now"]})
+print("OK" if "malformed-envelope" in txt and "unknown-carrier" not in txt else "BAD " + txt)
+PY
+)" || true
+if [ "$malformed_check" = "OK" ]; then
+	case_record 15 NOT_OBSERVED direct_post malformed-envelope PASS
+	pass "truncated JSON envelope is refused as malformed-envelope"
+else
+	case_record 15 NOT_OBSERVED direct_post malformed-envelope FAIL
+	fail "malformed-envelope refusal: $malformed_check"
+fi
+
 stop_verifier
 
 echo
 if [ "$failures" -eq 0 ]; then
-	echo "PASS: 13/13"
+	echo "PASS: 15/15"
 else
-	echo "FAIL: $failures of 13 assertions failed"
+	echo "FAIL: $failures of 15 assertions failed"
 fi
 exit "$((failures > 0))"

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run the existing E2E assertions and committed carrier vector suites.
 
-The E2E cases exercise the existing HTTP/proof flow and report their observed
-carrier and response mode. The vector layer separately checks both committed
+The E2E cases exercise the existing HTTP/proof flow. The report records the
+observed carriers and the declared response mode and outcome of each case. The vector layer separately checks both committed
 carrier encodings against the same proof. Local results are repository evidence
 only; they do not establish independent-wallet behavior or external conformance.
 """
@@ -42,6 +42,8 @@ OUTCOMES = {
     "encrypted-default-confirmed",
     "multi-credential-proof-verified",
     "missing-entry",
+    "unknown-carrier",
+    "malformed-envelope",
 }
 EXPECTED_CARRIERS = ("interim-json", "mso-mdoc-zk-cbor")
 EXPECTED_PATH = "openid4vp-interim-poc"
@@ -71,9 +73,13 @@ EXPECTED_CASE_METADATA = {
     "11": ((), "direct_post.jwt", ("encrypted-default-confirmed",)),
     "12": (("interim-json", "interim-json"), "direct_post", ("multi-credential-proof-verified",)),
     "13": ((), "direct_post", ("missing-entry",)),
+    "14": ((), "direct_post", ("unknown-carrier",)),
+    "15": ((), "direct_post", ("malformed-envelope",)),
 }
 CASE_IDS = tuple(EXPECTED_CASE_METADATA)
 CASE_ECHO = re.compile(r"^\s*echo\s+[\"']?(\d+)\.", re.MULTILINE)
+# Go prints "--- FAIL: Test"; tests/e2e.sh prints "  FAIL  msg"; go package failures print "FAIL\tpkg".
+FAIL_MARKER = re.compile(r"(?m)(?:^|\s)FAIL(?::|\s|$)")
 COMMAND_TIMEOUT_SECONDS = 900
 COMMAND_OUTPUT_LIMIT_BYTES = 4 * 1024 * 1024
 
@@ -144,8 +150,8 @@ def validate_case_records(
             "path_label": "NOT_OBSERVED",
             "carrier": "NOT_OBSERVED",
             "carriers": [],
-            "response_mode": "NOT_OBSERVED",
-            "outcome": "child-did-not-report",
+            "declared_response_mode": "NOT_OBSERVED",
+            "declared_outcome": "child-did-not-report",
             "result": "NOT_EXECUTED",
         }
         for case_id in case_ids
@@ -158,15 +164,15 @@ def validate_case_records(
             continue
         row = by_id[case_id]
         if case_id in seen:
-            row.update(outcome="duplicate-case-record", result="ERROR")
+            row.update(declared_outcome="duplicate-case-record", result="ERROR")
             problems.append(f"case {case_id}: duplicate record")
             continue
         seen.add(case_id)
 
         carriers = record.get("carriers")
         path_label = record.get("path_label")
-        response_mode = record.get("response_mode")
-        outcome = record.get("outcome")
+        response_mode = record.get("declared_response_mode")
+        outcome = record.get("declared_outcome")
         result = record.get("result")
         valid = True
         if not isinstance(carriers, list) or any(not isinstance(item, str) for item in carriers):
@@ -208,14 +214,14 @@ def validate_case_records(
             problems.append(f"case {case_id}: invalid result {result!r}")
             valid = False
         if not valid:
-            row.update(outcome="malformed-case-record", result="ERROR")
+            row.update(declared_outcome="malformed-case-record", result="ERROR")
             continue
         row.update(
             carriers=list(carriers),
             carrier=", ".join(carriers) if carriers else "NOT_OBSERVED",
             path_label=str(path_label),
-            response_mode=str(response_mode),
-            outcome=str(outcome),
+            declared_response_mode=str(response_mode),
+            declared_outcome=str(outcome),
             result=str(result),
         )
 
@@ -309,7 +315,7 @@ def run_command(
     returncode = proc.returncode
     if returncode == 0:
         status = "PASS"
-    elif "--- FAIL:" in output or "FAIL:" in output:
+    elif FAIL_MARKER.search(text_output):
         status = "FAIL"
     else:
         status = "ERROR"
@@ -344,6 +350,10 @@ def run_conformance(
     if len(case_ids) != len(set(case_ids)):
         inventory_prefix.append("tests/e2e.sh contains duplicate numbered assertion ids")
     inventory_prefix.extend(f"case {case_id}: numbered assertion has no runner metadata" for case_id in metadata_gaps)
+    inventory_prefix.extend(
+        f"case {case_id}: expected numbered assertion not found in tests/e2e.sh"
+        for case_id in CASE_IDS if case_id not in case_ids
+    )
 
     # Preserve this order: parser/dispatch controls, crypto-backed committed
     # vectors, then the live E2E suite whose rows include carrier observations.
@@ -478,8 +488,8 @@ def print_summary(report: dict[str, object]) -> None:
     print("  E2E case rows:")
     for case in report["cases"]:
         print(
-            f"    {case['case_id']:>2}  {case['carrier']:<30} {case['response_mode']:<16} "
-            f"{case['result']:<12} {case['outcome']} [{case['path_label']}]"
+            f"    {case['case_id']:>2}  {case['carrier']:<30} {case['declared_response_mode']:<16} "
+            f"{case['result']:<12} {case['declared_outcome']} [{case['path_label']}]"
         )
     print("  Carrier vectors:")
     for vector in report["carrier_vectors"]:

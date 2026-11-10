@@ -16,15 +16,15 @@ invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
 the Go carrier dispatch/parser checks, the committed carrier-vector verifier
 test, then `tests/e2e.sh`. The E2E script keeps its human-readable assertions
 and writes JSONL case observations to a private path supplied by the runner.
-The report has one ordered row for each of the 13 numbered assertions, with
-`path_label`, carrier, response mode, outcome and result. Cases that do not
+The report has one ordered row for each of the 15 numbered assertions, with
+`path_label`, observed carrier, declared response mode, declared outcome and result. Cases that do not
 carry a presentation (for example, proving the response key is published) have
 carrier `NOT_OBSERVED`; encrypted transport mode does not infer one. Child
 failures remain `FAIL`/`ERROR`, and cases the E2E child never reports remain
 `NOT_EXECUTED`.
 
 The E2E inventory exercises the OpenID4VP interim PoC path. Its rows do not
-claim that all 13 assertions exercise both encodings. The second layer runs the
+claim that all 15 assertions exercise both encodings. The second layer runs the
 same-proof committed vectors for `interim-json` and `mso-mdoc-zk-cbor`, whose
 byte hashes and provenance are in `tests/vectors/carrier-v1/manifest.json`.
 The runner requires `make deps` (including the Rust static library, prover and
@@ -256,8 +256,10 @@ of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 11. Default mode: a fresh `/present/new` without flags answers `direct_post.jwt`.
 12. Multi-credential (W6): with `-multi-credentials 2`, one session requests the national PoA and the AV doctype (two issuers); a wallet holding both answers both entries and the verifier answers `valid: true` with `all 2 credentials proved in zero knowledge`.
 13. Multi-credential all-or-error: a response answering only one of two queried credentials fails the session, with the missing credential id named in the detail.
+14. Unknown carrier bytes: a vp_token entry matching neither carrier is refused as `unknown-carrier`, not parsed as JSON.
+15. Malformed envelope: a truncated JSON envelope is refused as `malformed-envelope`, not `unknown-carrier`.
 
-Output is `PASS: 13/13` or `FAIL: n of 13 assertions failed`; exit status is
+Output is `PASS: 15/15` or `FAIL: n of 15 assertions failed`; exit status is
 non-zero when any assertion fails. Note what is absent: there is no
 untrusted-issuer case (the script deliberately trusts all minted issuer keys,
 which is why case 4 fails on the predicate value rather than on trust) and no

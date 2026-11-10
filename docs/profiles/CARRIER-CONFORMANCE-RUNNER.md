@@ -5,16 +5,15 @@
 The runner reports two separate layers:
 
 1. `tests/e2e.sh` retains its 13 existing cryptographic, transport and negative
-   assertions. Each assertion emits one machine-readable case record with its
+   assertions and adds two carrier-refusal assertions (14, 15). Each assertion emits one machine-readable case record with its
    case id, path label, observed carrier (or `NOT_OBSERVED` when the assertion
-   has no presentation bytes), response mode, outcome and result. Carrier and
+   has no presentation bytes), declared response mode, declared outcome and result. Carrier and
    response mode are independent fields. In particular, `direct_post.jwt`
    describes encrypted response transport; it does not imply a carrier.
 2. Go tests parse and dispatch carriers, then
    `TestCarrierVectorsVerifyIdentically` checks the two committed encodings
    against the same proof and transcript. This vector layer is where both
-   encodings are covered. The E2E suite does not claim a 13-case cross-carrier
-   matrix.
+   encodings are covered. The E2E suite does not claim a cross-carrier matrix.
 
 The E2E assertions currently use the OpenID4VP interim PoC carrier and the
 `openid4vp-interim-poc` path label. The Digital Credentials API is the mandated
