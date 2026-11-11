@@ -6,6 +6,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 
 | Document | What it is |
 |---|---|
+| [RP-register contract](../rp-kit/REGISTER-CONTRACT.md) | Fail-closed Go interface, shared synthetic corpus, provisional HTTP seam, bounded cache and local controls |
 | [TARA adapter contract](../rp-kit/TARA-CONTRACT.md) | Parallel OIDC reference, registered test-client prerequisites, bounded runner and external BLOCKED evidence |
 | [`CONFORMITY.md`](CONFORMITY.md) | This wallet's conformity statement against the specification (`EE-ZKP-003`, `EE-ZKP-060`) |
 | [`MEASUREMENTS.md`](MEASUREMENTS.md) | The on-device measurement harness and its results table |

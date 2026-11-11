@@ -108,7 +108,7 @@ lint-sh:
 # -race as in CI: these tests assert concurrency behaviour (session sweeps,
 # the reads limiter) that only the race detector exercises.
 test-go-fast:
-	cd verifier/go && go test -race ./oid4vp/... ./internal/... ./circuits/...
+	cd verifier/go && go test -race ./oid4vp/... ./internal/... ./circuits/... ./rpregister/...
 
 # The Python half of the transcript pin and the mint's device-key path. Run `make py-deps`
 # first, not whatever PyPI serves: the vectors are golden and uv.lock pins their inputs.

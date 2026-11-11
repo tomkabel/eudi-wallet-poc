@@ -31,7 +31,7 @@ func avAuditSession(t *testing.T) (*presenter, *oid4vp.Session) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &presenter{store: st, responseKey: &key, baseURL: "https://verifier.example.ee"}, s
+	return &presenter{register: testRegister(t), registerService: "age-verification", clientID: s.ClientID, store: st, responseKey: &key, baseURL: "https://verifier.example.ee"}, s
 }
 func TestAVConformanceResponseType(t *testing.T) {
 	p, s := avAuditSession(t)

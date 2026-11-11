@@ -78,6 +78,9 @@ func (p *presenter) handleDCAPINew(w http.ResponseWriter, r *http.Request) {
 		body.Element = "age_over_18"
 	}
 	q := oid4vp.AgeQuery("proof_of_age", p.docType, p.nsID, body.Element)
+	if !p.registerGate(w, p.clientID, q) {
+		return
+	}
 	s, err := p.store.NewISO(p.clientID, p.baseURL+"/present/dcapi/response", q, p.dcapiOrigin, p.offered)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -102,6 +105,14 @@ func (p *presenter) handleDCAPIPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s, err := p.store.Get(id)
+	if err != nil {
+		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		return
+	}
+	if !p.registerGate(w, s.ClientID, s.Query) {
+		return
+	}
+	s, err = p.store.Get(id)
 	if err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
@@ -151,6 +162,14 @@ func (p *presenter) handleDCAPIRequest(w http.ResponseWriter, r *http.Request) {
 	ext := s.SessionISO()
 	if ext == nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "session has no dcapi extension"})
+		return
+	}
+	if !p.registerGate(w, s.ClientID, s.Query) {
+		return
+	}
+	s, err = p.store.Get(id)
+	if err != nil {
+		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
 	cq, err := s.SingleQuery()
@@ -209,6 +228,14 @@ func (p *presenter) handleDCAPIResponse(w http.ResponseWriter, r *http.Request) 
 	}
 	defer p.sem.release()
 
+	peek, err := p.store.Get(id)
+	if err != nil {
+		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		return
+	}
+	if !p.registerGate(w, peek.ClientID, peek.Query) {
+		return
+	}
 	s, err := p.store.Claim(id)
 	if err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})

@@ -213,6 +213,23 @@ def main():
                 if message not in result.stderr.decode():
                     raise AssertionError(result.stderr)
             print("PASS nonpositive TTL and plain-alone startup refusal", flush=True)
+            process = start(["-dcapi-origin", "https://rp.example.ee"])
+            for route in ("/present/new", "/present/dcapi/new"):
+                code, refusal = request(base + route, {})
+                if (
+                    code != 503
+                    or refusal.get("reason") != "missing-register-prerequisite"
+                ):
+                    raise AssertionError(refusal)
+            stop(process)
+            print(
+                "PASS shipped unconfigured profile refuses both presentations",
+                flush=True,
+            )
+            args += [
+                "-rp-register-file",
+                str(REPO / "rp-kit/register/synthetic-v1.json"),
+            ]
             process = start()
             _, jwks = request(base + "/present/jwks.json")
             if not (len(jwks["keys"]) == 1 and "d" not in jwks["keys"][0]):

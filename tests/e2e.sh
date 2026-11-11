@@ -108,7 +108,7 @@ present() {
 start_verifier() {
 	# Transport negatives intentionally leave sessions unanswered. Bound the
 	# test server's graceful drain instead of waiting a full session TTL.
-	"$verifier" -registry "$repo/verifier/circuits.json" -issuers "$work/issuers.json" \
+	"$verifier" -rp-register-file "$repo/rp-kit/register/synthetic-v1.json" -registry "$repo/verifier/circuits.json" -issuers "$work/issuers.json" \
 		-addr "127.0.0.1:$port" -base-url "$base" -drain-timeout 1s "$@" >"$work/verifier.log" 2>&1 &
 	server_pid=$!
 	for _ in $(seq 1 50); do

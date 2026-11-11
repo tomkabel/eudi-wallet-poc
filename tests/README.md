@@ -529,3 +529,20 @@ It is included in make check and fast CI. Synthetic success is LOCAL_TEST, never
 live PASS. make test-tara-integration is opt-in and exits nonzero with BLOCKED
 when prerequisites are absent. See the [TARA contract](../rp-kit/TARA-CONTRACT.md)
 and [retained external attempt](../rp-kit/tara/evidence/attempt-2026-11-12.json).
+
+## RP-register (Story 3.3)
+
+`make test-go-fast` runs `verifier/go/rpregister` with the race detector: strict
+model/corpus, absence, TTL boundary, no error caching or stale fallback, identity
+isolation, defensive copies, capacity eviction, concurrent use, HTTP timeout/body
+bounds, redirect refusal and malformed/mismatched answers. `make test-go-zk`
+runs real HTTP-handler controls in `verifier/go/register_test.go`: both flows,
+nil, missing identity, unauthorized claims, release/callback surfaces, configured
+connection/timeout/5xx refusal, and stored session policy. `make test-rp-kit` first
+proves the shipped unconfigured service refuses both flows, then explicitly opts
+into the shared synthetic corpus for positive profile checks. `make e2e` likewise
+selects that mock for proof/carrier flows. Run `tests/drain_test.sh` separately
+with `EE_PROVER` set to the pinned prover to exercise drain; it also explicitly
+selects the shared mock. These are synthetic local
+controls, never authority-service evidence.
+Contract: [REGISTER-CONTRACT.md](../rp-kit/REGISTER-CONTRACT.md).

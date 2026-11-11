@@ -87,7 +87,7 @@ func newISOHarness(t *testing.T) *isoHarness {
 	}
 	st := oid4vp.NewStore(time.Minute)
 	return &isoHarness{
-		p: &presenter{
+		p: &presenter{register: testRegister(t), registerService: "age-verification",
 			store: st, trust: trust, registry: reg,
 			clientID: "x509_san_dns:verifier.example.ee",
 			baseURL:  "http://127.0.0.1:1", docType: "eu.europa.ec.av.1", nsID: "eu.europa.ec.av.1",

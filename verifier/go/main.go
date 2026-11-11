@@ -42,6 +42,7 @@ import (
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/jose"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/rpregister"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
 
@@ -406,6 +407,12 @@ func main() {
 		"demo switch: how many credentials /present/new asks for (>= 2 adds the "+
 			"eu.europa.ec.av.1 fixture doctype as the second credential; W6 e2e)")
 	version := flag.Bool("version", false, "print the linked longfellow-zk revision and exit")
+	registerFile := flag.String("rp-register-file", "", "explicit synthetic register corpus (local mock only)")
+	registerURL := flag.String("rp-register-url", "", "provisional register HTTP contract URL; HTTPS or literal loopback HTTP")
+	registerService := flag.String("rp-register-service", "age-verification", "registered service identity paired with -client-id")
+	registerTTL := flag.Duration("rp-register-cache-ttl", rpregister.DefaultTTL, "maximum positive registration age, strict TTL")
+	registerCapacity := flag.Int("rp-register-cache-capacity", rpregister.DefaultCapacity, "maximum cached positive identities")
+	registerTimeout := flag.Duration("rp-register-timeout", 2*time.Second, "absolute register HTTP lookup timeout")
 	flag.Parse()
 
 	if *version {
@@ -559,9 +566,35 @@ func main() {
 		log.Printf("trusting issuer %q for doctype %s", is.Name, is.DocType)
 	}
 
+	if *registerTimeout <= 0 {
+		log.Fatal("-rp-register-timeout must be positive")
+	}
+	var register rpregister.RPRegister = rpregister.Unconfigured{}
+	if *registerFile != "" && *registerURL != "" {
+		log.Fatal("choose one RP-register implementation")
+	}
+	if *registerFile != "" {
+		register, err = rpregister.LoadFile(*registerFile)
+		if err != nil {
+			log.Fatalf("RP-register mock: %v", err)
+		}
+		log.Print("rp-register provenance=explicit-synthetic-file-mock")
+	}
+	if *registerURL != "" {
+		register, err = rpregister.NewHTTP(*registerURL, *registerTimeout)
+		if err != nil {
+			log.Fatalf("RP-register HTTP: %v", err)
+		}
+	}
+	register, err = rpregister.NewCache(register, *registerTTL, *registerCapacity, log.Printf)
+	if err != nil {
+		log.Fatalf("RP-register cache: %v", err)
+	}
+	log.Printf("rp-register cache-ttl=%s capacity=%d timeout=%s", *registerTTL, *registerCapacity, *registerTimeout)
 	store := oid4vp.NewStore(*sessionTTL)
 	defer store.Stop() // end the janitor on ANY exit path (log.Fatalf too)
 	p := &presenter{
+		register: register, registerService: *registerService,
 		store:       store,
 		trust:       trust,
 		registry:    reg,

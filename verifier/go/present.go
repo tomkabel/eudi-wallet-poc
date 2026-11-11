@@ -16,18 +16,21 @@ import (
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/jose"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/rpregister"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
 
 // presenter holds everything one relying party needs to run presentations.
 type presenter struct {
-	store    *oid4vp.Store
-	trust    *oid4vp.TrustStore
-	registry *circuits.Registry
-	clientID string
-	baseURL  string
-	docType  string
-	nsID     string
+	register        rpregister.RPRegister
+	registerService string
+	store           *oid4vp.Store
+	trust           *oid4vp.TrustStore
+	registry        *circuits.Registry
+	clientID        string
+	baseURL         string
+	docType         string
+	nsID            string
 	// carrier forces one vp_token carrier for every session (-carrier flag,
 	// for tests); nil dispatches per query format, sniffing the entry bytes
 	// (oid4vp.CarrierForBytes).
@@ -207,6 +210,9 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 
 // startSession finishes handleNew for a single-credential query.
 func (p *presenter) startSession(w http.ResponseWriter, q oid4vp.DCQL) {
+	if !p.registerGate(w, p.clientID, q) {
+		return
+	}
 	var tp []byte
 	if p.responseKey != nil {
 		// direct_post.jwt (ADR-003): the handover binds this key's
@@ -225,6 +231,9 @@ func (p *presenter) startSession(w http.ResponseWriter, q oid4vp.DCQL) {
 // startSessionMulti finishes handleNew for a multi-credential query, under
 // this server's -max-credentials cap.
 func (p *presenter) startSessionMulti(w http.ResponseWriter, q oid4vp.DCQL) {
+	if !p.registerGate(w, p.clientID, q) {
+		return
+	}
 	var tp []byte
 	if p.responseKey != nil {
 		var tpErr error
@@ -264,6 +273,9 @@ func (p *presenter) handleRequest(w http.ResponseWriter, r *http.Request) {
 	s, err := p.store.Get(id)
 	if err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		return
+	}
+	if !p.registerGate(w, s.ClientID, s.Query) {
 		return
 	}
 	if err := p.store.ConsumeRequestFetch(s.ID); err != nil {
@@ -406,6 +418,10 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 			p.sem.release()
 		}
 	}()
+
+	if !p.registerGate(w, peek.ClientID, peek.Query) {
+		return
+	}
 
 	// Claim marks the session answered, so the same nonce cannot be used twice.
 	s, err := p.store.Claim(id)

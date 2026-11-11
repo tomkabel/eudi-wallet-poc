@@ -36,7 +36,7 @@ fail() { printf '  FAIL  %s\n' "$1"; failures=$((failures + 1)); }
 # Mint one adult attestation and start the verifier in plain mode (no JWE
 # plumbing needed to exercise the drain; e2e.sh covers the encrypted modes).
 python3 "$repo/issuer/mint_ee_poa.py" --out "$work/adult" --over 18 >"$work/mint.log"
-"$verifier" -registry "$repo/verifier/circuits.json" -issuers "$work/adult/issuers.json" \
+"$verifier" -rp-register-file "$repo/rp-kit/register/synthetic-v1.json" -registry "$repo/verifier/circuits.json" -issuers "$work/adult/issuers.json" \
 	-addr "127.0.0.1:$port" -base-url "$base" \
 	-response-mode direct_post -allow-unencrypted-response \
 	-session-ttl 30s -drain-timeout 20s >"$work/verifier.log" 2>&1 &

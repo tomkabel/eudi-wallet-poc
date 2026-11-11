@@ -1,0 +1,128 @@
+{
+  "version": "synthetic-rp-register/1",
+  "registrations": [
+    {
+      "tradeName": "Synthetic verifier",
+      "uniqueIdentifier": "x509_san_dns:verifier.example.ee",
+      "serviceIdentifier": "age-verification",
+      "memberState": "EE",
+      "intendedUses": [
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_16"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_18"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_21"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_65"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_16"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_18"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_21"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_65"
+        }
+      ],
+      "privacyPolicyUrl": null
+    },
+    {
+      "tradeName": "Synthetic relying party",
+      "uniqueIdentifier": "x509_san_dns:rp.example.ee",
+      "serviceIdentifier": "age-verification",
+      "memberState": "EE",
+      "intendedUses": [
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_16"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_18"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_21"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_65"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_16"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_18"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_21"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_65"
+        }
+      ],
+      "privacyPolicyUrl": null
+    },
+    {
+      "tradeName": "Synthetic local integrator",
+      "uniqueIdentifier": "x509_san_dns:localhost",
+      "serviceIdentifier": "age-verification",
+      "memberState": "EE",
+      "intendedUses": [
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_16"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_18"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_21"
+        },
+        {
+          "doctype": "ee.riik.poa.1",
+          "predicate": "age_over_65"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_16"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_18"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_21"
+        },
+        {
+          "doctype": "eu.europa.ec.av.1",
+          "predicate": "age_over_65"
+        }
+      ],
+      "privacyPolicyUrl": null
+    }
+  ]
+}

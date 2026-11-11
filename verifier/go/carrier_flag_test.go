@@ -50,7 +50,7 @@ func plainCarrierHarness(t *testing.T, carrier oid4vp.Carrier) (*presenter, *oid
 	if err != nil {
 		t.Fatalf("session: %v", err)
 	}
-	return &presenter{store: st, trust: trust, registry: reg, sem: make(limiter, 1), carrier: carrier}, s
+	return &presenter{register: testRegister(t), registerService: "age-verification", clientID: s.ClientID, store: st, trust: trust, registry: reg, sem: make(limiter, 1), carrier: carrier}, s
 }
 
 func writeTemp(t *testing.T, b []byte) string {
@@ -309,7 +309,7 @@ func nativeCarrierHarness(t *testing.T, count int) (*presenter, *oid4vp.Session,
 	}
 	p.maxCredentials = count
 	p.sem = make(limiter, count)
-	s, err := p.store.NewMulti("client", "https://example.com/present/response", query, count, nil)
+	s, err := p.store.NewMulti(p.clientID, "https://example.com/present/response", query, count, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

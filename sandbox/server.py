@@ -94,7 +94,9 @@ class Sandbox:
         self.verifier_url = f"http://127.0.0.1:{port}"
         self.verifier_log = open(os.path.join(work, "verifier.log"), "w")
         self.verifier = subprocess.Popen(
-            [verifier, "-registry", os.path.join(REPO, "verifier", "circuits.json"),
+            [verifier, "-rp-register-file",
+             os.path.join(REPO, "rp-kit", "register", "synthetic-v1.json"),
+             "-registry", os.path.join(REPO, "verifier", "circuits.json"),
              "-issuers", os.path.join(work, "issuers.json"),
              "-addr", f"127.0.0.1:{port}", "-base-url", self.verifier_url],
             stdout=self.verifier_log, stderr=subprocess.STDOUT)

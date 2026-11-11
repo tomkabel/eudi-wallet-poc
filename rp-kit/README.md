@@ -41,6 +41,7 @@ chmod 600 "$RP_STATE/response-key.pem"
 ./verifier/zkverify \
   -addr 127.0.0.1:8080 -base-url http://127.0.0.1:8080 \
   -client-id x509_san_dns:localhost \
+  -rp-register-file "$PWD/rp-kit/register/synthetic-v1.json" \
   -registry "$PWD/verifier/circuits.json" \
   -issuers "$RP_STATE/issuer/issuers.json" \
   -longfellow-rev-file "$PWD/verifier/zkverify-ffi/longfellow-rev.txt" \
@@ -167,4 +168,17 @@ curl -fsS http://127.0.0.1:8080/present/jwks.json
 Ordinary restart with the same key preserves JWKS; rotation changes it. Drain
 before exit to avoid interrupting sessions. The [TARA adapter contract](TARA-CONTRACT.md)
 defines the parallel OIDC authentication path, offline controls and opt-in live
-runner. Register and circuit gateway integrations are separate stories.
+runner. The [RP-register contract](REGISTER-CONTRACT.md) describes the current
+fail-closed registration seam.
+
+## RP-register prerequisite
+
+The shipped systemd environment leaves both register implementations empty.
+Health stays available, but redirect and DCAPI presentation creation refuses
+with `missing-register-prerequisite`. The local walkthrough explicitly opts into
+the shared synthetic mock; it is local evidence only. Configure exactly one of
+`RP_REGISTER_FILE` (synthetic mock) or `RP_REGISTER_URL` (provisional HTTP seam),
+and match `CLIENT_ID` plus `RP_REGISTER_SERVICE` to the registration.
+The published defaults are a strict 15m positive-cache TTL, capacity 256, and
+a 2s absolute HTTP timeout. See [REGISTER-CONTRACT.md](REGISTER-CONTRACT.md)
+for fields, refusal states, cache semantics and reproducible controls.

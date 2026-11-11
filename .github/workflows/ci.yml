@@ -159,7 +159,7 @@ jobs:
         # -race (codesec F8-race): these tests assert concurrency behaviour
         # (session store sweeps, reads-limiter bounds), which only the race
         # detector exercises — CGO is on by default when the detector is on.
-        run: go test -race ./oid4vp/... ./internal/... ./circuits/...
+        run: go test -race ./oid4vp/... ./internal/... ./circuits/... ./rpregister/...
 
       - name: python compiles
         run: python3 -m compileall -q issuer verifier wallet tests sandbox
