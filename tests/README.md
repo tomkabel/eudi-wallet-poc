@@ -496,3 +496,24 @@ A coordinated new version passes, demonstrating there is no hardcoded 1.0 gate.
 Runner controls show invalid evidence prevents passing vector/report results even
 when child proof tests pass. These are provenance checks, not crypto verification
 or independent conformance. See the [maintenance procedure](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md).
+
+## RP deployment profile (Story 3.1)
+
+`make test-rp-kit` requires `make py-deps` and `make deps`; it rebuilds Go
+against the existing Rust staticlib and runs [rp_kit_test.py](rp_kit_test.py).
+The bounded real-process harness checks health, default `direct_post.jwt`
+request, generated and installed P-256 key permissions, stable JWKS across restart,
+key-file swap/drain/rotation with persistent replacement JWKS, pending
+identity, repeated missing-callback 410 after a janitor tick, identifiable 404
+on both routes, rejection of zero/negative TTL and plain mode alone, the paired
+plain negative control, and SIGTERM exit. Temporary local issuer material is
+removed on exit. Native unit syntax is also checked with a staged executable
+when `systemd-analyze` is installed (otherwise explicitly skipped). This does not
+run the service account or systemd sandbox. No external deployment is claimed.
+
+`verifier/go/oid4vp/session_test.go` covers expiry before/after sweep,
+metadata-only retention, late mutation/reuse refusal, fixed retention deadline,
+FIFO capacity and cleanup. `verifier/go/result_expiry_test.go` covers pending,
+repeated expiry and unknown-id identity on both result routes. Run via
+`make test-go-fast` and `make test-go-zk` respectively (race detector).
+Operations: [RP profile](../rp-kit/README.md).

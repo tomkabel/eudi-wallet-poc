@@ -1,6 +1,7 @@
 package oid4vp
 
 import (
+	"container/list"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -60,14 +61,18 @@ func (s *Session) Expired(ttl time.Duration) bool {
 // durable and shared; nothing here is persisted, deliberately — a verifier that
 // keeps presentation records is a verifier that can be subpoenaed for them.
 //
-// Expiry is maintained by a janitor goroutine (tick = TTL/4, delete expired
-// under the store lock) instead of a full-map sweep on insert: the sweep made
+// Expiry is maintained by a janitor goroutine (tick = TTL/4, 1s floor), which
+// replaces expired payloads with bounded metadata under the store lock instead
+// of a full-map sweep on insert: the sweep made
 // every put pay the pathological case's cost. put itself does one expiry
 // check on insert only. Stop ends the janitor; main runs it on shutdown.
 type Store struct {
 	mu       sync.Mutex
 	sessions map[string]*Session
-	ttl      time.Duration
+	// Outcomes contain only ids/deadlines, never nonces, keys or verdicts.
+	expired     map[string]*list.Element
+	expiryOrder *list.List
+	ttl         time.Duration
 	// now is indirected for tests: the janitor tests pin a fake clock
 	// instead of sleeping for a real TTL.
 	now func() time.Time
@@ -78,13 +83,20 @@ type Store struct {
 
 const maxSessions = 10_000
 
+type expiryOutcome struct {
+	id    string
+	until time.Time
+}
+
 func NewStore(ttl time.Duration) *Store {
 	st := &Store{
-		sessions: make(map[string]*Session),
-		ttl:      ttl,
-		now:      time.Now,
-		stop:     make(chan struct{}),
-		done:     make(chan struct{}),
+		sessions:    make(map[string]*Session),
+		expired:     make(map[string]*list.Element),
+		expiryOrder: list.New(),
+		ttl:         ttl,
+		now:         time.Now,
+		stop:        make(chan struct{}),
+		done:        make(chan struct{}),
 	}
 	if ttl > 0 {
 		go st.janitor()
@@ -116,16 +128,50 @@ func (st *Store) janitor() {
 	}
 }
 
-// sweep deletes every expired session under the lock. It is the janitor's
-// body and runs nowhere else — put never ranges the map.
+// sweep replaces expired sessions with bounded metadata under the lock. It is
+// the janitor's body; put never ranges either map.
 func (st *Store) sweep() {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	for id, existing := range st.sessions {
-		if existing.Expired(st.ttl) {
-			delete(st.sessions, id)
+		if st.now().After(existing.Created.Add(st.ttl)) {
+			st.expireLocked(id, existing)
 		}
 	}
+	for id, e := range st.expired {
+		if !st.now().Before(e.Value.(expiryOutcome).until) {
+			delete(st.expired, id)
+			st.expiryOrder.Remove(e)
+		}
+	}
+}
+
+// expireLocked releases the session payload. Expiry can be observed for one
+// additional TTL from the original deadline, subject to a maxSessions FIFO
+// capacity bound and process lifetime. Polling does not extend this window.
+func (st *Store) expireLocked(id string, s *Session) {
+	delete(st.sessions, id)
+	until := s.Created.Add(st.ttl).Add(st.ttl)
+	if !st.now().Before(until) {
+		return
+	}
+	if len(st.expired) >= maxSessions {
+		oldest := st.expiryOrder.Front()
+		delete(st.expired, oldest.Value.(expiryOutcome).id)
+		st.expiryOrder.Remove(oldest)
+	}
+	st.expired[id] = st.expiryOrder.PushBack(expiryOutcome{id: id, until: until})
+}
+
+func (st *Store) missingLocked(id string) error {
+	if e, ok := st.expired[id]; ok {
+		if st.now().Before(e.Value.(expiryOutcome).until) {
+			return ErrExpired
+		}
+		delete(st.expired, id)
+		st.expiryOrder.Remove(e)
+	}
+	return ErrNoSession
 }
 
 // Stop ends the janitor goroutine and waits for it to exit. It is idempotent
@@ -271,6 +317,9 @@ func (st *Store) put(s *Session) (*Session, error) {
 	if _, ok := st.sessions[id]; ok {
 		return nil, ErrIDInUse
 	}
+	if errors.Is(st.missingLocked(id), ErrExpired) {
+		return nil, ErrIDInUse
+	}
 	st.sessions[id] = s
 	return snapshot(s), nil
 }
@@ -293,7 +342,11 @@ func (st *Store) ConsumeRequestFetch(id string) error {
 	defer st.mu.Unlock()
 	s, ok := st.sessions[id]
 	if !ok {
-		return ErrNoSession
+		return st.missingLocked(id)
+	}
+	if st.now().After(s.Created.Add(st.ttl)) {
+		st.expireLocked(id, s)
+		return ErrExpired
 	}
 	if s.RequestFetchDone {
 		return ErrRequestFetched
@@ -323,7 +376,7 @@ func (st *Store) LiveSessions() int {
 	defer st.mu.Unlock()
 	n := 0
 	for _, s := range st.sessions {
-		if !s.Expired(st.ttl) {
+		if !st.now().After(s.Created.Add(st.ttl)) {
 			n++
 		}
 	}
@@ -341,7 +394,7 @@ func (st *Store) InFlight() int {
 	defer st.mu.Unlock()
 	n := 0
 	for _, s := range st.sessions {
-		if !s.Answered && !s.Expired(st.ttl) {
+		if !s.Answered && !st.now().After(s.Created.Add(st.ttl)) {
 			n++
 		}
 	}
@@ -354,10 +407,10 @@ func (st *Store) Get(id string) (*Session, error) {
 	defer st.mu.Unlock()
 	s, ok := st.sessions[id]
 	if !ok {
-		return nil, ErrNoSession
+		return nil, st.missingLocked(id)
 	}
-	if s.Expired(st.ttl) {
-		delete(st.sessions, id)
+	if st.now().After(s.Created.Add(st.ttl)) {
+		st.expireLocked(id, s)
 		return nil, ErrExpired
 	}
 	return snapshot(s), nil
@@ -370,10 +423,10 @@ func (st *Store) Claim(id string) (*Session, error) {
 	defer st.mu.Unlock()
 	s, ok := st.sessions[id]
 	if !ok {
-		return nil, ErrNoSession
+		return nil, st.missingLocked(id)
 	}
-	if s.Expired(st.ttl) {
-		delete(st.sessions, id)
+	if st.now().After(s.Created.Add(st.ttl)) {
+		st.expireLocked(id, s)
 		return nil, ErrExpired
 	}
 	if s.Answered {
@@ -392,10 +445,10 @@ func (st *Store) Complete(id string, valid bool, detail string) (*Session, error
 	defer st.mu.Unlock()
 	s, ok := st.sessions[id]
 	if !ok {
-		return nil, ErrNoSession
+		return nil, st.missingLocked(id)
 	}
-	if s.Expired(st.ttl) {
-		delete(st.sessions, id)
+	if st.now().After(s.Created.Add(st.ttl)) {
+		st.expireLocked(id, s)
 		return nil, ErrExpired
 	}
 	if !s.Answered {
@@ -414,7 +467,11 @@ func (st *Store) AttachISO(id string, ext *ISOExtension, origin string) error {
 	defer st.mu.Unlock()
 	s, ok := st.sessions[id]
 	if !ok {
-		return ErrNoSession
+		return st.missingLocked(id)
+	}
+	if st.now().After(s.Created.Add(st.ttl)) {
+		st.expireLocked(id, s)
+		return ErrExpired
 	}
 	s.iso = ext
 	s.origin = origin

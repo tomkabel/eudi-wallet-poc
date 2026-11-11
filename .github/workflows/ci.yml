@@ -54,6 +54,8 @@ jobs:
           filters: |
             go_rust: &go_rust
               - 'verifier/**'
+              - 'rp-kit/**'
+              - 'tests/rp_kit_test.py'
               - 'zk-age-poc/**'
               - 'scripts/**'
               - 'Makefile'
@@ -331,6 +333,9 @@ jobs:
         # failure reported here would mask the e2e assertion below that is the
         # more informative signal.
         run: go test -race . ./zk/...
+
+      - name: RP deployment profile (bounded real process acceptance)
+        run: make test-rp-kit
 
       - name: AV report regressions with executed local audit
         run: |

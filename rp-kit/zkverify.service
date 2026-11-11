@@ -1,0 +1,25 @@
+[Unit]
+Description=EE wallet relying-party verifier (ADR-004)
+After=network.target
+
+[Service]
+Type=simple
+User=zkverify
+Group=zkverify
+WorkingDirectory=/var/lib/zkverify
+EnvironmentFile=/etc/zkverify/zkverify.env
+ExecStart=/usr/local/libexec/zkverify -addr ${ADDR} -base-url ${BASE_URL} -client-id ${CLIENT_ID} -registry ${REGISTRY} -issuers ${ISSUERS} -trust-root ${TRUST_ROOT} -longfellow-rev-file /etc/zkverify/longfellow-rev.txt -response-key-file /var/lib/zkverify/response-key.pem -session-ttl ${SESSION_TTL} -max-concurrent-verify ${MAX_CONCURRENT_VERIFY} -drain-timeout ${DRAIN_TIMEOUT} -dcapi-origin ${DCAPI_ORIGIN}
+KillSignal=SIGTERM
+# Must exceed DRAIN_TIMEOUT (default 6m) plus shutdown's 10s grace.
+TimeoutStopSec=375s
+Restart=on-failure
+RestartSec=3s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/var/lib/zkverify
+
+[Install]
+WantedBy=multi-user.target

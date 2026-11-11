@@ -417,6 +417,9 @@ func main() {
 		return
 	}
 
+	if *sessionTTL <= 0 {
+		log.Fatalf("-session-ttl must be positive, got %s", *sessionTTL)
+	}
 	if *maxVerify < 1 {
 		log.Fatalf("-max-concurrent-verify must be at least 1, got %d", *maxVerify)
 	}

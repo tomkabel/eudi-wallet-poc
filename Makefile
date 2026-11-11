@@ -160,6 +160,15 @@ test-go-zk:
 	fi
 	cd verifier/go && EE_BENCH_SKIP=$${EE_BENCH_SKIP-1} go test -race . ./zk/...
 
+# Rebuild Go against make deps' staticlib: stale binaries cannot pass this gate.
+.PHONY: test-rp-kit
+test-rp-kit:
+	@test -f verifier/zkverify-ffi/target/release/libzkverify.a || { echo "make test-rp-kit: run make deps first" >&2; exit 1; }
+	@binary="$$(mktemp)"; trap 'rm -f "$$binary"' EXIT; \
+		rev="$$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" && \
+		(cd verifier/go && go build -ldflags "-X main.longfellowRev=$$rev" -o "$$binary" .) && \
+		EE_VERIFIER="$$binary" python3 tests/rp_kit_test.py
+
 e2e: deps
 	@python3 -c 'import cbor2, cryptography, jwcrypto' 2>/dev/null || { \
 		echo "make e2e: Python dependencies missing — make py-deps" >&2; exit 1; }

@@ -182,14 +182,15 @@ This is the script the e2e CI job runs.
 
 ## What "deployment" means here
 
-Bluntly: nothing in this repository is deployed, and nothing here is ready to be. No
-deployment directory, no Dockerfile, no compose file, no Kubernetes manifest and no service
-unit exists for this stack; the one Dockerfile in the working tree,
-`eudi-arf/docker/Dockerfile`, belongs to the upstream ARF document repository inside the
-submodule, where it builds the ARF's PDFs.
-
-What exists is what you start by hand: three CLIs and one HTTP server on a local or LAN
-address. CI builds and tests; it does not package, publish or deploy anything.
+The [RP service profile](../rp-kit/README.md) provides reproducible local startup
+and systemd deployment of the existing verifier, persisted P-256 response keys,
+encrypted response defaults, status polling, drain and manual rotation. Run
+`make test-rp-kit` after `make py-deps` and `make deps` for bounded local process
+acceptance. The operator supplies HTTPS reverse proxy, DNS, certificates and trust
+inputs; CI does not publish or deploy a public service. This deployable PoC profile
+does not imply production certification. Sessions and expiry metadata remain in
+memory: after TTL a 410 names the id for at most one further TTL, subject to a
+10,000-outcome FIFO cap and restart; a later 404 names the requested id too.
 
 The intended production model — a wallet instance with a WSCD on the user's device, a
 wallet-provider backend, an issuance plane over X-tee, a trust plane — is drawn in the

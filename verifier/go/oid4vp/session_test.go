@@ -252,8 +252,7 @@ func TestStoreJanitorReapsExpiredWithoutPutPenalty(t *testing.T) {
 
 // TestStoreStopEndsJanitor: Stop terminates the janitor goroutine and is
 // idempotent; after Stop, a lapsed session is no longer reaped on its own.
-// The session lives on the fake timeline (Created = the fake now), because
-// Session.Expired itself reads the wall clock.
+// The session lives on the fake timeline (Created = the fake now).
 func TestStoreStopEndsJanitor(t *testing.T) {
 	ttl := time.Second
 	base := time.Unix(1_700_000_000, 0)
@@ -322,9 +321,8 @@ func TestStoreFullRefusesUntilJanitorSweeps(t *testing.T) {
 
 // TestStorePutRefusesAlreadyExpiredSession: the one expiry check put does is
 // on the session being inserted — an already-expired session never enters the
-// store, not even for one janitor tick. The fake clock is pushed a full
-// lifetime AHEAD of the real wall clock, because Session.Expired (which put's
-// check must agree with) compares Created against the real now.
+// store, not even for one janitor tick. The fake clock is pushed ahead of
+// the real wall clock to pin the check independently of wall time.
 func TestStorePutRefusesAlreadyExpiredSession(t *testing.T) {
 	st := NewStore(time.Minute)
 	t.Cleanup(st.Stop)
@@ -378,5 +376,130 @@ func TestCompleteRefusesUnclaimedAndExpired(t *testing.T) {
 	}
 	if _, ok := st.sessions[expired.ID]; ok {
 		t.Fatal("expired session left in the store after Complete refused it")
+	}
+}
+
+// Expiry survives reads and cleanup, but never retains a session payload or
+// permits late mutations. The fixed window is measured from the TTL deadline.
+func TestExpiryOutcomeLifecycle(t *testing.T) {
+	st := NewStore(time.Minute)
+	st.Stop()
+	base := time.Now()
+	clock := base
+	st.now = func() time.Time { return clock }
+	st.sessions["gone"] = &Session{ID: "gone", Created: base, Nonce: "secret", Detail: "sensitive", Query: testQuery(), iso: &ISOExtension{}}
+	clock = base.Add(time.Minute + time.Second)
+	for i := 0; i < 2; i++ {
+		if _, err := st.Get("gone"); !errors.Is(err, ErrExpired) {
+			t.Fatalf("Get = %v", err)
+		}
+		st.sweep()
+	}
+	if len(st.sessions) != 0 || len(st.expired) != 1 {
+		t.Fatal("expiry did not remove session payload")
+	}
+	if _, err := st.Claim("gone"); !errors.Is(err, ErrExpired) {
+		t.Fatalf("Claim = %v", err)
+	}
+	if _, err := st.Complete("gone", true, "late"); !errors.Is(err, ErrExpired) {
+		t.Fatalf("Complete = %v", err)
+	}
+	if err := st.ConsumeRequestFetch("gone"); !errors.Is(err, ErrExpired) {
+		t.Fatalf("fetch = %v", err)
+	}
+	if err := st.AttachISO("gone", &ISOExtension{}, "https://rp.example"); !errors.Is(err, ErrExpired) {
+		t.Fatalf("AttachISO = %v", err)
+	}
+	if _, err := st.put(&Session{ID: "gone", Created: clock}); !errors.Is(err, ErrIDInUse) {
+		t.Fatalf("reuse = %v", err)
+	}
+	clock = base.Add(2 * time.Minute)
+	if _, err := st.Get("gone"); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("after retention = %v", err)
+	}
+	if len(st.expired) != 0 || st.expiryOrder.Len() != 0 {
+		t.Fatal("outcome not reclaimed")
+	}
+}
+
+func TestExpiredMutationAsFirstOperation(t *testing.T) {
+	for name, mutate := range map[string]func(*Store) error{
+		"Claim": func(st *Store) error {
+			_, err := st.Claim("expired")
+			return err
+		},
+		"Complete": func(st *Store) error {
+			_, err := st.Complete("expired", true, "late")
+			return err
+		},
+		"ConsumeRequestFetch": func(st *Store) error { return st.ConsumeRequestFetch("expired") },
+		"AttachISO": func(st *Store) error {
+			return st.AttachISO("expired", &ISOExtension{}, "https://rp.example")
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			st := NewStore(time.Minute)
+			st.Stop()
+			base := time.Now()
+			st.now = func() time.Time { return base.Add(time.Minute + time.Second) }
+			st.sessions["expired"] = &Session{
+				ID: "expired", Created: base, Nonce: "secret",
+				Query: testQuery(), iso: &ISOExtension{}, Detail: "sensitive", Answered: name == "Complete",
+			}
+			if err := mutate(st); !errors.Is(err, ErrExpired) {
+				t.Fatalf("first operation = %v, want ErrExpired", err)
+			}
+			if len(st.sessions) != 0 || len(st.expired) != 1 {
+				t.Fatal("mutation did not replace payload with expiry metadata")
+			}
+			if _, err := st.Get("expired"); !errors.Is(err, ErrExpired) {
+				t.Fatalf("retained expiry before sweep = %v", err)
+			}
+			st.sweep()
+			if _, err := st.Get("expired"); !errors.Is(err, ErrExpired) {
+				t.Fatalf("retained expiry after mutation/sweep = %v", err)
+			}
+		})
+	}
+}
+
+func TestExpirySweepAndCapacity(t *testing.T) {
+	st := NewStore(time.Minute)
+	st.Stop()
+	base := time.Now()
+	st.now = func() time.Time { return base.Add(time.Minute + time.Second) }
+	for i := 0; i <= maxSessions; i++ {
+		id := fmt.Sprint(i)
+		st.sessions[id] = &Session{ID: id, Created: base, Nonce: "secret"}
+		st.expireLocked(id, st.sessions[id])
+	}
+	if len(st.expired) != maxSessions || st.expiryOrder.Len() != maxSessions {
+		t.Fatal("outcome capacity unbounded")
+	}
+	if _, err := st.Get("0"); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("FIFO eviction = %v", err)
+	}
+	if _, err := st.Get(fmt.Sprint(maxSessions)); !errors.Is(err, ErrExpired) {
+		t.Fatalf("newest outcome = %v", err)
+	}
+	st.now = func() time.Time { return base.Add(2 * time.Minute) }
+	st.sweep()
+	if len(st.expired) != 0 || st.expiryOrder.Len() != 0 {
+		t.Fatal("sweep left expired outcomes")
+	}
+}
+
+func TestSweepRetainsUnpolledExpiry(t *testing.T) {
+	st := NewStore(time.Minute)
+	st.Stop()
+	base := time.Now()
+	st.now = func() time.Time { return base.Add(time.Minute + time.Second) }
+	st.sessions["unpolled"] = &Session{ID: "unpolled", Created: base, Nonce: "secret"}
+	st.sweep()
+	if _, err := st.Get("unpolled"); !errors.Is(err, ErrExpired) {
+		t.Fatalf("after janitor = %v", err)
+	}
+	if len(st.sessions) != 0 {
+		t.Fatal("janitor retained payload")
 	}
 }

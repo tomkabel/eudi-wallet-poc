@@ -33,6 +33,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 | [`profiles/DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md`](profiles/DCHP-17-ZKP-SUPPORT-ISSUE-TEXT.md) | *ee-eudiw.* Issue text for DCHP #17 on ZKP support |
 | [`decisions/ADR-002-STRICT-CBOR-SUBSET-DECODER.md`](decisions/ADR-002-STRICT-CBOR-SUBSET-DECODER.md) | *ee-eudiw.* Why the ISO dcapi path decodes a strict CBOR subset in-house |
 | [`decisions/ADR-003-MINIMAL-JWE.md`](decisions/ADR-003-MINIMAL-JWE.md) | Why response encryption is a hand-rolled minimal JWE and `direct_post.jwt` is the default |
+| [`../rp-kit/README.md`](../rp-kit/README.md) | Runnable RP profile: build, local acceptance, systemd, HTTPS boundary, persisted keys, bounded expiry, drain and rotation |
 | [`decisions/ADR-004-RP-KIT-DEPLOYMENT-PROFILE.md`](decisions/ADR-004-RP-KIT-DEPLOYMENT-PROFILE.md) | The `rp-kit/` deployment profile: the `zkverify` binary under a documented flag set, persisted response key, drain-as-rotation, TARA alongside |
 | [`decisions/ADR-005-INTENDED-USE-SOURCE.md`](decisions/ADR-005-INTENDED-USE-SOURCE.md) | The wallet's `IntendedUseSource` interface and the typed, version-pinned registration-certificate model |
 | [`decisions/ADR-006-CIRCUIT-LIST-DOCUMENT.md`](decisions/ADR-006-CIRCUIT-LIST-DOCUMENT.md) | The signed circuit-list document format, its pinned-key validation and the in-memory provenance ring |

@@ -228,7 +228,7 @@ func (p *presenter) handleDCAPIResult(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/present/dcapi/result/")
 	s, err := p.store.Get(id)
 	if err != nil {
-		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		writeJSON(w, statusFor(err), map[string]string{"id": id, "error": err.Error()})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
