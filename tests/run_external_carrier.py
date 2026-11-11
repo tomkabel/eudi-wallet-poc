@@ -214,12 +214,15 @@ def base_report(checkout, timeout, output_limit):
         "repository agent; not independent operator evidence or certification.",
         "publication": "PREPARED_IN_REPOSITORY; public publication "
         "and independent reproduction remain outstanding",
-        "operator_actions": [
+        "engineering_actions": [
             "Build the pinned sample wallet and connect a supported device/emulator.",
             "Implement an adapter executing all 19 assertions and both "
             "carrier vectors against that target.",
-            "Rerun with --adapter-command; inspect evidence, arrange "
-            "maintainer publication and independent operator reproduction.",
+            "Rerun with --adapter-command and inspect the retained evidence.",
+        ],
+        "operator_actions": [
+            "Arrange maintainer publication of the reviewed evidence.",
+            "Reproduce the run independently and retain operator evidence.",
         ],
         "limitations": [
             "Local Go results, cached fixtures, upstream self-tests "
@@ -483,10 +486,14 @@ def markdown(report):
         "- " + inline(f"{row['carrier']}: {row['result']}; {row['evidence']}")
         for row in report["carrier_vectors"]
     )
-    lines.extend(["", "## Limitations and remaining operator steps", ""])
+    lines.extend(["", "## Limitations and remaining steps", ""])
     lines.extend(
         "- " + inline(item)
-        for item in report["limitations"] + report["operator_actions"]
+        for item in (
+            report["limitations"]
+            + report["engineering_actions"]
+            + report["operator_actions"]
+        )
     )
     if report["raw_adapter_evidence"] is not None:
         lines.extend(["", "## Original adapter evidence", ""])

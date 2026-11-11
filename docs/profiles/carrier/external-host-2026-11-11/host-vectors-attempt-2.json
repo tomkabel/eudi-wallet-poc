@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-11T21:17:55.810126+00:00",
+  "scope": "Repository vector feed only; zero of 19 carrier flow cases exercised.",
+  "target": {
+    "name": "Multipaz 0.99.0",
+    "expected_revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+    "checkout": "/tmp/eudi-carrier-multipaz-0.99.0"
+  },
+  "host": {
+    "platform": "Linux-7.3.3-1-cachyos-x86_64-with-glibc2.44",
+    "machine": "x86_64",
+    "python": "3.14.9",
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk",
+    "ANDROID_HOME": "/opt/android-sdk"
+  },
+  "timeout_seconds": 120,
+  "output_limit_bytes": 4194304,
+  "executions": [
+    {
+      "name": "revision-before",
+      "status": "PASS",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "returncode": 0,
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "cleanliness-before",
+      "status": "PASS",
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "returncode": 0,
+      "output": "",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "java-version",
+      "status": "PASS",
+      "command": [
+        "/usr/lib/jvm/java-17-openjdk/bin/java",
+        "-version"
+      ],
+      "returncode": 0,
+      "output": "openjdk version \"17.0.20.1\" 2026-08-18\nOpenJDK Runtime Environment (build 17.0.20.1+1)\nOpenJDK 64-Bit Server VM (build 17.0.20.1+1, mixed mode, sharing)\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "host-target-test",
+      "status": "ERROR",
+      "command": [
+        "./gradlew",
+        "--offline",
+        "--init-script",
+        "/home/notroot/Documents/eudi-wallet-poc/docs/profiles/carrier/external-host-2026-11-11/vector-harness/init.gradle",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2",
+        ":multipaz-longfellow:jvmTest",
+        "--tests",
+        "org.eudi.externalcarrier.RepositoryCarrierVectorTest.feedBothVectors"
+      ],
+      "returncode": 143,
+      "output": "To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\nDaemon will be stopped at the end of the build \nType-safe project accessors is an incubating feature.\n\n> Configure project :multipaz\nSkipping artifact signing for multipaz: No signing keys configured.\nw: \u26a0\ufe0f Invalid Source Set Dependency Across Trees\nKotlin Source Set 'androidInstrumentedTest' can't depend on 'commonTest' as they are from different Source Set Trees.\nSolution: Please remove this dependency edge.\n\n\n> Configure project :multipaz-android-legacy\nSkipping artifact signing for multipaz-android-legacy: No signing keys configured.\n\n> Configure project :multipaz-cbor-rpc\nSkipping artifact signing for multipaz-cbor-rpc: No signing keys configured.\n\n> Task :build-logic:conventions:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :build-logic:lokalize:checkKotlinGradlePluginConfigurationErrors SKIPPED\n\n> Configure project :multipaz-compose\n\nThe Kotlin Gradle plugin was loaded multiple times in different subprojects, which is not supported and may break the build. \nThis might happen in subprojects that apply the Kotlin plugins with the Gradle 'plugins { ... }' DSL if they specify explicit versions, even if the versions are equal.\nPlease add the Kotlin plugin to the common parent project or the root project, then remove the versions in the subprojects.\nIf the parent project does not need the plugin, add 'apply false' to the plugin line.\nSee: https://docs.gradle.org/current/userguide/plugins.html#sec:subprojects_plugins_dsl\nThe Kotlin plugin was loaded in the following projects: ':conventions', ':dokka-known-subclasses-plugin'\n\n> Task :build-logic:lokalize:compileKotlin UP-TO-DATE\n> Task :build-logic:lokalize:compileJava NO-SOURCE\n> Task :build-logic:conventions:compileKotlin UP-TO-DATE\n> Task :build-logic:conventions:compileJava NO-SOURCE\n> Task :build-logic:conventions:pluginDescriptors UP-TO-DATE\n> Task :build-logic:conventions:processResources UP-TO-DATE\n> Task :build-logic:conventions:classes UP-TO-DATE\n> Task :build-logic:conventions:jar UP-TO-DATE\n> Task :build-logic:lokalize:pluginDescriptors UP-TO-DATE\n> Task :build-logic:lokalize:processResources UP-TO-DATE\n> Task :build-logic:lokalize:classes UP-TO-DATE\n> Task :build-logic:lokalize:jar UP-TO-DATE\n\n> Configure project :multipaz-compose\nSkipping artifact signing for multipaz-compose: No signing keys configured.\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:3:30: 'ExperimentalComposeLibrary' is deprecated. Please specify dependency via version catalog\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:88:40: 'runtime: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:89:40: 'foundation: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:90:40: 'material3: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:91:40: 'ui: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:92:40: 'components: ComposePlugin.CommonComponentsDependencies' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:92:51: 'resources: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:93:40: 'materialIconsExtended: String' is deprecated. This artifact is pinned to version 1.7.3 and will not receive updates. Either use this version explicitly or migrate to Material Symbols (vector resources). See https://kotlinlang.org/docs/multiplatform/whats-new-compose-180.html\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:96:29: 'runtime: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:97:29: 'foundation: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:98:29: 'material3: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:99:29: 'ui: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:100:29: 'components: ComposePlugin.CommonComponentsDependencies' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:100:40: 'resources: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:101:29: 'materialIconsExtended: String' is deprecated. This artifact is pinned to version 1.7.3 and will not receive updates. Either use this version explicitly or migrate to Material Symbols (vector resources). See https://kotlinlang.org/docs/multiplatform/whats-new-compose-180.html\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:120:24: 'ExperimentalComposeLibrary' is deprecated. Please specify dependency via version catalog\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:121:40: 'uiTest: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:159:37: 'uiTooling: String' is deprecated. Use org.jetbrains.compose.ui:ui-tooling module instead\nXML format detected for multipaz-compose - generateMultipazStrings will skip execution\n\n> Configure project :multipaz-dcapi\nSkipping artifact signing for multipaz-dcapi: No signing keys configured.\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-dcapi/build.gradle.kts:42:9: This declaration needs opt-in. Its usage should be marked with '@org.jetbrains.kotlin.gradle.ExperimentalWasmDsl' or '@OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)'\nw: \u26a0\ufe0f Invalid Source Set Dependency Across Trees\nKotlin Source Set 'androidInstrumentedTest' can't depend on 'commonTest' as they are from different Source Set Trees.\nSolution: Please remove this dependency edge.\n\n\n> Configure project :multipaz-doctypes\nSkipping artifact signing for multipaz-doctypes: No signing keys configured.\nJSON format configured for generateMultipazStrings task in multipaz-doctypes\n\n> Configure project :multipaz-longfellow\nSkipping artifact signing for multipaz-longfellow: No signing keys configured.\n\n> Configure project :multipaz-server\nSkipping artifact signing for multipaz-server: No signing keys configured.\n\n> Configure project :multipaz-swiftui\nSkipping artifact signing for multipaz-swiftui: No signing keys configured.\n\n> Configure project :multipaz-utopia\nSkipping artifact signing for multipaz-utopia: No signing keys configured.\n\n[runner terminated child: child exceeded 120s timeout]\n",
+      "detail": "child exceeded 120s timeout",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "revision-after",
+      "status": "PASS",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "returncode": 0,
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "cleanliness-after",
+      "status": "PASS",
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "returncode": 0,
+      "output": "",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    }
+  ],
+  "finished_at": "2026-11-11T21:19:56.454769+00:00",
+  "assertions": {
+    "carrier_cases_executed": 0,
+    "repository_vectors_executed": 0
+  },
+  "result": "ERROR"
+}

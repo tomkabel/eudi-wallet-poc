@@ -294,7 +294,26 @@ class CarrierConformanceTests(unittest.TestCase):
             evidence = cast(dict[str, str], report["external_evidence"])
             self.assertEqual(evidence["status"], "BLOCKED")
             self.assertEqual(evidence["date"], runner.date.today().isoformat())
+            self.assertEqual(evidence["attempt_date"], "2026-11-11")
+            self.assertEqual(evidence["target"], "Multipaz sample wallet 0.99.0")
+            self.assertEqual(
+                evidence["revision"], "7486ddbca490038c3580513d8273b9bbf18c6b70"
+            )
+            self.assertEqual(evidence["runner"], "tests/run_external_carrier.py")
+            self.assertEqual(
+                evidence["evidence"],
+                "docs/profiles/carrier/external-run-2026-11-11/report.json",
+            )
             self.assertTrue(runner.report_passed(report))
+            future = runner.date(2027, 1, 1)
+            with patch.object(runner, "date") as clock:
+                clock.today.return_value = future
+                observed = runner.run_conformance(
+                    root, fake_runner, staticlib_built=True
+                )
+            evidence = cast(dict[str, str], observed["external_evidence"])
+            self.assertEqual(evidence["date"], "2027-01-01")
+            self.assertEqual(evidence["attempt_date"], "2026-11-11")
 
     def test_vector_suite_requires_visible_pass_and_valid_manifest_hashes(self):
         with tempfile.TemporaryDirectory() as tmp:

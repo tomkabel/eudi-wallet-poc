@@ -1,0 +1,405 @@
+{
+  "carrier_vectors": [
+    {
+      "carrier": "interim-json",
+      "evidence": "external adapter has not executed",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "carrier": "mso-mdoc-zk-cbor",
+      "evidence": "external adapter has not executed",
+      "result": "NOT_EXECUTED"
+    }
+  ],
+  "case_inventory": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19"
+  ],
+  "cases": [
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "1",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "2",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "3",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "4",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "5",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "6",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "7",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "8",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "9",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "10",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "11",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "12",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "13",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "14",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "15",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "16",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "17",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "18",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "19",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    }
+  ],
+  "checkout": "/tmp/eudi-carrier-multipaz-0.99.0",
+  "detail": "External preparation unavailable: child exceeded 600.0s timeout",
+  "evidence_scope": "Independent implementation attempt by repository agent; not independent operator evidence or certification.",
+  "executions": [
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "checkout-revision",
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "git",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "checkout-origin",
+      "output": "https://github.com/openwallet-foundation/multipaz.git\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "checkout-cleanliness",
+      "output": "",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "adb",
+        "devices",
+        "-l"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "preparation-1",
+      "output": "List of devices attached\nc482d41b               device usb:1-4.4 product:CPH2609EEA model:CPH2609 device:OP5D35L1 transport_id:1\n\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "./gradlew",
+        "--no-daemon",
+        "--console=plain",
+        ":samples:testapp:assembleDebug"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "child exceeded 600.0s timeout",
+      "name": "preparation-2",
+      "output": "To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\nDaemon will be stopped at the end of the build \nType-safe project accessors is an incubating feature.\n\n> Configure project :multipaz\nSkipping artifact signing for multipaz: No signing keys configured.\nw: \u26a0\ufe0f Invalid Source Set Dependency Across Trees\nKotlin Source Set 'androidInstrumentedTest' can't depend on 'commonTest' as they are from different Source Set Trees.\nSolution: Please remove this dependency edge.\n\n\n> Configure project :multipaz-android-legacy\nSkipping artifact signing for multipaz-android-legacy: No signing keys configured.\n\n> Configure project :multipaz-cbor-rpc\nSkipping artifact signing for multipaz-cbor-rpc: No signing keys configured.\n\n> Configure project :multipaz-compose\n\nThe Kotlin Gradle plugin was loaded multiple times in different subprojects, which is not supported and may break the build. \nThis might happen in subprojects that apply the Kotlin plugins with the Gradle 'plugins { ... }' DSL if they specify explicit versions, even if the versions are equal.\nPlease add the Kotlin plugin to the common parent project or the root project, then remove the versions in the subprojects.\nIf the parent project does not need the plugin, add 'apply false' to the plugin line.\nSee: https://docs.gradle.org/current/userguide/plugins.html#sec:subprojects_plugins_dsl\nThe Kotlin plugin was loaded in the following projects: ':conventions', ':dokka-known-subclasses-plugin'\n\n> Task :build-logic:conventions:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :build-logic:lokalize:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :build-logic:conventions:pluginDescriptors\n> Task :build-logic:conventions:processResources\n> Task :build-logic:lokalize:pluginDescriptors\n> Task :build-logic:lokalize:processResources\n> Task :build-logic:lokalize:compileKotlin\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/build-logic/lokalize/src/main/kotlin/org/multipaz/lokalize/llm/strategy/GoogleStrategy.kt:22:18 'static enum entry GEMINI15FLASH: LLmModel' is deprecated. Use GEMINI2_0_FLASH or GEMINI2_5_FLASH instead.\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/build-logic/lokalize/src/main/kotlin/org/multipaz/lokalize/util/LLMConfig.kt:158:14 'static enum entry GEMINI15FLASH: LLmModel' is deprecated. Use GEMINI2_0_FLASH or GEMINI2_5_FLASH instead.\n\n> Task :build-logic:lokalize:compileJava NO-SOURCE\n> Task :build-logic:lokalize:classes\n> Task :build-logic:lokalize:jar\n> Task :build-logic:conventions:compileKotlin\n> Task :build-logic:conventions:compileJava NO-SOURCE\n> Task :build-logic:conventions:classes\n> Task :build-logic:conventions:jar\n\n> Configure project :multipaz-compose\nSkipping artifact signing for multipaz-compose: No signing keys configured.\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:3:30: 'ExperimentalComposeLibrary' is deprecated. Please specify dependency via version catalog\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:88:40: 'runtime: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:89:40: 'foundation: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:90:40: 'material3: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:91:40: 'ui: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:92:40: 'components: ComposePlugin.CommonComponentsDependencies' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:92:51: 'resources: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:93:40: 'materialIconsExtended: String' is deprecated. This artifact is pinned to version 1.7.3 and will not receive updates. Either use this version explicitly or migrate to Material Symbols (vector resources). See https://kotlinlang.org/docs/multiplatform/whats-new-compose-180.html\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:96:29: 'runtime: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:97:29: 'foundation: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:98:29: 'material3: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:99:29: 'ui: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:100:29: 'components: ComposePlugin.CommonComponentsDependencies' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:100:40: 'resources: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:101:29: 'materialIconsExtended: String' is deprecated. This artifact is pinned to version 1.7.3 and will not receive updates. Either use this version explicitly or migrate to Material Symbols (vector resources). See https://kotlinlang.org/docs/multiplatform/whats-new-compose-180.html\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:120:24: 'ExperimentalComposeLibrary' is deprecated. Please specify dependency via version catalog\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:121:40: 'uiTest: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build.gradle.kts:159:37: 'uiTooling: String' is deprecated. Use org.jetbrains.compose.ui:ui-tooling module instead\nXML format detected for multipaz-compose - generateMultipazStrings will skip execution\n\n> Configure project :multipaz-dcapi\nSkipping artifact signing for multipaz-dcapi: No signing keys configured.\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz-dcapi/build.gradle.kts:42:9: This declaration needs opt-in. Its usage should be marked with '@org.jetbrains.kotlin.gradle.ExperimentalWasmDsl' or '@OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)'\nw: \u26a0\ufe0f Invalid Source Set Dependency Across Trees\nKotlin Source Set 'androidInstrumentedTest' can't depend on 'commonTest' as they are from different Source Set Trees.\nSolution: Please remove this dependency edge.\n\n\n> Configure project :multipaz-doctypes\nSkipping artifact signing for multipaz-doctypes: No signing keys configured.\nJSON format configured for generateMultipazStrings task in multipaz-doctypes\n\n> Configure project :multipaz-longfellow\nSkipping artifact signing for multipaz-longfellow: No signing keys configured.\n\n> Configure project :multipaz-server\nSkipping artifact signing for multipaz-server: No signing keys configured.\n\n> Configure project :multipaz-swiftui\nSkipping artifact signing for multipaz-swiftui: No signing keys configured.\n\n> Configure project :multipaz-utopia\nSkipping artifact signing for multipaz-utopia: No signing keys configured.\n\n> Configure project :multipaz:SwiftBridge\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/multipaz/SwiftBridge/build.gradle.kts:30:7: 'create(String, noinline T.() -> Unit): T' is deprecated. Use register instead. See https://docs.gradle.org/current/userguide/task_configuration_avoidance.html for more information.\n\n> Configure project :multipaz-dcapi:matcherTest\nThis version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.\nChecking the license for package NDK (Side by side) 27.0.12077973 in /opt/android-sdk/licenses\nLicense for package NDK (Side by side) 27.0.12077973 accepted.\nPreparing \"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973\".\n\"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973\" ready.\nInstalling NDK (Side by side) 27.0.12077973 in /opt/android-sdk/ndk/27.0.12077973\n\"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973\" complete.\n\"Install NDK (Side by side) 27.0.12077973 v.27.0.12077973\" finished.\n\n> Configure project :samples:testapp\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:130:40: 'preview: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:151:40: 'runtime: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:152:40: 'foundation: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:153:40: 'material3: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:154:40: 'ui: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:155:40: 'components: ComposePlugin.CommonComponentsDependencies' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:155:51: 'resources: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:156:40: 'components: ComposePlugin.CommonComponentsDependencies' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:156:51: 'uiToolingPreview: String' is deprecated. Specify dependency directly\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:157:40: 'materialIconsExtended: String' is deprecated. This artifact is pinned to version 1.7.3 and will not receive updates. Either use this version explicitly or migrate to Material Symbols (vector resources). See https://kotlinlang.org/docs/multiplatform/whats-new-compose-180.html\nw: file:///tmp/eudi-carrier-multipaz-0.99.0/samples/testapp/build.gradle.kts:240:37: 'uiTooling: String' is deprecated. Use org.jetbrains.compose.ui:ui-tooling module instead\nChecking the license for package Android SDK Platform 36 in /opt/android-sdk/licenses\nLicense for package Android SDK Platform 36 accepted.\nPreparing \"Install Android SDK Platform 36 (revision 2)\".\n\"Install Android SDK Platform 36 (revision 2)\" ready.\nInstalling Android SDK Platform 36 in /opt/android-sdk/platforms/android-36\n\"Install Android SDK Platform 36 (revision 2)\" complete.\n\"Install Android SDK Platform 36 (revision 2)\" finished.\n[=========                              ] 25%                                   \rAdded dependency: compileDebugKotlinAndroid -> generateMultipazStrings for multipaz-compose\nConfigured generated strings source dir for multipaz-compose: /tmp/eudi-carrier-multipaz-0.99.0/multipaz-compose/build/generated/kmp/kotlin/org/multipaz/doctypes/generated\nAdded dependency: compileDebugKotlinAndroid -> generateMultipazStrings for multipaz-doctypes\nConfigured generated strings source dir for multipaz-doctypes: /tmp/eudi-carrier-multipaz-0.99.0/multipaz-doctypes/build/generated/kmp/kotlin/org/multipaz/doctypes/generated\nAdded dependency: compileWebMainKotlinMetadata -> generateMultipazStrings for multipaz-compose\nAdded dependency: compileCommonMainKotlinMetadata -> generateMultipazStrings for multipaz-compose\nAdded dependency: compileWebMainKotlinMetadata -> generateMultipazStrings for multipaz-doctypes\nAdded dependency: compileCommonMainKotlinMetadata -> generateMultipazStrings for multipaz-doctypes\nAdded dependency: compileAppleMainKotlinMetadata -> generateMultipazStrings for multipaz-doctypes\nAdded dependency: compileIosMainKotlinMetadata -> generateMultipazStrings for multipaz-doctypes\nAdded dependency: compileNativeMainKotlinMetadata -> generateMultipazStrings for multipaz-doctypes\nAdded dependency: compileAppleMainKotlinMetadata -> generateMultipazStrings for multipaz-compose\nAdded dependency: compileIosMainKotlinMetadata -> generateMultipazStrings for multipaz-compose\nAdded dependency: compileNativeMainKotlinMetadata -> generateMultipazStrings for multipaz-compose\n\n> Task :samples:testapp:preBuild UP-TO-DATE\n> Task :samples:testapp:preBlueDebugBuild UP-TO-DATE\n> Task :samples:testapp:mergeBlueDebugNativeDebugMetadata NO-SOURCE\n> Task :multipaz:kmpPartiallyResolvedDependenciesChecker\n> Task :multipaz:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :multipaz:generateBuildConfigClasses UP-TO-DATE\n> Task :multipaz:generateJavaSharedMainBuildConfigClasses SKIPPED\n> Task :multipaz:generateJvmMainBuildConfigClasses SKIPPED\n> Task :multipaz:transformCommonMainDependenciesMetadata UP-TO-DATE\n> Task :multipaz-cbor-rpc:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :multipaz-cbor-rpc:compileKotlin UP-TO-DATE\n> Task :multipaz-cbor-rpc:compileJava NO-SOURCE\n> Task :multipaz-cbor-rpc:processResources UP-TO-DATE\n> Task :multipaz-cbor-rpc:classes UP-TO-DATE\n> Task :multipaz-cbor-rpc:jar UP-TO-DATE\n> Task :multipaz:kspKotlinJvm SKIPPED\n> Task :multipaz:jvmProcessResources NO-SOURCE\n> Task :multipaz:processJvmMainResources SKIPPED\n> Task :multipaz-swiftui:kmpPartiallyResolvedDependenciesChecker\n> Task :multipaz-swiftui:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :multipaz-swiftui:jvmProcessResources NO-SOURCE\n> Task :multipaz-swiftui:processJvmMainResources SKIPPED\n> Task :multipaz:generateAndroidDebugBuildConfigClasses SKIPPED\n> Task :multipaz:preBuild UP-TO-DATE\n> Task :multipaz:preDebugBuild UP-TO-DATE\n> Task :multipaz:generateDebugResValues\n> Task :multipaz:generateDebugResources\n> Task :multipaz:packageDebugResources\n> Task :multipaz:processDebugNavigationResources\n> Task :multipaz:javaPreCompileDebug\n> Task :multipaz:parseDebugLocalResources\n> Task :multipaz:kspCommonMainKotlinMetadata\n> Task :multipaz-compose:kmpPartiallyResolvedDependenciesChecker\n\n[runner terminated child: child exceeded 600.0s timeout]\n",
+      "returncode": 143,
+      "status": "ERROR"
+    }
+  ],
+  "generated_at": "2026-11-11T21:05:15.584524+00:00",
+  "host": {
+    "hostname": "cachy",
+    "platform": "Linux-7.3.3-1-cachyos-x86_64-with-glibc2.44",
+    "python": "3.14.9"
+  },
+  "limitations": [
+    "Local Go results, cached fixtures, upstream self-tests and builds are not external assertions.",
+    "No device, independent operator, certification, ZKP policy or circuit security claim is established."
+  ],
+  "operator_actions": [
+    "Build the pinned sample wallet and connect a supported device/emulator.",
+    "Implement an adapter executing all 19 assertions and both carrier vectors against that target.",
+    "Rerun with --adapter-command; inspect evidence, arrange maintainer publication and independent operator reproduction."
+  ],
+  "output_limit_bytes": 1048576,
+  "publication": "PREPARED_IN_REPOSITORY; public publication and independent reproduction remain outstanding",
+  "raw_adapter_evidence": null,
+  "raw_adapter_evidence_base64": null,
+  "schema_version": 1,
+  "status": "BLOCKED",
+  "suite_provenance": {
+    "dirty": true,
+    "executions": [
+      {
+        "command": [
+          "git",
+          "rev-parse",
+          "HEAD"
+        ],
+        "cwd": "/home/notroot/Documents/eudi-wallet-poc",
+        "detail": "",
+        "name": "suite-revision",
+        "output": "62ccf9292cac0d1e2633a2ee2050b47d859d3337\n",
+        "returncode": 0,
+        "status": "PASS"
+      },
+      {
+        "command": [
+          "git",
+          "status",
+          "--porcelain",
+          "--untracked-files=all"
+        ],
+        "cwd": "/home/notroot/Documents/eudi-wallet-poc",
+        "detail": "",
+        "name": "suite-cleanliness",
+        "output": " M Makefile\n M _bmad-output/implementation-artifacts/spec-2-4-external-carrier-run-and-published-result.md\n M docs/README.md\n M docs/profiles/CARRIER-CONFORMANCE-RUNNER.md\n M tests/README.md\n M tests/run_carrier_conformance.py\n M tests/test_carrier_conformance.py\n?? docs/profiles/carrier/external-rerun-2026-11-11/README.md\n?? docs/profiles/carrier/external-rerun-2026-11-11/report.json\n",
+        "returncode": 0,
+        "status": "PASS"
+      }
+    ],
+    "observed_at": "2026-11-11T21:05:15.609285+00:00",
+    "revision": "62ccf9292cac0d1e2633a2ee2050b47d859d3337",
+    "sha256": {
+      "docs/profiles/carrier/external-target.json": "f031f87726a3c408481a393cbaa5ddb698ad7fbef5f149f92e35a3b71f40b717",
+      "tests/e2e.sh": "f51d6783c86f748c1ab24fa701d1625cbfc3bd2d5fc55b2041848afd923568aa",
+      "tests/run_carrier_conformance.py": "6f60b34a7d0be864abd7884d537cf27ddb6d9ce0d48da83170dbd825ec11e44c",
+      "tests/run_external_carrier.py": "2fcf254874933c741093e13678db0fe25b87e7230cfe8ee1059f8ece7980989b",
+      "tests/vectors/carrier-v1/device_response.cbor": "23978eb511a13d4a38a743260d5ef44a7fd9488d47806c33631fe092adc7c4aa",
+      "tests/vectors/carrier-v1/device_response.cbor.b64": "507ebf7ad0a5c726a54ea42e63c774fb9ab093c480af1cf13712dca05cf523e3",
+      "tests/vectors/carrier-v1/device_response.json.b64": "0137786051da14b4d37cffa4ed547c1762080893827ef966e4f0fb5927bbecb5",
+      "tests/vectors/carrier-v1/device_response_transcript.bin": "544b2287e816c6bdd4cfb9c666672014c7774f18ec09880eabe8f46032a5aaa6",
+      "tests/vectors/carrier-v1/manifest.json": "9405fc1bff0d9029049a07bf78fc647e4d61f36033a70ef5f230587cfa28eca4",
+      "tests/vectors/carrier-v1/request.json": "4586ada2b2833fa5f3b20de5d4d2720dacd7ec3a5d1f6944cc5d96e4144b5e83"
+    }
+  },
+  "target": {
+    "name": "Multipaz sample wallet 0.99.0",
+    "network_policy": "Offline checks never download or execute upstream code.",
+    "preparation": [
+      "git clone --depth 1 --branch 0.99.0 https://github.com/openwallet-foundation/multipaz.git /tmp/eudi-carrier-multipaz-0.99.0",
+      "git -C /tmp/eudi-carrier-multipaz-0.99.0 rev-parse HEAD",
+      "python3 tests/run_external_carrier.py --checkout /tmp/eudi-carrier-multipaz-0.99.0 --prepare-command 'adb devices -l' --prepare-command './gradlew --no-daemon --console=plain :samples:testapp:assembleDebug' --timeout 120 --json /tmp/external-carrier.json --markdown /tmp/external-carrier.md"
+    ],
+    "rationale": "Existing carrier fixtures derive from Multipaz 0.99.0 ZK serialization. Its public sample wallet provides an attributable independent implementation target; fixture provenance establishes no external compatibility.",
+    "revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+    "scope": "Repository agent execution is not independent operator evidence; publication and independent reproduction remain outstanding.",
+    "source_url": "https://github.com/openwallet-foundation/multipaz.git",
+    "tag": "0.99.0",
+    "tag_object": "e8a55fb5f9083d433ed69ca45e4faa16edeccafb",
+    "verification_command": "git ls-remote https://github.com/openwallet-foundation/multipaz.git refs/tags/0.99.0 refs/tags/0.99.0^{}",
+    "verified_on": "2026-11-11"
+  },
+  "timeout_seconds": 600.0,
+  "verified_revision": "7486ddbca490038c3580513d8273b9bbf18c6b70"
+}

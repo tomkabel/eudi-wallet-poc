@@ -41,6 +41,38 @@ not prove independent-wallet behavior or external conformance. The OpenID4VP
 the mandated ZK path. Story 2.4 remains the independent evidence gate. See the
 [runner profile](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md).
 
+The separate external runner is `tests/run_external_carrier.py`. The selected
+target is public Multipaz sample wallet 0.99.0 at canonical source commit
+`7486ddbca490038c3580513d8273b9bbf18c6b70`;
+[target metadata](../docs/profiles/carrier/external-target.json) records its
+rationale and explicit checkout/preparation commands. Its historical
+[2026-11-11 attempt](../docs/profiles/carrier/external-run-2026-11-11/README.md)
+is `BLOCKED` after a bounded build timeout, with no connected device and all
+19 assertions/two vectors unexecuted. The report is prepared in-repository;
+public publication and independent operator reproduction remain outstanding.
+
+Run offline external controls directly with
+`python3 -m unittest discover -s tests -p 'test_external_carrier.py'`, or run
+all carrier controls through `make test-carrier-conformance` (also in
+`make check` and fast CI). These use fake evidence and bounded local children,
+without downloading or building upstream code. They cover the PASS/FAIL/
+BLOCKED/ERROR matrix, strict inventory and provenance, malformed evidence,
+runtime/CLI report semantics, descendant cleanup and safe diagnostic rendering.
+The [runner profile](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md#explicit-external-invocation)
+documents the external invocation, adapter environment and exact case/vector
+schema. No target adapter is shipped. Local PASS, fixtures, upstream self-tests,
+build success and adapter exit code alone cannot satisfy external acceptance.
+
+The separately retained [host vector feed](../docs/profiles/carrier/external-host-2026-11-11/README.md)
+actually invokes the pinned Multipaz parser and native verifier with both exact
+repository vectors. Its partial result is FAIL: CBOR parses and verifies, while
+the interim JSON envelope is rejected. All 19 flow cases remain NOT_EXECUTED.
+Run its offline evidence-classification controls with
+`python3 -m unittest discover -s docs/profiles/carrier/external-host-2026-11-11 -p test_host_evidence.py`.
+These six supplemental controls validate provenance and fresh-evidence accounting;
+they do not execute the external target. Explicit host reproduction commands live
+with the retained evidence and are excluded from ordinary offline CI.
+
 ## AV Profile registry checks (Python standard library, offline)
 
 - `python3 tests/check_av_registry.py` validates the public Annex A revision/date

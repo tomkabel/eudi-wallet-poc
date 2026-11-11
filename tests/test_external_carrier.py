@@ -101,6 +101,18 @@ class ExternalCarrierTests(unittest.TestCase):
             Path("/external"), preparation=[["build"]], process=fake_process()
         )
         self.assertEqual(report["status"], "BLOCKED")
+        self.assertTrue(report["engineering_actions"][0].startswith("Build "))
+        self.assertTrue(report["engineering_actions"][1].startswith("Implement "))
+        self.assertEqual(
+            report["operator_actions"],
+            [
+                "Arrange maintainer publication of the reviewed evidence.",
+                "Reproduce the run independently and retain operator evidence.",
+            ],
+        )
+        rendered = external.markdown(report)
+        for action in report["engineering_actions"] + report["operator_actions"]:
+            self.assertIn(external.inline(action), rendered)
         self.assertTrue(
             all(
                 row["result"] == "NOT_EXECUTED"
@@ -467,12 +479,31 @@ class ExternalCarrierTests(unittest.TestCase):
         self.assertNotIn("Detail: ~~~", rendered)
 
     def test_successful_parent_cleanup_kills_silent_descendant(self):
+        for ignore_term in (False, True):
+            with self.subTest(ignore_term=ignore_term):
+                self.check_successful_parent_cleanup(ignore_term)
+
+    def check_successful_parent_cleanup(self, ignore_term):
         with tempfile.TemporaryDirectory() as tmp:
             pidfile = Path(tmp) / "pid"
             body = (
-                "import os,time; p=os.fork(); "
-                "open(" + repr(str(pidfile)) + ", 'w').write(str(p)) if p else None; "
-                "os._exit(0) if p else None; os.close(1); os.close(2); time.sleep(30)"
+                "import os,signal,time\n"
+                "ready_read, ready_write = os.pipe()\n"
+                "p = os.fork()\n"
+                "if p:\n"
+                "    os.close(ready_write)\n"
+                "    os.read(ready_read, 1)\n"
+                "    open(" + repr(str(pidfile)) + ", 'w').write(str(p))\n"
+                "    os._exit(0)\n"
+                "os.close(ready_read)\n"
+                + (
+                    "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+                    if ignore_term
+                    else ""
+                )
+                + "os.close(1)\nos.close(2)\n"
+                "os.write(ready_write, b'1')\nos.close(ready_write)\n"
+                "time.sleep(30)\n"
             )
             result = external.execute(
                 "silent-child", [sys.executable, "-c", body], Path.cwd(), 3, 1024

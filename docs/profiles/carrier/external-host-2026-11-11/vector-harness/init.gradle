@@ -1,0 +1,14 @@
+// Add outside-checkout test source without changing any target source file.
+gradle.projectsEvaluated {
+    def target = gradle.rootProject.findProject(':multipaz-longfellow')
+    if (target == null) return
+    target.extensions.getByName('kotlin').sourceSets.getByName('jvmTest').kotlin.srcDir(
+        new File(System.getenv('EE_HOST_HARNESS_DIR'))
+    )
+}
+// Evidence must come from an executed test body, including on repeat runs.
+gradle.projectsEvaluated {
+    def target = gradle.rootProject.findProject(':multipaz-longfellow')
+    if (target == null) return
+    target.tasks.named('jvmTest').configure { outputs.upToDateWhen { false } }
+}

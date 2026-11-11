@@ -146,6 +146,7 @@ test-carrier-conformance:
 	python3 tests/check_carrier_versions.py
 	python3 -m unittest discover -s tests -p 'test_carrier_versions.py'
 	python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'
+	python3 -m unittest discover -s tests -p 'test_external_carrier.py'
 
 # EE_BENCH_SKIP=1 as in CI: the step 8 percentile run is a host measurement,
 # not a check. `EE_BENCH_SKIP= make test-go-zk` runs it.

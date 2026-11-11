@@ -326,6 +326,13 @@ def run_command(
         proc.wait()
     else:
         proc.wait()
+        # A successful parent can leave descendants that closed the output pipe.
+        # The dedicated process group belongs to this bounded command only.
+        for termination_signal in (signal.SIGTERM, signal.SIGKILL):
+            try:
+                os.killpg(proc.pid, termination_signal)
+            except ProcessLookupError:
+                break
     proc.stdout.close()
     text_output = output.decode("utf-8", errors="replace")
     if limit_error:
@@ -483,8 +490,16 @@ def run_conformance(
         "external_evidence": {
             "status": "BLOCKED",
             "date": date.today().isoformat(),
-            "target": "Not selected; target selection is assigned to Story 2.4",
-            "reason": "This run is local; no independent implementation or revision has been run against the suite.",
+            "attempt_date": "2026-11-11",
+            "target": "Multipaz sample wallet 0.99.0",
+            "revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+            "runner": "tests/run_external_carrier.py",
+            "evidence": "docs/profiles/carrier/external-run-2026-11-11/report.json",
+            "reason": (
+                "This run is local. The separately recorded external attempt is "
+                "BLOCKED; no external carrier assertions or independent operator "
+                "reproduction are established."
+            ),
         },
     }
     return report
