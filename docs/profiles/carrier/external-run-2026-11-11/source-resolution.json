@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-11-11T12:17:15.678289+00:00",
+  "host": {
+    "hostname": "cachy",
+    "platform": "Linux-7.3.3-1-cachyos-x86_64-with-glibc2.44"
+  },
+  "execution": {
+    "name": "public-tag-resolution",
+    "status": "PASS",
+    "command": [
+      "git",
+      "ls-remote",
+      "https://github.com/openwallet-foundation/multipaz.git",
+      "refs/tags/0.99.0",
+      "refs/tags/0.99.0^{}"
+    ],
+    "returncode": 0,
+    "output": "e8a55fb5f9083d433ed69ca45e4faa16edeccafb\trefs/tags/0.99.0\n7486ddbca490038c3580513d8273b9bbf18c6b70\trefs/tags/0.99.0^{}\n",
+    "detail": "",
+    "cwd": "/tmp"
+  },
+  "clone": {
+    "command": [
+      "git",
+      "clone",
+      "--depth",
+      "1",
+      "--branch",
+      "0.99.0",
+      "https://github.com/openwallet-foundation/multipaz.git",
+      "/tmp/eudi-carrier-multipaz-0.99.0"
+    ],
+    "cwd": "/home/notroot/Documents/eudi-wallet-poc",
+    "returncode": 0,
+    "diagnostic": "Public annotated tag checkout completed at detached HEAD 7486ddbca490038c3580513d8273b9bbf18c6b70; runner separately verifies HEAD, origin and clean source."
+  }
+}

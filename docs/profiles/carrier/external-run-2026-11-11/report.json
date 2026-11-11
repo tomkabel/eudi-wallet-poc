@@ -1,0 +1,360 @@
+{
+  "carrier_vectors": [
+    {
+      "carrier": "interim-json",
+      "evidence": "external adapter has not executed",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "carrier": "mso-mdoc-zk-cbor",
+      "evidence": "external adapter has not executed",
+      "result": "NOT_EXECUTED"
+    }
+  ],
+  "case_inventory": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19"
+  ],
+  "cases": [
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "1",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "2",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "3",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "4",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "5",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "6",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "7",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "8",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "9",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "10",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "11",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "12",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "13",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "14",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "15",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "16",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "17",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "18",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    },
+    {
+      "assertion_result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "case_id": "19",
+      "declared_outcome": "child-did-not-report",
+      "declared_response_mode": "NOT_OBSERVED",
+      "path_label": "NOT_OBSERVED",
+      "result": "NOT_EXECUTED"
+    }
+  ],
+  "checkout": "/tmp/eudi-carrier-multipaz-0.99.0",
+  "detail": "External preparation unavailable: child exceeded 120.0s timeout",
+  "evidence_scope": "Independent implementation attempt by repository agent; not independent operator evidence or certification.",
+  "executions": [
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "checkout-revision",
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "git",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "checkout-origin",
+      "output": "https://github.com/openwallet-foundation/multipaz.git\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "checkout-cleanliness",
+      "output": "",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "adb",
+        "devices",
+        "-l"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "",
+      "name": "preparation-1",
+      "output": "List of devices attached\n\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "./gradlew",
+        "--no-daemon",
+        "--console=plain",
+        ":samples:testapp:assembleDebug"
+      ],
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0",
+      "detail": "child exceeded 120.0s timeout",
+      "name": "preparation-2",
+      "output": "Downloading https://services.gradle.org/distributions/gradle-8.14.2-bin.zip\n.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%..............100%\n\nWelcome to Gradle 8.14.2!\n\nHere are the highlights of this release:\n - Java 24 support\n - GraalVM Native Image toolchain selection\n - Enhancements to test reporting\n - Build Authoring improvements\n\nFor more details see https://docs.gradle.org/8.14.2/release-notes.html\n\nTo honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\nDaemon will be stopped at the end of the build \n\n[runner terminated child: child exceeded 120.0s timeout]\n",
+      "returncode": 143,
+      "status": "ERROR"
+    }
+  ],
+  "generated_at": "2026-11-11T12:13:38.415502+00:00",
+  "host": {
+    "hostname": "cachy",
+    "platform": "Linux-7.3.3-1-cachyos-x86_64-with-glibc2.44",
+    "python": "3.14.9"
+  },
+  "limitations": [
+    "Local Go results, cached fixtures, upstream self-tests and builds are not external assertions.",
+    "No device, independent operator, certification, ZKP policy or circuit security claim is established.",
+    "adb devices -l reported no connected devices; no sample wallet device execution or external assertion adapter was available."
+  ],
+  "operator_actions": [
+    "Build the pinned sample wallet and connect a supported device/emulator.",
+    "Implement an adapter executing all 19 assertions and both carrier vectors against that target.",
+    "Rerun with --adapter-command; inspect evidence, arrange maintainer publication and independent operator reproduction."
+  ],
+  "output_limit_bytes": 1048576,
+  "publication": "PREPARED_IN_REPOSITORY; public publication and independent reproduction remain outstanding",
+  "raw_adapter_evidence": null,
+  "schema_version": 1,
+  "source_resolution": "source-resolution.json",
+  "status": "BLOCKED",
+  "target": {
+    "name": "Multipaz sample wallet 0.99.0",
+    "network_policy": "Offline checks never download or execute upstream code.",
+    "preparation": [
+      "git clone --depth 1 --branch 0.99.0 https://github.com/openwallet-foundation/multipaz.git /tmp/eudi-carrier-multipaz-0.99.0",
+      "git -C /tmp/eudi-carrier-multipaz-0.99.0 rev-parse HEAD",
+      "python3 tests/run_external_carrier.py --checkout /tmp/eudi-carrier-multipaz-0.99.0 --prepare-command 'adb devices -l' --prepare-command './gradlew --no-daemon --console=plain :samples:testapp:assembleDebug' --timeout 120 --json /tmp/external-carrier.json --markdown /tmp/external-carrier.md"
+    ],
+    "rationale": "Existing carrier fixtures derive from Multipaz 0.99.0 ZK serialization. Its public sample wallet provides an attributable independent implementation target; fixture provenance establishes no external compatibility.",
+    "revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+    "scope": "Repository agent execution is not independent operator evidence; publication and independent reproduction remain outstanding.",
+    "source_url": "https://github.com/openwallet-foundation/multipaz.git",
+    "tag": "0.99.0",
+    "tag_object": "e8a55fb5f9083d433ed69ca45e4faa16edeccafb",
+    "verification_command": "git ls-remote https://github.com/openwallet-foundation/multipaz.git refs/tags/0.99.0 refs/tags/0.99.0^{}",
+    "verified_on": "2026-11-11"
+  },
+  "timeout_seconds": 120,
+  "verified_revision": "7486ddbca490038c3580513d8273b9bbf18c6b70"
+}
