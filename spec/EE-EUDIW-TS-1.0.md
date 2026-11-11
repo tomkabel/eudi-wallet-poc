@@ -1340,6 +1340,8 @@ Collected for the reader's convenience. Every item here should be re-checked bef
 38. **Carrier-profile provenance.** The exact ISO/IEC 18013-5 second-edition draft revision behind the observed zkDocuments wire shape has not been verified. Carrier-profile labels cite the committed Multipaz 0.99.0 host fixture and repository policy, not an invented ISO draft revision. OpenID4VP 1.0 Final and its Appendix B.2.6.1 identifier were checked against the versioned primary HTML during the 2026-11-11 label-maintenance run. Existing carrier-profile §9 uncertainty, including historical AV/TS14 commentary, remains unchanged. See docs/profiles/carrier-versions.json. **[UNVERIFIED]**
 
 
+39. **Current TARA joining agreement terms.** Story 3.2 checked the public TARA TechnicalSpecification (self-labelled v1.21, 03.09.2025) and Liitumine pages on 12 November 2026; these describe institutional application, SLA consent, registered HTTPS callback and demo credential issuance. The linked RIA joining destination returned an HTTP error in that session, so current agreement wording and institutional eligibility remain **[UNVERIFIED]**. Obtain current terms and approval directly from RIA before runtime attestation. See [TARA adapter contract](../rp-kit/TARA-CONTRACT.md).
+
 ---
 
 ## Annex A — Estonian statutory age thresholds

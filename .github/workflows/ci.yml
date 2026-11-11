@@ -177,6 +177,9 @@ jobs:
       - name: AV conformance runner regressions
         run: python3 -m unittest discover -s tests -p 'test_av_conformance.py'
 
+      - name: TARA contract (offline HTTP provider controls only)
+        run: make test-tara-contract
+
       - name: Carrier version evidence and runner regressions
         run: make test-carrier-conformance
 

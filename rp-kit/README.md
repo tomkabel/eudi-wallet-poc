@@ -165,5 +165,6 @@ curl -fsS http://127.0.0.1:8080/present/jwks.json
 ```
 
 Ordinary restart with the same key preserves JWKS; rotation changes it. Drain
-before exit to avoid interrupting sessions. TARA, register and circuit gateway
-integrations are separate stories.
+before exit to avoid interrupting sessions. The [TARA adapter contract](TARA-CONTRACT.md)
+defines the parallel OIDC authentication path, offline controls and opt-in live
+runner. Register and circuit gateway integrations are separate stories.

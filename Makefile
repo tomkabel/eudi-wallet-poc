@@ -120,7 +120,7 @@ test-py:
 
 # Everything that runs without the prover or an emulator: the lint job and ci.yml's fast job. Needs
 # the toolchains `make lint` lists; `make test-go-zk` and `make e2e` are the rest of CI.
-check: lint test-doctor pki-gates publish-guard pin-gate test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
+check: test-tara-contract lint test-doctor pki-gates publish-guard pin-gate test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
 
 # PKI plan gates and their seeded failures (security.yml runs the same).
 pki-gates:
@@ -178,3 +178,11 @@ e2e: deps
 sandbox:
 	EE_PROVER="$$(pwd)/../longfellow-zk/rust/target/release/examples/ee_poa_demo" \
 		EE_VERIFIER="$$(pwd)/verifier/zkverify" python3 sandbox/server.py
+
+# Offline controls run in CI; live browser login is opt-in.
+.PHONY: test-tara-contract test-tara-integration
+test-tara-contract:
+	python3 -m unittest discover -s tests -p 'test_tara_contract.py'
+
+test-tara-integration:
+	python3 rp-kit/tara/run_integration.py

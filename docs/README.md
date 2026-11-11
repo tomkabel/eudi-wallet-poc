@@ -6,6 +6,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 
 | Document | What it is |
 |---|---|
+| [TARA adapter contract](../rp-kit/TARA-CONTRACT.md) | Parallel OIDC reference, registered test-client prerequisites, bounded runner and external BLOCKED evidence |
 | [`CONFORMITY.md`](CONFORMITY.md) | This wallet's conformity statement against the specification (`EE-ZKP-003`, `EE-ZKP-060`) |
 | [`MEASUREMENTS.md`](MEASUREMENTS.md) | The on-device measurement harness and its results table |
 | [`DEVELOPMENT.md`](DEVELOPMENT.md) | Building and running the ZK spine, and the checks that define green |

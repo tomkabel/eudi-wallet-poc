@@ -517,3 +517,15 @@ FIFO capacity and cleanup. `verifier/go/result_expiry_test.go` covers pending,
 repeated expiry and unknown-id identity on both result routes. Run via
 `make test-go-fast` and `make test-go-zk` respectively (race detector).
 Operations: [RP profile](../rp-kit/README.md).
+
+## TARA reference contract (Story 3.2)
+
+After make py-deps, make test-tara-contract runs offline real-loopback HTTP
+provider controls with generated RSA signatures: browser/state/nonce binding,
+callback replay and expiry, missing runtime attestations (no network), discovery
+issuer and endpoint restrictions, Basic form encoding, redirect refusal, invalid
+claims/keys/signatures/assurance, body/transaction bounds and sanitized CLI outcomes.
+It is included in make check and fast CI. Synthetic success is LOCAL_TEST, never
+live PASS. make test-tara-integration is opt-in and exits nonzero with BLOCKED
+when prerequisites are absent. See the [TARA contract](../rp-kit/TARA-CONTRACT.md)
+and [retained external attempt](../rp-kit/tara/evidence/attempt-2026-11-12.json).
