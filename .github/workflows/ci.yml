@@ -72,6 +72,11 @@ jobs:
               - 'docs/profiles/AV-PROFILE-FIXTURES.md'
               - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
               - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
+              - 'docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md'
+              - 'docs/profiles/carrier-versions.json'
+              - 'docs/analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md'
+              - 'docs/decisions/ADR-003-MINIMAL-JWE.md'
+              - 'spec/EE-EUDIW-TS-1.0.md'
               - 'docs/README.md'
               - 'Makefile'
               - 'pyproject.toml'
@@ -170,8 +175,8 @@ jobs:
       - name: AV conformance runner regressions
         run: python3 -m unittest discover -s tests -p 'test_av_conformance.py'
 
-      - name: Carrier runner regressions
-        run: python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'
+      - name: Carrier version evidence and runner regressions
+        run: make test-carrier-conformance
 
       - name: ruff
         # The blocking set is `select` in pyproject.toml: F (pyflakes) and E9 catch undefined names,

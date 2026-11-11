@@ -25,6 +25,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Sequence
 
+from check_carrier_versions import validate_carrier_versions
+
 
 RESPONSE_MODES = {"direct_post", "direct_post.jwt", "not-applicable", "NOT_OBSERVED"}
 RESULTS = {"PASS", "FAIL"}
@@ -450,6 +452,11 @@ def run_conformance(
                     manifest_problem = manifest_problem or f"manifest SHA-256 mismatch for {name!r}"
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         manifest_problem = f"could not read carrier vector manifest: {exc}"
+
+    version_problems = validate_carrier_versions(root)
+    if version_problems:
+        manifest_problem = "\n".join(([manifest_problem] if manifest_problem else []) + version_problems)
+        inventory_problems.extend(version_problems)
 
     vector_rows = [
         {

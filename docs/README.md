@@ -11,6 +11,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 | [`DEVELOPMENT.md`](DEVELOPMENT.md) | Building and running the ZK spine, and the checks that define green |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | *ee-eudiw.* How the issuer, wallet, verifier and prover fit together, and the trust boundaries |
 | [`profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md`](profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md) | *ee-eudiw.* The `mso_mdoc_zk` OpenID4VP carrier as implemented, field by field |
+| [carrier-versions.json](profiles/carrier-versions.json) | Versioned carrier-rule derivations, source evidence and explicit ISO revision uncertainty; checked offline |
 | [`profiles/AV-PROFILE-CLAUSE-REGISTRY.md`](profiles/AV-PROFILE-CLAUSE-REGISTRY.md) | Public Annex A pin, complete ordered clause accounting, scoped test mappings, explicit v1 exclusions and offline validation/refresh instructions |
 | [`profiles/AV-PROFILE-FIXTURES.md`](profiles/AV-PROFILE-FIXTURES.md) | Exact public A.11 containers, version-labelled local AV requests and copied minted proof, read-only byte drift checks, regeneration and assertion limits |
 | [`profiles/AV-VCI-INVOCATION.md`](profiles/AV-VCI-INVOCATION.md) | External av-vci invocation grammar, visible entry/refusal UI, public scheme discrepancy, provider-unavailable boundary and Android smoke commands |

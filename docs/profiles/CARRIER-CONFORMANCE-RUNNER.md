@@ -102,3 +102,46 @@ fixtures. They do not establish independent-wallet behavior, third-party
 verifier behavior, scheme-owner acceptance or external conformance. No result
 from this local runner substitutes for the independent implementation and
 published evidence required by Story 2.4.
+
+## Offline version evidence and maintenance
+
+Run the stdlib-only assertion without Rust or network access:
+
+    python3 tests/check_carrier_versions.py
+    make test-carrier-conformance
+
+The make target runs that assertion, its mutation controls and the existing
+fake-child runner regressions; it is included in make check. The runner invokes
+the same validator. Bad evidence marks the committed-vector suite and both
+carrier rows ERROR, retains item-specific diagnostics and prevents a passing
+report even when every child proof test passes.
+
+The profile's Version header is authoritative. Every numbered rule has a visible
+carrier-profile/source label and its own derivation in
+[carrier-versions.json](carrier-versions.json). Each of the five published
+payload/support files has a manifest provenance entry. Circuit versions (6/7),
+Multipaz release 0.99.0 and external document revisions identify different things.
+The validator discovers all numbered rule markers and all files recursively under
+carrier-v1 except manifest.json; discovered files, hashes and provenance must
+agree, with no duplicate rules or orphan metadata. Evidence paths and uncertainty
+references resolve locally. Validation reads files only and never refreshes sources.
+
+For a deliberate revision:
+
+1. Verify changed external identifiers against primary sources; record what was
+   checked and retain unresolved provenance as [UNVERIFIED] with a spec §23 item.
+   Never invent an ISO second-edition draft revision or call local policy ISO law.
+2. Review every rule-specific derivation and every fixture's source references.
+   Update the authoritative profile Version, all visible labels and matching
+   inventory/manifest labels together. A header-only bump must fail every old label.
+3. Run the commands above and make check. Run the existing Go byte/crypto checks
+   with the documented staticlib prerequisite. Labels alone do not require byte
+   regeneration. The builder preserves reviewed per-file provenance, derives the
+   version from the profile and refuses stale or incomplete evidence.
+
+This inventory covers only the published carrier-v1 set. AV vectors and original
+source fixtures retain their separate provenance. Its wire-shape evidence is
+host-side Multipaz fixture evidence, not an independently confirmed ISO draft or
+device-conformance claim. Existing profile uncertainty remains visible; spec §23
+item 38 records the unavailable exact ISO revision; the OpenID4VP 1.0 Final
+identifier and handover section were checked against the versioned primary HTML.

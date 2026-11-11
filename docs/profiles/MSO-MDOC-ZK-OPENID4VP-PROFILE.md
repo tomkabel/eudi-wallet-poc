@@ -60,7 +60,7 @@ retrieval there), issuance, and the ISO 18013-7 Annex C dcapi carrier, which sha
 
 ## 2. The format identifier
 
-**Profile rule 1.** The DCQL credential format identifier is the string `mso_mdoc_zk`.
+**Profile rule 1.** [carrier-profile: 1.0; sources: multipaz-0.99.0, repository-policy] The DCQL credential format identifier is the string `mso_mdoc_zk`.
 
 - It is what the de-facto implementations send in `credentials[].format`
   (`verifier/go/oid4vp/dcql.go` `FormatMsoMdocZk`; the fork's
@@ -93,13 +93,13 @@ all fields (rule 5), and the `system` label space currently holds exactly the tw
 rule 4 names. A future IANA-style registry inherits this field set; nothing here
 pre-empts one.
 
-**Profile rule 2.** An `mso_mdoc_zk` credential query MUST carry
+**Profile rule 2.** [carrier-profile: 1.0; sources: multipaz-0.99.0, repository-policy] An `mso_mdoc_zk` credential query MUST carry
 `meta.doctype_value` (a valid ISO/IEC 18013-5 doctype identifier, same rule as `mso_mdoc`)
 and a non-empty `meta.zk_system_type` array. A query that advertises no proving system
 cannot be allowlisted and is malformed, not merely unanswerable (`dcql.go` `Validate`;
 the fork's parser fails closed the same way — `MsoMdocZkParsingTest` case 5).
 
-**Profile rule 3.** Each `zk_system_type` entry carries exactly the fields the two shipping
+**Profile rule 3.** [carrier-profile: 1.0; sources: multipaz-0.99.0, iso-second-edition] Each `zk_system_type` entry carries exactly the fields the two shipping
 implementations agree on, and they are the fields the Estonian ZK Circuit Registry (EE-ZKP-030)
 already publishes:
 
@@ -118,7 +118,7 @@ The multipaz 0.99.0 bundle ships eight such circuits (v6 and v7, 1–4 attribute
 this profile's fixture exercises is
 `longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121`.
 
-**Profile rule 4 (the `system` string).** Two system strings are in live use for the same
+**Profile rule 4 (the `system` string).** [carrier-profile: 1.0; sources: multipaz-0.99.0, repository-policy, iso-second-edition] Two system strings are in live use for the same
 underlying scheme, and both are fixture-verified in this repository:
 
 - `longfellow-libzk-v1` — what a de-facto wallet puts in `zk_system_type.system` and in the
@@ -134,7 +134,7 @@ allowlist matches on `id` + `circuit_hash` + the numeric tuple, never on the lab
 `ZkSystemSpec` model regardless of source). A one-label policy with label-keyed trust would
 be a weaker contract than the implementations already enforce.
 
-**Profile rule 5 (allowlisting).** Every advertised entry MUST match a registry-listed
+**Profile rule 5 (allowlisting).** [carrier-profile: 1.0; sources: repository-policy] Every advertised entry MUST match a registry-listed
 circuit on **all** of `id`, `circuit_hash`, `version`, `num_attributes`,
 `block_enc_hash`, `block_enc_sig`, checked before any proving/verifying work; every entry is
 checked, not just the first, so a query advertising one accepted and one unknown circuit is
@@ -146,7 +146,7 @@ published entries only, and no holder-supplied number ever reaches the FFI hash 
 
 ## 4. `meta.verifier_message`
 
-**Profile rule 6 (v1.0 semantics — closed here; proposed to DCHP #17).**
+**Profile rule 6 (v1.0 semantics — closed here; proposed to DCHP #17).** [carrier-profile: 1.0; sources: repository-policy]
 `meta.verifier_message` is an OPTIONAL text field whose semantics this profile now fixes
 rather than leaves open, because shipped implementations must interop before any WG acts:
 
@@ -172,7 +172,7 @@ as CBOR tag 0 (standard date/time) over an RFC 3339 text string, seconds precisi
 fractional seconds (both fixture-pinned, `isodcapi.go` `ParseZkDocument`; fractional seconds
 are refused per ISO/IEC 18013-5 clauses 7.1 and 9.1.2.4).
 
-**Profile rule 7 (the freshness window).** The verifier MUST window-check the presented
+**Profile rule 7 (the freshness window).** [carrier-profile: 1.0; sources: repository-policy] The verifier MUST window-check the presented
 `timestamp` against its own clock: the value MUST lie within
 `[session_created − 60 s, now + 60 s]` — the ISO dcapi path's `CheckTimestampWindow`
 window with its 60-second slack (`SessionTZ`), which plan §8.7 adopted as the starting
@@ -181,7 +181,7 @@ rule (a) in `present.go`) applies it unchanged; that path is library-level, sinc
 `/present/new` does not yet issue `mso_mdoc_zk` queries (`verifier/README.md`). The slack absorbs clock skew between wallet and verifier, not
 replay margin.
 
-**Profile rule 8 (the proof binds the timestamp).** On this carrier the Longfellow proof
+**Profile rule 8 (the proof binds the timestamp).** [carrier-profile: 1.0; sources: multipaz-0.99.0, repository-policy] On this carrier the Longfellow proof
 takes `ZkDocumentData.timestamp` as its `Now` input — the proof itself establishes (d) of
 EE-ZKP-021, that the attestation is within validity, *as of the wallet's own timestamp*.
 The window check is therefore load-bearing, not decorative: it is what keeps a stale
@@ -189,7 +189,7 @@ document from being replayed with its proof intact. The fixture's
 `request.json` records the proof-bound timestamp (`2026-09-24T14:19:58Z`) and the Go test
 re-derives the window from it.
 
-**Profile rule 9 (session freshness outside the document).** The verifier's own session
+**Profile rule 9 (session freshness outside the document).** [carrier-profile: 1.0; sources: repository-policy, openid4vp-1.0-final] The verifier's own session
 controls (nonce single-use via `Store.Claim`, session expiry) apply on this path exactly as
 on the plain path; the carrier changes what the response looks like, not when a response
 may be accepted. A proof made for another `client_id`, another `response_uri` or another
@@ -221,7 +221,7 @@ Appendix B.2.6.2 `OpenID4VPDCAPIHandover` — implemented in this repository onl
 the plain path's `ISOTranscript`, not yet ZK-proven over this carrier [UNVERIFIED for the
 ZK case; PENDING-DEVICE].
 
-Profile rule 10 follows: **transcript bytes are a verifier-side secret in construction, not
+**Profile rule 10.** [carrier-profile: 1.0; sources: openid4vp-1.0-final, repository-policy] **transcript bytes are a verifier-side secret in construction, not
 in content** — `client_id`, `nonce` and `response_uri` come from the stored session, never
 from the response (`present.go` `checkZk`, `Session.Transcript()`), because a transcript the
 response can influence is a transcript the response can bind to something else.
@@ -260,7 +260,7 @@ profile: a conforming implementation must accept both carriers for the one proof
 | `device_response.cbor` (the whole vp_token value) | 360,859 |
 | `zkDocuments[0].proof` (the Longfellow proof bstr) | 360,180 |
 
-**Profile rule 11 (response modes).** Because one credential's answer is ~360 KB of CBOR —
+**Profile rule 11 (response modes).** [carrier-profile: 1.0; sources: repository-policy, openid4vp-1.0-final] Because one credential's answer is ~360 KB of CBOR —
 ~481 kB once base64url-encoded into the JSON `vp_token` — the redirect-channel response
 modes are constrained as follows:
 
@@ -293,25 +293,25 @@ The wallet must one day carry both this carrier and the Commission's TS14 multi-
 signature track (BBS-family credentials in a JWP container, converging in ETSI TS 119
 476-2). The profile's coexistence rules, each grounded in what step 8.7 actually built:
 
-- **Rule 12 — one format identifier per scheme family.** `mso_mdoc_zk` is mdoc+Longfellow
+- **Profile rule 12 — one format identifier per scheme family.** [carrier-profile: 1.0; sources: repository-policy] `mso_mdoc_zk` is mdoc+Longfellow
   by construction: `ZkDocumentData` carries `issuerSigned`/`deviceSigned` mdoc structures.
   TS14 §2.4 declares mdoc and SD-JWT VC structurally incompatible with MMS ZKPs and proposes
   a JWP-based container — that container, when it exists, is a **different** DCQL format
   with its own `system` registry, not a new value of `zk_system_type.system` inside
   `mso_mdoc_zk`. A response mixing schemes in one credential answer is refused (one
   zkDocument per query, §7).
-- **Rule 13 — scheme identity rides the presentation, in the same place.** EE-ZKP-004's
+- **Profile rule 13 — scheme identity rides the presentation, in the same place.** [carrier-profile: 1.0; sources: repository-policy, multipaz-0.99.0] EE-ZKP-004's
   crypto-agility requirement ("scheme identity carried in the presentation") is met on this
   carrier by `zkSystemId` in the response and `zk_system_type.system` in the query; a Track
   B format must put its identity in the analogous slot so a verifier dispatches on format
   and system before any parse or FFI work, exactly as `present.go` dispatches on
   `cq.Format`.
-- **Rule 14 — one refusal path, scheme-agnostic.** The wallet's EE-ZKP-051 refusal and the
+- **Profile rule 14 — one refusal path, scheme-agnostic.** [carrier-profile: 1.0; sources: repository-policy] The wallet's EE-ZKP-051 refusal and the
   per-doc-request spec scoping run on the same `ZkSystemSpec` model regardless of which
   transport or scheme delivered the specs (the fork's DCQL parser feeds the same map the
   ISO path uses) — a second scheme plugs into the step 4c `ZkPresenter` seam without a
   second consent or refusal code path.
-- **Rule 15 — the issuer-disclosure consent line is carrier-independent in wording.** The
+- **Profile rule 15 — the issuer-disclosure consent line is carrier-independent in wording.** [carrier-profile: 1.0; sources: repository-policy, multipaz-0.99.0] The
   `msoX5chain` disclosure (below) is this carrier's instance of a general fact: ZK proofs
   can hide claims and still reveal the issuer. The fork's consent line ("The issuer of this
   attestation will be visible to the requesting party", EE-ZKP-042 discipline) applies to
@@ -355,6 +355,23 @@ is one more reason EE-ZKP-011 keeps Track B on the roadmap.
   (`kLigeroNreqv7 = 132`), below the ACM v2.0 recommended 125 bits — EE-ZKP-022a's pilot
   constraint binds this carrier exactly as it binds the ISO path. Nothing here changes
   ZKP_08's status.
+
+## Label maintenance and provenance scope
+
+Visible carrier-profile labels identify this document's Version, not a circuit
+version, implementation release or external-document revision. The per-rule
+source inventory and derivations are in [carrier-versions.json](carrier-versions.json).
+It distinguishes observed Multipaz 0.99.0 wire shape, OpenID4VP transcript
+construction and repository policy; it does not label policy as an ISO requirement.
+The exact ISO second-edition draft revision remains **[UNVERIFIED]** (specification
+§23 item 38). Existing §9 uncertainty and device-evidence limits remain unchanged.
+
+On a deliberate profile revision, review every rule and published fixture, update
+its visible/manifest label and source derivation, then run the offline validator
+and make test-carrier-conformance. Validation is read-only: it discovers numbered
+rules and every file under tests/vectors/carrier-v1 except manifest.json, rejecting
+uncovered items, stale labels and orphan metadata. It never refreshes standards or
+generates bytes. See [runner maintenance](CARRIER-CONFORMANCE-RUNNER.md).
 
 ## 10. References
 

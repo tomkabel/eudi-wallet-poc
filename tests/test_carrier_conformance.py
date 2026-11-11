@@ -1,4 +1,5 @@
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -58,6 +59,24 @@ def setup_root(root):
         "carriers": list(runner.EXPECTED_CARRIERS),
         "sha256": hashes,
     }))
+    source = Path(__file__).resolve().parents[1]
+    for relative in (
+        "docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md",
+        "docs/profiles/carrier-versions.json",
+    ):
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source / relative, target)
+    inventory = json.loads((source / "docs/profiles/carrier-versions.json").read_text())
+    for evidence in inventory["sources"].values():
+        for relative in evidence["evidence"]:
+            target = root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source / relative, target)
+    data = json.loads(manifest.read_text())
+    source_manifest = source / "tests/vectors/carrier-v1/manifest.json"
+    data["provenance"] = json.loads(source_manifest.read_text())["provenance"]
+    manifest.write_text(json.dumps(data))
     return manifest
 
 

@@ -445,3 +445,22 @@ builds anything — build the prover and `verifier/zkverify` first.
 - Rust: `verifier/zkverify-ffi/src/lib.rs` has one `#[cfg(test)]` unit test (`oversize_inputs_are_rejected_not_aborted`), but ci.yml runs no `cargo test`, so it only runs by hand; `zk-age-poc/` has none. In CI the Rust side is covered only by building and by e2e.sh case 5.
 - `tests/load_test.py` is not invoked by ci.yml — run it by hand. (Only `tests/e2e.sh` runs in CI; the root `README.md` says so.)
 - No coverage measurement anywhere.
+
+### Carrier version evidence
+
+Run the offline, read-only assertion with stdlib Python:
+
+    python3 tests/check_carrier_versions.py
+    make test-carrier-conformance
+
+The target is part of make check. It checks every discovered numbered carrier
+profile rule and every published carrier-v1 file against the profile Version
+header, resolving per-item source references through
+[carrier-versions.json](../docs/profiles/carrier-versions.json). Mutation controls
+cover absent, malformed and stale labels; header-only revisions; newly added or
+duplicate rules/files; missing indexed files and orphan metadata; unknown sources,
+missing source versions/dispositions/evidence and missing §23 uncertainty records.
+A coordinated new version passes, demonstrating there is no hardcoded 1.0 gate.
+Runner controls show invalid evidence prevents passing vector/report results even
+when child proof tests pass. These are provenance checks, not crypto verification
+or independent conformance. See the [maintenance procedure](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md).
