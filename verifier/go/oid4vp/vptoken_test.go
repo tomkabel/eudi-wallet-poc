@@ -3,6 +3,7 @@ package oid4vp
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -114,5 +115,18 @@ func TestDCQLSingleRequiresBooleanValues(t *testing.T) {
 				t.Fatalf("Single() accepted values %v", tc.values)
 			}
 		})
+	}
+}
+
+func TestPredicateFailureKeepsErrorIdentity(t *testing.T) {
+	q, err := AgeQuery("proof_of_age", testDocType, testNamespace, testElement).Single()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := validPresentation()
+	p.AttrCBORHex = "f4"
+	_, _, err = tokenFor(t, q.ID, p).Parse(q)
+	if !errors.Is(err, ErrPredicateValue) {
+		t.Fatalf("predicate error: %v", err)
 	}
 }

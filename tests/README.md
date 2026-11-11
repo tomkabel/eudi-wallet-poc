@@ -16,15 +16,15 @@ invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
 the Go carrier dispatch/parser checks, the committed carrier-vector verifier
 test, then `tests/e2e.sh`. The E2E script keeps its human-readable assertions
 and writes JSONL case observations to a private path supplied by the runner.
-The report has one ordered row for each of the 15 numbered assertions, with
-`path_label`, observed carrier, declared response mode, declared outcome and result. Cases that do not
+The report has one ordered row for each of the 19 numbered assertions, with
+`path_label`, observed carrier, declared response mode, declared outcome, binding_property, assertion_result and result. Cases that do not
 carry a presentation (for example, proving the response key is published) have
 carrier `NOT_OBSERVED`; encrypted transport mode does not infer one. Child
 failures remain `FAIL`/`ERROR`, and cases the E2E child never reports remain
 `NOT_EXECUTED`.
 
 The E2E inventory exercises the OpenID4VP interim PoC path. Its rows do not
-claim that all 15 assertions exercise both encodings. The second layer runs the
+claim that all 19 assertions exercise both encodings. The second layer runs the
 same-proof committed vectors for `interim-json` and `mso-mdoc-zk-cbor`, whose
 byte hashes and provenance are in `tests/vectors/carrier-v1/manifest.json`.
 The runner requires `make deps` (including the Rust static library, prover and
@@ -241,7 +241,7 @@ W6), merges all three issuer lists into one trust store, starts
 drives `wallet/present.py` once per case and greps the verifier's answer out
 of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 `EE_VERIFIER` optionally overrides the verifier path; the wallet needs python
-`cbor2`, `cryptography` and `jwcrypto`. Thirteen assertions:
+`cbor2`, `cryptography` and `jwcrypto`. Nineteen assertions:
 
 1. Happy path, plain mode: the adult proves `age_over_18`; output must contain `"valid": true`.
 2. Transcript binding: `--tamper-nonce` makes the proof cover a different nonce; the verifier must answer `"valid": false`.
@@ -259,7 +259,18 @@ of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 14. Unknown carrier bytes: a vp_token entry matching neither carrier is refused as `unknown-carrier`, not parsed as JSON.
 15. Malformed envelope: a truncated JSON envelope is refused as `malformed-envelope`, not `unknown-carrier`.
 
-Output is `PASS: 15/15` or `FAIL: n of 15 assertions failed`; exit status is
+16. Controlled client_id transcript mutation in encrypted mode: HTTP 200 valid:false with transcript-binding.
+17. Controlled response_uri transcript mutation: same refusal, while posting to the original destination.
+18. Controlled jwk_thumbprint transcript mutation: same refusal, while encrypting to the original response key.
+19. Well-formed empty CBOR: HTTP 400 valid:false on the plain sniff path with no-presentation and the same persisted polling detail.
+
+The six controlled binding cases require exact case-specific property labels;
+missing/wrong/generic labels fail runner validation. Nonce, replay, predicate and
+decryption assertions require stable runtime names. Runtime opaque proof failures
+name transcript-binding without attributing an individual input. See
+[failure reasons](../docs/profiles/CARRIER-FAILURE-REASONS.md).
+
+Output is `PASS: 19/19` or `FAIL: n of 19 assertions failed`; exit status is
 non-zero when any assertion fails. Note what is absent: there is no
 untrusted-issuer case (the script deliberately trusts all minted issuer keys,
 which is why case 4 fails on the predicate value rather than on trust) and no

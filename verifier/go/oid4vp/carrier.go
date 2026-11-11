@@ -94,11 +94,12 @@ type CheckedPresentation struct {
 // ErrNoZkDocument marks the legal empty answer on the CBOR carrier: the wallet
 // presented nothing provable. Callers turn it into whatever "not a yes" means
 // on their path (a 200 valid:false here), never into a parse failure.
-var ErrNoZkDocument = errors.New("no zkDocument: the wallet presented nothing provable in this response")
+var ErrNoZkDocument = errors.New("no-presentation: no zkDocument: the wallet presented nothing provable in this response")
 
 // Stable carrier outcomes. Callers can classify these without parsing
 // diagnostic wording, while the wrapped text keeps the holder-facing detail.
 var (
+	ErrPredicateValue      = errors.New("predicate-value")
 	ErrMissingVPTokenEntry = errors.New("missing-entry")
 	ErrUnknownCarrier      = errors.New("unknown-carrier")
 	ErrMalformedEnvelope   = errors.New("malformed-envelope")
@@ -307,11 +308,11 @@ func checkDisclosedValue(issuerSigned []byte, q CredentialQuery) error {
 			continue
 		}
 		if valV.Kind != cborsub.KBool {
-			return fmt.Errorf("elementValue for %q is a %s, want a boolean", q.Element(), valV.Kind)
+			return fmt.Errorf("%w: elementValue for %q is a %s, want a boolean", ErrPredicateValue, q.Element(), valV.Kind)
 		}
 		if !valV.Bool {
-			return fmt.Errorf("presentation proves %s = 0xf4, but the query only accepts 0xf5 (true)",
-				q.Element())
+			return fmt.Errorf("%w: presentation proves %s = 0xf4, but the query only accepts 0xf5 (true)",
+				ErrPredicateValue, q.Element())
 		}
 		return nil
 	}

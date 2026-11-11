@@ -199,10 +199,10 @@ func matchesQueryValue(attrID string, attrCBOR []byte, want []any) error {
 		acceptable = append(acceptable, fmt.Sprintf("0x%02x (%t)", enc, b))
 	}
 	if len(acceptable) == 0 {
-		return fmt.Errorf("the query names no acceptable value for %s", attrID)
+		return fmt.Errorf("%w: the query names no acceptable value for %s", ErrPredicateValue, attrID)
 	}
-	return fmt.Errorf("presentation proves %s = 0x%x, but the query only accepts %s",
-		attrID, attrCBOR, strings.Join(acceptable, " or "))
+	return fmt.Errorf("%w: presentation proves %s = 0x%x, but the query only accepts %s",
+		ErrPredicateValue, attrID, attrCBOR, strings.Join(acceptable, " or "))
 }
 
 // ParseZkVPToken reads an mso_mdoc_zk vp_token entry (plan §8.7): the

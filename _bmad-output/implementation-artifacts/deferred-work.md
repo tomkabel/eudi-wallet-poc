@@ -5,3 +5,7 @@ Code review of story 2-1 (commit 9d9f12a, carrier runner).
 
 - Archived spec `spec-2-1-carrier-runner-over-existing-cases.md` has `status: 'done'`, but the story is `review`; the spec's Code Map lists `direct_post.jwt` for cases 6-11 while `tests/e2e.sh` records case 10 as `direct_post`. The file is not on HEAD (retired in 06fc1b6), so fix it only if the archive is revived. Pre-existing.
 - ~~Final-code E2E evidence is missing~~ Settled 2026-11-11: `make e2e` on d5d290e passed all 15 cases and the carrier summary; 2-1 marked done.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-binding-property-failure-naming.md`
+  summary: Preserve raw non-property case observations separately when metadata validation fails.
+  evidence: Pre-existing validate_case_records discards observed carrier/mode/outcome on malformed metadata; new binding_property and assertion_result are retained.

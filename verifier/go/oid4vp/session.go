@@ -278,7 +278,7 @@ func (st *Store) put(s *Session) (*Session, error) {
 var (
 	ErrNoSession   = errors.New("oid4vp: no such session")
 	ErrExpired     = errors.New("oid4vp: session expired")
-	ErrAlreadyUsed = errors.New("oid4vp: session already answered")
+	ErrAlreadyUsed = errors.New("single-use: session already answered")
 	ErrStoreFull   = errors.New("oid4vp: too many active sessions")
 	ErrIDInUse     = errors.New("oid4vp: session id already in use")
 	// ErrRequestFetched: the request_uri was already consumed (B2).

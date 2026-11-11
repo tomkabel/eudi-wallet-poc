@@ -18,6 +18,7 @@ def record(case_id):
         "declared_response_mode": mode,
         "declared_outcome": outcomes[0],
         "result": "PASS",
+        "binding_property": runner.EXPECTED_PROPERTIES.get(str(case_id), "not-applicable"),
     }
 
 
@@ -63,16 +64,68 @@ def setup_root(root):
 class CarrierConformanceTests(unittest.TestCase):
     def test_complete_inventory_is_reported_in_case_order(self):
         rows, problems = runner.validate_case_records(
-            [record(n) for n in reversed(range(1, 16))]
+            [record(n) for n in reversed(range(1, 20))]
         )
         self.assertEqual(problems, [])
         self.assertEqual([row["case_id"] for row in rows], list(runner.CASE_IDS))
         self.assertTrue(all(row["result"] == "PASS" for row in rows))
 
+    def test_binding_property_evidence_is_required_and_case_specific(self):
+        properties = {**runner.EXPECTED_PROPERTIES, "1": "not-applicable"}
+        for case_id, property_name in properties.items():
+            for claimed_result in ("PASS", "FAIL"):
+                for wrong in (None, "binding", "transcript-binding", "wrong-property", []):
+                    bad = record(case_id)
+                    if wrong is None:
+                        bad.pop("binding_property")
+                    else:
+                        bad["binding_property"] = wrong
+                    bad["result"] = claimed_result
+                    records = [
+                        bad if n == case_id else record(n) for n in runner.CASE_IDS
+                    ]
+                    rows, problems = runner.validate_case_records(records)
+                    row = next(row for row in rows if row["case_id"] == case_id)
+                    self.assertEqual(
+                        row["result"], "ERROR", (property_name, wrong, claimed_result)
+                    )
+                    self.assertEqual(row["assertion_result"], claimed_result)
+                    self.assertEqual(row["binding_property"], wrong)
+                    self.assertTrue(
+                        any("binding_property" in problem for problem in problems)
+                    )
+                    self.assertFalse(runner.report_passed({
+                        "inventory_problems": problems,
+                        "suites": [{"status": "PASS"}],
+                        "case_inventory": list(runner.CASE_IDS),
+                        "cases": rows,
+                        "carrier_vectors": [
+                            {"carrier": carrier, "result": "PASS"}
+                            for carrier in runner.EXPECTED_CARRIERS
+                        ],
+                    }))
+
+    def test_failed_assertion_retains_controlled_property_in_summary(self):
+        import contextlib
+        import io
+        for case_id, property_name in runner.EXPECTED_PROPERTIES.items():
+            failed = record(case_id)
+            failed["result"] = "FAIL"
+            rows, problems = runner.validate_case_records([failed])
+            row = next(row for row in rows if row["case_id"] == case_id)
+            self.assertEqual(problems, [])
+            self.assertEqual(row["binding_property"], property_name)
+            self.assertEqual(row["result"], "FAIL")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                runner.print_summary({"suites": [], "cases": [row], "carrier_vectors": [], "inventory_problems": []})
+            self.assertIn("property=" + property_name, output.getvalue())
+            self.assertIn("assertion=FAIL", output.getvalue())
+
     def test_missing_child_records_remain_not_executed(self):
         rows, problems = runner.validate_case_records([])
         self.assertEqual(problems, [])
-        self.assertEqual(len(rows), 15)
+        self.assertEqual(len(rows), 19)
         self.assertTrue(all(row["result"] == "NOT_EXECUTED" for row in rows))
         self.assertFalse(runner.report_passed({
             "inventory_problems": [],
@@ -142,18 +195,18 @@ class CarrierConformanceTests(unittest.TestCase):
             root = Path(tmp)
             setup_root(root)
             e2e = root / "tests/e2e.sh"
-            e2e.write_text(e2e.read_text() + '\necho "16. added assertion"\n')
+            e2e.write_text(e2e.read_text() + '\necho "20. added assertion"\n')
 
             def fake_runner(name, command, cwd, env):
                 if name == "e2e-assertions":
-                    write_records(env, 15)
+                    write_records(env, 19)
                 output = passing_output(name)
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 
             report = runner.run_conformance(root, fake_runner, staticlib_built=True)
         self.assertTrue(
             any(
-                "case 16" in p and "no runner metadata" in p
+                "case 20" in p and "no runner metadata" in p
                 for p in problems_of(report)
             )
         )
@@ -210,7 +263,7 @@ class CarrierConformanceTests(unittest.TestCase):
             def fake_runner(name, command, cwd, env):
                 events.append(name)
                 if name == "e2e-assertions":
-                    write_records(env, 15)
+                    write_records(env, 19)
                 output = passing_output(name)
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 
@@ -231,7 +284,7 @@ class CarrierConformanceTests(unittest.TestCase):
 
             def fake_runner(name, command, cwd, env):
                 if name == "e2e-assertions":
-                    write_records(env, 15)
+                    write_records(env, 19)
                 output = "ok\n" if name == "committed-carrier-vectors" else "ok"
                 return runner.SuiteResult(name, "PASS", list(command), 0, output)
 

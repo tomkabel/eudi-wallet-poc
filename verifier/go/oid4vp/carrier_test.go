@@ -601,3 +601,18 @@ func TestCarrierDispatchStableOutcomes(t *testing.T) {
 		t.Fatalf("incomplete multi vp_token error/carriers = %v / %v, want missing-entry / none", err, carriers)
 	}
 }
+
+func TestCBORPredicateFailureKeepsErrorIdentity(t *testing.T) {
+	q := carrierFixtureQuery(t)
+	// Minimal issuerSigned disclosure; checking it needs neither proof nor key.
+	raw := append([]byte{0xa1}, cborText(q.Namespace())...)
+	raw = append(raw, 0x81, 0xa2)
+	raw = append(raw, cborText("elementIdentifier")...)
+	raw = append(raw, cborText(q.Element())...)
+	raw = append(raw, cborText("elementValue")...)
+	raw = append(raw, 0xf4)
+	err := checkDisclosedValue(raw, q)
+	if !errors.Is(err, ErrPredicateValue) {
+		t.Fatalf("predicate error: %v", err)
+	}
+}

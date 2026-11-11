@@ -46,7 +46,7 @@ development_status:
 
   epic-2: in-progress
   2-1-carrier-runner-over-existing-cases: done
-  2-2-binding-property-failure-naming: ready-for-dev
+  2-2-binding-property-failure-naming: review
   2-3-version-labelled-carrier-fixtures: backlog
   2-4-external-carrier-run-and-published-result: backlog
   epic-2-retrospective: optional

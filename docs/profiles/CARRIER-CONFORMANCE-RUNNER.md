@@ -4,10 +4,10 @@
 
 The runner reports two separate layers:
 
-1. `tests/e2e.sh` retains its 13 existing cryptographic, transport and negative
-   assertions and adds two carrier-refusal assertions (14, 15). Each assertion emits one machine-readable case record with its
+1. `tests/e2e.sh` retains its fifteen existing assertions and appends three
+   transcript-input controls (16–18) and an empty-presentation refusal (19). Each assertion emits one machine-readable case record with its
    case id, path label, observed carrier (or `NOT_OBSERVED` when the assertion
-   has no presentation bytes), declared response mode, declared outcome and result. Carrier and
+   has no presentation bytes), declared response mode, declared outcome, binding_property and result. Carrier and
    response mode are independent fields. In particular, `direct_post.jwt`
    describes encrypted response transport; it does not imply a carrier.
 2. Go tests parse and dispatch carriers, then
@@ -15,7 +15,8 @@ The runner reports two separate layers:
    against the same proof and transcript. This vector layer is where both
    encodings are covered. The E2E suite does not claim a cross-carrier matrix.
 
-The E2E assertions currently use the OpenID4VP interim PoC carrier and the
+The E2E proof assertions use the OpenID4VP interim PoC carrier; the empty
+response case observes the CBOR carrier. The suite retains the
 `openid4vp-interim-poc` path label. The Digital Credentials API is the mandated
 ZK presentation path. OpenID4VP `mso_mdoc_zk` is profiled but unofficial and
 must not be read as EU endorsement.
@@ -44,6 +45,14 @@ inventory diagnostics. The vector suite setup is `ERROR` when its required Rust
 static library is absent. The vector status describes the paired same-proof
 test; a failing leg is identified in that suite's retained output.
 
+The six deliberate violations name nonce, single-use, predicate-value,
+client_id, response_uri and jwk_thumbprint in case-specific binding_property
+fields. The runner validates those fields, preserves assertion_result separately
+from metadata validation errors, and prints the supplied property even on FAIL.
+Other cases require not-applicable. Case 19 reports no-presentation separately.
+See [Carrier failure reasons](CARRIER-FAILURE-REASONS.md) for runtime prefixes,
+HTTP semantics, controlled attribution and the limits of transcript-binding.
+
 ## Vectors and provenance
 
 `tests/vectors/carrier-v1/manifest.json` identifies `tools/build_cbor_fixture.py`
@@ -59,7 +68,7 @@ transcript.
 Install the pinned dependencies and build the documented Rust spine:
 
 ```sh
-pip install -r tests/requirements-ci.txt
+make py-deps
 make deps
 make e2e
 ```

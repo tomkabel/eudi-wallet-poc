@@ -65,7 +65,7 @@ case_record() {
 	[ -n "${EE_E2E_CASES:-}" ] || return 0
 	python3 - "$EE_E2E_CASES" "$@" <<'PY'
 import json, sys
-path, case_id, carrier, response_mode, outcome, result = sys.argv[1:]
+path, case_id, carrier, response_mode, outcome, result, *property_name = sys.argv[1:]
 with open(path, "a", encoding="utf-8") as f:
     f.write(json.dumps({
         "case_id": case_id,
@@ -74,6 +74,7 @@ with open(path, "a", encoding="utf-8") as f:
         "declared_response_mode": response_mode,
         "declared_outcome": outcome,
         "result": result,
+        "binding_property": property_name[0] if property_name else "not-applicable",
     }, sort_keys=True) + "\n")
 PY
 }
@@ -105,8 +106,10 @@ present() {
 # start_verifier launches zkverify with the given response-mode flags and waits
 # for it. The mode flags are passed through verbatim.
 start_verifier() {
+	# Transport negatives intentionally leave sessions unanswered. Bound the
+	# test server's graceful drain instead of waiting a full session TTL.
 	"$verifier" -registry "$repo/verifier/circuits.json" -issuers "$work/issuers.json" \
-		-addr "127.0.0.1:$port" -base-url "$base" "$@" >"$work/verifier.log" 2>&1 &
+		-addr "127.0.0.1:$port" -base-url "$base" -drain-timeout 1s "$@" >"$work/verifier.log" 2>&1 &
 	server_pid=$!
 	for _ in $(seq 1 50); do
 		if curl -fsS "$base/healthz" >/dev/null 2>&1; then break; fi
@@ -136,21 +139,21 @@ fi
 
 echo "2. transcript binding: a proof made against a different nonce"
 present "$work/2.log" "$work/adult" --tamper-nonce
-if grep -q '"valid": false' "$work/2.log"; then
-	case_record 2 "$(observed_carriers "$work/2.log")" direct_post transcript-binding-refused PASS
+if grep -q 'response   : HTTP 200' "$work/2.log" && grep -q '"valid": false' "$work/2.log" && grep -q 'transcript-binding' "$work/2.log"; then
+	case_record 2 "$(observed_carriers "$work/2.log")" direct_post transcript-binding-refused PASS nonce
 	pass "verifier answered valid:false"
 else
-	case_record 2 "$(observed_carriers "$work/2.log")" direct_post transcript-binding-refused FAIL
+	case_record 2 "$(observed_carriers "$work/2.log")" direct_post transcript-binding-refused FAIL nonce
 	fail "expected valid:false"; tail -20 "$work/2.log"
 fi
 
 echo "3. single use: the same vp_token posted twice"
 present "$work/3.log" "$work/adult" --replay
-if grep -q 'replay     : HTTP 410' "$work/3.log"; then
-	case_record 3 "$(observed_carriers "$work/3.log")" direct_post replay-refused PASS
+if grep -q 'response   : HTTP 200' "$work/3.log" && grep -q '"valid": true' "$work/3.log" && grep -q 'replay     : HTTP 410' "$work/3.log" && grep -q 'single-use' "$work/3.log"; then
+	case_record 3 "$(observed_carriers "$work/3.log")" direct_post replay-refused PASS single-use
 	pass "the replayed post was refused with 410"
 else
-	case_record 3 "$(observed_carriers "$work/3.log")" direct_post replay-refused FAIL
+	case_record 3 "$(observed_carriers "$work/3.log")" direct_post replay-refused FAIL single-use
 	fail "expected HTTP 410 on replay"; tail -20 "$work/3.log"
 fi
 
@@ -158,11 +161,11 @@ fi
 # refuse a proof of `age_over_18 = false` even though the proof is sound.
 echo "4. predicate binding: an under-18 holder proves age_over_18 = false"
 present "$work/4.log" "$work/minor" --allow-false-predicate
-if grep -q '"valid": false' "$work/4.log" && grep -q 'only accepts 0xf5' "$work/4.log"; then
-	case_record 4 "$(observed_carriers "$work/4.log")" direct_post false-predicate-refused PASS
+if grep -q 'response   : HTTP 400' "$work/4.log" && grep -q '"valid": false' "$work/4.log" && grep -q 'predicate-value' "$work/4.log"; then
+	case_record 4 "$(observed_carriers "$work/4.log")" direct_post false-predicate-refused PASS predicate-value
 	pass "verifier answered valid:false, on the value and not by accident"
 else
-	case_record 4 "$(observed_carriers "$work/4.log")" direct_post false-predicate-refused FAIL
+	case_record 4 "$(observed_carriers "$work/4.log")" direct_post false-predicate-refused FAIL predicate-value
 	fail "a false predicate was accepted as true"; tail -20 "$work/4.log"
 fi
 
@@ -296,7 +299,7 @@ try:
     print("UNEXPECTED-200")
 except urllib.error.HTTPError as e:
     txt = e.read().decode()
-    print("OK" if e.code == 400 and "decrypt" in txt else f"BAD {e.code} {txt[:120]}")
+    print("OK" if e.code == 400 and "decryption:" in txt else f"BAD {e.code} {txt[:120]}")
 PY
 )" || true
 if [ "$tamper_check" = "OK" ]; then
@@ -540,10 +543,79 @@ fi
 
 stop_verifier
 
+# Four appended controls keep the established fifteen assertion IDs stable.
+start_verifier -response-mode direct_post.jwt
+
+echo "16. transcript binding: deliberately changed client_id"
+present "$work/16.log" "$work/adult" --tamper-client-id
+if grep -q '"valid": false' "$work/16.log" && grep -q 'transcript-binding' "$work/16.log" && grep -q 'response   : HTTP 200' "$work/16.log"; then
+    case_record 16 "$(observed_carriers "$work/16.log")" direct_post.jwt transcript-binding-refused PASS client_id
+    pass "client_id control refused as transcript-binding"
+else
+    case_record 16 "$(observed_carriers "$work/16.log")" direct_post.jwt transcript-binding-refused FAIL client_id
+    fail "client_id control was not refused as transcript-binding"; tail -20 "$work/16.log"
+fi
+
+echo "17. transcript binding: deliberately changed response_uri"
+present "$work/17.log" "$work/adult" --tamper-response-uri
+if grep -q '"valid": false' "$work/17.log" && grep -q 'transcript-binding' "$work/17.log" && grep -q 'response   : HTTP 200' "$work/17.log"; then
+    case_record 17 "$(observed_carriers "$work/17.log")" direct_post.jwt transcript-binding-refused PASS response_uri
+    pass "response_uri control refused as transcript-binding"
+else
+    case_record 17 "$(observed_carriers "$work/17.log")" direct_post.jwt transcript-binding-refused FAIL response_uri
+    fail "response_uri control was not refused as transcript-binding"; tail -20 "$work/17.log"
+fi
+
+echo "18. transcript binding: deliberately changed jwk_thumbprint"
+present "$work/18.log" "$work/adult" --tamper-jwk-thumbprint
+if grep -q '"valid": false' "$work/18.log" && grep -q 'transcript-binding' "$work/18.log" && grep -q 'response   : HTTP 200' "$work/18.log"; then
+    case_record 18 "$(observed_carriers "$work/18.log")" direct_post.jwt transcript-binding-refused PASS jwk_thumbprint
+    pass "jwk_thumbprint control refused as transcript-binding"
+else
+    case_record 18 "$(observed_carriers "$work/18.log")" direct_post.jwt transcript-binding-refused FAIL jwk_thumbprint
+    fail "jwk_thumbprint control was not refused as transcript-binding"; tail -20 "$work/18.log"
+fi
+
+stop_verifier
+start_verifier -response-mode direct_post -allow-unencrypted-response
+echo "19. empty CBOR DeviceResponse: no-presentation refusal"
+empty_check="$(python3 - "$base" <<'EMPTY'
+import base64, cbor2, json, sys, urllib.error, urllib.request
+base = sys.argv[1]
+def post(url, payload, expected_status):
+    request = urllib.request.Request(url, data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            assert response.status == expected_status
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        assert error.code == expected_status
+        return json.load(error)
+started = post(base + "/present/new", {"element": "age_over_18"}, 201)
+req = json.load(urllib.request.urlopen(started["request_uri"], timeout=30))
+entry = base64.urlsafe_b64encode(cbor2.dumps({"version": "1.0", "zkDocuments": [], "status": 0})).decode().rstrip("=")
+response = post(req["response_uri"], {"vp_token": {req["dcql_query"]["credentials"][0]["id"]: [entry]}}, 400)
+assert response["valid"] is False and response["detail"].startswith("no-presentation:"), response
+assert response["carriers"] == ["mso-mdoc-zk-cbor"], response
+polled = json.load(urllib.request.urlopen(base + "/present/result/" + started["id"], timeout=30))
+assert polled["detail"] == response["detail"] and polled["valid"] is False, polled
+print("OK " + ",".join(response["carriers"]))
+EMPTY
+)" || true
+if [ "$empty_check" = "OK mso-mdoc-zk-cbor" ]; then
+    case_record 19 "${empty_check#OK }" direct_post no-presentation PASS
+    pass "empty CBOR response refused as no-presentation"
+else
+    case_record 19 NOT_OBSERVED direct_post no-presentation FAIL
+    fail "empty presentation handling: $empty_check"
+fi
+stop_verifier
+
 echo
 if [ "$failures" -eq 0 ]; then
-	echo "PASS: 15/15"
+	echo "PASS: 19/19"
 else
-	echo "FAIL: $failures of 15 assertions failed"
+	echo "FAIL: $failures of 19 assertions failed"
 fi
 exit "$((failures > 0))"

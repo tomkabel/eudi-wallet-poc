@@ -306,6 +306,11 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if peek.Answered {
+		writeJSON(w, http.StatusGone, map[string]string{"error": oid4vp.ErrAlreadyUsed.Error()})
+		return
+	}
+
 	var token oid4vp.VPToken
 	ct := r.Header.Get("Content-Type")
 	switch {
@@ -345,7 +350,7 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 			// and the distinction stays in the log.
 			log.Printf("/present/response/%s: jwe decrypt failed: %v", id, err)
 			writeJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "the encrypted response could not be decrypted",
+				"error": "decryption: the encrypted response could not be decrypted",
 			})
 			return
 		}
@@ -618,7 +623,7 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 	}
 	log.Printf("/present/response/%s: no issuer verified the proof, last error: %v", s.ID, lastErr)
 	if errors.Is(lastErr, zk.ErrInvalid) {
-		return false, "no trusted issuer's key verifies this proof", http.StatusOK
+		return false, "transcript-binding: the proof did not verify", http.StatusOK
 	}
 	return false, verifyErrorCategory(lastErr), http.StatusBadRequest
 }
@@ -736,7 +741,7 @@ func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.Credential
 		// A proof that does not verify is an answer, not a failure: 200,
 		// valid:false. Only the runtime's wording stays server-side.
 		log.Printf("/present/response/%s: proof invalid: %v", s.ID, err)
-		return false, "the proof did not verify", http.StatusOK
+		return false, "transcript-binding: the proof did not verify", http.StatusOK
 	default:
 		log.Printf("/present/response/%s: %v", s.ID, err)
 		return false, verifyErrorCategory(err), http.StatusBadRequest

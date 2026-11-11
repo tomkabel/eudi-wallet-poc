@@ -161,6 +161,23 @@ def verify_jar(signed: dict, pinned_pem) -> dict:
     return json.loads(b64u_decode(payload_b64))
 
 
+def controlled_transcript_inputs(client_id, nonce, thumbprint, response_uri, property_name=None):
+    """Mutate exactly one proof input; never change the request or JWE key."""
+    if property_name == "client_id":
+        client_id += "-controlled-tamper"
+    elif property_name == "nonce":
+        nonce += "-controlled-tamper"
+    elif property_name == "response_uri":
+        response_uri += "-controlled-tamper"
+    elif property_name == "jwk_thumbprint":
+        if thumbprint is None:
+            raise ValueError("jwk_thumbprint control requires direct_post.jwt")
+        thumbprint = bytes([thumbprint[0] ^ 1]) + thumbprint[1:]
+    elif property_name is not None:
+        raise ValueError("unknown transcript control")
+    return client_id, nonce, thumbprint, response_uri
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -181,8 +198,11 @@ def main() -> None:
                          "key (the {keys:[…]} document, inline in the request's client_metadata.jwks "
                          "or at GET /present/jwks.json). This mirrors what a real wallet's response "
                          "encryption does; jwcrypto does the JWE (see ADR-003 for the profile).")
-    ap.add_argument("--tamper-nonce", action="store_true",
-                    help="prove against a different nonce, to show the binding holds")
+    tamper = ap.add_mutually_exclusive_group()
+    for flag in ("nonce", "client-id", "response-uri", "jwk-thumbprint"):
+        tamper.add_argument("--tamper-" + flag, dest="tamper_property",
+                            action="store_const", const=flag.replace("-", "_"),
+                            help="prove against a deliberately different " + flag)
     ap.add_argument("--replay", action="store_true",
                     help="post the same vp_token twice, to show the nonce is single-use")
     ap.add_argument("--allow-false-predicate", action="store_true",
@@ -226,7 +246,6 @@ def main() -> None:
     # direct_post.jwt the third element is the verifier response key's RFC 7638
     # thumbprint, taken from the request's own client_metadata.jwks (never from
     # a second fetch — the transcript is fixed before anything is posted).
-    nonce = "A" * 43 if args.tamper_nonce else req["nonce"]
     jwks = None
     thumbprint = None
     if req.get("response_mode") == "direct_post.jwt":
@@ -243,9 +262,14 @@ def main() -> None:
                               separators=(",", ":"), sort_keys=True).encode()
         thumbprint = hashlib.sha256(tp_input).digest()
         print(f"resp key   : P-256, thumbprint {thumbprint.hex()[:16]}…")
-    transcript = session_transcript(req["client_id"], nonce, thumbprint, req["response_uri"])
+    try:
+        inputs = controlled_transcript_inputs(req["client_id"], req["nonce"], thumbprint,
+                                              req["response_uri"], args.tamper_property)
+    except ValueError as exc:
+        sys.exit(str(exc))
+    transcript = session_transcript(*inputs)
     print(f"transcript : {len(transcript)} bytes, sha256 {hashlib.sha256(transcript).hexdigest()[:16]}…"
-          + ("   (DELIBERATELY WRONG NONCE)" if args.tamper_nonce else ""))
+          + (f"   (CONTROLLED {args.tamper_property})" if args.tamper_property else ""))
 
     # 3. Re-sign deviceAuth over it and prove — one presentation per queried
     # credential. A multi-credential request (W6) carries one DCQL credential

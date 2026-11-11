@@ -44,6 +44,7 @@ OUTCOMES = {
     "missing-entry",
     "unknown-carrier",
     "malformed-envelope",
+    "no-presentation",
 }
 EXPECTED_CARRIERS = ("interim-json", "mso-mdoc-zk-cbor")
 EXPECTED_PATH = "openid4vp-interim-poc"
@@ -75,6 +76,14 @@ EXPECTED_CASE_METADATA = {
     "13": ((), "direct_post", ("missing-entry",)),
     "14": ((), "direct_post", ("unknown-carrier",)),
     "15": ((), "direct_post", ("malformed-envelope",)),
+    "16": (("interim-json",), "direct_post.jwt", ("transcript-binding-refused",)),
+    "17": (("interim-json",), "direct_post.jwt", ("transcript-binding-refused",)),
+    "18": (("interim-json",), "direct_post.jwt", ("transcript-binding-refused",)),
+    "19": (("mso-mdoc-zk-cbor",), "direct_post", ("no-presentation",)),
+}
+EXPECTED_PROPERTIES = {
+    "2": "nonce", "3": "single-use", "4": "predicate-value",
+    "16": "client_id", "17": "response_uri", "18": "jwk_thumbprint",
 }
 CASE_IDS = tuple(EXPECTED_CASE_METADATA)
 CASE_ECHO = re.compile(r"^\s*echo\s+[\"']?(\d+)\.", re.MULTILINE)
@@ -153,6 +162,8 @@ def validate_case_records(
             "declared_response_mode": "NOT_OBSERVED",
             "declared_outcome": "child-did-not-report",
             "result": "NOT_EXECUTED",
+            "binding_property": "NOT_OBSERVED",
+            "assertion_result": "NOT_EXECUTED",
         }
         for case_id in case_ids
     }
@@ -174,7 +185,13 @@ def validate_case_records(
         response_mode = record.get("declared_response_mode")
         outcome = record.get("declared_outcome")
         result = record.get("result")
+        property_name = record.get("binding_property")
+        row.update(binding_property=property_name, assertion_result=result)
         valid = True
+        expected_property = EXPECTED_PROPERTIES.get(case_id, "not-applicable")
+        if property_name != expected_property:
+            problems.append(f"case {case_id}: binding_property {property_name!r} does not match expected {expected_property!r}")
+            valid = False
         if not isinstance(carriers, list) or any(not isinstance(item, str) for item in carriers):
             problems.append(f"case {case_id}: carriers must be an array of strings")
             valid = False
@@ -489,7 +506,8 @@ def print_summary(report: dict[str, object]) -> None:
     for case in report["cases"]:
         print(
             f"    {case['case_id']:>2}  {case['carrier']:<30} {case['declared_response_mode']:<16} "
-            f"{case['result']:<12} {case['declared_outcome']} [{case['path_label']}]"
+            f"{case['result']:<12} {case['declared_outcome']} property={case['binding_property']} "
+            f"assertion={case['assertion_result']} [{case['path_label']}]"
         )
     print("  Carrier vectors:")
     for vector in report["carrier_vectors"]:
