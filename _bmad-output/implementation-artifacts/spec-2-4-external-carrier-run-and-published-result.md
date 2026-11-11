@@ -2,10 +2,17 @@
 title: '2.4 External carrier run and published result'
 type: 'feature'
 created: '2026-11-11'
-status: 'awaiting-operator'
+status: awaiting-operator
+operator_actions:
+  - Publish the reviewed carrier evidence from commit a2141151a30875bdf343f73831f75cde8f005961 through the maintainer-approved public fork channel.
+  - Reproduce the documented pinned Multipaz vector run independently and retain the operator identity, source revision, commands and unedited result artifacts.
+followup_review_recommended: false
+deferred: []
+baseline_revision: '62ccf9292cac0d1e2633a2ee2050b47d859d3337'
 baseline_commit: 'a1a8c81c141145ca7e280b4591464c15e65f1377'
 route: 'dispatch'
 review_loop_iteration: 0
+warnings: [oversized]
 story_key: '2-4-external-carrier-run-and-published-result'
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
@@ -55,7 +62,7 @@ context:
 - [x] `docs/profiles/carrier/external-target.json` — record reviewed upstream URL, tag, canonical commit, rationale and reproducible preparation instructions; ordinary checks never download or execute external code.
 - [x] `docs/profiles/carrier/external-run-2026-11-11/` — attempt the pinned public sample build/run outside the repository; retain JSON, Markdown and relevant output. Record observed device/adapter gaps and operator steps instead of declaring success.
 - [x] `Makefile`, `tests/README.md`, `docs/profiles/CARRIER-CONFORMANCE-RUNNER.md`, `docs/README.md` — wire offline controls, document semantics and index new evidence documents.
-- [x] `_bmad-output/implementation-artifacts/sprint-status.yaml` — preserve prior edits; record repository completion separately from the external/operator gate using existing sprint conventions.
+- [x] This story spec — finalize awaiting-operator with a nonempty operator_actions YAML list of imperative strings and matching Auto Run Result, and commit reviewed changes. Never write, stage or revert orchestrator-owned sprint-status.yaml.
 
 **Acceptance Criteria:**
 - Given a named pinned external implementation, when the documented attempt runs, then reports retain its revision, selection rationale and actual result even if it fails or cannot build/run.
@@ -63,6 +70,23 @@ context:
 - Given only repository preparation or agent execution, when completion is recorded, then public publication and independent operator evidence remain explicitly outstanding.
 
 ## Implementation Notes
+
+### Redispatch scope (2026-11-11)
+
+Existing artifacts are historical evidence, not proof of current integration.
+Inspection found missing external controls in Makefile, stale local-report target
+metadata, absent adapter documentation and missing docs index entries. Restore
+these integrations and verify afresh, preserving original attempt bytes. The user
+now authorizes committing repository work; this supersedes the older frozen
+commit restriction. Never write, stage or revert sprint-status.yaml. Finalize
+awaiting-operator only for maintainer publication and independent-operator
+actions, with matching frontmatter and Auto Run Result. Adapter engineering
+is not a human prerequisite; a genuine bounded upstream build failure may be
+retained as BLOCKED external evidence without making the story itself blocked.
+
+Document invocation, adapter environment and schema, exact case/vector metadata,
+exit codes, bounded execution and source-attribution limits. Explicitly state that
+no target adapter is shipped. Run every external control and make check afresh.
 
 Repository implementation is complete; external acceptance remains awaiting operator.
 The external runner validates the public pinned checkout before attribution, bounds
@@ -126,4 +150,135 @@ Review completion: verified patch findings corrected without changing frozen int
 
 Final `make check` exited 0 after all review patches, including 22 version, 20 local-runner and 26 external controls. Log: `/tmp/story24-final-parent-check.log`. All matrix rows executed and passed; CLI/runtime errors, dirty attribution, descriptor races, silent descendants and hostile report text have regression controls. Final `git diff --check` passed. Three review layers completed; every finding has an individual triage row, all accepted patches fixed, none deferred.
 
-Repository half complete; sprint remains `awaiting-operator` because external carrier assertions, public publication and independent reproduction are outstanding. The original BLOCKED attempt and original artifact hashes are preserved by the separately dated supplement. No local commit was created: the approved frozen boundary requires separate authorization for commit/push.
+Repository half complete in the earlier run; external carrier assertions, public publication and independent reproduction were outstanding. The original BLOCKED attempt and original artifact hashes are preserved by the separately dated supplement. No local commit was created in that run. The current redispatch explicitly authorizes a local commit; push remains outside this run.
+
+
+### 2026-11-11 — Redispatch review pass
+- verdicts: 13 observations — high 0, medium 8, low 2, false 3, maybe-false 0
+- findings:
+  - [medium] [patch] Blind: historical evidence was redated by local execution — added fixed attempt_date alongside local observation date; future-clock regression passes.
+  - [medium] [patch] Blind: setsid descendants escape process-group cleanup — narrowed documentation to original dedicated process-group members; detached sessions explicitly excluded.
+  - [low] [patch] Blind: raw evidence retention overstated — documented pre-read rejection and bounded regular-file retention limits.
+  - [low] [patch] Blind: case 5 outcome pairing omitted — documented exact PASS/refused and FAIL/failed pairing from the validator.
+  - [false] [reject] Blind: intermediate in-review lacks final operator_actions/result/commit — expected pending finalization; finalization below supplies required fields and supersedes old no-commit prose.
+  - [medium] [patch] Edge: detached sessions survive group termination — same demonstrated root cause as Blind; corrected scope of guarantee rather than introducing cgroup public requirements.
+  - [medium] [patch] Verification: SIGKILL success-branch regression unprotected — added synchronized SIGTERM-ignoring child to existing successful-parent test; both variants pass.
+  - [false] [reject] Intent: intermediate integration diff does not show final lifecycle/commit — expected workflow staging, resolved by terminal finalization; not a code defect.
+  - [medium] [patch] Intent: offline controls do not establish external assertions — retained fresh real bounded build attempts separately; every assertion remains NOT_EXECUTED, never inferred from controls.
+  - [medium] [patch] Intent: adapter implementation misassigned to operator — corrected documentation to engineering/environment work; host feasibility attempted separately, independent reproduction/publication only are operator responsibilities.
+  - [false] [reject] Intent: external BLOCKED differs from story lifecycle — external outcome and awaiting-operator lifecycle deliberately describe different surfaces.
+  - [medium] [patch] Intent: sprint ownership cannot be proven by diff alone — no sprint mutation made; verify original SHA-256 and absence from staged/committed change set.
+  - [medium] [patch] Feasibility audit: historic no-device observation no longer current — new separately dated attempt records connected device; preserve original bytes rather than rewrite history.
+
+No deferred review finding. Review corrections preserve original cryptographic inputs,
+runner case inventory, dependencies and target pin. The finding about editing this
+spec is rejected as a review route per workflow; lifecycle fields are finalized as
+an explicit user requirement, not by changing acceptance to fit implementation.
+
+
+### 2026-11-11 — Supplemental harness review
+- verdicts: 4 findings — high 0, medium 3, low 0, false 1, maybe-false 0
+- findings:
+  - [medium] [patch] Host harness observed provenance without enforcing it — require canonical source, exact origin and clean before/after boundaries before attribution.
+  - [medium] [patch] Gradle status alone could label failed/missing vector assertions PASS — separate process status from compatibility result and require complete fresh two-vector evidence.
+  - [medium] [patch] Gradle UP-TO-DATE could omit fresh evidence after deletion — force actual selected test execution and validate corresponding test XML.
+  - [false] [reject] Detached-session containment in supplemental execution — documented original process-group limitation already applies; no all-descendant containment is claimed.
+
+The actual initial vector feed executed both rows: interim-json FAIL at the target
+CBOR parser, mso-mdoc-zk-cbor PASS through target parser and native verifier.
+Upstream SystemTest independently generated a fresh proof and verified it. All
+19 flow cases remain NOT_EXECUTED; partial vector failure is not a full-suite PASS.
+
+## Auto Run Result
+
+Status: awaiting-operator
+
+Implemented and committed the reviewed repository work as
+
+a2141151a30875bdf343f73831f75cde8f005961
+
+before finalizing this status. Public publication and independent operator
+reproduction remain explicitly outstanding; no push or external message was sent.
+The matching frontmatter operator_actions contains only these human actions.
+
+### Delivered change
+
+- Makefile and the local runner/tests: include all external controls in fast CI,
+  identify the selected target/revision and historical attempt date, and clean up
+  remaining original-process-group members after successful parent exit.
+- External runner/tests: separate engineering work from operator publication and
+  independent reproduction; regressions cover SIGTERM-resistant descendants.
+- Runner profile, tests README and docs index: document invocation, full adapter
+  schema, evidence boundaries, exact failure semantics and reproducible commands.
+- Fresh sample attempts: retain actual 120-second and 600-second build timeouts,
+  connected-device observations, command output and source provenance separately
+  from unchanged historical evidence.
+- Host evidence and outside-source harness: actually execute the pinned Multipaz
+  public parser/native verifier on both exact repository carrier vectors, validate
+  provenance before/after, force fresh tests, retain XML and input hashes, and
+  derive compatibility from assertions separately from process success.
+
+### Actual result and coverage
+
+Target: Multipaz 0.99.0 at canonical source revision
+7486ddbca490038c3580513d8273b9bbf18c6b70. Public tag resolution was rechecked
+with git ls-remote. Its fixture relationship and independent implementation are
+the recorded selection rationale.
+
+The final partial compatibility result is FAIL: the CBOR carrier parsed and its
+native proof verified (code 0), while exact interim JSON bytes failed the target
+CBOR parser. The target harness process succeeded and one fresh XML test body
+executed both feeds. This demonstrates the particular parser/verifier surface,
+not absence of every possible Multipaz integration. All 19 flow cases remain
+NOT_EXECUTED; this is not a full-suite PASS or certification. The separate
+upstream self-test generated a fresh proof successfully but does not count as a
+repository carrier assertion.
+
+Full flow/session interoperability, target-aware metadata and a complete 19-case
+adapter remain explicitly outside the demonstrated partial result. They are
+engineering work, not human operator actions or a prerequisite to publishing the
+actual partial failure required by this story. No device/provider unavailability
+is asserted for the current host. Publication must retain these coverage limits.
+
+### Review and verification
+
+Four review layers completed, plus a host feasibility audit and supplemental
+harness review. Every observation has an individual verdict in the triage log.
+Accepted patches address date attribution, cleanup scope and SIGKILL coverage,
+raw-byte retention wording, case-5 pairing, engineering/operator separation,
+source attribution, process-vs-assertion status and fresh test enforcement.
+Rejected observations concern expected intermediate lifecycle state, a deliberate
+distinction between external outcome and story lifecycle, or an already explicit
+process-group limitation. No review item is deferred. The final reviewer confirmed
+the three supplemental defects resolved; its transient missing standalone vector
+file observation occurred during the forced rerun, and the final file exists and
+agrees with embedded observations.
+
+Follow-up review recommended: false. This redispatch is a follow-up convergence
+pass: patched high 0; no specific unverified correctness risk remains in the
+reviewed partial-result surface. Full-suite coverage remains an explicit limit.
+
+- Final make check: PASS, exit 0, after all implementation/harness changes; log
+  /tmp/story24-final-verified-check.log. It includes 22 version, 20 local-runner
+  and 26 external controls, plus the existing complete fast CI gates.
+- Supplemental host evidence controls: PASS, 6 tests; source, missing/duplicate
+  evidence, assertion FAIL despite process PASS, stale tests and process errors.
+- New Python full Ruff families, formatting and Pyright: PASS.
+- Actual corrected target vector rerun: process PASS, compatibility FAIL, two
+  vector observations; all input hashes match the committed harness inputs.
+- Original artifact SHA-256 values match the original supplement. Target checkout
+  remains at its canonical revision with clean source before and after execution.
+- git diff --check and staged whitespace check: PASS. Markdown presentation
+  whitespace is normalized; JSON preserves command-output bytes.
+- sprint-status.yaml was never written, staged or reverted; its SHA-256 remains
+  44f8dece2af730cdbf927334246039ec2a5d0ddb16c40d8fe9cca0bdede7b6b9.
+  It is absent from this run's commit changes. No demo-data or private content,
+  cryptographic inputs, golden vectors, pinned dependencies or transport defaults
+  changed.
+
+### Operator actions owed
+
+1. Publish the reviewed carrier evidence through the maintainer-approved public
+   fork channel, including failures, provenance and explicit unexecuted coverage.
+2. Reproduce the documented pinned target run independently and retain operator
+   identity, source revision, exact commands and unedited artifacts.

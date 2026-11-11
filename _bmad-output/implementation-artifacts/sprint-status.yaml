@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-23-2026 04:42
-last_updated: 11-11-2026 00:00
+last_updated: 11-11-2026 22:20
 project: eudi-wallet-poc
 project_key: NOKEY
 tracking_system: file-system
@@ -38,17 +38,17 @@ development_status:
   epic-1: in-progress
   1-1-av-profile-clause-registry: done
   1-2-av-profile-fixtures: done
-  1-3-av-conformance-runner: awaiting-operator
+  1-3-av-conformance-runner: in-progress
   1-4-av-vci-invocation: done
   1-5-avsua-equivalent-issuance-path: done
-  1-6-published-av-report-and-external-reproduction: awaiting-operator
+  1-6-published-av-report-and-external-reproduction: in-progress
   epic-1-retrospective: done
 
   epic-2: in-progress
   2-1-carrier-runner-over-existing-cases: done
-  2-2-binding-property-failure-naming: review
-  2-3-version-labelled-carrier-fixtures: review
-  2-4-external-carrier-run-and-published-result: backlog
+  2-2-binding-property-failure-naming: done
+  2-3-version-labelled-carrier-fixtures: done
+  2-4-external-carrier-run-and-published-result: in-progress
   epic-2-retrospective: optional
 
   epic-3: backlog
@@ -60,7 +60,7 @@ development_status:
   3-6-refusal-distinguishable-from-cancellation: backlog
   3-7-integrator-readme-and-timed-onboarding: backlog
   3-8-parallel-path-integration-note: backlog
-  3-9-gateway-adapter-for-rp-kit: backlog
+  3-9-gateway-adapter-for-the-rp-kit: backlog
   epic-3-retrospective: optional
 
   epic-4: backlog
@@ -166,6 +166,8 @@ development_status:
   14-1-mock-drift-contract-tests: backlog
   14-2-mutation-guard-for-fail-closed-paths: backlog
   epic-14-retrospective: optional
+
+# Action items committed during retrospectives (section created by the retrospective workflow)
 action_items:
   - id: "epic-1-retro-independent-candidate"
     epic: 1
