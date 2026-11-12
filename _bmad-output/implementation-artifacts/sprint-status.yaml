@@ -54,7 +54,7 @@ development_status:
   epic-3: backlog
   3-1-deployable-rp-service-profile: done
   3-2-tara-facing-adapter-contract: awaiting-operator
-  3-3-fail-closed-rp-register-interface-and-mock: backlog
+  3-3-fail-closed-rp-register-interface-and-mock: done
   3-4-rp-register-interface-proposal: backlog
   3-5-four-estonian-acceptance-cases: backlog
   3-6-refusal-distinguishable-from-cancellation: backlog

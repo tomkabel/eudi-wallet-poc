@@ -2,7 +2,7 @@
 title: '3.3 Fail-closed RP-register interface and mock'
 type: feature
 created: '2026-11-12'
-status: done
+status: in-review
 baseline_revision: 8fdce0b5c0fa379a443f435e221abae6526bf719
 review_loop_iteration: 0
 followup_review_recommended: true
@@ -141,36 +141,3 @@ Executed controls:
 No operator-only acceptance remains. The HTTP adapter is a local proposal and
 synthetic success is not evidence of an authority service or registration.
 
-## Auto Run Result
-
-Status: done
-
-Implemented Story 3.3: a public fail-closed RPRegister interface, strict six-field registration model, shared three-RP synthetic file mock, provisional bounded HTTP adapter, positive-only TTL/capacity cache and registration policy gates across redirect/DCAPI creation, release and callback surfaces. Default deployments remain healthy but refuse presentations without a configured register.
-
-Files changed:
-- verifier/go/rpregister/register.go — model, strict JSON/file/HTTP adapters and bounded positive cache with nonblocking cold admission.
-- verifier/go/rpregister/register_test.go — absent/malformed/file/HTTP/deadline/TTL/capacity/copy/concurrency controls.
-- verifier/go/register.go and register_test.go — all-claim policy, fixed refusal messages, outer HTTP gates, lifecycle and stored-session tests.
-- verifier/go/main.go, present.go and iso.go — runtime configuration, registration gates and post-lookup expiry checks.
-- verifier/go/iso_test.go, carrier_flag_test.go, av_conformance_test.go and step8_7_openid4vp_zk_test.go — explicit synthetic registration in existing gated fixtures.
-- rp-kit/register/README.md and synthetic-v1.json — versioned shared three-RP corpus; omitted negative identity and future certificate-generator reuse boundary.
-- rp-kit/REGISTER-CONTRACT.md, README.md, zkverify.service and zkverify.env.example — published refusal/cache/identity/resource contract and unconfigured deployment defaults.
-- tests/rp_kit_test.py, e2e.sh, drain_test.sh, demo/demo.sh and sandbox/server.py — real default-refusal acceptance and explicit mock opt-ins for existing positive demonstrations.
-- Makefile and .github/workflows/ci.yml — standalone register race suite in fast checks.
-- docs/README.md and tests/README.md — documentation/test indexes.
-- This story spec — immutable intent, implementation record, complete individual review triage and terminal result.
-
-Review: four layers completed, 22 individual findings triaged: high 0, medium 16, low 1, false 5, maybe-false 0. Twelve distinct medium root-cause patches applied (16 medium rows include four overlaps), zero deferred. Repairs reject duplicate/case-variant JSON, handle all nil-capable adapters, bound cold lookup admission, sanitize replacement-provider errors, recheck DCAPI expiry, strengthen timeout/category/file controls and add multi-creation/stored-policy/lifecycle tests. Each patch row in the Review Triage Log records its specific repair. Five rejected false findings concern the ADR's explicit cache precedence, local-versus-authority evidence, intended mock opt-in, and intermediate commit/operator status. One rejected low finding is the alphabetical-only country-code metadata check: it cannot grant a predicate and adding a maintained country allowlist for an unlikely metadata defect was judged unnecessary complexity. All six rejections retain individual reasons in the log.
-
-Follow-up review recommended: true. This first pass patched twelve medium entries. Specific remaining independent-review risk: the newly strict recursive JSON decoder and nonblocking cache admission were repaired after the four review layers; targeted races and full regressions validate them, but a second independent security review has not examined those repaired paths. This recommendation does not imply a failing acceptance criterion.
-
-Parent verification after repairs:
-- make check — PASS, including lint, standalone race suite and fast regressions.
-- make test-go-zk — PASS, root HTTP/crypto and zk suites with race detector.
-- make test-rp-kit — PASS, actual staged unit/environment default refusal and explicit synthetic positive profile.
-- make e2e — PASS, all 19 assertions and both carrier vectors.
-- Separate tests/drain_test.sh with pinned prover and locked venv — PASS, 3/3 on the repaired tree.
-- Uncached verbose package/handler matrix controls — PASS. Matrix audit maps unconfigured/registered/missing to TestRegisterHTTPGates/StrictModelAndMock, configured failure to TestRegisterConfiguredFailuresHTTP/HTTPContractControls/HTTPBodyDeadline, fresh/stale to CacheBoundariesIsolationCopies/RegisterFreshStaleHTTP, isolation/resources to ConcurrentCache/CacheBoundedColdAdmission, and session lifetime to RegisterStoredPolicy/RegisterDCAPIExpiresDuringLookup; no skips.
-- Full baseline diff and repair diff read by parent; git diff --check and staged whitespace checks PASS. Protected sprint-status.yaml and demo-data excluded from staging/commit and unchanged by this run. No push.
-
-No human-only acceptance work is required by this interface/mock story, so terminal status is done rather than awaiting-operator. Synthetic/local success establishes no authority API, registration, external interoperability or certification. Fresh-cache allows intentionally accept bounded staleness under ADR-007. The memberState validator checks two uppercase letters, not membership in an ISO country list. Replacement RPRegister adapters must bound their own I/O; the shipped HTTP adapter enforces its absolute timeout.
