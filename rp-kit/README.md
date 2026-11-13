@@ -182,3 +182,5 @@ and match `CLIENT_ID` plus `RP_REGISTER_SERVICE` to the registration.
 The published defaults are a strict 15m positive-cache TTL, capacity 256, and
 a 2s absolute HTTP timeout. See [REGISTER-CONTRACT.md](REGISTER-CONTRACT.md)
 for fields, refusal states, cache semantics and reproducible controls.
+The [RP-register interface proposal](REGISTER-PROPOSAL.md) adds the pinned ARF
+compliance note, authority decisions, certificate migration and review handoff.

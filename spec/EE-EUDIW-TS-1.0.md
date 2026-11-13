@@ -1342,6 +1342,8 @@ Collected for the reader's convenience. Every item here should be re-checked bef
 
 39. **Current TARA joining agreement terms.** Story 3.2 checked the public TARA TechnicalSpecification (self-labelled v1.21, 03.09.2025) and Liitumine pages on 12 November 2026; these describe institutional application, SLA consent, registered HTTPS callback and demo credential issuance. The linked RIA joining destination returned an HTTP error in that session, so current agreement wording and institutional eligibility remain **[UNVERIFIED]**. Obtain current terms and approval directly from RIA before runtime attestation. See [TARA adapter contract](../rp-kit/TARA-CONTRACT.md).
 
+40. **Current Estonian RP-register and certificate arrangements.** Story 3.4's proposal, prepared 13 November 2026, does not establish a current RIA production register endpoint, supported API version, availability/onboarding terms, authority signing/trust profile, or Estonian access/registration-certificate and CT/SCT arrangements against a current RIA primary specification. These remain **[UNVERIFIED]**, not a finding that an API or certificate profile is absent. Historical ADR/research absence and design statements are not upgraded to current facts. Obtain the authority's dated primary specification before claiming an authority-backed integration. See the [proposal's dated source record](../rp-kit/REGISTER-PROPOSAL.md#dated-source-record), which separately pins the public ARF and TS5/TS6 evidence.
+
 ---
 
 ## Annex A — Estonian statutory age thresholds

@@ -3,6 +3,8 @@
 This implements ADR-007 and ADR-005. It proposes a local contract seam; it does
 not claim that RIA or any other authority operates this API. Synthetic mock
 success proves only local behavior. It adds no wallet/certificate parser.
+The [authority-facing proposal](REGISTER-PROPOSAL.md) maps this seam to pinned
+ARF requirements, records its gaps and provides the publication/review handoff.
 
 ## Go interface and identity
 

@@ -1,0 +1,10 @@
+{
+  "actions": [
+    "Publish the reviewed proposal from implementation commit 7515a9631c9efa8f1d686cb1edf4aa394ae831ae on the public fork remote or agreed public channel, and record its actual URL, full revision and publication date.",
+    "Arrange an Estonian service-owner usability review of the published proposal, record the reviewer name and role, date, full reviewed revision, usable or not-usable verdict and concrete feedback with permission to publish, and address the feedback."
+  ],
+  "parked_at": "2026-11-13",
+  "run_id": "20261113-065737-ce36",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-3-4-rp-register-interface-proposal.md",
+  "story_key": "3-4-rp-register-interface-proposal"
+}
