@@ -29,6 +29,10 @@ type JWK struct {
 	D   string `json:"d,omitempty"` // private; accepted in memory, never published
 	Kid string `json:"kid,omitempty"`
 	Use string `json:"use,omitempty"`
+	// Alg is the JOSE algorithm the key is intended for. HAIP 1.0 publishes it
+	// as "ECDH-ES"; a key handed to a wallet without it forces the wallet to
+	// guess the profile, and the conformant wallet refuses instead of guessing.
+	Alg string `json:"alg,omitempty"`
 }
 
 // GenerateKey makes a fresh P-256 response key as a JWK.
@@ -43,6 +47,7 @@ func GenerateKey() (JWK, error) {
 		X: base64.RawURLEncoding.EncodeToString(pub[1:33]),
 		Y: base64.RawURLEncoding.EncodeToString(pub[33:65]),
 		D: base64.RawURLEncoding.EncodeToString(priv.Bytes()),
+		Alg: "ECDH-ES",
 	}, nil
 }
 
