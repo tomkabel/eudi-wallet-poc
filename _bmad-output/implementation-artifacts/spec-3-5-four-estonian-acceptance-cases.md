@@ -198,3 +198,26 @@ under the frozen intent's explicit prohibition. Its Story 3.5 backlog and Epic 3
 backlog values are stale; consult this evidence-backed handoff for current progress.
 The next independent implementation story is 3.6; foreign acceptance remains an
 operator obligation and must not be converted into done by local controls.
+
+### Redispatch verification — 16 November 2026
+
+Status: awaiting-operator
+
+Rechecked the existing terminal handoff on redispatch rather than treating the
+orchestrator's tracker as implementation evidence. `make test-estonian-acceptance`
+passed all 26 tests again. The retained clean-commit report has seven ordered
+rows, five local PASS controls, two foreign NOT_EXECUTED cases, no diagnostics,
+and the two matching imperative operator actions. Its before/after source
+manifests are identical. Comparing all 636 recorded entries with the current
+checkout found only the acceptance guide's subsequent four-line link to that
+same clean-commit evidence; implementation contents match the measured source.
+This recheck does not claim a fresh integrated execution or independent review.
+
+Existing implementation and evidence commits remain
+`a47d364f84f0094e7ab302ff01d786f921af1d7f` and
+`5bd9b4b5bc140d779bf42aba63e2e2cafe135b4d`, respectively. The working tree was
+clean before this verification note. Sprint-status was neither written nor
+reverted, and retains SHA-256
+`5a56053a0571f8173290df0da1c4d5a4326837936afd686becca014572cf93cc`.
+Both frontmatter operator actions remain owed; no additional agent implementation
+work was identified by this recheck.
