@@ -1,0 +1,11 @@
+cd verifier/go && EE_BENCH_SKIP=${EE_BENCH_SKIP-1} go test -race . ./zk/...
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go	98.111s
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go/zk	37.345s
+PASS systemd unit syntax (staged executable)
+PASS nonpositive TTL and plain-alone startup refusal
+PASS shipped unconfigured profile refuses both presentations
+PASS health, encrypted default, public JWKS and pending identity
+PASS no callback: repeated identifiable expiry and unknown ids
+PASS stable JWKS across restart and optional DCAPI pending/expiry
+PASS private key swap, drain, rotation and stable replacement JWKS
+PASS explicitly paired plain negative control and SIGTERM exit

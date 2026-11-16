@@ -7,6 +7,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 | Document | What it is |
 |---|---|
 | [Estonian acceptance cases](../rp-kit/ACCEPTANCE.md) | Seven ordered machine-readable cases, fresh foreign evidence contract, actual local HTTP/proof and wallet dispatch/fallback controls, and operator handoff |
+| [Estonian clean-commit acceptance evidence](../rp-kit/evidence/acceptance-2026-11-16/README.md) | Final implementation revision, stable source manifests, five local passes, full check/unit evidence and foreign-session operator handoff |
 | [Estonian local acceptance evidence](../rp-kit/evidence/acceptance-2026-11-13/README.md) | Agent-local dirty-workspace report/transcript and JVM observations; five local passes, foreign PID/AV unexecuted, awaiting operator |
 | [Signed pinned circuit fallback](../verifier/go/circuits/README.md) | Shared signed document, public pin, reproducible generator, expiry/runtime validation and generated wallet resource |
 | [RP-register interface proposal](../rp-kit/REGISTER-PROPOSAL.md) | Authority-facing lookup proposal, pinned ARF/TS5/TS6 mapping and gaps, synthetic reproduction and publication/service-owner review handoff |

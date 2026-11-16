@@ -1,0 +1,205 @@
+python3 -m unittest discover -s tests -p 'test_tara_contract.py'
+...................Open https://client.example/login through the configured HTTPS proxy.
+.Open https://client.example/login through the configured HTTPS proxy.
+.Open https://client.example/login through the configured HTTPS proxy.
+...
+----------------------------------------------------------------------
+Ran 24 tests in 8.971s
+
+OK
+cd verifier/go && unformatted="$(gofmt -l .)" && if [ -n "$unformatted" ]; then \
+	echo "not gofmt-clean:"; echo "$unformatted"; exit 1; fi
+cd verifier/go && go vet ./...
+cd verifier/go && golangci-lint run ./...
+0 issues.
+python3 -m compileall -q issuer verifier wallet tests sandbox
+ruff check .
+All checks passed!
+python3 tools/lint_ratchet.py
+ruff: 1042 now, 1043 in baseline, 0 rose or new, 1 paid down
+pyright: 69 now, 77 in baseline, 0 rose or new, 8 paid down
+format: 14 new python file(s) since 223b1db checked
+cd verifier/zkverify-ffi && cargo fmt --check
+cd verifier/zkverify-ffi && cargo clippy --locked --all-targets -- -D warnings
+[1m[92m    Finished[0m ]8;;https://doc.rust-lang.org/cargo/reference/profiles.html#default-profiles\`dev` profile [unoptimized + debuginfo]]8;;\ target(s) in 0.19s
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk" ./gradlew --console=plain -q :app:spotlessCheck :app:detekt
+shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
+python3 -m unittest discover -s tests -p 'test_doctor.py'
+...
+----------------------------------------------------------------------
+Ran 3 tests in 1.691s
+
+OK
+python3 tests/check_pki_gates.py
+ok   trust-all
+ok   mocks
+ok   freshness
+ok   key-material
+ok   manifest
+ok   mirror
+python3 -m unittest discover -s tests -p 'test_pki_gates.py'
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.840s
+
+OK
+python3 tools/publish_guard.py
+python3 -m unittest discover -s tests -p 'test_publish_guard.py'
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 1.192s
+
+OK
+python3 tools/pin_gate.py
+python3 -m unittest discover -s tests -p 'test_pin_gate.py'
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 2.085s
+
+OK
+cd verifier/go && go test -race ./oid4vp/... ./internal/... ./circuits/... ./cmd/circuit-list ./rpregister/...
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp	(cached)
+?   	github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/algpolicy	[no test files]
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/cborsub	(cached)
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/jose	(cached)
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits	(cached)
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go/cmd/circuit-list	(cached)
+ok  	github.com/tomkabel/eudi-wallet-poc/verifier/go/rpregister	(cached)
+python3 wallet/test_transcript.py
+ok — 3 transcript vectors match the Go verifier
+python3 issuer/test_mint_device_key.py
+ok — device public key parsing, placeholder signature, batch refusal
+python3 issuer/test_mint_custody.py
+ok — IACA-signed DSC with the ISO profile, encrypted custody outside --test-mode
+python3 sandbox/test_age.py
+sandbox age reckoning ok
+python3 tests/check_av_registry.py
+AV registry: OK — source_blocks=86, clauses=94, mapped=20, excluded=74, tests=20
+Traceability only: mapped tests have not been executed by this check.
+python3 -m unittest discover -s tests -p 'test_av_registry.py'
+.....................................
+----------------------------------------------------------------------
+Ran 37 tests in 2.457s
+
+OK
+python3 tools/build_av_fixtures.py --check
+AV fixtures: OK — 49 files match; read-only check
+python3 -m unittest discover -s tests -p 'test_av_fixtures.py'
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 7.043s
+
+OK
+python3 -m unittest discover -s tests -p 'test_av_conformance.py'
+......................................
+----------------------------------------------------------------------
+Ran 38 tests in 97.347s
+
+OK
+python3 tests/check_carrier_versions.py
+Carrier version evidence OK: all discovered rules and carrier-v1 files use the current profile version
+python3 -m unittest discover -s tests -p 'test_carrier_versions.py'
+......................
+----------------------------------------------------------------------
+Ran 22 tests in 3.245s
+
+OK
+wrote 6 files to tests/vectors/carrier-v1
+  proof: 360180 bytes, both carriers
+python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'
+...
+== output-limit-test: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import os; os.write(1, b'x' * 100)
+.
+== timeout-test: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import os,time; os.close(1); time.sleep(5)
+.......
+== fail-test: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c print('--- FAIL: TestX'); raise SystemExit(1)
+--- FAIL: TestX
+
+== fail-test: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c print('  FAIL  case 3 msg'); raise SystemExit(1)
+  FAIL  case 3 msg
+.........
+----------------------------------------------------------------------
+Ran 20 tests in 0.813s
+
+OK
+python3 -m unittest discover -s tests -p 'test_external_carrier.py'
+.........usage: python3 -m unittest [-h] --checkout CHECKOUT
+                           [--prepare-command PREPARE_COMMAND]
+                           [--adapter-command ADAPTER_COMMAND]
+                           [--timeout TIMEOUT] [--output-limit OUTPUT_LIMIT]
+                           --json JSON --markdown MARKDOWN
+python3 -m unittest: error: No closing quotation
+.........External carrier PASS: No external adapter configured; build success alone cannot establish assertions.
+External carrier FAIL: No external adapter configured; build success alone cannot establish assertions.
+External carrier BLOCKED: No external adapter configured; build success alone cannot establish assertions.
+External carrier ERROR: No external adapter configured; build success alone cannot establish assertions.
+External carrier ERROR: Suite metadata/input error: [Errno 2] No such file or directory: '/tmp/tmp60tqqwgs/metadata.json'
+External carrier ERROR: Suite metadata/input error: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+External carrier ERROR: Suite metadata/input error: target metadata does not match reviewed public target
+
+== external-adapter: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 /tmp/tmpol2fx7dh/adapter.py
+adapter diagnostics
+.
+== adapter: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c print("x" * 10000)
+.
+== adapter: /missing-external-carrier-command
+
+== adapter: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import os,signal; os.kill(os.getpid(), signal.SIGTERM)
+.
+== adapter: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import os,time; p=os.fork(); open('/tmp/tmpl1lp0mxb/pid',"w").write(str(p)) if p else None; time.sleep(30)
+..
+== silent-child: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import os,signal,time
+ready_read, ready_write = os.pipe()
+p = os.fork()
+if p:
+    os.close(ready_write)
+    os.read(ready_read, 1)
+    open('/tmp/tmpn4o3tj_q/pid', 'w').write(str(p))
+    os._exit(0)
+os.close(ready_read)
+os.close(1)
+os.close(2)
+os.write(ready_write, b'1')
+os.close(ready_write)
+time.sleep(30)
+
+
+== silent-child: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import os,signal,time
+ready_read, ready_write = os.pipe()
+p = os.fork()
+if p:
+    os.close(ready_write)
+    os.read(ready_read, 1)
+    open('/tmp/tmp764be01q/pid', 'w').write(str(p))
+    os._exit(0)
+os.close(ready_read)
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+os.close(1)
+os.close(2)
+os.write(ready_write, b'1')
+os.close(ready_write)
+time.sleep(30)
+
+...
+----------------------------------------------------------------------
+Ran 26 tests in 4.001s
+
+OK
+python3 -m unittest discover -s tests -p 'test_estonian_acceptance.py'
+
+== descendant: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import subprocess,sys; subprocess.Popen([sys.executable,'-c','import time; time.sleep(10)'])
+.
+== pass: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c print('ok')
+ok
+
+== fail: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c raise SystemExit(2)
+
+== timeout: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c import time; time.sleep(5)
+
+== output: /home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3 -c print('x'*10000)
+.........................
+----------------------------------------------------------------------
+Ran 26 tests in 4.391s
+
+OK
+Estonian acceptance: INCOMPLETE; report: /tmp/tmph44wo75k/report.json

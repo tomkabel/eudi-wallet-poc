@@ -2,7 +2,7 @@
 title: '3.5 Four Estonian acceptance cases'
 type: feature
 created: '2026-11-13'
-status: in-review
+status: awaiting-operator
 baseline_revision: f1c7e1263844109edb39184bc1d5b7bd213b5e48
 review_loop_iteration: 0
 followup_review_recommended: false
@@ -13,6 +13,9 @@ context:
   - '{project-root}/docs/decisions/ADR-008-CARRIER-PATH-PLACEMENT.md'
 warnings: [oversized]
 deferred: []
+operator_actions:
+  - "Execute a fresh genuine foreign PID wallet session with authorized issuer trust/access, and supply its external adapter evidence."
+  - "Execute a fresh genuine foreign AV wallet session with authorized issuer trust/access, and supply its external adapter evidence."
 ---
 
 <intent-contract>
@@ -65,7 +68,7 @@ deferred: []
 - [x] tests/ local acceptance helper as needed: actual absent registration on both HTTP routes and real local AV proof using locked issuer/prover, supplementary local evidence only.
 - [x] Makefile and CI/Android filters: integrate fast report controls plus actual linked/JVM acceptance execution in appropriate jobs.
 - [x] rp-kit/ACCEPTANCE.md and existing indexes: case schema, commands, observed refusal names, fallback provenance, evidence limits and imperative operator handoff. Do not answer unresolved foreign-AV legal question.
-- [ ] This spec: executed checks/review/canonical commits and terminal status/operator actions.
+- [x] This spec: executed checks/review/canonical commits and terminal status/operator actions.
 
 **Acceptance Criteria:**
 - Given RP kit prerequisites, when documented runner executes, then seven ordered rows record observed evidence, without foreign acceptance claims absent genuine foreign sessions.
@@ -127,7 +130,7 @@ An expected refusal is a passing control, never an accepted presentation. Unsupp
 - Final integrated runner after parameter hardening: BUILD SUCCESSFUL (40 tasks executed, 3m52s JVM phase); five local PASS, two foreign NOT_EXECUTED, no diagnostics, expected exit 1/INCOMPLETE and awaiting-operator. [Retained report, transcript and both unskipped JVM XML suites](../../rp-kit/evidence/acceptance-2026-11-13/README.md) explicitly identify the dirty implementation snapshot at full base revision f1c7e1263844109edb39184bc1d5b7bd213b5e48. Final report is local engineering evidence, not independent foreign acceptance.
 - Parent-verification Kotlin lint follow-up: all 22 introduced detekt findings repaired using extracted matching/JSON-guard helpers, typed transport/reader/age-policy context, explicit imports/constants and reduced fixture arguments; no baseline changes or new suppressions. make lint-kotlin passed. Complete JAVA_HOME=/usr/lib/jvm/java-17-openjdk ./gradlew :app:testLocal_mocksUnitTest --console=plain passed (34 suites, 236 tests, zero skips/failures/errors); [separate follow-up evidence](../../rp-kit/evidence/acceptance-2026-11-13/followup-kotlin-lint/summary.json) preserves the earlier report unchanged. git diff --check passed.
 
-The parent workflow must complete broad verification/review and record canonical implementation commits before terminal handoff. Do not treat an orchestration state as evidence. Human-only foreign credential/device/trust/access prerequisites remain unperformed.
+Broad verification and canonical implementation commit are now recorded in Auto Run Result below. Human-only foreign credential/device/trust/access prerequisites remain unperformed.
 
 ### Required final gates
 
@@ -160,3 +163,38 @@ The parent workflow must complete broad verification/review and record canonical
 - The required broad gate exposed a pre-existing Python 3.14 decoder behavior change: `test_deep_adapter_json_preserves_error_artifacts` failed because 100,000 nested arrays no longer raised decoder recursion errors. Added an explicit iterative 256-container nesting guard in the AV runner; the unchanged regression turned green. This bounded compatibility repair preserves the existing malformed-evidence policy and tests.
 
 - Final required checks PASS: `make check` gates through AV fixtures, then repaired AV conformance (38 tests), carrier/version/external suites and Estonian integrity (26 tests) rerun as their unchanged make targets. `make lint-py` passes after the AV compatibility fix. Kotlin formatter and detekt pass with unchanged baselines. `git diff --check` passes; 109 affected local document links resolve. Clean-commit integrated evidence and final commit identifiers follow in Auto Run Result.
+
+## Auto Run Result
+
+Status: awaiting-operator
+
+Implementation commit: `a47d364f84f0094e7ab302ff01d786f921af1d7f`.
+
+All agent-executable Story 3.5 work is complete and committed: seven-case runner,
+actual ViewModel dispatch/refusal controls, real absent-registration HTTP gates,
+local encrypted AV proof, shared signed offline fallback, strict foreign evidence
+intake, CI integration and indexed reproduction instructions. The existing review
+triage is resolved with no deferrals; final structural/lint and Python 3.14
+compatibility repairs preserve assertions and baselines. Follow-up review
+recommended: false; this is not a claim of a new independent reviewer verdict.
+
+The [16 November clean-commit evidence](../../rp-kit/evidence/acceptance-2026-11-16/README.md)
+records all five local cases PASS, both foreign cases NOT_EXECUTED, no diagnostics,
+stable source manifests, expected INCOMPLETE/exit 1 and awaiting-operator.
+The fresh selected JVM suites passed all 10 tests. The full wallet suite passed
+35 suites/243 tests with zero failures/errors/skips. Complete `make check` passed
+from the clean implementation commit, including all lint/security/fixture,
+Go race, AV/carrier and 26 acceptance-integrity controls. Linked Go/ZK tests and
+all eight deployed RP-profile groups passed. `make doctor` passed 16/16.
+
+Execute the two imperative frontmatter operator actions to obtain genuine foreign
+PID and AV acceptance evidence. No external session, physical-device execution,
+certification, legal entitlement, push or external message is claimed. This
+handoff and retained evidence are committed separately from the measured source.
+
+Sprint-status remains byte-identical (SHA-256
+`5a56053a0571f8173290df0da1c4d5a4326837936afd686becca014572cf93cc`)
+under the frozen intent's explicit prohibition. Its Story 3.5 backlog and Epic 3
+backlog values are stale; consult this evidence-backed handoff for current progress.
+The next independent implementation story is 3.6; foreign acceptance remains an
+operator obligation and must not be converted into done by local controls.

@@ -10,6 +10,10 @@ The [13 November 2026 local execution](evidence/acceptance-2026-11-13/README.md)
 retains five local PASS controls, two foreign NOT_EXECUTED cases and the
 awaiting-operator handoff, with explicit dirty-workspace provenance.
 
+The [16 November clean-commit execution](evidence/acceptance-2026-11-16/README.md)
+records the completed review repairs, five local passes and explicit foreign-session
+operator handoff against the exact implementation revision.
+
 ## Execute
 
 Use the [development setup](../docs/DEVELOPMENT.md), pinned Python dependencies,
