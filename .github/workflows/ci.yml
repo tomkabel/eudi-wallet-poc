@@ -98,6 +98,9 @@ jobs:
               - 'issuer/**'
               - 'wallet/**'
               - 'tests/run_carrier_conformance.py'
+              - 'tests/run_estonian_acceptance.py'
+              - 'tests/estonian_local_acceptance.py'
+              - 'tests/test_estonian_acceptance.py'
               - 'tests/e2e.sh'
               - 'pyproject.toml'
               - 'uv.lock'
@@ -159,7 +162,7 @@ jobs:
         # -race (codesec F8-race): these tests assert concurrency behaviour
         # (session store sweeps, reads-limiter bounds), which only the race
         # detector exercises — CGO is on by default when the detector is on.
-        run: go test -race ./oid4vp/... ./internal/... ./circuits/... ./rpregister/...
+        run: go test -race ./oid4vp/... ./internal/... ./circuits/... ./cmd/circuit-list ./rpregister/...
 
       - name: python compiles
         run: python3 -m compileall -q issuer verifier wallet tests sandbox
@@ -182,6 +185,9 @@ jobs:
 
       - name: Carrier version evidence and runner regressions
         run: make test-carrier-conformance
+
+      - name: Estonian acceptance report integrity controls
+        run: make test-estonian-acceptance
 
       - name: ruff
         # The blocking set is `select` in pyproject.toml: F (pyflakes) and E9 catch undefined names,
@@ -339,6 +345,9 @@ jobs:
 
       - name: RP deployment profile (bounded real process acceptance)
         run: make test-rp-kit
+
+      - name: Estonian acceptance (actual local HTTP and encrypted AV proof)
+        run: make estonian-acceptance-linked
 
       - name: AV report regressions with executed local audit
         run: |

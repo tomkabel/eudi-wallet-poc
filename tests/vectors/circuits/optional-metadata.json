@@ -1,0 +1,197 @@
+[
+  {
+    "name": "upstream_tag-null",
+    "field": "upstream_tag",
+    "value": null,
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "upstream_tag-empty",
+    "field": "upstream_tag",
+    "value": "",
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "upstream_tag-nonempty",
+    "field": "upstream_tag",
+    "value": "2026-01-01",
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "upstream_tag-number",
+    "field": "upstream_tag",
+    "value": 1,
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "upstream_tag-boolean",
+    "field": "upstream_tag",
+    "value": true,
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "upstream_tag-array",
+    "field": "upstream_tag",
+    "value": [],
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "upstream_tag-object",
+    "field": "upstream_tag",
+    "value": {},
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "accepted_on-null",
+    "field": "accepted_on",
+    "value": null,
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "accepted_on-empty",
+    "field": "accepted_on",
+    "value": "",
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "accepted_on-nonempty",
+    "field": "accepted_on",
+    "value": "2026-01-01",
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "accepted_on-number",
+    "field": "accepted_on",
+    "value": 1,
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "accepted_on-boolean",
+    "field": "accepted_on",
+    "value": true,
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "accepted_on-array",
+    "field": "accepted_on",
+    "value": [],
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "accepted_on-object",
+    "field": "accepted_on",
+    "value": {},
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "deprecated_on-null",
+    "field": "deprecated_on",
+    "value": null,
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "deprecated_on-empty",
+    "field": "deprecated_on",
+    "value": "",
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "deprecated_on-nonempty",
+    "field": "deprecated_on",
+    "value": "2026-01-01",
+    "valid": true,
+    "deprecated": true
+  },
+  {
+    "name": "deprecated_on-number",
+    "field": "deprecated_on",
+    "value": 1,
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "deprecated_on-boolean",
+    "field": "deprecated_on",
+    "value": true,
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "deprecated_on-array",
+    "field": "deprecated_on",
+    "value": [],
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "deprecated_on-object",
+    "field": "deprecated_on",
+    "value": {},
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "audits-null",
+    "field": "audits",
+    "value": null,
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "audits-empty",
+    "field": "audits",
+    "value": [],
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "audits-strings",
+    "field": "audits",
+    "value": [
+      "community note"
+    ],
+    "valid": true,
+    "deprecated": false
+  },
+  {
+    "name": "audits-string",
+    "field": "audits",
+    "value": "note",
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "audits-null-element",
+    "field": "audits",
+    "value": [
+      null
+    ],
+    "valid": false,
+    "deprecated": false
+  },
+  {
+    "name": "audits-number-element",
+    "field": "audits",
+    "value": [
+      1
+    ],
+    "valid": false,
+    "deprecated": false
+  }
+]

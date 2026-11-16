@@ -16,6 +16,16 @@ def symbols(path):
 def reject_json_constant(value):
     raise ValueError(f"nonfinite JSON constant: {value}")
 
+def check_json_depth(payload):
+    pending = [(payload, 0)]
+    while pending:
+        value, depth = pending.pop()
+        if isinstance(value, (dict, list)):
+            if depth >= 256:
+                raise ValueError("adapter JSON nesting limit exceeded")
+            children = value.values() if isinstance(value, dict) else value
+            pending.extend((child, depth + 1) for child in children)
+
 def external_results(command, timeout, registry):
     mapped = [c for c in registry.get("clauses", []) if c.get("test")]
     if not command:
@@ -59,6 +69,7 @@ def external_results(command, timeout, registry):
                 try:
                     payload = json.loads(streams["stdout"], object_pairs_hook=check_av_registry.unique_object,
                                          parse_constant=reject_json_constant)
+                    check_json_depth(payload)
                     # JSON escapes can introduce surrogates despite valid UTF-8 transport.
                     json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8")
                 except (ValueError, UnicodeError, RecursionError) as exc:

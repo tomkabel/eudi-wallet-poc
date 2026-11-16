@@ -1,5 +1,6 @@
 package ee.cyber.wallet.domain.presentation
 
+import org.multipaz.mdoc.zkp.ZkSystem
 import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 import org.slf4j.LoggerFactory
 
@@ -14,13 +15,22 @@ import org.slf4j.LoggerFactory
  */
 object ZkCapability {
 
-    // ponytail: holds all bundled circuits (~2 MB) once loaded; load only the requested one via
-    // addCircuit() if that footprint ever matters.
-    val zkSystem: LongfellowZkSystem? by lazy {
-        runCatching { LongfellowZkSystem().apply { addDefaultCircuits() } }
-            .onFailure { LoggerFactory.getLogger("ZkCapability").warn("Longfellow prover unavailable on this device", it) }
-            .getOrNull()
+    /** Exact production construction seam: registry failure never becomes native incapability. */
+    fun create(
+        native: () -> ZkSystem,
+        registry: () -> Result<SignedCircuitList>,
+        clock: () -> java.time.Instant = java.time.Instant::now
+    ): ZkSystem? = runCatching { RegistryZkSystem.create(native(), registry, clock) }
+        .onFailure { LoggerFactory.getLogger("ZkCapability").warn("Longfellow prover unavailable on this device", it) }
+        .getOrNull()
+
+    val zkSystem: ZkSystem? by lazy {
+        create(
+            native = { LongfellowZkSystem().apply { addDefaultCircuits() } },
+            registry = { PinnedCircuitList.loaded }
+        )
     }
 
     val capable: Boolean get() = zkSystem != null
+    val registryFailure: String? get() = zkSystem?.registryFailure
 }

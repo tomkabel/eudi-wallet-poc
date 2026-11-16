@@ -364,7 +364,8 @@ func checkLongfellowRev(linked, revFile string) error {
 
 func main() {
 	addr := flag.String("addr", ":8080", "listen address")
-	registryPath := flag.String("registry", "circuits.json", "accepted circuit registry (EE-ZKP-030)")
+	registryPath := flag.String("registry", "circuits.json", "signed pinned circuit registry (ADR-006)")
+	circuitListKey := flag.String("circuit-list-key", "", "public key JSON for signed circuit list; empty uses embedded release pin")
 	trustPath := flag.String("issuers", "issuers.json", "trusted attestation providers")
 	longfellowRevFile := flag.String("longfellow-rev-file", "../zkverify-ffi/longfellow-rev.txt",
 		"pinned longfellow-zk revision the linked runtime must match; relative to the working directory")
@@ -520,10 +521,19 @@ func main() {
 	reads := make(limiter, 4**maxVerify)
 	log.Printf("verifying at most %d proofs concurrently", *maxVerify)
 
-	reg, err := circuits.Load(*registryPath)
+	circuitKey := circuits.PinnedKey
+	if *circuitListKey != "" {
+		var err error
+		circuitKey, err = os.ReadFile(*circuitListKey)
+		if err != nil {
+			log.Fatalf("circuit list key: %v", err)
+		}
+	}
+	reg, err := circuits.LoadSigned(*registryPath, circuitKey, longfellowRev, time.Now())
 	if err != nil {
 		log.Fatalf("circuit registry: %v", err)
 	}
+	log.Printf("circuit list: pinned-local list_version=%s (signature verified; no registry fetch)", reg.ListVersion())
 	// Plan §5.3 (startup): hash every registry entry through the FFI and refuse
 	// to start on mismatch — a registry file whose hash disagrees with the
 	// binary would silently offer circuits the runtime cannot prove.

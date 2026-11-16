@@ -108,7 +108,7 @@ lint-sh:
 # -race as in CI: these tests assert concurrency behaviour (session sweeps,
 # the reads limiter) that only the race detector exercises.
 test-go-fast:
-	cd verifier/go && go test -race ./oid4vp/... ./internal/... ./circuits/... ./rpregister/...
+	cd verifier/go && go test -race ./oid4vp/... ./internal/... ./circuits/... ./cmd/circuit-list ./rpregister/...
 
 # The Python half of the transcript pin and the mint's device-key path. Run `make py-deps`
 # first, not whatever PyPI serves: the vectors are golden and uv.lock pins their inputs.
@@ -120,7 +120,7 @@ test-py:
 
 # Everything that runs without the prover or an emulator: the lint job and ci.yml's fast job. Needs
 # the toolchains `make lint` lists; `make test-go-zk` and `make e2e` are the rest of CI.
-check: test-tara-contract lint test-doctor pki-gates publish-guard pin-gate test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance
+check: test-tara-contract lint test-doctor pki-gates publish-guard pin-gate test-go-fast test-py test-av-registry test-av-fixtures test-av-conformance test-carrier-conformance test-estonian-acceptance
 
 # PKI plan gates and their seeded failures (security.yml runs the same).
 pki-gates:
@@ -147,6 +147,21 @@ test-carrier-conformance:
 	python3 -m unittest discover -s tests -p 'test_carrier_versions.py'
 	python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'
 	python3 -m unittest discover -s tests -p 'test_external_carrier.py'
+
+# Fast integrity controls need no device, Rust staticlib or external credentials.
+.PHONY: test-estonian-acceptance estonian-acceptance estonian-acceptance-linked
+test-estonian-acceptance:
+	python3 -m unittest discover -s tests -p 'test_estonian_acceptance.py'
+
+# The complete report intentionally returns nonzero without genuine foreign sessions.
+estonian-acceptance:
+	python3 tests/run_estonian_acceptance.py --json "$${EE_ACCEPTANCE_REPORT:-/tmp/estonian-acceptance.json}"
+
+# CI executes actual local HTTP/proof paths; unexecuted rows remain visible.
+estonian-acceptance-linked:
+	@report="$$(mktemp)"; trap 'rm -f "$$report"' EXIT; \
+		python3 tests/run_estonian_acceptance.py --json "$$report" --no-jvm; result=$$?; \
+		python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["cases"][3]["state"]=="PASS" and r["supplementary"][0]["outcome"]=="proof-verified"; assert r["cases"][0]["state"]==r["cases"][1]["state"]=="NOT_EXECUTED"; assert int(sys.argv[2])==1' "$$report" "$$result"
 
 # EE_BENCH_SKIP=1 as in CI: the step 8 percentile run is a host measurement,
 # not a check. `EE_BENCH_SKIP= make test-go-zk` runs it.

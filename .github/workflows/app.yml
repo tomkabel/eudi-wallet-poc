@@ -44,6 +44,12 @@ jobs:
               - 'tests/vectors/trust/**'
               - 'verifier/go/internal/algpolicy/policy/**'
               - 'tools/gen-mock-keys.sh'
+              - 'verifier/circuits.json'
+              - 'verifier/go/circuits/**'
+              - 'tests/vectors/circuits/**'
+              - 'verifier/zkverify-ffi/longfellow-rev.txt'
+              - 'tests/run_estonian_acceptance.py'
+              - 'tests/test_estonian_acceptance.py'
               - '.github/workflows/app.yml'
 
   unit-test:

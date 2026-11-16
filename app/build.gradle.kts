@@ -33,6 +33,9 @@ android {
         targetSdk = 35
         versionCode = project.properties["BUILD_NUMBER"]?.toString()?.toInt() ?: 9999
         versionName = "0.6.6"
+        stringBuildConfig("LONGFELLOW_RUNTIME_ARTIFACT", "multipaz-longfellow:" + libs.versions.multipaz.get())
+        val circuitDocument = groovy.json.JsonSlurper().parse(file("../verifier/circuits.json")) as Map<*, *>
+        stringBuildConfig("CIRCUIT_LIST_VERSION", circuitDocument["list_version"].toString())
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -561,3 +564,11 @@ val failOnPlaceholderHosts by tasks.registering {
     }
 }
 tasks.matching { it.name == "preDebugBuild" }.configureEach { dependsOn(failOnPlaceholderHosts) }
+
+// ADR-006: package the exact verifier document and public pin as generated resources.
+val generateCircuitRegistry by tasks.registering(Copy::class) {
+    from(rootProject.file("verifier/circuits.json"), rootProject.file("verifier/go/circuits/pinned-key.json"))
+    into(layout.buildDirectory.dir("generated/circuitRegistry/circuit-registry"))
+}
+android.sourceSets.getByName("main").resources.srcDir(layout.buildDirectory.dir("generated/circuitRegistry"))
+tasks.named("preBuild").configure { dependsOn(generateCircuitRegistry) }

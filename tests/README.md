@@ -546,3 +546,59 @@ with `EE_PROVER` set to the pinned prover to exercise drain; it also explicitly
 selects the shared mock. These are synthetic local
 controls, never authority-service evidence.
 Contract: [REGISTER-CONTRACT.md](../rp-kit/REGISTER-CONTRACT.md).
+
+## Estonian acceptance cases (Story 3.5)
+
+Run the fast report integrity controls with
+
+```sh
+make test-estonian-acceptance
+```
+
+The [acceptance guide](../rp-kit/ACCEPTANCE.md) describes the seven ordered rows,
+fresh external adapter schema, source/session provenance and operator handoff.
+tests/test_estonian_acceptance.py covers missing/duplicate/unknown/malformed and
+skipped evidence, stale sessions/XML, artifact digests/path escape, zero-exit
+without observations, fallback version/SpecID/hash drift, CLI nonzero semantics
+and bounded process groups/output/timeouts. It also tests bounded reads before
+hash/decode, nesting errors, missing Longfellow pins with seven retained rows,
+complete before/after source manifests (including untracked implementation),
+source-mutation invalidation, rejection of another checkout with this repository's
+history, wallet-build provenance and stale wire inside fresh wrappers. Synthetic records in those controls
+are never foreign-wallet evidence. The suite is included in make check and fast CI.
+
+The full local report command is:
+
+```sh
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk .venv/bin/python3 \
+  tests/run_estonian_acceptance.py --json /tmp/estonian-acceptance.json
+```
+
+It requires the locked Python dependencies, built prover/staticlib, JDK17 and
+Android SDK. The runner rebuilds the verifier, stages the shipped profile and
+tests both real creation HTTP routes (403/register-not-found). The linked
+TestEstonianAbsentRegistrationNoSession additionally asserts zero live-session
+allocation through the production handlers. A real locally minted EE AV is
+proved and verified with the encrypted default as supplementary evidence.
+make estonian-acceptance-linked runs this process/proof portion in linked CI.
+
+The fresh Go TestPinnedOfflineAcceptance and JVM SignedCircuitFallbackTest
+exercise both actual production signed fallback consumers. The JVM
+EstonianViewModelAcceptanceTest drives wire JSON/CBOR and proximity transfer
+events through actual production ViewModel entry points, real matcher results,
+capability/policy evaluation, consent state, retained refusal and actual transport
+boundaries. It asserts zero response even after share/PIN actions, unsupported
+unsigned OpenID, missing/signed-untrusted readerAuth and incapable-device positive
+controls. EstonianAcceptanceDispatchTest retains helper regression coverage.
+SignedCircuitFallbackTest uses the exact production factory with injected native
+and list dependencies, tests named failure retention and expiry after loading,
+and requires every requested circuit identity parameter to match. Both language
+decoders consume tests/vectors/circuits/optional-metadata.json. The generator's
+actual CLI subprocess roundtrip tests run in make test-go-fast and fast CI;
+linked handler tests prove expiry causes no new session or FFI call. The existing Android unit-test job
+runs these suites; signed artifact/key/runtime paths also trigger that workflow.
+The complete runner forces fresh selected JVM output and compares both actual
+resolver observations to the pinned signed document. It deliberately exits 1
+and preserves foreign PID/AV NOT_EXECUTED until genuine external sessions exist.
+The [retained 13 November execution](../rp-kit/evidence/acceptance-2026-11-13/README.md)
+contains the report/transcript and both JVM XML files with dirty-source limits.

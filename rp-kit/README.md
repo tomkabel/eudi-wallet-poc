@@ -5,6 +5,10 @@ deployment profile for the existing `verifier/zkverify` binary. The local
 acceptance path checks startup, encrypted requests, persistent keys and missing
 callbacks; it does not constitute production certification or public deployment.
 
+The [seven-case Estonian acceptance guide](ACCEPTANCE.md) runs real local
+registration/refusal/fallback controls, keeps the local EE AV proof supplementary,
+and documents strict fresh foreign PID/AV evidence intake and operator actions.
+
 ## Build and local acceptance
 
 From the repository root on Linux, use the toolchains pinned in `mise.toml`,

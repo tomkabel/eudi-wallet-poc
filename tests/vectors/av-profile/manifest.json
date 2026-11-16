@@ -44,7 +44,7 @@
     },
     {
       "path": "verifier/circuits.json",
-      "sha256": "aae3a319feff4ec11dc623a5161e069b193005c713d40f875e198aeb5a370e0f"
+      "sha256": "b34a8261cfd1aac39009a13143c9075efb3ef90db121ff5fee8f04e7c8dbc665"
     },
     {
       "path": "verifier/go/zk/testdata/step8-7-openid4vp-zk/device_response.cbor",

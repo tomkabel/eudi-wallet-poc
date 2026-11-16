@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-13T06:13:41" hostname="cachy" time="0.41">
+  <properties/>
+  <testcase name="deprecatedEntryDoesNotDisplaceLiveEntry" classname="ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest" time="0.301"/>
+  <testcase name="invalidFallbacksRefuseAndPreserveNativeCapability" classname="ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest" time="0.093"/>
+  <testcase name="offlineSharedDocumentResolvesOfferedNativeCircuit" classname="ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest" time="0.016"/>
+  <system-out><![CDATA[ESTONIAN_FALLBACK={"consumer":"wallet","list_version":"1","spec_id":"longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121","fetched":false,"document_sha256":"b34a8261cfd1aac39009a13143c9075efb3ef90db121ff5fee8f04e7c8dbc665","signature_valid":true}
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

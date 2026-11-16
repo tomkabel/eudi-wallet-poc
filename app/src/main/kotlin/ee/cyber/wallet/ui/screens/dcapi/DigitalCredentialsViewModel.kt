@@ -23,18 +23,19 @@ import ee.cyber.wallet.domain.documents.mdoc.MDocUtils.generateDCApiHandover
 import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
 import ee.cyber.wallet.domain.presentation.AgePredicatePolicy.error
 import ee.cyber.wallet.domain.presentation.CredentialClaim
-import ee.cyber.wallet.domain.presentation.DcApiRequestDispatch
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.HolderObligations
 import ee.cyber.wallet.domain.presentation.LongfellowZkPresenter
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
 import ee.cyber.wallet.domain.presentation.ProtocolRefusal
+import ee.cyber.wallet.domain.presentation.WalletRequestDispatch
+import ee.cyber.wallet.domain.presentation.ZkCapability
 import ee.cyber.wallet.domain.presentation.ZkPresentation
 import ee.cyber.wallet.domain.presentation.ZkPresentationReason
-import ee.cyber.wallet.domain.presentation.ZkCapability
 import ee.cyber.wallet.domain.presentation.ZkPresenter
 import ee.cyber.wallet.domain.presentation.mergeZkSpecs
+import ee.cyber.wallet.domain.presentation.registryFailure
 import ee.cyber.wallet.domain.presentation.resolveSchemeId
 import ee.cyber.wallet.domain.presentation.zkSpecsByDocType
 import ee.cyber.wallet.domain.provider.Attestation
@@ -48,8 +49,8 @@ import ee.cyber.wallet.ui.screens.documents.credentialType
 import ee.cyber.wallet.ui.screens.documents.docType
 import ee.cyber.wallet.ui.screens.presentation.MatchedField
 import ee.cyber.wallet.ui.screens.presentation.MatchedFields
+import ee.cyber.wallet.ui.screens.presentation.RequestRefusalDispatch
 import ee.cyber.wallet.ui.screens.presentation.fields
-import ee.cyber.wallet.util.DeviceRequestParser
 import ee.cyber.wallet.util.readerAuthSubject
 import ee.cyber.wallet.util.toPresentationDefinition
 import ee.cyber.wallet.util.zkSpecsByDocTypeFromDcql
@@ -74,6 +75,7 @@ import kotlinx.parcelize.RawValue
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import org.multipaz.cbor.Cbor
 import org.multipaz.crypto.EcPublicKey
@@ -81,8 +83,8 @@ import org.multipaz.crypto.Hpke
 import org.multipaz.mdoc.response.MdocDocument
 import org.multipaz.mdoc.response.buildDeviceResponse
 import org.multipaz.mdoc.zkp.ZkDocument
+import org.multipaz.mdoc.zkp.ZkSystem
 import org.multipaz.mdoc.zkp.ZkSystemSpec
-import org.multipaz.mdoc.zkp.longfellow.LongfellowZkSystem
 import org.multipaz.util.fromBase64Url
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
@@ -92,16 +94,35 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import org.multipaz.mdoc.response.DeviceResponse as MdocDeviceResponse
 
 @HiltViewModel
-class DigitalCredentialsViewModel @Inject constructor(
-    private val allowedAppsJson: String,
-    private val documentRepository: DocumentRepository,
-    private val cryptoProviderFactory: CryptoProvider.Factory,
-    private val secureAreaKeyManager: SecureAreaKeyManager,
-    private val openId4VPManager: OpenId4VPManager,
-    private val transactionLogRepository: TransactionLogRepository,
-    private val eePoaConsumption: EePoaConsumption,
-    @Dispatcher(WalletDispatchers.Default) private val defaultDispatcher: CoroutineDispatcher
+class DigitalCredentialsViewModel private constructor(
+    private val production: Production?,
+    private val requestDependencies: RequestDependencies?
 ) : MviViewModel<DcEvent, DcUiState, DcEffect>() {
+
+    @Inject
+    constructor(production: Production) : this(production, null)
+
+    internal constructor(dependencies: RequestDependencies) : this(null, dependencies)
+
+    data class Production @Inject constructor(
+        val allowedAppsJson: String,
+        val documentRepository: DocumentRepository,
+        val cryptoProviderFactory: CryptoProvider.Factory,
+        val secureAreaKeyManager: SecureAreaKeyManager,
+        val openId4VPManager: OpenId4VPManager,
+        val transactionLogRepository: TransactionLogRepository,
+        val eePoaConsumption: EePoaConsumption,
+        @Dispatcher(WalletDispatchers.Default) val defaultDispatcher: CoroutineDispatcher
+    )
+
+    private val allowedAppsJson: String get() = requireNotNull(production).allowedAppsJson
+    private val documentRepository: DocumentRepository get() = requireNotNull(production).documentRepository
+    private val cryptoProviderFactory: CryptoProvider.Factory get() = requireNotNull(production).cryptoProviderFactory
+    private val secureAreaKeyManager: SecureAreaKeyManager get() = requireNotNull(production).secureAreaKeyManager
+    private val openId4VPManager: OpenId4VPManager get() = requireNotNull(production).openId4VPManager
+    private val transactionLogRepository: TransactionLogRepository get() = requireNotNull(production).transactionLogRepository
+    private val eePoaConsumption: EePoaConsumption get() = requireNotNull(production).eePoaConsumption
+    private val defaultDispatcher: CoroutineDispatcher get() = requireNotNull(production).defaultDispatcher
 
     private val logger = LoggerFactory.getLogger(DigitalCredentialsViewModel::class.java)
 
@@ -111,122 +132,114 @@ class DigitalCredentialsViewModel @Inject constructor(
     private val zkPresenter: ZkPresenter by lazy { LongfellowZkPresenter(zkSystem) }
 
     // Null when this device cannot prove at all (ZkCapability).
-    private val zkSystem: LongfellowZkSystem? get() = ZkCapability.zkSystem
+    private val zkSystem: ZkSystem? get() = requestDependencies?.zkSystem?.invoke() ?: if (requestDependencies == null) ZkCapability.zkSystem else null
 
     override fun initialState(): DcUiState = DcUiState()
 
     /** The ViewModel outlives activity recreation; the request is processed once per ViewModel. */
     private var requestProcessed = false
 
+    internal data class ProviderRequest(val requestJson: String, val origin: String)
+
+    internal data class RequestDependencies(
+        val documents: suspend () -> List<CredentialDocument>,
+        val matches: (PresentationDefinition, List<CredentialDocument>) -> Pair<List<CredentialClaim>, Match>,
+        val zkSystem: () -> ZkSystem?,
+        val remaining: suspend (CredentialType) -> Int,
+        val logRefusal: suspend (String, DocType, AppError, PresentationTier?) -> Unit,
+        val transcript: (String, String) -> ListElement,
+        val recipientKey: (String) -> EcPublicKey,
+        val releaseResponse: (String) -> Unit
+    )
+
     @OptIn(ExperimentalDigitalCredentialApi::class)
-    fun processRequest(intent: Intent) {
+    fun processRequest(intent: Intent) = processRequest {
+        val providerRequest = PendingIntentHandler.retrieveProviderGetCredentialRequest(intent)
+        if (providerRequest == null) {
+            logger.error("No credential request found")
+            sendEffect { DcEffect.Error("No credential request found") }
+            return@processRequest null
+        }
+
+        val origin = providerRequest.callingAppInfo.getOrigin(allowedAppsJson)
+        if (origin == null) {
+            logger.error("Could not determine origin")
+            sendEffect { DcEffect.Error("Could not determine origin") }
+            return@processRequest null
+        }
+
+        val option = providerRequest.credentialOptions
+            .filterIsInstance<GetDigitalCredentialOption>()
+            .firstOrNull()
+        if (option == null) {
+            logger.error("No digital credential option found")
+            sendEffect { DcEffect.Error("No digital credential option found") }
+            return@processRequest null
+        }
+
+        ProviderRequest(option.requestJson, origin)
+    }
+
+    internal fun processRequest(request: ProviderRequest) = processRequest { request }
+
+    private fun processRequest(load: suspend () -> ProviderRequest?) {
         if (requestProcessed) return
         requestProcessed = true
         setState { copy(isLoading = true) }
         viewModelScope.launch {
             try {
-                val providerRequest = PendingIntentHandler.retrieveProviderGetCredentialRequest(intent)
-                if (providerRequest == null) {
-                    logger.error("No credential request found")
-                    sendEffect { DcEffect.Error("No credential request found") }
-                    return@launch
-                }
+                val request = load() ?: return@launch
+                val origin = request.origin
+                WalletRequestDispatch.dcApi(
+                    requestJson = request.requestJson,
+                    sessionTranscript = { getSessionTranscript(it, origin).toCBOR() },
+                    refuse = ::refuseProtocol
+                ) { wireRequest ->
+                    val data = wireRequest.data
+                    val sessionTranscript = getSessionTranscript(wireRequest.encryptionInfo, origin)
+                    val recipientPublicKey = getRecipientPublicKey(wireRequest.encryptionInfo)
+                    val docRequests = wireRequest.docRequests
 
-                val origin = providerRequest.callingAppInfo.getOrigin(allowedAppsJson)
-                if (origin == null) {
-                    logger.error("Could not determine origin")
-                    sendEffect { DcEffect.Error("Could not determine origin") }
-                    return@launch
-                }
-
-                val option = providerRequest.credentialOptions
-                    .filterIsInstance<GetDigitalCredentialOption>()
-                    .firstOrNull()
-                if (option == null) {
-                    logger.error("No digital credential option found")
-                    sendEffect { DcEffect.Error("No digital credential option found") }
-                    return@launch
-                }
-
-                val json = JSONObject(option.requestJson)
-                val requestsArray = json.getJSONArray("requests")
-
-                // EE-PRO-013 / plan §4 item 4a: read the `protocol` field of every entry BEFORE
-                // touching the payload. Take the first entry this wallet can answer and refuse
-                // the rest with a specific error instead of letting the payload parser throw a
-                // bare JSONException on bytes it was never meant to read.
-                val protocolNames = (0 until requestsArray.length()).map { index ->
-                    val entry = requestsArray.getJSONObject(index)
-                    if (entry.has("protocol")) entry.getString("protocol") else null
-                }
-                val firstSupportedIndex = when (val decision = DcApiRequestDispatch.dispatch(protocolNames)) {
-                    is DcApiRequestDispatch.Decision.Take -> decision.index
-                    is DcApiRequestDispatch.Decision.Empty -> {
-                        logger.error("DC API request carries no protocol entries")
-                        refuseProtocol(ProtocolRefusal.NO_REQUEST)
-                        return@launch
+                    // Plan §8.7: the accepted `org-iso-mdoc` entry's `data` may carry a DCQL query in
+                    // `dcqlQuery` (provisional wire location; the protocol allow-list above is
+                    // unchanged, `openid4vp` stays refused). Its mso_mdoc_zk zk_system_type entries
+                    // parse into the same ZkSystemSpec model the ISO path uses and join the
+                    // per-docType map — the ISO specs win where the doc request carried a zkRequest,
+                    // DCQL's apply otherwise (mergeZkSpecs) — and the EE-ZKP-051 refusal, the
+                    // per-credential resolveSchemeId and the EE-ZKP-042 notice run unchanged over it.
+                    val dcqlSpecsByDocType = if (data.containsKey("dcqlQuery")) {
+                        zkSpecsByDocTypeFromDcql(Json.parseToJsonElement(data.getValue("dcqlQuery").jsonPrimitive.content) as JsonObject)
+                    } else {
+                        emptyMap()
                     }
-                    is DcApiRequestDispatch.Decision.Unsupported -> {
-                        logger.error("Unsupported DC API protocol: ${decision.protocolName}")
-                        refuseProtocol(ProtocolRefusal.UNSUPPORTED_PROTOCOL)
-                        return@launch
-                    }
+                    val effectiveSpecsByDocType = mergeZkSpecs(zkSpecsByDocType(docRequests), dcqlSpecsByDocType)
+
+                    // EE-RP-003 / plan §4 item 4d (finding F7, review finding 1): the consent screen
+                    // names an origin, not a relying party. The readerAuth certificate subject is
+                    // shown only when the readerAuth signature check PASSED — the parser populates
+                    // the chain even on a failed check, so an ungated CN is attacker-chosen. Trust
+                    // validation of a passing chain stays §8.3 scope.
+                    val readerSubject = readerAuthSubject(docRequests)
+                    // EE-PRO-025 / EE-ZKP-055a: authenticated only when readerAuth both verified and
+                    // chained to a trusted access CA. No anchors are configured on this path yet, so
+                    // every DC API request counts as unauthenticated: the least-trusted case.
+                    val authenticatedByDocType = WalletRequestDispatch.authenticationByDocType(docRequests)
+
+                    val presentationDefinition = toPresentationDefinition(docRequests)
+
+                    val documents = requestDependencies?.documents?.invoke() ?: documentRepository.documents.first()
+                    val documentMatches = presentationDefinition.getDocumentMatches(documents)
+
+                    handleMatchResult(
+                        documentMatches,
+                        PresentationTransport(origin, sessionTranscript, recipientPublicKey),
+                        // Keyed by docType: a ZK request for one document must not change how another
+                        // is presented. A repeated docType keeps its first doc request's specs only;
+                        // the DCQL carrier's specs fill the docTypes whose ISO zkRequest is absent.
+                        effectiveSpecsByDocType,
+                        ReaderIdentity(readerSubject, authenticatedByDocType)
+                    )
                 }
-                val firstRequest = requestsArray.getJSONObject(firstSupportedIndex)
-                val data = firstRequest.getJSONObject("data")
-                val deviceRequestBase64 = data.getString("deviceRequest")
-                val encryptionInfoBase64 = data.getString("encryptionInfo")
-
-                val sessionTranscript = getSessionTranscript(encryptionInfoBase64, origin)
-                val recipientPublicKey = getRecipientPublicKey(encryptionInfoBase64)
-
-                val docRequests = DeviceRequestParser(
-                    deviceRequestBase64.fromBase64Url(),
-                    sessionTranscript.toCBOR()
-                ).parse().docRequests
-
-                // Plan §8.7: the accepted `org-iso-mdoc` entry's `data` may carry a DCQL query in
-                // `dcqlQuery` (provisional wire location; the protocol allow-list above is
-                // unchanged, `openid4vp` stays refused). Its mso_mdoc_zk zk_system_type entries
-                // parse into the same ZkSystemSpec model the ISO path uses and join the
-                // per-docType map — the ISO specs win where the doc request carried a zkRequest,
-                // DCQL's apply otherwise (mergeZkSpecs) — and the EE-ZKP-051 refusal, the
-                // per-credential resolveSchemeId and the EE-ZKP-042 notice run unchanged over it.
-                val dcqlSpecsByDocType = if (data.has("dcqlQuery")) {
-                    zkSpecsByDocTypeFromDcql(Json.parseToJsonElement(data.getString("dcqlQuery")) as JsonObject)
-                } else {
-                    emptyMap()
-                }
-                val effectiveSpecsByDocType = mergeZkSpecs(zkSpecsByDocType(docRequests), dcqlSpecsByDocType)
-
-                // EE-RP-003 / plan §4 item 4d (finding F7, review finding 1): the consent screen
-                // names an origin, not a relying party. The readerAuth certificate subject is
-                // shown only when the readerAuth signature check PASSED — the parser populates
-                // the chain even on a failed check, so an ungated CN is attacker-chosen. Trust
-                // validation of a passing chain stays §8.3 scope.
-                val readerSubject = readerAuthSubject(docRequests)
-                // EE-PRO-025 / EE-ZKP-055a: authenticated only when readerAuth both verified and
-                // chained to a trusted access CA. No anchors are configured on this path yet, so
-                // every DC API request counts as unauthenticated: the least-trusted case.
-                val authenticated = docRequests.any { it.readerAuthenticated && it.readerChainTrusted }
-
-                val presentationDefinition = toPresentationDefinition(docRequests)
-
-                val documents = documentRepository.documents.first()
-                val documentMatches = presentationDefinition.getDocumentMatches(documents)
-
-                handleMatchResult(
-                    documentMatches,
-                    origin,
-                    sessionTranscript,
-                    recipientPublicKey,
-                    // Keyed by docType: a ZK request for one document must not change how another
-                    // is presented. A repeated docType keeps its first doc request's specs only;
-                    // the DCQL carrier's specs fill the docTypes whose ISO zkRequest is absent.
-                    effectiveSpecsByDocType,
-                    readerSubject,
-                    authenticated
-                )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -238,15 +251,53 @@ class DigitalCredentialsViewModel @Inject constructor(
         }
     }
 
+    private data class PresentationTransport(val origin: String, val sessionTranscript: ListElement, val recipientPublicKey: EcPublicKey)
+
+    private data class ReaderIdentity(val subject: String?, val authenticatedByDocType: Map<String, Boolean>)
+
+    private fun matchedCredentials(documentMatches: Pair<List<CredentialClaim>, Match>, match: Match.Matched): List<DcCredential> {
+        val credentials = mutableListOf<DcCredential>()
+        val claims = documentMatches.first
+
+        match.matches.forEach { inputDescriptor ->
+            val candidateClaimId = inputDescriptor.value
+                .filter { (_, candidateClaim) ->
+                    candidateClaim.matches.any { it.value is FieldQueryResult.CandidateField.Found }
+                }
+                .keys
+                .firstOrNull() ?: return@forEach
+
+            val document = claims.firstOrNull { it.uniqueId == candidateClaimId }
+                ?.credentialDocument as? CredentialDocument.MDocDocument ?: return@forEach
+
+            val fields = match.fields(candidateClaimId, false, document.type)
+            val optionalFields = match.fields(candidateClaimId, true, document.type)
+
+            if (fields.isNotEmpty() || optionalFields.isNotEmpty()) {
+                credentials.add(
+                    DcCredential(
+                        id = document.id,
+                        credentialType = document.credentialType(),
+                        fields = fields,
+                        optionalFields = optionalFields,
+                        attestation = document.attestation,
+                        mDoc = document.mDoc
+                    )
+                )
+            }
+        }
+
+        return credentials
+    }
+
     private suspend fun handleMatchResult(
         documentMatches: Pair<List<CredentialClaim>, Match>,
-        origin: String,
-        sessionTranscript: ListElement,
-        recipientPublicKey: EcPublicKey,
+        transport: PresentationTransport,
         zkSystemSpecs: Map<String, List<ZkSystemSpec>>,
-        readerSubject: String?,
-        authenticated: Boolean
+        readerIdentity: ReaderIdentity
     ) {
+        val (origin, sessionTranscript, recipientPublicKey) = transport
+        val authenticatedByDocType = readerIdentity.authenticatedByDocType
         when (val match = documentMatches.second) {
             is Match.NotMatched -> {
                 logger.info("No matching credentials found")
@@ -254,36 +305,7 @@ class DigitalCredentialsViewModel @Inject constructor(
             }
 
             is Match.Matched -> {
-                val credentials = mutableListOf<DcCredential>()
-                val claims = documentMatches.first
-
-                match.matches.forEach { inputDescriptor ->
-                    val candidateClaimId = inputDescriptor.value
-                        .filter { (_, candidateClaim) ->
-                            candidateClaim.matches.any { it.value is FieldQueryResult.CandidateField.Found }
-                        }
-                        .keys
-                        .firstOrNull() ?: return@forEach
-
-                    val document = claims.firstOrNull { it.uniqueId == candidateClaimId }
-                        ?.credentialDocument as? CredentialDocument.MDocDocument ?: return@forEach
-
-                    val fields = match.fields(candidateClaimId, false, document.type)
-                    val optionalFields = match.fields(candidateClaimId, true, document.type)
-
-                    if (fields.isNotEmpty() || optionalFields.isNotEmpty()) {
-                        credentials.add(
-                            DcCredential(
-                                id = document.id,
-                                credentialType = document.credentialType(),
-                                fields = fields,
-                                optionalFields = optionalFields,
-                                attestation = document.attestation,
-                                mDoc = document.mDoc
-                            )
-                        )
-                    }
-                }
+                val credentials = matchedCredentials(documentMatches, match)
 
                 if (credentials.isEmpty()) {
                     sendEffect { DcEffect.NoMatch }
@@ -300,38 +322,39 @@ class DigitalCredentialsViewModel @Inject constructor(
                     return
                 }
                 val lastAgeAttestation = credentials.any {
-                    AgePredicatePolicy.isAgeAttestation(it.credentialType) && eePoaConsumption.remaining(it.credentialType) <= 1
+                    AgePredicatePolicy.isAgeAttestation(it.credentialType) && remaining(it.credentialType) <= 1
                 }
-                setState {
-                    copy(
-                        verifier = origin,
-                        requestAuthenticated = authenticated,
-                        lastAgeAttestation = lastAgeAttestation,
-                        // EE-RP-003 (4d): show the readerAuth certificate subject when the
-                        // reader authenticated the request; the origin alone stays otherwise.
-                        readerSubject = readerSubject,
-                        credentials = credentials,
-                        sessionTranscript = sessionTranscript,
-                        recipientPublicKey = recipientPublicKey,
-                        zkSystemSpecs = zkSystemSpecs,
-                        expectedPlainTier = expectedPlainTier(zkSystemSpecs, credentials),
-                        // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's
-                        // certificate chain (msoX5chain) into every ZkDocument, so the
-                        // verifier sees which issuer stands behind the attestation. The
-                        // consent screen says so before the user shares — for a matched
-                        // credential whose own docType resolved specs, as expectedPlainTier
-                        // is scoped, not for a request that merely named mso_mdoc_zk.
-                        issuerDisclosesToVerifier = credentials.any {
-                            zkSystemSpecs[it.credentialType.docType().uri].orEmpty().isNotEmpty()
-                        }
-                    )
-                }
+                val matchedState = state.value.copy(
+                    verifier = origin,
+                    requestAuthenticated = authenticatedByDocType.isNotEmpty() && authenticatedByDocType.values.all { it },
+                    authenticatedByDocType = authenticatedByDocType,
+                    lastAgeAttestation = lastAgeAttestation,
+                    // EE-RP-003 (4d): show the readerAuth certificate subject when the
+                    // reader authenticated the request; the origin alone stays otherwise.
+                    readerSubject = readerIdentity.subject,
+                    credentials = credentials,
+                    sessionTranscript = sessionTranscript,
+                    recipientPublicKey = recipientPublicKey,
+                    zkSystemSpecs = zkSystemSpecs,
+                    expectedPlainTier = expectedPlainTier(zkSystemSpecs, credentials),
+                    // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's
+                    // certificate chain (msoX5chain) into every ZkDocument, so the
+                    // verifier sees which issuer stands behind the attestation. The
+                    // consent screen says so before the user shares — for a matched
+                    // credential whose own docType resolved specs, as expectedPlainTier
+                    // is scoped, not for a request that merely named mso_mdoc_zk.
+                    issuerDisclosesToVerifier = credentials.any {
+                        zkSystemSpecs[it.credentialType.docType().uri].orEmpty().isNotEmpty()
+                    }
+                )
                 // EE-ZKP-055a / EE-POA-013 without a ZK request: no optional-field toggle can make
                 // the proof possible, so refuse now rather than after the consent screen.
                 val askedForProof = credentials.any {
                     it.credentialType.requiresZkProof() && zkSystemSpecs[it.credentialType.docType().uri].orEmpty().isNotEmpty()
                 }
-                if (!askedForProof) refusePlainWhenSpecsUnsatisfiable(state.value)
+                if (askedForProof || !refusePlainWhenSpecsUnsatisfiable(matchedState)) {
+                    setState { matchedState }
+                }
             }
         }
     }
@@ -385,55 +408,82 @@ class DigitalCredentialsViewModel @Inject constructor(
      * Returns true when the presentation was refused and nothing may be shared.
      */
     private suspend fun refusePlainWhenSpecsUnsatisfiable(currentState: DcUiState): Boolean {
-        // Each age document against the specs its own doc request advertised, never another's.
-        val refused = currentState.credentials.firstOrNull { credential ->
-            val specs = currentState.zkSystemSpecs[credential.credentialType.docType().uri].orEmpty()
-            credential.credentialType.requiresZkProof() &&
-                HolderObligations.refusePlainFallback(
-                    zkCapable = zkSystem != null,
-                    proofRequested = specs.isNotEmpty(),
-                    satisfiable = resolveSchemeId(zkSystem, specs, credential.allCheckedFields.size) != null,
-                    authenticated = currentState.requestAuthenticated,
-                    lastAttestation = eePoaConsumption.remaining(credential.credentialType) <= 1
+        return WalletRequestDispatch.agePlain(
+            credentials = currentState.credentials,
+            policy = WalletRequestDispatch.AgeRequestPolicy(zkSystem != null, currentState.authenticatedByDocType),
+            describe = { credential ->
+                val specs = currentState.zkSystemSpecs[credential.credentialType.docType().uri].orEmpty()
+                WalletRequestDispatch.AgeCredential(
+                    credential.credentialType,
+                    credential.credentialType.docType().uri,
+                    specs.isNotEmpty(),
+                    resolveSchemeId(zkSystem, specs, credential.allCheckedFields.size) != null,
+                    remaining(credential.credentialType) <= 1
                 )
-        } ?: return false
-
-        val proofRequested = currentState.zkSystemSpecs[refused.credentialType.docType().uri].orEmpty().isNotEmpty()
-        val error = HolderObligations.plainRefusalReason(proofRequested, currentState.requestAuthenticated)
-        logger.warn("Refusing plain fallback for an age attestation on a ZK-capable device: {}", error)
-        if (error == AppError.PRESENTATION_NO_MATCHING_CIRCUIT) {
-            refusePlain(currentState.verifier, refused.credentialType.docType(), PresentationTier.PLAIN_NO_MATCHING_CIRCUIT, error)
-        } else {
-            refuseBeforeConsent(currentState.verifier, refused.credentialType.docType(), error)
-        }
-        return true
+            },
+            refuse = { credential, error ->
+                logger.warn("Refusing plain fallback for an age attestation on a ZK-capable device: {}", error)
+                if (error == AppError.PRESENTATION_NO_MATCHING_CIRCUIT) {
+                    refusePlain(currentState.verifier, credential.credentialType.docType(), PresentationTier.PLAIN_NO_MATCHING_CIRCUIT, error)
+                } else {
+                    refuseBeforeConsent(currentState.verifier, credential.credentialType.docType(), error)
+                }
+            },
+            proceed = {}
+        )
     }
 
     /** A refusal of a presentation that never happened: logged without a tier, nothing shared. */
     private suspend fun refuseBeforeConsent(verifier: String, docType: DocType, error: AppError) {
-        transactionLogRepository.addTransactionLog(party = verifier, docType = docType, error = error)
-        setState { copy(isLoading = false, verifier = verifier, plainRefusal = error) }
-        sendEffect { DcEffect.RefusedPlainFallback }
+        RequestRefusalDispatch.dcAge(
+            state.value.copy(verifier = verifier, registryRefusal = zkSystem?.registryFailure),
+            error,
+            { updated -> setState { updated } },
+            { emitted -> sendEffect { emitted } }
+        )
+        logRefusal(verifier, docType, error)
     }
 
     /** Shows the EE-PRO-013 refusal (F8); the user closes it, which ends as RESULT_CANCELED. */
     private fun refuseProtocol(refusal: ProtocolRefusal) {
-        setState { copy(isLoading = false, protocolRefusal = refusal) }
-        sendEffect { DcEffect.Refused(refusal) }
+        RequestRefusalDispatch.dcProtocol(
+            state.value,
+            refusal,
+            { updated -> setState { updated } },
+            { emitted -> sendEffect { emitted } }
+        )
     }
 
     /** Logs the EE-ZKP-051 refusal and shows it; nothing is shared. */
     private suspend fun refusePlain(verifier: String, docType: DocType, tier: PresentationTier, error: AppError) {
-        transactionLogRepository.addTransactionLog(party = verifier, docType = docType, tier = tier, error = error)
-        setState { copy(isLoading = false, plainRefusal = error) }
-        sendEffect { DcEffect.RefusedPlainFallback }
+        RequestRefusalDispatch.dcAge(
+            state.value.copy(registryRefusal = zkSystem?.registryFailure),
+            error,
+            { updated -> setState { updated } },
+            { emitted -> sendEffect { emitted } }
+        )
+        logRefusal(verifier, docType, error, tier)
     }
 
     private fun PresentationDefinition.getDocumentMatches(
         documents: List<CredentialDocument>
-    ): Pair<List<CredentialClaim>, Match> = openId4VPManager.matches(this, documents)
+    ): Pair<List<CredentialClaim>, Match> =
+        requestDependencies?.matches?.invoke(this, documents) ?: openId4VPManager.matches(this, documents)
+
+    private suspend fun remaining(type: CredentialType): Int =
+        requestDependencies?.remaining?.invoke(type) ?: eePoaConsumption.remaining(type)
+
+    private suspend fun logRefusal(party: String, docType: DocType, error: AppError, tier: PresentationTier? = null) {
+        val dependencies = requestDependencies
+        if (dependencies != null) {
+            dependencies.logRefusal(party, docType, error, tier)
+        } else {
+            transactionLogRepository.addTransactionLog(party = party, docType = docType, error = error, tier = tier)
+        }
+    }
 
     private fun getSessionTranscript(encryptionInfoBase64: String, origin: String): ListElement {
+        requestDependencies?.let { return it.transcript(encryptionInfoBase64, origin) }
         return ListElement(
             listOf(
                 NullElement(),
@@ -444,6 +494,7 @@ class DigitalCredentialsViewModel @Inject constructor(
     }
 
     private fun getRecipientPublicKey(encryptionInfoBase64: String): EcPublicKey {
+        requestDependencies?.let { return it.recipientKey(encryptionInfoBase64) }
         val encryptionInfo = CBORObject.DecodeFromBytes(encryptionInfoBase64.fromBase64Url())
         if (encryptionInfo.type != CBORType.Array) {
             throw IllegalArgumentException("EncryptionInfo should be an array but was: ${encryptionInfo.type}")
@@ -505,6 +556,7 @@ class DigitalCredentialsViewModel @Inject constructor(
 
     @OptIn(ExperimentalEncodingApi::class)
     private suspend fun onShareClicked() {
+        if (state.value.protocolRefusal != null || state.value.plainRefusal != null) return
         val currentState = state.value
         val sessionTranscript = currentState.sessionTranscript ?: return
         val recipientPublicKey = currentState.recipientPublicKey ?: return
@@ -671,7 +723,12 @@ class DigitalCredentialsViewModel @Inject constructor(
                 }.onFailure { logger.error("EE-PoA consumption failed", it) }
             }
 
-            sendEffect { DcEffect.SendResponse(response) }
+            val dependencies = requestDependencies
+            if (dependencies != null) {
+                dependencies.releaseResponse(response)
+            } else {
+                sendEffect { DcEffect.SendResponse(response) }
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -769,8 +826,10 @@ data class DcUiState(
     val expectedPlainTier: PresentationTier? = null,
     // EE-ZKP-051 refusal already happened for this request; the screen shows this reason.
     val plainRefusal: AppError? = null,
+    val registryRefusal: String? = null,
     // EE-PRO-025 / EE-ZKP-055a: readerAuth verified and chained to a trusted access CA.
     val requestAuthenticated: Boolean = false,
+    val authenticatedByDocType: @RawValue Map<String, Boolean> = emptyMap(),
     // EE-POA-013: an age attestation in this request is the last of its batch; shown with the
     // EE-ZKP-042 notice when it would go out plain.
     val lastAgeAttestation: Boolean = false,

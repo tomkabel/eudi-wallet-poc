@@ -1,0 +1,54 @@
+
+> Configure project :
+The Dependency Analysis plugin is only known to work with versions of AGP between 8.0.0 and 8.4.0-alpha01. You are using 8.9.2. Proceed at your own risk.
+
+> Task :app:generateCircuitRegistry UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preLocal_mocksBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateLocal_mocksBuildConfig UP-TO-DATE
+> Task :app:extractIncludeLocal_mocksProto UP-TO-DATE
+> Task :app:extractLocal_mocksProto UP-TO-DATE
+> Task :app:extractProto UP-TO-DATE
+> Task :app:generateLocal_mocksProto UP-TO-DATE
+> Task :app:generateSafeArgsLocal_mocks UP-TO-DATE
+> Task :app:checkLocal_mocksAarMetadata UP-TO-DATE
+> Task :app:generateLocal_mocksResValues UP-TO-DATE
+> Task :app:mapLocal_mocksSourceSetPaths UP-TO-DATE
+> Task :app:generateLocal_mocksResources UP-TO-DATE
+> Task :app:mergeLocal_mocksResources UP-TO-DATE
+> Task :app:packageLocal_mocksResources UP-TO-DATE
+> Task :app:parseLocal_mocksLocalResources UP-TO-DATE
+> Task :app:createLocal_mocksCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksLocal_mocks UP-TO-DATE
+> Task :app:processLocal_mocksMainManifest UP-TO-DATE
+> Task :app:processLocal_mocksManifest UP-TO-DATE
+> Task :app:processLocal_mocksManifestForPackage UP-TO-DATE
+> Task :app:processLocal_mocksResources UP-TO-DATE
+> Task :app:javaPreCompileLocal_mocks UP-TO-DATE
+> Task :app:preLocal_mocksUnitTestBuild UP-TO-DATE
+> Task :app:extractTestLocal_mocksProto UP-TO-DATE
+> Task :app:extractTestProto UP-TO-DATE
+> Task :app:javaPreCompileLocal_mocksUnitTest UP-TO-DATE
+> Task :app:kspLocal_mocksKotlin
+> Task :app:compileLocal_mocksKotlin
+> Task :app:compileLocal_mocksJavaWithJavac
+> Task :app:hiltAggregateDepsLocal_mocks UP-TO-DATE
+> Task :app:hiltJavaCompileLocal_mocks
+> Task :app:processLocal_mocksJavaRes
+> Task :app:bundleLocal_mocksClassesToCompileJar
+> Task :app:transformLocal_mocksClassesWithAsm
+> Task :app:extractIncludeLocal_mocksUnitTestProto
+> Task :app:generateLocal_mocksUnitTestProto NO-SOURCE
+> Task :app:bundleLocal_mocksClassesToRuntimeJar
+> Task :app:kspLocal_mocksUnitTestKotlin
+> Task :app:compileLocal_mocksUnitTestKotlin
+> Task :app:compileLocal_mocksUnitTestJavaWithJavac NO-SOURCE
+> Task :app:hiltAggregateDepsLocal_mocksUnitTest UP-TO-DATE
+> Task :app:hiltJavaCompileLocal_mocksUnitTest NO-SOURCE
+> Task :app:processLocal_mocksUnitTestJavaRes UP-TO-DATE
+> Task :app:transformLocal_mocksUnitTestClassesWithAsm
+> Task :app:testLocal_mocksUnitTest
+
+BUILD SUCCESSFUL in 2m
+40 actionable tasks: 13 executed, 27 up-to-date

@@ -6,6 +6,9 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 
 | Document | What it is |
 |---|---|
+| [Estonian acceptance cases](../rp-kit/ACCEPTANCE.md) | Seven ordered machine-readable cases, fresh foreign evidence contract, actual local HTTP/proof and wallet dispatch/fallback controls, and operator handoff |
+| [Estonian local acceptance evidence](../rp-kit/evidence/acceptance-2026-11-13/README.md) | Agent-local dirty-workspace report/transcript and JVM observations; five local passes, foreign PID/AV unexecuted, awaiting operator |
+| [Signed pinned circuit fallback](../verifier/go/circuits/README.md) | Shared signed document, public pin, reproducible generator, expiry/runtime validation and generated wallet resource |
 | [RP-register interface proposal](../rp-kit/REGISTER-PROPOSAL.md) | Authority-facing lookup proposal, pinned ARF/TS5/TS6 mapping and gaps, synthetic reproduction and publication/service-owner review handoff |
 | [RP-register contract](../rp-kit/REGISTER-CONTRACT.md) | Fail-closed Go interface, shared synthetic corpus, provisional HTTP seam, bounded cache and local controls |
 | [TARA adapter contract](../rp-kit/TARA-CONTRACT.md) | Parallel OIDC reference, registered test-client prerequisites, bounded runner and external BLOCKED evidence |

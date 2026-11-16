@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 // Registry is the relying party's set of accepted proving circuits.
@@ -21,7 +22,10 @@ import (
 // presentation, because a per-presentation fetch is a phone-home that would
 // defeat ZKP_07.
 type Registry struct {
-	mu sync.RWMutex
+	mu        sync.RWMutex
+	document  *Document
+	expiresAt time.Time
+	now       func() time.Time
 	// byTuple is keyed by the published (version, numAttributes) tuple — the
 	// lookup callers make (plan defect S11). byHash is keyed by hash (the
 	// lookup EE-ZKP-023 names) and exists to reject duplicate hashes at load;
@@ -95,22 +99,28 @@ func NewRegistry(circuits []Circuit) (*Registry, error) {
 	return r, nil
 }
 
-// Load reads a registry from a JSON file.
+// Load reads source/test registry data without authenticating it. Production must
+// use LoadSigned. Envelope metadata is retained for source provenance.
 func Load(path string) (*Registry, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read circuit registry: %w", err)
 	}
-	var doc struct {
-		Circuits []Circuit `json:"circuits"`
-	}
+	var doc Document
 	if err := json.Unmarshal(b, &doc); err != nil {
 		return nil, fmt.Errorf("parse circuit registry: %w", err)
 	}
 	if len(doc.Circuits) == 0 {
 		return nil, fmt.Errorf("circuit registry %s lists no circuits", path)
 	}
-	return NewRegistry(doc.Circuits)
+	r, err := NewRegistry(doc.Circuits)
+	if err != nil {
+		return nil, err
+	}
+	if doc.Schema != "" {
+		r.document = &doc
+	}
+	return r, nil
 }
 
 // Lookup returns the accepted entry for (version, numAttributes). It matches
@@ -119,6 +129,9 @@ func Load(path string) (*Registry, error) {
 func (r *Registry) Lookup(version, numAttributes uint32) (Circuit, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+	if r.now != nil && !r.now().Before(r.expiresAt) {
+		return Circuit{}, false
+	}
 	c, ok := r.byTuple[tupleKey(version, numAttributes)]
 	return c, ok
 }
@@ -127,7 +140,24 @@ func (r *Registry) Lookup(version, numAttributes uint32) (Circuit, bool) {
 func (r *Registry) Accepted() []Circuit {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+	if r.now != nil && !r.now().Before(r.expiresAt) {
+		return nil
+	}
 	out := make([]Circuit, 0, len(r.acceptedList))
 	out = append(out, r.acceptedList...)
 	return out
+}
+
+// CurrentError names a signed document's failed prerequisite even after it was
+// cached successfully. Unsigned source registries retain their test-only rules.
+func (r *Registry) CurrentError() error {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	if r.now != nil && !r.now().Before(r.expiresAt) {
+		return fmt.Errorf("stale-list")
+	}
+	if len(r.acceptedList) == 0 {
+		return fmt.Errorf("missing-acceptable-circuit")
+	}
+	return nil
 }

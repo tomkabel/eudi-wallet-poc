@@ -181,6 +181,10 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 	if body.Element == "" {
 		body.Element = "age_over_18"
 	}
+	if err := p.registry.CurrentError(); err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": err.Error()})
+		return
+	}
 
 	// The demo surface asks for the doctype this server is configured for. A
 	// credentials > 1 additionally asks for the second fixture doctype
@@ -678,6 +682,9 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 // multi-credential path parses every credential once (ParseCarrierMulti) and
 // then walks the rules per credential.
 func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.CredentialQuery, cp *oid4vp.CheckedPresentation) (bool, string, int) {
+	if err := p.registry.CurrentError(); err != nil {
+		return false, err.Error(), http.StatusForbidden
+	}
 	// The advertised circuits come from this session's own (verifier-built)
 	// query; resolve them against the registry here, before any FFI work, so
 	// verify uses the registry entry, never the query's copy.

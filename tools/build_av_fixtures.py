@@ -28,7 +28,7 @@ SYSTEM = "longfellow-libzk-v1"
 PARAMETERS = ("circuit_hash", "version", "num_attributes", "block_enc_hash", "block_enc_sig")
 MINTED = Path("verifier/go/zk/testdata/step8-7-openid4vp-zk")
 LOCAL_PINS = {
-    "verifier/circuits.json": "aae3a319feff4ec11dc623a5161e069b193005c713d40f875e198aeb5a370e0f",
+    "verifier/circuits.json": "b34a8261cfd1aac39009a13143c9075efb3ef90db121ff5fee8f04e7c8dbc665",
     str(MINTED / "device_response.cbor"): "23978eb511a13d4a38a743260d5ef44a7fd9488d47806c33631fe092adc7c4aa",
     str(MINTED / "request.json"): "0de691b7abb742f40dbbb392a3352cb155989e1bdfe64e58f704db936524d89d",
     str(MINTED / "GENERATED-BY"): "9bf321d9e5a3e4edd06302cb45b40da96c09ddbbf509d40df309fb14dd7acd89",

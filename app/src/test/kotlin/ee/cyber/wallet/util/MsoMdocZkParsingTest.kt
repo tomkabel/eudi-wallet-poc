@@ -94,27 +94,25 @@ class MsoMdocZkParsingTest {
     @Test
     fun `a held circuit resolves and a matching request proves over the real bundled circuits`() = runTest {
         val zkSystem = LongfellowZkSystem().apply { addDefaultCircuits() }
-        val heldHash = zkSystem.systemSpecs
-            .first { it.getParam<Long>("num_attributes") == 1L }
-            .getParam<String>("circuit_hash")!!
+        val heldSpec = zkSystem.systemSpecs.first { it.getParam<Long>("num_attributes") == 1L }
+        val heldHash = heldSpec.getParam<String>("circuit_hash")!!
         val query = zkQuery(
-            id = "reader-named-id",
+            id = heldSpec.id,
             circuitHash = heldHash,
-            numAttributes = 1
+            numAttributes = 1,
+            version = heldSpec.getParam<Long>("version")!!.toInt(),
+            blockEncHash = heldSpec.getParam<Long>("block_enc_hash")!!.toInt(),
+            blockEncSig = heldSpec.getParam<Long>("block_enc_sig")!!.toInt()
         )
 
         val specsByDocType = zkSpecsByDocTypeFromDcql(query)
 
-        // The DCQL-parsed spec satisfies the same resolution the ISO zkRequest path runs: the
-        // HELD spec's id is resolved (the id travels in the proof; the verifier allowlists by
-        // the query's own circuit_hash, which is how ee-eudiw's ZkSystemTypeAllowlist keys it).
+        // The DCQL path resolves the exact held identity, including the advertised block sizes.
         val schemeId = resolveSchemeId(zkSystem, specsByDocType["eu.europa.ec.av.1"].orEmpty(), 1)
-        val heldSpec = zkSystem.systemSpecs
-            .first { it.getParam<Long>("num_attributes") == 1L && it.getParam<String>("circuit_hash") == heldHash }
         assertEquals(
             heldSpec.id,
             schemeId,
-            "the held circuit's own id resolves over the reader-advertised one"
+            "the complete advertised identity resolves to the held circuit"
         )
     }
 
