@@ -15,15 +15,21 @@ import (
 	"strings"
 )
 
-// The one profile this package speaks (ADR-003). Anything else is
-// ErrUnsupported — a refusal, never a fallback.
+// The profiles this package speaks (ADR-003, amended for HAIP 1.0). Anything
+// else is ErrUnsupported — a refusal, never a fallback.
+//
+// algHeader is key agreement with key wrapping (CEK random, wrapped under the
+// ConcatKDF KEK); algDirect is direct key agreement (the ConcatKDF output IS the
+// CEK and the encrypted-key segment is empty). HAIP 1.0 names the direct form,
+// and wallets that implement the profile refuse anything else.
 const (
 	algHeader = "ECDH-ES+A256KW"
+	algDirect = "ECDH-ES"
 	encHeader = "A256GCM"
 )
 
 // ErrUnsupported marks an algorithm, curve or key type outside the profile.
-var ErrUnsupported = errors.New("jose: unsupported outside the ECDH-ES+A256KW / A256GCM / P-256 profile")
+var ErrUnsupported = errors.New("jose: unsupported outside the ECDH-ES / ECDH-ES+A256KW / A256GCM / P-256 profile")
 
 // ErrDecrypt covers every integrity failure: bad tag, bad wrap, malformed
 // token. The distinctions are in the wrapped error for the log, never in
@@ -124,7 +130,7 @@ func aesKeyUnwrap(kek, in []byte) ([]byte, error) {
 // parseHeader decodes and checks the received JOSE header: the only shape this
 // package will emit, with members whose mere presence is a refusal.
 
-func parseHeader(raw []byte) (epk JWK, err error) {
+func parseHeader(raw []byte) (epk JWK, alg string, err error) {
 	var h struct {
 		Alg string          `json:"alg"`
 		Enc string          `json:"enc"`
@@ -137,24 +143,24 @@ func parseHeader(raw []byte) (epk JWK, err error) {
 		Jwk json.RawMessage `json:"jwk"`
 	}
 	if err := json.Unmarshal(raw, &h); err != nil {
-		return JWK{}, fmt.Errorf("%w: header is not valid JSON: %v", ErrParse, err)
+		return JWK{}, "", fmt.Errorf("%w: header is not valid JSON: %v", ErrParse, err)
 	}
-	if h.Alg != algHeader || h.Enc != encHeader {
-		return JWK{}, fmt.Errorf("%w: alg/enc %q/%q", ErrUnsupported, h.Alg, h.Enc)
+	if (h.Alg != algHeader && h.Alg != algDirect) || h.Enc != encHeader {
+		return JWK{}, "", fmt.Errorf("%w: alg/enc %q/%q", ErrUnsupported, h.Alg, h.Enc)
 	}
 	if h.Zip != "" {
-		return JWK{}, fmt.Errorf("%w: zip is not part of the profile", ErrUnsupported)
+		return JWK{}, "", fmt.Errorf("%w: zip is not part of the profile", ErrUnsupported)
 	}
 	if h.D != nil {
-		return JWK{}, errors.New("jose: header carries a private key member (d)")
+		return JWK{}, "", errors.New("jose: header carries a private key member (d)")
 	}
 	if h.Jku != "" || h.X5u != "" || h.Jwk != nil {
-		return JWK{}, fmt.Errorf("%w: remote key members (jku/x5u/jwk) are refused", ErrUnsupported)
+		return JWK{}, "", fmt.Errorf("%w: remote key members (jku/x5u/jwk) are refused", ErrUnsupported)
 	}
 	if h.Epk == nil {
-		return JWK{}, fmt.Errorf("%w: header has no epk", ErrParse)
+		return JWK{}, "", fmt.Errorf("%w: header has no epk", ErrParse)
 	}
-	return *h.Epk, nil
+	return *h.Epk, h.Alg, nil
 }
 
 // Encrypt seals plaintext to the recipient's P-256 public JWK under the
@@ -175,6 +181,56 @@ func Encrypt(recipientJWK JWK, plaintext []byte) (string, error) {
 		return "", err
 	}
 	return encryptWithHeader(recipientJWK, plaintext, hdr)
+}
+
+// EncryptDirect seals plaintext under direct key agreement (alg=ECDH-ES): the
+// ConcatKDF output is the content key and the encrypted-key segment is empty.
+// This is the profile HAIP 1.0 names and the wallet accepts; use Encrypt for the
+// legacy wrapped-key profile.
+func EncryptDirect(recipientJWK JWK, plaintext []byte) (string, error) {
+	recipientPub, err := recipientJWK.ECDHKey()
+	if err != nil {
+		return "", err
+	}
+	eph, err := ecdh.P256().GenerateKey(rand.Reader)
+	if err != nil {
+		return "", fmt.Errorf("jose: ephemeral key: %w", err)
+	}
+	pub := eph.PublicKey().Bytes()
+	epkJWK := JWK{Kty: "EC", Crv: "P-256", X: b64(pub[1:33]), Y: b64(pub[33:65])}
+	shared, err := eph.ECDH(recipientPub)
+	if err != nil {
+		return "", fmt.Errorf("jose: ecdh: %w", err)
+	}
+	cek, err := concatKDF(shared, []byte(algDirect), 256)
+	if err != nil {
+		return "", err
+	}
+	tp, err := recipientJWK.Thumbprint()
+	if err != nil {
+		return "", err
+	}
+	hdrJSON, err := json.Marshal(struct {
+		Alg string `json:"alg"`
+		Enc string `json:"enc"`
+		Epk JWK    `json:"epk"`
+		Kid string `json:"kid"`
+	}{Alg: algDirect, Enc: encHeader, Epk: epkJWK, Kid: b64(tp)})
+	if err != nil {
+		return "", err
+	}
+	hdrB64 := b64(hdrJSON)
+	iv := make([]byte, 12)
+	if _, err := rand.Read(iv); err != nil {
+		return "", fmt.Errorf("jose: iv: %w", err)
+	}
+	gcm, err := newGCM(cek)
+	if err != nil {
+		return "", err
+	}
+	sealed := gcm.Seal(nil, iv, plaintext, []byte(hdrB64))
+	ct, tag := sealed[:len(sealed)-16], sealed[len(sealed)-16:]
+	return strings.Join([]string{hdrB64, "", b64(iv), b64(ct), b64(tag)}, "."), nil
 }
 
 // encryptWithHeader is Encrypt with a caller-chosen protected header — the
@@ -280,7 +336,7 @@ func Decrypt(recipient *JWK, token string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: header is not base64url: %v", ErrParse, err)
 	}
-	epk, err := parseHeader(hdrJSON)
+	epk, alg, err := parseHeader(hdrJSON)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +363,13 @@ func Decrypt(recipient *JWK, token string) ([]byte, error) {
 	if len(tag) != 16 {
 		return nil, fmt.Errorf("%w: tag is %d bytes, want 16", ErrDecrypt, len(tag))
 	}
-	if len(wrapped) != 40 { // 32-byte CEK + 8-byte wrap register
+	if alg == algDirect {
+		// Direct key agreement defines no encrypted key at all: a non-empty
+		// segment would mean two readings of one header. Refuse it.
+		if len(wrapped) != 0 {
+			return nil, fmt.Errorf("%w: alg=%s carries a %d-byte encrypted key", ErrDecrypt, algDirect, len(wrapped))
+		}
+	} else if len(wrapped) != 40 { // 32-byte CEK + 8-byte wrap register
 		return nil, fmt.Errorf("%w: wrapped key is %d bytes, want 40", ErrDecrypt, len(wrapped))
 	}
 
@@ -323,14 +385,21 @@ func Decrypt(recipient *JWK, token string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: ecdh: %v", ErrDecrypt, err)
 	}
-	// ConcatKDF's Otherinfo: alg | apu(∅) | apv(∅) — neither member is in the header.
-	kek, err := concatKDF(shared, []byte(algHeader), 256)
+	// ConcatKDF's Otherinfo: alg | apu(∅) | apv(∅) — neither member is in the
+	// header. The algorithm identifier is the received alg, so direct agreement
+	// derives the CEK itself under "ECDH-ES".
+	derived, err := concatKDF(shared, []byte(alg), 256)
 	if err != nil {
 		return nil, err
 	}
-	cek, err := aesKeyUnwrap(kek, wrapped)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrDecrypt, err)
+	var cek []byte
+	if alg == algDirect {
+		cek = derived
+	} else {
+		cek, err = aesKeyUnwrap(derived, wrapped)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrDecrypt, err)
+		}
 	}
 
 	gcm, err := newGCM(cek)

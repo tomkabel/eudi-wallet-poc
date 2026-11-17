@@ -434,7 +434,8 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	valid, detail, code, carriers := p.check(s, token)
-	if _, err := p.store.Complete(id, valid, detail); err != nil {
+	claims := provenClaims(s.Query, valid, carriers)
+	if _, err := p.store.CompleteWithClaims(id, valid, detail, claims); err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
@@ -771,6 +772,33 @@ func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.Credential
 	}
 }
 
+// provenClaims distils what a zero-knowledge carrier actually proved into the
+// boolean a relying party can act on. Today the recognised predicates are the
+// age-over-N set, which is the only boolean-predicate family the AV profile
+// defines; anything else stays un-distilled rather than guessed. A disclosed
+// (non-ZK) presentation returns nil on purpose: there the verifier has handed
+// the relying party attributes, and inventing a boolean would turn a disclosed
+// value into a claim it never made.
+func provenClaims(q oid4vp.DCQL, valid bool, carriers []string) map[string]any {
+	if !valid || len(carriers) != 1 || carriers[0] != "mso-mdoc-zk-cbor" {
+		return nil
+	}
+	if len(q.Credentials) != 1 || len(q.Credentials[0].Claims) != 1 {
+		return nil
+	}
+	path := q.Credentials[0].Claims[0].Path
+	if len(path) == 0 {
+		return nil
+	}
+	// The AV profile addresses predicates by namespace + element; the element
+	// is the last path component and the only part that names the predicate.
+	name := fmt.Sprint(path[len(path)-1])
+	if !strings.HasPrefix(name, "age_over_") {
+		return nil
+	}
+	return map[string]any{name: true}
+}
+
 // handleResult lets the relying party's own page poll the outcome.
 func (p *presenter) handleResult(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/present/result/")
@@ -779,9 +807,13 @@ func (p *presenter) handleResult(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, statusFor(err), map[string]string{"id": id, "error": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	body := map[string]any{
 		"id": s.ID, "answered": s.Answered, "valid": s.Valid, "detail": s.Detail,
-	})
+	}
+	if len(s.Claims) > 0 {
+		body["claims"] = s.Claims
+	}
+	writeJSON(w, http.StatusOK, body)
 }
 
 func statusFor(err error) int {

@@ -33,6 +33,13 @@ type Session struct {
 	Valid    bool   `json:"valid"`
 	Detail   string `json:"detail,omitempty"`
 
+	// Claims carries the predicate answers a zero-knowledge presentation
+	// proved (e.g. {"age_over_18": true}). It is empty for disclosed-data
+	// presentations: there the relying party reads the attributes it asked
+	// for, and a distilled boolean would misrepresent a disclosed value as a
+	// proof. Emitted so a relying party never has to parse a proof itself.
+	Claims map[string]any `json:"claims,omitempty"`
+
 	// The ISO 18013-7 Annex C (dcapi) extension, nil on the redirect path.
 	// Unexported: it holds the HPKE private key and must never reach the JSON
 	// snapshots the API hands out. origin is the configured -dcapi-origin the
@@ -441,6 +448,13 @@ func (st *Store) Claim(id string) (*Session, error) {
 // response handler's Claim is what marks it answered) or that has expired —
 // either way the result would attach to a presentation nobody verified.
 func (st *Store) Complete(id string, valid bool, detail string) (*Session, error) {
+	return st.CompleteWithClaims(id, valid, detail, nil)
+}
+
+// CompleteWithClaims is Complete plus the predicate answers the verifier proved.
+// Kept separate so existing callers stay one-argument and the nil case stays
+// explicit rather than a silent empty map.
+func (st *Store) CompleteWithClaims(id string, valid bool, detail string, claims map[string]any) (*Session, error) {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	s, ok := st.sessions[id]
@@ -456,6 +470,7 @@ func (st *Store) Complete(id string, valid bool, detail string) (*Session, error
 	}
 	s.Valid = valid
 	s.Detail = detail
+	s.Claims = claims
 	return snapshot(s), nil
 }
 
