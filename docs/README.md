@@ -6,6 +6,7 @@ imported from that repository at `e368fc1` and describe it as it stood then.
 
 | Document | What it is |
 |---|---|
+| [Refusal versus cancellation specification](../_bmad-output/specs/spec-3-6-refusal-distinguishable-from-cancellation/SPEC.md) | Story 3.6: three-outcome UI/interface contract, production dispatch scope and required regression evidence |
 | [Estonian acceptance cases](../rp-kit/ACCEPTANCE.md) | Seven ordered machine-readable cases, fresh foreign evidence contract, actual local HTTP/proof and wallet dispatch/fallback controls, and operator handoff |
 | [Estonian clean-commit acceptance evidence](../rp-kit/evidence/acceptance-2026-11-16/README.md) | Final implementation revision, stable source manifests, five local passes, full check/unit evidence and foreign-session operator handoff |
 | [Estonian local acceptance evidence](../rp-kit/evidence/acceptance-2026-11-13/README.md) | Agent-local dirty-workspace report/transcript and JVM observations; five local passes, foreign PID/AV unexecuted, awaiting operator |
