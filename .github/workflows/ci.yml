@@ -1,26 +1,14 @@
 name: CI
 
-# Only the ZK spine is built here; the Android app has no CI job. Kotlin-only
-# pushes would otherwise pay for the e2e job's Rust build.
+# The ZK spine (Go, Rust, Python). The Android app is built by app.yml.
+#
+# Every push and pull request starts this workflow; the `changes` job (dorny/paths-filter) decides
+# which jobs run. Path filters on `on:` would leave a required check "Expected, waiting" forever
+# when they skip the whole workflow, so the filtering is per job and `ci-ok` is the one check to
+# require in branch protection: it passes when every job it needs succeeded or was skipped.
 on:
   push:
-    paths:
-      - 'verifier/**'
-      - 'zk-age-poc/**'
-      - 'issuer/**'
-      - 'wallet/**'
-      - 'tests/**'
-      - 'demo/**'
-      - '.github/workflows/ci.yml'
   pull_request:
-    paths:
-      - 'verifier/**'
-      - 'zk-age-poc/**'
-      - 'issuer/**'
-      - 'wallet/**'
-      - 'tests/**'
-      - 'demo/**'
-      - '.github/workflows/ci.yml'
 
 # A PR from a branch in this repo triggers both `push` and `pull_request`. Keying
 # on head_ref for PRs puts both in the same group so the newer one cancels the
@@ -44,26 +32,109 @@ defaults:
     working-directory: eudi-wallet-poc
 
 jobs:
+  changes:
+    name: changes (which paths moved)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read   # the filter lists a PR's files through the API
+    outputs:
+      go_rust: ${{ steps.filter.outputs.go_rust }}
+      python: ${{ steps.filter.outputs.python }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+      lint: ${{ steps.filter.outputs.lint }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            go_rust: &go_rust
+              - 'verifier/**'
+              - 'rp-kit/**'
+              - 'tests/rp_kit_test.py'
+              - 'zk-age-poc/**'
+              - 'scripts/**'
+              - 'Makefile'
+              - 'mise.toml'
+              - '.gitattributes'
+              - '.github/workflows/ci.yml'
+            python: &python
+              - 'issuer/**'
+              - 'wallet/**'
+              - 'tests/**'
+              - 'sandbox/**'
+              - 'tools/**'
+              - 'demo/**'
+              - 'docs/profiles/av/**'
+              - 'docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md'
+              - 'docs/profiles/AV-PROFILE-FIXTURES.md'
+              - 'docs/profiles/AV-REPORT-REPRODUCTION.md'
+              - 'docs/profiles/CARRIER-CONFORMANCE-RUNNER.md'
+              - 'docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md'
+              - 'docs/profiles/carrier-versions.json'
+              - 'docs/analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md'
+              - 'docs/decisions/ADR-003-MINIMAL-JWE.md'
+              - 'spec/EE-EUDIW-TS-1.0.md'
+              - 'docs/README.md'
+              - 'Makefile'
+              - 'pyproject.toml'
+              - 'uv.lock'
+              - '.github/workflows/ci.yml'
+            # Every language `make lint` covers, plus the files that configure the linters.
+            lint:
+              - *go_rust
+              - *python
+              - 'app/**'
+              - 'gradle/**'
+              - '*.gradle.kts'
+              - '.pre-commit-config.yaml'
+            # The prover/verifier build, plus the Python that drives it end to end.
+            e2e:
+              - *go_rust
+              - 'issuer/**'
+              - 'wallet/**'
+              - 'tests/run_carrier_conformance.py'
+              - 'tests/run_estonian_acceptance.py'
+              - 'tests/estonian_local_acceptance.py'
+              - 'tests/test_estonian_acceptance.py'
+              - 'tests/e2e.sh'
+              - 'pyproject.toml'
+              - 'uv.lock'
+
   fast:
     name: fast (lint, vet, unit tests)
+    needs: changes
+    if: needs.changes.outputs.go_rust == 'true' || needs.changes.outputs.python == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           path: eudi-wallet-poc
           persist-credentials: false
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: eudi-wallet-poc/verifier/go/go.mod
           # The module has no third-party dependencies and therefore no go.sum,
           # which the built-in cache needs to key on.
           cache: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: 0.13.7
+          enable-cache: false
+      - name: Python deps (uv.lock; every wheel hash verified)
+        run: |
+          uv sync --locked --only-group ci --only-group lint
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: gofmt
         working-directory: eudi-wallet-poc/verifier/go
@@ -91,24 +162,40 @@ jobs:
         # -race (codesec F8-race): these tests assert concurrency behaviour
         # (session store sweeps, reads-limiter bounds), which only the race
         # detector exercises — CGO is on by default when the detector is on.
-        run: go test -race ./oid4vp/... ./internal/... ./circuits/...
+        run: go test -race ./oid4vp/... ./internal/... ./circuits/... ./cmd/circuit-list ./rpregister/...
 
       - name: python compiles
-        run: python3 -m compileall -q issuer verifier wallet tests
+        run: python3 -m compileall -q issuer verifier wallet tests sandbox
+
+      - name: AV profile registry (offline traceability and mutation controls)
+        run: |
+          python3 tests/check_av_registry.py
+          python3 -m unittest discover -s tests -p 'test_av_registry.py'
+
+      - name: AV profile fixtures (read-only bytes, provenance and corruption controls)
+        run: |
+          python3 tools/build_av_fixtures.py --check
+          python3 -m unittest discover -s tests -p 'test_av_fixtures.py'
+
+      - name: AV conformance runner regressions
+        run: python3 -m unittest discover -s tests -p 'test_av_conformance.py'
+
+      - name: TARA contract (offline HTTP provider controls only)
+        run: make test-tara-contract
+
+      - name: Carrier version evidence and runner regressions
+        run: make test-carrier-conformance
+
+      - name: Estonian acceptance report integrity controls
+        run: make test-estonian-acceptance
 
       - name: ruff
-        # F (pyflakes) and E9 catch undefined names, unused imports and syntax
-        # errors — the things that are wrong rather than merely unfashionable.
-        # The wider default set flags this codebase's deliberate compact style
-        # (`if not x: return`, grouped imports) and enforcing it would mean
-        # reformatting working code to satisfy a linter added after the fact.
-        #
-        # The submodule is a separate project with its own lint setup, and a
-        # developer tree has it checked out even where CI leaves it empty.
-        # Keep our linter out of them, or `ruff check .` flags their code.
-        run: |
-          pip install ruff==0.16.6
-          ruff check --isolated --select F,E9 --exclude eudi-arf .
+        # The blocking set is `select` in pyproject.toml: F (pyflakes) and E9 catch undefined names,
+        # unused imports and syntax errors, the things that are wrong rather than merely unfashionable.
+        # The wider families, pyright and the format check of new files are the ratchet in the `lint`
+        # job (tools/lint_ratchet.py); they hold the old code at its baseline instead of reformatting it.
+        # Excludes (the eudi-arf submodule, vendored agent tooling) are `extend-exclude` there too.
+        run: ruff check .
 
       - name: the wallet's half of the transcript pin
         # The Go half of these golden vectors runs in the step above; this is the
@@ -118,17 +205,27 @@ jobs:
         # is pinned from both sides or it is not pinned at all.
         #
         # It loads wallet/present.py, which imports cbor2 and cryptography: the
-        # runner has neither, and without this install the step fails on the
-        # import rather than on the vectors.
-        run: |
-          pip install -r tests/requirements-ci.txt
-          python3 wallet/test_transcript.py
+        # runner has neither, and without the locked install above the step fails
+        # on the import rather than on the vectors.
+        run: python3 wallet/test_transcript.py
 
       - name: the mint's device public key path
         # Nothing else runs --device-public-key: the Go tests read static
         # fixture bytes and no demo or e2e script passes the flag. cbor2 and
         # cryptography are installed by the step above.
         run: python3 issuer/test_mint_device_key.py
+
+      - name: the mint's IACA chain and key custody
+        # PKI plan NEW-S2-1 and NEW-S4-2: the DSC chains to the IACA in
+        # issuers.json; persisted keys are encrypted outside --test-mode.
+        run: python3 issuer/test_mint_custody.py
+
+      - name: the doctor fails when the toolchain or prover is missing
+        run: python3 -m unittest discover -s tests -p 'test_doctor.py'
+
+      - name: the sandbox's age reckoning
+        # EE-POA-027: Europe/Tallinn, and 28 February for a 29 February birthday.
+        run: python3 sandbox/test_age.py
 
       - name: shellcheck
         # Info-level findings are style opinions and their codes drift between
@@ -139,25 +236,35 @@ jobs:
         run: shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh
 
   e2e:
-    name: e2e (prover + verifier, tests/e2e.sh)
+    name: carrier conformance (prover + verifier)
+    needs: changes
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
       EE_BENCH_SKIP: "1"   # the percentile run is a host measurement, not a check; STEP8-RECORD
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           path: eudi-wallet-poc
           persist-credentials: false
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version-file: eudi-wallet-poc/verifier/go/go.mod
           cache: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: 0.13.7
+          enable-cache: false
+      - name: Python deps (uv.lock; every wheel hash verified)
+        run: |
+          uv sync --locked --only-group ci
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: clone longfellow-zk at the pinned revision
         id: longfellow
@@ -170,7 +277,7 @@ jobs:
           echo "rev=$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" >> "$GITHUB_OUTPUT"
 
       - name: cache cargo registry and build artefacts
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: |
             ~/.cargo/registry
@@ -180,7 +287,7 @@ jobs:
           # The pinned longfellow revision (read from the file in this step) plus
           # the lockfile, the manifests and the copied-in example sources are what
           # decide what gets built.
-          key: e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-${{ hashFiles('eudi-wallet-poc/verifier/zkverify-ffi/Cargo.lock', 'eudi-wallet-poc/verifier/zkverify-ffi/Cargo.toml', 'eudi-wallet-poc/verifier/zkverify-ffi/.cargo/config.toml', 'eudi-wallet-poc/zk-age-poc/*.rs') }}
+          key: e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-${{ hashFiles('eudi-wallet-poc/verifier/zkverify-ffi/Cargo.lock', 'eudi-wallet-poc/verifier/zkverify-ffi/Cargo.toml', 'eudi-wallet-poc/verifier/zkverify-ffi/.cargo/config.toml', 'eudi-wallet-poc/zk-age-poc/*.rs', 'eudi-wallet-poc/zk-age-poc/prover.Cargo.lock') }}
           restore-keys: |
             e2e-${{ runner.os }}-lf${{ steps.longfellow.outputs.rev }}-
 
@@ -192,7 +299,7 @@ jobs:
           RUSTFLAGS: -C target-cpu=x86-64-v3
         run: |
           ./scripts/prover-examples-install.sh
-          cargo build --release --examples --features testonly \
+          cargo build --locked --release --examples --features testonly \
             --manifest-path ../longfellow-zk/rust/applications/mdoc_zk/runtime/Cargo.toml
 
       - name: the prover binary exists
@@ -236,9 +343,96 @@ jobs:
         # more informative signal.
         run: go test -race . ./zk/...
 
-      - name: tests/e2e.sh
+      - name: RP deployment profile (bounded real process acceptance)
+        run: make test-rp-kit
+
+      - name: Estonian acceptance (actual local HTTP and encrypted AV proof)
+        run: make estonian-acceptance-linked
+
+      - name: AV report regressions with executed local audit
+        run: |
+          test -f verifier/zkverify-ffi/target/release/libzkverify.a
+          python3 -m unittest discover -s tests -p 'test_av_conformance.py'
+
+      - name: carrier runner (E2E assertions + committed carrier vectors)
         env:
           EE_PROVER: ${{ github.workspace }}/longfellow-zk/rust/target/release/examples/ee_poa_demo
+        run: python3 tests/run_carrier_conformance.py --json carrier-conformance-report.json
+
+      - name: upload carrier conformance report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: carrier-conformance-report
+          path: carrier-conformance-report.json
+          if-no-files-found: error
+          retention-days: 14
+
+  lint:
+    name: lint (pre-commit, every linter in make lint)
+    needs: changes
+    if: needs.changes.outputs.lint == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: eudi-wallet-poc
+          # lint_ratchet.py and spotless ratchetFrom diff against a commit that predates the gate.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: eudi-wallet-poc/verifier/go/go.mod
+          cache: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: 0.13.7
+          enable-cache: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - name: Python deps (ruff, pyright and pre-commit come from uv.lock)
         run: |
-          pip install -r tests/requirements-ci.txt
-          tests/e2e.sh
+          uv sync --locked --only-group ci --only-group lint
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: clone longfellow-zk at the pinned revision (clippy resolves the path dependency)
+        run: ./scripts/bootstrap-longfellow.sh
+      - name: golangci-lint 2.15.0 (checksum from the release asset digest)
+        run: |
+          f=golangci-lint-2.15.0-linux-amd64.tar.gz
+          curl -fsSL -o "$RUNNER_TEMP/$f" "https://github.com/golangci/golangci-lint/releases/download/v2.15.0/$f"
+          echo "9b7fe6a6bf6334b98decf8d86b11415ea7889afdabdd1959fdce23af2a9ebcea  $RUNNER_TEMP/$f" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$f" -C "$RUNNER_TEMP" --strip-components=1 "golangci-lint-2.15.0-linux-amd64/golangci-lint"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: rustfmt and clippy
+        run: rustup component add rustfmt clippy
+      - name: pre-commit run --all-files
+        # Hook revisions are pinned by SHA in .pre-commit-config.yaml. The local hooks call
+        # `make lint-go|lint-rust|lint-kotlin|lint-sh` and tools/lint_ratchet.py.
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  ci-ok:
+    name: ci-ok
+    # The one check to require in branch protection. `if: always()` makes it run when a needed
+    # job failed or was skipped; skipped (no matching paths) counts as success, failure or
+    # cancelled does not.
+    if: always()
+    needs: [changes, fast, lint, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: every needed job succeeded or was skipped
+        working-directory: ${{ github.workspace }}
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) echo "::error::a needed job ended $r"; exit 1 ;; esac
+          done

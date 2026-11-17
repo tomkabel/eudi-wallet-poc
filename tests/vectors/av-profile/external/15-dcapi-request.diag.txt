@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "docRequests": [
+    {
+      "itemsRequest": 24(<<
+        {
+          "docType": "eu.europa.ec.av.1",
+          "nameSpaces": {
+            "eu.europa.ec.av.1": {
+              "age_over_18": false
+            }
+          }
+        }
+      >>)
+    }
+  ]
+}
+

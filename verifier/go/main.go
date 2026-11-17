@@ -42,6 +42,7 @@ import (
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/jose"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/rpregister"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
 
@@ -290,16 +291,6 @@ func handleVerify(reg *circuits.Registry, sem, reads limiter) http.HandlerFunc {
 	}
 }
 
-// requestKeyPublicOf returns nil for a nil key, else the public half — a
-// tiny indirection so the presenter literal stays assignment-shaped.
-func requestKeyPublicOf(k *jose.JWK) *jose.JWK {
-	if k == nil {
-		return nil
-	}
-	pk := k.Public()
-	return &pk
-}
-
 // requireTLSBaseURL refuses an externally-reachable -base-url that is not
 // https: the request_uri and response_uri a wallet acts on come from it, and
 // a cleartext base URL lets a network observer rewrite both (JAR signing
@@ -353,6 +344,9 @@ func checkLongfellowRev(linked, revFile string) error {
 	raw, err := os.ReadFile(revFile)
 	if err != nil {
 		if os.IsNotExist(err) {
+			// Deployed away from the source tree there is nothing to compare
+			// against — but say so, or a wrong cwd silently disables the check.
+			log.Printf("longfellow rev check skipped: %s not found (set -longfellow-rev-file)", revFile)
 			return nil
 		}
 		return fmt.Errorf("read longfellow rev file: %w", err)
@@ -370,13 +364,17 @@ func checkLongfellowRev(linked, revFile string) error {
 
 func main() {
 	addr := flag.String("addr", ":8080", "listen address")
-	registryPath := flag.String("registry", "circuits.json", "accepted circuit registry (EE-ZKP-030)")
+	registryPath := flag.String("registry", "circuits.json", "signed pinned circuit registry (ADR-006)")
+	circuitListKey := flag.String("circuit-list-key", "", "public key JSON for signed circuit list; empty uses embedded release pin")
 	trustPath := flag.String("issuers", "issuers.json", "trusted attestation providers")
+	longfellowRevFile := flag.String("longfellow-rev-file", "../zkverify-ffi/longfellow-rev.txt",
+		"pinned longfellow-zk revision the linked runtime must match; relative to the working directory")
 	trustRootFile := flag.String("trust-root", "",
 		"PEM file holding the EC P-256 key that signs the trust store (B3); "+
 			"empty disables signature verification (development)")
-	ignoreTrustFreshness := flag.Bool("ignore-trust-freshness", false,
-		"skip the signed trust store's not_before/not_after windows (development)")
+	// Registered only in `-tags devflags` builds (devflags_on.go); a release
+	// binary rejects the flag as undefined and exits 2.
+	ignoreTrustFreshness := ignoreTrustFreshnessFlag()
 	baseURL := flag.String("base-url", "http://127.0.0.1:8080", "externally reachable base URL")
 	clientID := flag.String("client-id", "x509_san_dns:verifier.example.ee", "OpenID4VP client identifier")
 	docType := flag.String("doctype", "ee.riik.poa.1", "doctype to request")
@@ -410,6 +408,12 @@ func main() {
 		"demo switch: how many credentials /present/new asks for (>= 2 adds the "+
 			"eu.europa.ec.av.1 fixture doctype as the second credential; W6 e2e)")
 	version := flag.Bool("version", false, "print the linked longfellow-zk revision and exit")
+	registerFile := flag.String("rp-register-file", "", "explicit synthetic register corpus (local mock only)")
+	registerURL := flag.String("rp-register-url", "", "provisional register HTTP contract URL; HTTPS or literal loopback HTTP")
+	registerService := flag.String("rp-register-service", "age-verification", "registered service identity paired with -client-id")
+	registerTTL := flag.Duration("rp-register-cache-ttl", rpregister.DefaultTTL, "maximum positive registration age, strict TTL")
+	registerCapacity := flag.Int("rp-register-cache-capacity", rpregister.DefaultCapacity, "maximum cached positive identities")
+	registerTimeout := flag.Duration("rp-register-timeout", 2*time.Second, "absolute register HTTP lookup timeout")
 	flag.Parse()
 
 	if *version {
@@ -421,10 +425,13 @@ func main() {
 		return
 	}
 
+	if *sessionTTL <= 0 {
+		log.Fatalf("-session-ttl must be positive, got %s", *sessionTTL)
+	}
 	if *maxVerify < 1 {
 		log.Fatalf("-max-concurrent-verify must be at least 1, got %d", *maxVerify)
 	}
-	if err := checkLongfellowRev(longfellowRev, "../zkverify-ffi/longfellow-rev.txt"); err != nil {
+	if err := checkLongfellowRev(longfellowRev, *longfellowRevFile); err != nil {
 		log.Fatalf("%v", err)
 	}
 	if *unsafeDevAPI {
@@ -490,6 +497,13 @@ func main() {
 		if err != nil {
 			log.Fatalf("request key %s: %v", *requestKeyFile, err)
 		}
+		// The kid is fixed once here, on the signing key itself, so the JWS
+		// header kid and the served jwk's kid always agree and no request
+		// handler ever writes to shared key state.
+		if requestKey.Kid == "" {
+			pk := requestKey.Public()
+			requestKey.Kid = jose.ThumbprintB64(&pk)
+		}
 		rkPub := requestKey.Public()
 		log.Printf("request key: loaded %s (thumbprint %s); request objects are signed as JAR",
 			*requestKeyFile, jose.ThumbprintB64(&rkPub))
@@ -507,10 +521,19 @@ func main() {
 	reads := make(limiter, 4**maxVerify)
 	log.Printf("verifying at most %d proofs concurrently", *maxVerify)
 
-	reg, err := circuits.Load(*registryPath)
+	circuitKey := circuits.PinnedKey
+	if *circuitListKey != "" {
+		var err error
+		circuitKey, err = os.ReadFile(*circuitListKey)
+		if err != nil {
+			log.Fatalf("circuit list key: %v", err)
+		}
+	}
+	reg, err := circuits.LoadSigned(*registryPath, circuitKey, longfellowRev, time.Now())
 	if err != nil {
 		log.Fatalf("circuit registry: %v", err)
 	}
+	log.Printf("circuit list: pinned-local list_version=%s (signature verified; no registry fetch)", reg.ListVersion())
 	// Plan §5.3 (startup): hash every registry entry through the FFI and refuse
 	// to start on mismatch — a registry file whose hash disagrees with the
 	// binary would silently offer circuits the runtime cannot prove.
@@ -536,7 +559,7 @@ func main() {
 			log.Fatalf("trust root %s: %v", *trustRootFile, err)
 		}
 		rootPub := root.Public()
-		trust, err = oid4vp.LoadSignedTrustStore(*trustPath, &rootPub, nil, time.Now(), *ignoreTrustFreshness)
+		trust, err = oid4vp.LoadSignedTrustStore(*trustPath, &rootPub, nil, time.Now, *ignoreTrustFreshness)
 		if err != nil {
 			log.Fatalf("trust store: %v", err)
 		}
@@ -553,25 +576,50 @@ func main() {
 		log.Printf("trusting issuer %q for doctype %s", is.Name, is.DocType)
 	}
 
+	if *registerTimeout <= 0 {
+		log.Fatal("-rp-register-timeout must be positive")
+	}
+	var register rpregister.RPRegister = rpregister.Unconfigured{}
+	if *registerFile != "" && *registerURL != "" {
+		log.Fatal("choose one RP-register implementation")
+	}
+	if *registerFile != "" {
+		register, err = rpregister.LoadFile(*registerFile)
+		if err != nil {
+			log.Fatalf("RP-register mock: %v", err)
+		}
+		log.Print("rp-register provenance=explicit-synthetic-file-mock")
+	}
+	if *registerURL != "" {
+		register, err = rpregister.NewHTTP(*registerURL, *registerTimeout)
+		if err != nil {
+			log.Fatalf("RP-register HTTP: %v", err)
+		}
+	}
+	register, err = rpregister.NewCache(register, *registerTTL, *registerCapacity, log.Printf)
+	if err != nil {
+		log.Fatalf("RP-register cache: %v", err)
+	}
+	log.Printf("rp-register cache-ttl=%s capacity=%d timeout=%s", *registerTTL, *registerCapacity, *registerTimeout)
 	store := oid4vp.NewStore(*sessionTTL)
 	defer store.Stop() // end the janitor on ANY exit path (log.Fatalf too)
 	p := &presenter{
-		store:            store,
-		trust:            trust,
-		registry:         reg,
-		clientID:         *clientID,
-		baseURL:          strings.TrimSuffix(*baseURL, "/"),
-		docType:          *docType,
-		nsID:             *docType,
-		carrier:          carrierOverride,
-		sem:              sem,
-		reads:            reads,
-		responseKey:      responseKey,
-		allowPlain:       *allowUnencrypted,
-		requestKey:       requestKey,
-		requestKeyPublic: requestKeyPublicOf(requestKey),
-		dcapiOrigin:      *dcapiOrigin,
-		offered:          reg.Accepted(),
+		register: register, registerService: *registerService,
+		store:       store,
+		trust:       trust,
+		registry:    reg,
+		clientID:    *clientID,
+		baseURL:     strings.TrimSuffix(*baseURL, "/"),
+		docType:     *docType,
+		nsID:        *docType,
+		carrier:     carrierOverride,
+		sem:         sem,
+		reads:       reads,
+		responseKey: responseKey,
+		allowPlain:  *allowUnencrypted,
+		requestKey:  requestKey,
+		dcapiOrigin: *dcapiOrigin,
+		offered:     reg.Accepted(),
 
 		maxCredentials: *maxCreds,
 
@@ -696,8 +744,10 @@ func main() {
 		} else {
 			log.Printf("zkverify: drained cleanly")
 		}
-		// ListenAndServe returns ErrServerClosed once Shutdown completes; the
-		// goroutine's send lands in the buffered channel and is dropped.
-		<-serveErr
+		// ListenAndServe returns ErrServerClosed once Shutdown completes; anything
+		// else is worth a line.
+		if err := <-serveErr; err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("zkverify: server stopped with: %v", err)
+		}
 	}
 }

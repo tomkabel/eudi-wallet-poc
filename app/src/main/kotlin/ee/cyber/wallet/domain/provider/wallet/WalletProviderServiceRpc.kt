@@ -13,7 +13,7 @@ import ee.cyber.wallet.provider.registerWalletInstanceRequest
 import ee.cyber.wallet.provider.signRequest
 import ee.cyber.wallet.util.sha256
 import ee.cyber.wallet.util.toBase64String
-import ee.cyber.wallet.util.useTransportSecurityForBuild
+import ee.cyber.wallet.util.useTransportFor
 import io.grpc.Channel
 import io.grpc.ManagedChannel
 import io.grpc.Metadata
@@ -42,11 +42,7 @@ class WalletProviderServiceRpc(
             val uri = URI.create(rpcUrl)
             OkHttpChannelBuilder.forAddress(uri.host, uri.port).apply {
                 logger.info("connecting to $uri")
-                if (uri.scheme == "https") {
-                    useTransportSecurityForBuild()
-                } else {
-                    usePlaintext()
-                }
+                useTransportFor(uri)
                 executor(dispatcher.asExecutor())
             }.build()
         }

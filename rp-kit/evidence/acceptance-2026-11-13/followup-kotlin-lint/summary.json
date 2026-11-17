@@ -1,0 +1,298 @@
+{
+  "schema": "ee-estonian-followup-verification/1",
+  "generated_at": "2026-11-13T06:14:51.940847+00:00",
+  "base_revision": "f1c7e1263844109edb39184bc1d5b7bd213b5e48",
+  "dirty_snapshot": true,
+  "changes": "Structural Kotlin lint repair without baseline changes or new suppressions. Existing actual-time runtime expiry behavior preserved.",
+  "commands": [
+    {
+      "command": "make lint-kotlin",
+      "returncode": 0
+    },
+    {
+      "command": "JAVA_HOME=/usr/lib/jvm/java-17-openjdk ./gradlew :app:testLocal_mocksUnitTest --console=plain",
+      "returncode": 0
+    }
+  ],
+  "suite_count": 34,
+  "totals": {
+    "tests": 236,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0
+  },
+  "suites": [
+    {
+      "suite": "ee.cyber.wallet.data.datastore.UserPreferencesDataSourceTest",
+      "tests": 2,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "e329931c0ef64fc42b76ad3e9843784d9a1a419a74bec2f4561fbd984bc36e71"
+    },
+    {
+      "suite": "ee.cyber.wallet.di.ClientIdPrefixPolicyTest",
+      "tests": 2,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "f7564de2a6ac232bf57335cda270c6b5fa50aba9e469a9771ea5c3111582cc9e"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.credentials.AvVciInvocationTest",
+      "tests": 10,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "7a4cb9813c97fb8210e53496830cb9ecf11e1a6936ce9b2324325186d7236579"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.credentials.RegistryDocTypeTest",
+      "tests": 2,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "60e015ae20eb74ab55cc9165bd3b847200eadbea6bb982be3ecac8925ec1dc73"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.documents.CredentialToDocumentMapperMdocVerificationTest",
+      "tests": 4,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "44ee53e7d6852e032f97518a789b579898af712efb12465297bfe177bb836732"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.measurement.ZkProofBenchmarkTest",
+      "tests": 21,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "5be4e3f12163d39675717286b223c378e1bdcc13dce1367c08b4998c5f463fb9"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.AgePredicatePolicyTest",
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "5b66855c00899fab1175364be6093330d8889ce0c86467737cb6c01fe7a418ab"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.DcApiRequestDispatchTest",
+      "tests": 7,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "8004bb276f91d388c7995ebb7ecb7380417460bdd8147c6609ccb6d53fd2b254"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.EePoaConsumptionTest",
+      "tests": 8,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "adbd7ca005a38e37d427b935e89e6ef5569b73451902bc323d21066de1ed0d82"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.EstonianAcceptanceDispatchTest",
+      "tests": 8,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "8cee82f8b8c5d85dc3195eb7466f52f086ad897f48060c5f17856893f86a86ce"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.HaipResponsePolicyTest",
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "1dee2bc36fb994df33a43e45e938c580b56c2d31d6719fbeb87079743e24de84"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.HolderObligationsTest",
+      "tests": 27,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "37a07d3d261e1875d02585f793bc792882ac506b22c79cc131b414d6bcae2b1d"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest",
+      "tests": 3,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "29526813127ed6400c6ace1d4fc0e01c0fe019b8d1d225fc9dc8bb03b6c066b2"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.presentation.ZkPerDocRequestResolutionTest",
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "a209747a91e9638a870712129e418413cdf4cfb1d841decf92d367e28cb06acc"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.provider.ageverification.AgeReckoningTest",
+      "tests": 8,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "c704d08701d90ef1cd89d484da9c4768a35f05c6f1406158259505cbb3ad865d"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.provider.ageverification.EePoaIssuanceTest",
+      "tests": 3,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "4b428c0fcdc10fec1f30c4ede60eb69c6746836c18b01fb4cd64288d75599e81"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.provider.wallet.AvsuaIssuanceTest",
+      "tests": 27,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "a13a5ac41ceb4254fa51707f8eec0b11dc3d279670799d101ae9746a1a3e5d7c"
+    },
+    {
+      "suite": "ee.cyber.wallet.domain.provider.wallet.WalletProviderServiceMockAttestationTest",
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "d1861a9604ca651c9357bc42e8f5e16628e4420be9192de238e0e7c7a74989de"
+    },
+    {
+      "suite": "ee.cyber.wallet.sdjwt.EudiSdJwtTest",
+      "tests": 1,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "0dcdde51510fb41312573d982b212282089a4110067c57c2b51dd12e0398b25b"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.AesGcmStreamCodecTest",
+      "tests": 9,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "a00a90b95b2b5ab73d330802f1d51834f9e350db15faa2323da26af800d66dd4"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.AlgorithmPolicyTest",
+      "tests": 6,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "93c68b49b0257cfdab8c506cb79b0fb311ef1463aa12d441e33963b059498c58"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.AttestationChallengeTest",
+      "tests": 2,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "8f25927b0ed00b4cecf4dac64ec00b01e5b3b3b03f9996db3b025618d8799dcb"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.CertificateChainValidatorTest",
+      "tests": 15,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "95d15a4e51ddf42e80d9156cb7e8983f6fb0e7b248fcb10611936c2b19e9bbf7"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.CoseSigStructureTest",
+      "tests": 3,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "8d1b3d3db65dcd3a7f3eb7de2a75336973efa6435d59e0c66a4e685d48d69268"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.LotlStatusFilterTest",
+      "tests": 3,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "ecc91d16e5254ae2827ae708e8954680a4dc2ccc60a5e297932be23a76d8337e"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.PinVerifierTest",
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "0d0977e7b9ffce7f7be3d8b4cf0b2db78ec1372c1aa1a53d174003127d06aa7c"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.SecureAreaKeyCleanupTest",
+      "tests": 7,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "78a7975a8855360ce39aa44657d78eae75c30829271edb2113e0880563c4247a"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.SecureAreaSelectionTest",
+      "tests": 2,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "bf85949bba175d6ceac0f6a1ee230789a6495a881c01f63637f2bdc7da0e44a3"
+    },
+    {
+      "suite": "ee.cyber.wallet.security.SharedTrustVectorsTest",
+      "tests": 1,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "a83583d3cbb381757277791b61dfeb52531db50002f92f8a9363dff244878db4"
+    },
+    {
+      "suite": "ee.cyber.wallet.ui.navigation.app.WalletInvocationViewModelTest",
+      "tests": 6,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "1107b019f624514fa816d3c0af16a37b8b1ae73cbbdbb08879eca1498d459621"
+    },
+    {
+      "suite": "ee.cyber.wallet.ui.screens.presentation.ScannerChannelTest",
+      "tests": 2,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "b0ccbdb1204db3ffb7d7cf05af69398e95be533fc8634ded50ad206d2e6165a5"
+    },
+    {
+      "suite": "ee.cyber.wallet.util.DeviceRequestParserReaderAuthTest",
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "3ce7a5d7c82ba7a9bca7b9aa4d8996d438f355d5fc079897134580a9bece90b9"
+    },
+    {
+      "suite": "ee.cyber.wallet.util.MsoMdocZkParsingTest",
+      "tests": 12,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "975d4c266d8fe916db06c47bae7cc13e2ef05687745ddc5eef7b2db4b8e30a9e"
+    },
+    {
+      "suite": "ee.cyber.wallet.util.ReaderAuthSubjectTest",
+      "tests": 5,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "sha256": "e68b302a217a2d401596def37710a0d66bd6b7893565e861d3d1f0363258605e"
+    }
+  ]
+}

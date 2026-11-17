@@ -1,6 +1,5 @@
 package ee.cyber.wallet
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -15,11 +14,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -28,6 +25,7 @@ import ee.cyber.wallet.MainActivityUiState.Loading.isSuccess
 import ee.cyber.wallet.ui.model.DarkThemeConfig
 import ee.cyber.wallet.ui.navigation.app.WalletApp
 import ee.cyber.wallet.ui.navigation.app.WalletAppViewModel
+import ee.cyber.wallet.ui.navigation.app.WalletInvocationViewModel
 import ee.cyber.wallet.ui.theme.WalletTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -39,14 +37,17 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModels<MainActivityViewModel>()
 
+    private val invocations by viewModels<WalletInvocationViewModel>()
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.dataString?.let(invocations::receive)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-
-        // D14 (mobile F2, stage 2): the biometric prompt host for presentation-time SecureArea
-        // unlocks — only a RESUMED activity may show the platform prompt.
-        ee.cyber.wallet.ui.prompt.PromptDialogHost.activity = this
 
         var uiState: MainActivityUiState by mutableStateOf(MainActivityUiState.Loading)
 
@@ -61,12 +62,11 @@ class MainActivity : AppCompatActivity() {
 
         splashScreen.setKeepOnScreenCondition { !uiState.isSuccess() }
 
+        if (savedInstanceState == null) intent.dataString?.let(invocations::receive)
+        // NavHost must not auto-handle the Activity intent before validation.
+        intent = Intent()
+
         setContent {
-            val newIntent by onNewIntent()
-            if (newIntent != null) {
-                // reset intent dues to issues with Nav
-                intent = Intent()
-            }
             val darkTheme = shouldUseDarkTheme(uiState)
             WalletTheme(useDarkTheme = darkTheme) {
                 val appViewModel by viewModels<WalletAppViewModel>()
@@ -76,31 +76,10 @@ class MainActivity : AppCompatActivity() {
                         .fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WalletApp(viewModel = appViewModel, newIntent)
+                    WalletApp(viewModel = appViewModel, invocations = invocations)
                 }
             }
         }
-    }
-
-    @Composable
-    @SuppressLint("ProduceStateDoesNotAssignValue") // TODO: fix this
-    private fun onNewIntent() = produceState(initialValue = intent) {
-        val consumer = Consumer<Intent> {
-            this.value = it
-        }
-        addOnNewIntentListener(consumer)
-        awaitDispose {
-            removeOnNewIntentListener(consumer)
-        }
-    }
-
-    override fun onDestroy() {
-        // D14: clear the prompt host so a destroyed activity can never be asked to show a
-        // platform dialog (the unlock path then fails closed with PromptUiNotAvailableException).
-        if (ee.cyber.wallet.ui.prompt.PromptDialogHost.activity === this) {
-            ee.cyber.wallet.ui.prompt.PromptDialogHost.activity = null
-        }
-        super.onDestroy()
     }
 }
 

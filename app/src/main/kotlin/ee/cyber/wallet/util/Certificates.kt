@@ -5,6 +5,7 @@ import androidx.annotation.RawRes
 import ee.cyber.wallet.BuildConfig
 import io.grpc.okhttp.OkHttpChannelBuilder
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
@@ -30,6 +31,17 @@ private class TrustAllX509TrustManager : X509TrustManager {
  * certificate so the self-signed dev backends work; every other build uses
  * the platform trust store, so a release can never ship MITM-able.
  */
+/**
+ * TLS for https; plaintext only for a debug build talking to a loopback host (the `local`
+ * build types, via adb reverse). Anything else — e.g. a release build whose RPC URL was
+ * misconfigured to http — is refused rather than sending wallet credentials in the clear.
+ */
+internal fun OkHttpChannelBuilder.useTransportFor(uri: URI): OkHttpChannelBuilder = when {
+    uri.scheme == "https" -> useTransportSecurityForBuild()
+    BuildConfig.DEBUG && uri.host in setOf("localhost", "127.0.0.1", "::1") -> usePlaintext()
+    else -> throw IllegalStateException("Refusing plaintext gRPC to $uri: https required")
+}
+
 internal fun OkHttpChannelBuilder.useTransportSecurityForBuild(): OkHttpChannelBuilder {
     useTransportSecurity()
     if (BuildConfig.DEBUG) {

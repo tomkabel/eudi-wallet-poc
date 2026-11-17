@@ -7,17 +7,20 @@ import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.data.repository.DocumentRepository
+import ee.cyber.wallet.di.ApplicationScope
 import ee.cyber.wallet.domain.AppError
+import ee.cyber.wallet.domain.credentials.IssuanceRefused
 import ee.cyber.wallet.domain.credentials.CredentialType
 import ee.cyber.wallet.domain.credentials.DigitalCredentialsRegistrar
 import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
 import ee.cyber.wallet.domain.documents.CredentialDocument
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
+import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.domain.provider.IssuePidUseCase
-import ee.cyber.wallet.domain.provider.ageverification.AgeVerificationProviderServiceMock
+import ee.cyber.wallet.domain.provider.MockIssuance
 import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
-import ee.cyber.wallet.domain.provider.mdl.MdlProviderServiceMock
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
 import kotlinx.coroutines.CancellationException
@@ -25,6 +28,7 @@ import ee.cyber.wallet.ui.mvi.ViewSideEffect
 import ee.cyber.wallet.ui.mvi.ViewState
 import io.ktor.http.Url
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -54,12 +58,17 @@ class IssuanceViewModel @Inject constructor(
     private val documentRepository: DocumentRepository,
     private val openId4VCIManager: OpenId4VCIManager,
     private val issuePidUseCase: IssuePidUseCase,
-    private val mdlProviderServiceMock: MdlProviderServiceMock,
-    private val ageVerificationProviderServiceMock: AgeVerificationProviderServiceMock,
+    private val mockIssuance: MockIssuance,
     private val eePoaBatchIssuer: BatchAgeIssuer,
+    private val eePoaConsumption: EePoaConsumption,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
-    private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar
+    private val digitalCredentialsRegistrar: DigitalCredentialsRegistrar,
+    @ApplicationScope private val applicationScope: CoroutineScope
 ) : MviViewModel<Event, UiState, Effect>() {
+
+    // EE-POA-011b: the key of an mDL fetched over OpenID4VCI that the user leaves without
+    // accepting. Released when the screen goes away; cleared on accept.
+    private var unacceptedKeyId: String? = null
 
     private val logger = LoggerFactory.getLogger("IssuanceViewModel")
 
@@ -131,7 +140,7 @@ class IssuanceViewModel @Inject constructor(
     }
 
     private suspend fun issueMockMdl() {
-        val mockMdl = mdlProviderServiceMock.issueMdl()
+        val mockMdl = mockIssuance.issueMdl()
         val attestation = Attestation(
             id = UUID.randomUUID().toString(),
             credential = mockMdl.credential,
@@ -146,7 +155,7 @@ class IssuanceViewModel @Inject constructor(
         // EE-POA-003: one transaction mints the EE-PoA batch and the AV attestation together;
         // on-device the batch keys come from SecureAreaKeyManager.batchCreateKey via the DI-wired
         // issuer below, so both doctypes are stored (and consumed) through one flow.
-        val attestations = ageVerificationProviderServiceMock.issueEePoaBatch(eePoaBatchIssuer)
+        val attestations = mockIssuance.issueAgeVerification(eePoaBatchIssuer)
         val documents = attestations.mapNotNull { credentialToDocumentMapper.convert(it) }
         setState { copy(documents = documents) }
     }
@@ -159,11 +168,15 @@ class IssuanceViewModel @Inject constructor(
             // issuance-configuration error, not a crash.
             val deepLink = requireNotNull(uri) { "Issuance deep link carried no data" }
             val credentialDocument = openId4VCIManager.getCredential(Url(deepLink))
+            unacceptedKeyId = credentialDocument.attestation.keyAttestation.keyId
             setState { copy(documents = listOf(credentialDocument)) }
         }.onFailure {
             if (it is CancellationException) throw it
             logger.error("failed: $it", it)
-            sendEffect { Effect.ShowError(AppError.ISSUANCE_ERROR) }
+            // A deliberate refusal (unbound credential, deferred issuance) says why; anything
+            // else stays the generic issuance error.
+            val error = (it as? IssuanceRefused)?.appError ?: AppError.ISSUANCE_ERROR
+            sendEffect { Effect.ShowError(error) }
         }
         setLoading(false)
     }
@@ -173,9 +186,15 @@ class IssuanceViewModel @Inject constructor(
     override suspend fun handleEvents(event: Event): Unit = run {
         when (event) {
             Event.AcceptDocument -> {
+                // Re-issuance replaces the batch: the old age attestations and their keys go
+                // before the new ones are stored, so the wallet never holds two batches.
+                state.value.documents.map { it.attestation.type }.distinct()
+                    .filter { AgePredicatePolicy.isAgeAttestation(it) }
+                    .forEach { eePoaConsumption.discardBatch(it) }
                 state.value.documents.forEach {
                     documentRepository.addDocument(it)
                 }
+                unacceptedKeyId = null
                 digitalCredentialsRegistrar.registerCredentials()
                 sendEffect { Effect.Complete }
             }
@@ -228,4 +247,10 @@ class IssuanceViewModel @Inject constructor(
     }
 
     private fun setLoading(loading: Boolean) = setState { copy(isLoading = loading) }
+
+    override fun onCleared() {
+        // The view model scope is gone by now; the release must outlive it.
+        unacceptedKeyId?.let { keyId -> applicationScope.launch { openId4VCIManager.releaseUnacceptedKey(keyId) } }
+        super.onCleared()
+    }
 }

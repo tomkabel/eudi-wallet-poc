@@ -1,0 +1,2 @@
+av://?credential_offer=%7B%22credential_issuer%22%3A%22https%3A%2F%2Fcredential-issuer.example.com%22%2C%22credential_configuration_ids%22%3A%5B%22proof_of_age%22%5D%2C%22grants%22%3A%7B%22authorization_code%22%3A%7B%22issuer_state%22%3A%22Yp3vX9a7QTmc12bZfL8eRA5ow0UNjhKG%22%7D%7D%7D
+

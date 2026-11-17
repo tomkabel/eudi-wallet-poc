@@ -22,17 +22,20 @@ checkout; `verifier/` is `zkverify`, a Go HTTP server over a Rust staticlib in
 
 ## Prerequisites
 
-- **Python 3.12** — the version CI pins in both jobs. The scripts need `cbor2` and
-  `cryptography` (`pip install cbor2 cryptography`); the lint check uses
-  `pip install ruff==0.16.6`. There is **no requirements file and no Makefile in this
-  repository** — those plain installs in `.github/workflows/ci.yml` are the whole story.
+- **Python 3.12** — the version CI pins in both jobs. Install the scripts' dependencies
+  with `make py-deps` (`uv sync --locked --only-group ci` from `pyproject.toml` and
+  `uv.lock`, every wheel hash-checked), the exact versions CI uses: the transcript
+  vectors are golden, and a different `cbor2` can shift the bytes they pin. To change a
+  pin, edit the `ci` group in `pyproject.toml`, run `uv lock`, then `make test-py`.
+  The lint check uses `pip install ruff==0.16.6`.
 - **Go at the version in [`../verifier/go/go.mod`](../verifier/go/go.mod)** (currently
   `go 1.26`); CI reads it from that file. The module has no third-party dependencies and
   no `go.sum`. Its `zk` package is cgo linking a Rust staticlib, so the build also needs a C
   toolchain.
-- **A Rust toolchain** for the prover and the FFI. Nothing here pins one, and CI installs
-  none of its own — it uses what the `ubuntu-latest` image carries. `zk-age-poc/REPRODUCE.md`
-  records rustc/cargo 1.97.0 for its measured run; a record, not a requirement.
+- **A Rust toolchain** for the prover and the FFI. CI installs none of its own — it uses what
+  the `ubuntu-latest` image carries — so `mise.toml` pins the one the local and devcontainer builds
+  use (1.95.0, the minimum `make doctor` accepts). `zk-age-poc/REPRODUCE.md` records rustc/cargo
+  1.97.0 for its measured run; a record, not a requirement.
 - **Tools**: `jq` and `ip` (iproute2) for `demo/demo.sh`; `curl` for `tests/e2e.sh`;
   `shellcheck` for the checks below.
 - **Submodule**: `git submodule update --init` fetches `eudi-arf`, the ARF the specification
@@ -50,6 +53,39 @@ dependency has no lockfile entry, so that file is the single source of truth.
 asserts what it got, and builds the prover, the staticlib and the verifier; CI's e2e job
 runs the same script. Either way the directory name must be `longfellow-zk`.
 
+This is a pinned sibling checkout, not a git submodule: a submodule lives inside the
+repository, which would move the crate every `../../../longfellow-zk` path dependency and the
+`EE_PROVER` defaults in the Makefile, the demo scripts and CI would then have to follow. After
+building, `make deps` writes `ee_poa_demo.built` next to the prover: the binary's sha256 and the
+revision it was built from. `make doctor` re-checks both, so a prover that was rebuilt by hand,
+replaced or built from another revision is reported. The sha256 is not committed: Rust builds are
+not byte-reproducible across toolchains, so it proves "unchanged since `make deps`", not "equal to
+CI's binary".
+
+Longfellow gitignores its own `Cargo.lock`, so a plain clone resolves crates.io at build time. The
+prover's dependencies are therefore pinned here: `zk-age-poc/prover.Cargo.lock` is copied over the
+sibling's `rust/Cargo.lock` by `scripts/prover-examples-install.sh`, and the prover builds run with
+`--locked` (Makefile and `ci.yml`). Regenerate it by deleting the sibling's `Cargo.lock`, building, and
+copying the result back, after the golden tests pass.
+
+## `make doctor` and the devcontainer
+
+`make doctor` (`tools/doctor.py`) prints one line per failed check and exits 1 on any: Go
+(from `verifier/go/go.mod`), Python, Rust and ruff minimums (from `mise.toml`), shellcheck, the pinned
+Python packages of `uv.lock` (and that the lock matches `pyproject.toml`), `RUSTFLAGS` and the `target-cpu=x86-64-v3` pin, JDK 17,
+the Android SDK, the prover and the verifier with `test -x`, `libzkverify.a`, the prover checksum record,
+and the sibling's revision and cleanliness. `DOCTOR_SKIP="android java"` skips groups
+(`toolchain java android prover longfellow`); `DOCTOR_VERBOSE=1` also prints passing checks.
+
+`.devcontainer/` builds an image from `ubuntu:24.04` pinned by digest, with the tools of `mise.toml`
+and JDK 17 from apt (no Android SDK; the container sets `DOCTOR_SKIP=android`). Inside it,
+`make bootstrap` installs the pinned Python packages, runs `make deps` and then `make doctor`; it refuses
+to run outside a container unless `BOOTSTRAP_HOST=1`. Then `make check`.
+
+CI runs path-scoped: `changes` jobs (`dorny/paths-filter`) decide which jobs run. Require `ci-ok`
+(ci.yml) and `app-ok` (app.yml) in branch protection, not the individual jobs: both treat a skipped job
+as success, so a PR that touches no matching path is not left waiting.
+
 ## Build both
 
 `make deps` runs the sequence below (scripts/bootstrap-longfellow.sh +
@@ -60,8 +96,10 @@ expanded form, for reading:
 # prover — the zk-age-poc examples, built inside the Longfellow tree
 mkdir -p ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples
 cp zk-age-poc/*.rs ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples/
+# Longfellow gitignores its Cargo.lock; this repo's copy is what the prover is verified with
+cp zk-age-poc/prover.Cargo.lock ../longfellow-zk/rust/Cargo.lock
 # RUSTFLAGS: see Troubleshooting for why this baseline
-(cd ../longfellow-zk/rust/applications/mdoc_zk/runtime && RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --release --examples --features testonly)
+(cd ../longfellow-zk/rust/applications/mdoc_zk/runtime && RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --locked --release --examples --features testonly)
 test -x ../longfellow-zk/rust/target/release/examples/ee_poa_demo
 
 # verifier — the Rust staticlib, then the server binary
@@ -76,29 +114,24 @@ own `.cargo/config.toml`, so the verifier build needs no `RUSTFLAGS`.
 ## Running the checks locally
 
 `.github/workflows/ci.yml` is the definition of green. The `fast` job needs no Rust
-toolchain and runs in seconds:
+toolchain and runs in seconds; `make check` runs the same set (`make lint`,
+`make test-go-fast`, `make test-py`):
 
 ```bash
-(cd verifier/go && test -z "$(gofmt -l .)" && go vet ./... && go test ./oid4vp/... ./internal/... ./circuits/...)
-python3 -m compileall -q issuer verifier wallet tests
-pip install ruff==0.16.6 cbor2 cryptography   # ruff pinned as in ci.yml
-ruff check --isolated --select F,E9 --exclude eudi-arf .
-python3 wallet/test_transcript.py             # the Python half of the transcript pin
-python3 issuer/test_mint_device_key.py
-shellcheck --severity=warning scripts/*.sh tests/*.sh
+pip install ruff==0.16.6 && make py-deps   # pinned as in ci.yml; py-deps builds .venv from uv.lock
+make check
 ```
 
-`make lint` runs the same set.
-
 The `e2e` job runs "Build both" above, then the packages that link the staticlib and the
-end-to-end script:
+end-to-end script — `make test-go-zk` and `make e2e`, or by hand:
 
 ```bash
-(cd verifier/go && EE_BENCH_SKIP=1 go test . ./zk/...)
+(cd verifier/go && EE_BENCH_SKIP=1 go test -race . ./zk/...)
 EE_PROVER="$PWD/../longfellow-zk/rust/target/release/examples/ee_poa_demo" tests/e2e.sh
 ```
 
-`EE_BENCH_SKIP=1` skips the step 8 percentile run, a host measurement rather than a check.
+`EE_BENCH_SKIP=1` skips the step 8 percentile run, a host measurement rather than a check;
+`make test-go-zk` sets it unless you pass `EE_BENCH_SKIP=` to run the measurement.
 `shellcheck` globs `tests/*.sh` and CI invokes `tests/e2e.sh` by path, so keep both where
 they are.
 
@@ -149,14 +182,15 @@ This is the script the e2e CI job runs.
 
 ## What "deployment" means here
 
-Bluntly: nothing in this repository is deployed, and nothing here is ready to be. No
-deployment directory, no Dockerfile, no compose file, no Kubernetes manifest and no service
-unit exists for this stack; the one Dockerfile in the working tree,
-`eudi-arf/docker/Dockerfile`, belongs to the upstream ARF document repository inside the
-submodule, where it builds the ARF's PDFs.
-
-What exists is what you start by hand: three CLIs and one HTTP server on a local or LAN
-address. CI builds and tests; it does not package, publish or deploy anything.
+The [RP service profile](../rp-kit/README.md) provides reproducible local startup
+and systemd deployment of the existing verifier, persisted P-256 response keys,
+encrypted response defaults, status polling, drain and manual rotation. Run
+`make test-rp-kit` after `make py-deps` and `make deps` for bounded local process
+acceptance. The operator supplies HTTPS reverse proxy, DNS, certificates and trust
+inputs; CI does not publish or deploy a public service. This deployable PoC profile
+does not imply production certification. Sessions and expiry metadata remain in
+memory: after TTL a 410 names the id for at most one further TTL, subject to a
+10,000-outcome FIFO cap and restart; a later 404 names the requested id too.
 
 The intended production model — a wallet instance with a WSCD on the user's device, a
 wallet-provider backend, an issuance plane over X-tee, a trust plane — is drawn in the

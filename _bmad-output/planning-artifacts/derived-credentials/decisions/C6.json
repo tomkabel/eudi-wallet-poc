@@ -1,0 +1,4 @@
+{"question":"where to write the proposal: skill default_output_file vs orchestrator's folder","choices":[
+ {"label":"Skill default: planning-artifacts/sprint-change-proposal-2026-11-06.md","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":60}},
+ {"label":"Orchestrator folder: derived-credentials/sprint-change-proposal.md","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+ {"label":"Both: write the default and a pointer in derived-credentials","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":20}}]}

@@ -90,6 +90,13 @@ class CredentialToDocumentMapperMdocVerificationTest {
                 org.bouncycastle.asn1.x509.Extension.keyUsage, true,
                 org.bouncycastle.asn1.x509.KeyUsage(org.bouncycastle.asn1.x509.KeyUsage.digitalSignature)
             )
+            // ISO/IEC 18013-5 id-mdl-kp-mdlDS: the DS profile (PKI plan NEW-S2-1) requires it.
+            addExtension(
+                org.bouncycastle.asn1.x509.Extension.extendedKeyUsage, true,
+                org.bouncycastle.asn1.x509.ExtendedKeyUsage(
+                    org.bouncycastle.asn1.x509.KeyPurposeId.getInstance(org.bouncycastle.asn1.ASN1ObjectIdentifier("1.0.18013.5.1.2"))
+                )
+            )
         }.build(JcaContentSignerBuilder("SHA512withECDSA").build(rootKey.private))
             .let { JcaX509CertificateConverter().getCertificate(it) }
         return listOf(leaf, root)

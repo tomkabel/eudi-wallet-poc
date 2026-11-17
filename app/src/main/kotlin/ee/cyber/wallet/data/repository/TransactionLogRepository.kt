@@ -5,6 +5,9 @@ import ee.cyber.wallet.data.database.dao.LogRecordDao
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.presentation.PresentationTier
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.serialization.json.JsonObject
 
 class TransactionLogRepository(
@@ -13,7 +16,9 @@ class TransactionLogRepository(
 
     val transactionLogs = logRecordDao.getAll()
 
-    fun getTransactionLog(id: String) = logRecordDao.getById(id.toLong())
+    /** The id arrives from navigation; a malformed or unknown one yields nothing, not a crash. */
+    fun getTransactionLog(id: String): Flow<LogEntryEntity> =
+        id.toLongOrNull()?.let { logRecordDao.getById(it).filterNotNull() } ?: emptyFlow()
 
     suspend fun addTransactionLog(
         party: String,

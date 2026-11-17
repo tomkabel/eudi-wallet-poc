@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Forge report: verify PID, then issue a derived attestation</title>
+<style>
+body{font:16px/1.5 system-ui,sans-serif;max-width:52rem;margin:2rem auto;padding:0 1rem;color:#1d1d1f;background:#fff}
+h1{font-size:1.5rem;margin-bottom:.2rem}h2{font-size:1.1rem;margin-top:1.8rem;border-bottom:1px solid #ccc}
+.top{display:flex;gap:1.5rem;align-items:center}.muted{color:#555}
+ul{padding-left:1.2rem}li{margin:.25rem 0}code{background:#eee;padding:0 .2rem}
+.p{display:inline-block;border:1px solid #999;border-radius:1rem;padding:.1rem .6rem;margin:.15rem;font-size:.9rem}
+</style></head><body>
+<div class="top">
+<svg width="140" height="140" viewBox="0 0 140 140" role="img" aria-label="Seal: Hardened, narrowed">
+<circle cx="70" cy="70" r="64" fill="#8b1e1e"/><circle cx="70" cy="70" r="54" fill="none" stroke="#f3d9b1" stroke-width="2" stroke-dasharray="4 3"/>
+<text x="70" y="66" text-anchor="middle" fill="#f3d9b1" font-size="17" font-weight="700" font-family="Georgia,serif">HARDENED</text>
+<text x="70" y="86" text-anchor="middle" fill="#f3d9b1" font-size="12" font-family="Georgia,serif">narrowed</text></svg>
+<div><h1>Verify the PID, then issue a derived attestation</h1>
+<p class="muted">bmad-forge-idea, run autonomously on 2026-11-06. Every decision was made with tiltrank. Full brief: <code>forge-brief.md</code></p></div></div>
+
+<h2>Outcome</h2>
+<p>Mostly no to the post's thesis; a narrow yes for this repository. Next step: <strong>bmad-correct-course</strong>, adding one gated story to Epic 10 after Stories 3.1 and 10.1. The close runner-up was parking it.</p>
+
+<h2>Locked</h2>
+<ul>
+<li>A derived attestation is worth issuing only for a fact the PID cannot carry: standing, role, mandate. Re-asserting identity is a non-goal.</li>
+<li>First slice: the issuer authenticates the holder by an OpenID4VP presentation of the PID nested inside OpenID4VCI (spec §11.5), then issues a mock mandate attestation without PID attributes. The wallet refuses an issuer that asks for more than its registered intended use.</li>
+</ul>
+
+<h2>Rejected, and why</h2>
+<ul>
+<li>A separate product: no payer (the wallet is free to holders, issuers cannot meter verifications without breaking unlinkability, Art. 45h bars reusing the data) and a two-sided cold start (Mobile Connect).</li>
+<li>Bank attestation that customer due diligence was done: AMLR Art. 48–49 keep responsibility with the bank that relies on it, and banks can identify with the PID directly (Art. 22(6)(b)).</li>
+<li>Telco account attestation as the demo payload: it is not in the spec catalogue, and KYC Match already sells the same fact.</li>
+</ul>
+
+<h2>Weak points that survived</h2>
+<ul>
+<li>The verdict was contested: parking costs nothing while Epics 3, 4 and 10 are unstarted.</li>
+<li>Unknown whether the wallet can handle a presentation request in the middle of an issuance.</li>
+<li>In Estonia, mandates belong to the state (Pääsuke), so the slice does not test the "businesses issue" thesis.</li>
+</ul>
+
+<h2>Who pressure-tested it</h2>
+<p><span class="p">📊 Mary, analyst</span><span class="p">🏗️ Winston, architect</span><span class="p">📋 John, PM</span>
+<span class="p">🏦 bank AML officer (generated)</span><span class="p">📡 telco product owner (generated)</span><span class="p">🏠 rental-platform verifier (generated)</span></p>
+<p class="muted">All six voices came from one model; they are not independent reviewers.</p>
+</body></html>

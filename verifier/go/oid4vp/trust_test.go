@@ -8,6 +8,11 @@ package oid4vp
 // which is the rule the store exists to enforce.
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -78,20 +83,6 @@ func readStep6FixtureIssuer(t *testing.T) (meta struct {
 		t.Fatalf("parse fixture request.json: %v", err)
 	}
 	return meta
-}
-
-// upper/lowerPairs mints a 64-hex-char coordinate pair in both cases, so the
-// case-insensitivity test can use keys that pass the P-256 shape check.
-func upperLowerPairs(t *testing.T, seed byte) (upper, lower [2]string) {
-	t.Helper()
-	x := make([]byte, 32)
-	y := make([]byte, 32)
-	x[0], y[0] = seed, seed+0x40
-	ux := "0x" + strings.ToUpper(hex.EncodeToString(x))
-	lx := "0x" + hex.EncodeToString(x)
-	uy := "0x" + strings.ToUpper(hex.EncodeToString(y))
-	ly := "0x" + hex.EncodeToString(y)
-	return [2]string{ux, uy}, [2]string{lx, ly}
 }
 
 // Hex case is not identity: an uppercase store entry must still match the
@@ -195,28 +186,57 @@ func TestTrustStoreRejectsBadHex(t *testing.T) {
 	}
 }
 
-// TestTrustStoreCapsIssuersPerDocType: a fifth key for one doctype is a load
-// error — every key runs a ~2.5s ZK verify before Select rejects it, so an
-// unbounded list stretches presentations toward the write timeout.
-func TestTrustStoreCapsIssuersPerDocType(t *testing.T) {
+// TestTrustStoreLoadsManyIssuersPerDocType: the load-time issuer cap is gone
+// (NEW-S2-3) — Select indexes by key id, so 50 keys for one doctype load and
+// each is selectable by coordinates and by key id.
+func TestTrustStoreLoadsManyIssuersPerDocType(t *testing.T) {
 	var entries []string
-	for i := 0; i < maxIssuersPerDocType+1; i++ {
+	for i := 0; i < 50; i++ {
 		x := "0x" + strings.Repeat(fmt.Sprintf("%02x", i+1), 32)
 		y := "0x" + strings.Repeat(fmt.Sprintf("%02x", 0x80+i), 32)
 		entries = append(entries, issuerJSON(fmt.Sprintf("iss-%d", i), "d", x, y))
 	}
-	_, err := LoadTrustStore(writeIssuers(t, `{"issuers":[`+strings.Join(entries, ",")+`]}`))
-	if err == nil {
-		t.Fatalf("LoadTrustStore accepted %d issuers for one doctype", maxIssuersPerDocType+1)
+	ts, err := LoadTrustStore(writeIssuers(t, `{"issuers":[`+strings.Join(entries, ",")+`]}`))
+	if err != nil {
+		t.Fatalf("LoadTrustStore with 50 issuers for one doctype: %v", err)
 	}
-	if !strings.Contains(err.Error(), "cap") {
-		t.Errorf("error %q does not name the cap", err)
+	if is, _ := ts.For("d"); len(is) != 50 {
+		t.Fatalf("For(d) = %d issuers, want 50", len(is))
 	}
+	x := "0x" + strings.Repeat("20", 32)
+	y := "0x" + strings.Repeat(fmt.Sprintf("%02x", 0x80+31), 32)
+	got, err := ts.Select("d", "0x"+strings.ToUpper(x[2:]), y)
+	if err != nil || got.Name != "iss-31" {
+		t.Fatalf("Select(iss-31) = %q, %v", got.Name, err)
+	}
+	if got, err := ts.SelectByKeyID("d", strings.ToUpper(got.KeyID())); err != nil || got.Name != "iss-31" {
+		t.Fatalf("SelectByKeyID(iss-31) = %q, %v", got.Name, err)
+	}
+	if _, err := ts.SelectByKeyID("d", strings.Repeat("0", 64)); err == nil {
+		t.Fatal("SelectByKeyID accepted an unknown key id")
+	}
+	if _, err := ts.SelectByKeyID("other", got.KeyID()); err == nil {
+		t.Fatal("SelectByKeyID crossed doctypes")
+	}
+}
 
-	// At the cap it still loads.
-	entries = entries[:maxIssuersPerDocType]
-	if _, err := LoadTrustStore(writeIssuers(t, `{"issuers":[`+strings.Join(entries, ",")+`]}`)); err != nil {
-		t.Fatalf("LoadTrustStore at the cap failed: %v", err)
+// TestKeyIDIsSPKIDigest pins KeyIDOf to SHA-256 of the stdlib's DER
+// SubjectPublicKeyInfo encoding of the same key.
+func TestKeyIDIsSPKIDigest(t *testing.T) {
+	k, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	der, err := x509.MarshalPKIXPublicKey(&k.PublicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := sha256.Sum256(der)
+	pt, _ := k.PublicKey.ECDH()
+	b := pt.Bytes()
+	got, err := KeyIDOf("0x"+hex.EncodeToString(b[1:33]), "0x"+hex.EncodeToString(b[33:]))
+	if err != nil || got != hex.EncodeToString(want[:]) {
+		t.Fatalf("KeyIDOf = %q, %v; want %x", got, err, want)
 	}
 }
 
@@ -263,7 +283,7 @@ func writeSignedTrustStore(t *testing.T, k *jose.JWK, issuers []Issuer) string {
 // batteryIssuers is a minimal valid store: one issuer, well-formed keys.
 func batteryIssuers() []Issuer {
 	return []Issuer{{Name: "battery-issuer", DocType: "d", Namespace: "d",
-		PKx: "0x" + strings.Repeat("aa", 32), PKy: "0x" + strings.Repeat("bb", 32)}}
+		PKx: "0x" + strings.Repeat("aa", 32), PKy: "0x" + strings.Repeat("bb", 32), IACA: testIACA()}}
 }
 
 // TestSignedTrustStoreGoodSignatureLoads: the verified store behaves exactly
@@ -271,7 +291,7 @@ func batteryIssuers() []Issuer {
 func TestSignedTrustStoreGoodSignatureLoads(t *testing.T) {
 	k := signedKey(t)
 	issuers := batteryIssuers()
-	ts, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, issuers), k, nil, time.Now(), false)
+	ts, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, issuers), k, nil, time.Now, false)
 	if err != nil {
 		t.Fatalf("LoadSignedTrustStore: %v", err)
 	}
@@ -297,7 +317,7 @@ func TestSignedTrustStoreTamperedArrayFails(t *testing.T) {
 	if err := os.WriteFile(path, []byte(tampered), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := LoadSignedTrustStore(path, k, nil, time.Now(), false); err == nil {
+	if _, err := LoadSignedTrustStore(path, k, nil, time.Now, false); err == nil {
 		t.Fatal("a spliced issuer array loaded")
 	}
 }
@@ -308,7 +328,7 @@ func TestSignedTrustStoreForeignSignatureFails(t *testing.T) {
 	k := signedKey(t)
 	other := signedKey(t)
 	path := writeSignedTrustStore(t, other, batteryIssuers())
-	if _, err := LoadSignedTrustStore(path, k, nil, time.Now(), false); err == nil {
+	if _, err := LoadSignedTrustStore(path, k, nil, time.Now, false); err == nil {
 		t.Fatal("a store signed by a foreign key loaded")
 	}
 }
@@ -320,13 +340,13 @@ func TestSignedTrustStoreRemovedEntryFails(t *testing.T) {
 	k := signedKey(t)
 	full := batteryIssuers()
 	full = append(full, Issuer{Name: "battery-issuer-2", DocType: "d2", Namespace: "d2",
-		PKx: "0x" + strings.Repeat("cc", 32), PKy: "0x" + strings.Repeat("dd", 32)})
-	prior, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, full), k, nil, time.Now(), false)
+		PKx: "0x" + strings.Repeat("cc", 32), PKy: "0x" + strings.Repeat("dd", 32), IACA: testIACA()})
+	prior, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, full), k, nil, time.Now, false)
 	if err != nil {
 		t.Fatalf("prior load: %v", err)
 	}
 	path := writeSignedTrustStore(t, k, full[:len(full)-1])
-	_, err = LoadSignedTrustStore(path, k, prior, time.Now(), false)
+	_, err = LoadSignedTrustStore(path, k, prior, time.Now, false)
 	if err == nil {
 		t.Fatal("a store that removed a prior issuer loaded")
 	}
@@ -334,35 +354,82 @@ func TestSignedTrustStoreRemovedEntryFails(t *testing.T) {
 		t.Errorf("error %q does not name the removed issuer", err)
 	}
 	// The same store without a prior is fine: append-only is relative.
-	if _, err := LoadSignedTrustStore(path, k, nil, time.Now(), false); err != nil {
+	if _, err := LoadSignedTrustStore(path, k, nil, time.Now, false); err != nil {
 		t.Errorf("fresh (prior=nil) load of the shorter store failed: %v", err)
 	}
 }
 
-// TestSignedTrustStoreStaleNotAfter: an expired entry is refused at load —
-// and the -ignore-trust-freshness dev escape is the only way past it.
+// TestSignedTrustStoreStaleNotAfter: an entry outside its window loads (so
+// retiring an issuer with not_after cannot stop the verifier) but is not
+// selectable — and the window is checked per lookup, so an issuer that
+// expires while the verifier runs stops being trusted.
 func TestSignedTrustStoreStaleNotAfter(t *testing.T) {
 	k := signedKey(t)
 	now := time.Now()
+	clock := func() time.Time { return now }
 	stale := batteryIssuers()
 	stale[0].NotAfter = now.Add(-time.Hour).Format(time.RFC3339)
 	path := writeSignedTrustStore(t, k, stale)
-	if _, err := LoadSignedTrustStore(path, k, nil, now, false); err == nil {
-		t.Fatal("a stale not_after loaded with freshness enforced")
-	}
-	ts, err := LoadSignedTrustStore(path, k, nil, now, true)
+	ts, err := LoadSignedTrustStore(path, k, nil, clock, false)
 	if err != nil {
-		t.Fatalf("ignore-trust-freshness did not admit the stale entry: %v", err)
+		t.Fatalf("a retired (not_after past) entry must not fail the load: %v", err)
+	}
+	if _, err := ts.Select("d", stale[0].PKx, stale[0].PKy); err == nil {
+		t.Fatal("a stale issuer was selectable with freshness enforced")
+	}
+	ts, err = LoadSignedTrustStore(path, k, nil, clock, true)
+	if err != nil {
+		t.Fatalf("ignore-trust-freshness load: %v", err)
 	}
 	if _, err := ts.Select("d", stale[0].PKx, stale[0].PKy); err != nil {
-		t.Errorf("stale store admitted but issuer not selectable: %v", err)
+		t.Errorf("ignore-trust-freshness: issuer not selectable: %v", err)
 	}
 	// A not-yet-valid entry is the mirror case.
 	future := batteryIssuers()
 	future[0].NotBefore = now.Add(time.Hour).Format(time.RFC3339)
-	fpath := writeSignedTrustStore(t, k, future)
-	if _, err := LoadSignedTrustStore(fpath, k, nil, now, false); err == nil {
-		t.Fatal("a not-yet-valid entry loaded with freshness enforced")
+	ts, err = LoadSignedTrustStore(writeSignedTrustStore(t, k, future), k, nil, clock, false)
+	if err != nil {
+		t.Fatalf("not-yet-valid load: %v", err)
+	}
+	if _, err := ts.Select("d", future[0].PKx, future[0].PKy); err == nil {
+		t.Fatal("a not-yet-valid issuer was selectable")
+	}
+	// Expiry while running: valid now, gone once the clock passes not_after.
+	live := batteryIssuers()
+	live[0].NotAfter = now.Add(time.Hour).Format(time.RFC3339)
+	ts, err = LoadSignedTrustStore(writeSignedTrustStore(t, k, live), k, nil, clock, false)
+	if err != nil {
+		t.Fatalf("live load: %v", err)
+	}
+	if _, err := ts.Select("d", live[0].PKx, live[0].PKy); err != nil {
+		t.Fatalf("a currently valid issuer was not selectable: %v", err)
+	}
+	now = now.Add(2 * time.Hour)
+	if _, err := ts.Select("d", live[0].PKx, live[0].PKy); err == nil {
+		t.Fatal("an issuer that expired after load is still trusted")
+	}
+	// An unparsable bound is still a load error.
+	bad := batteryIssuers()
+	bad[0].NotAfter = "tomorrow"
+	if _, err := LoadSignedTrustStore(writeSignedTrustStore(t, k, bad), k, nil, clock, false); err == nil {
+		t.Fatal("an unparsable not_after loaded")
+	}
+}
+
+// TestSignedTrustStoreAppendOnlyCaseInsensitive: prior keys are stored
+// lowercased; a new store written in uppercase hex still keeps them.
+func TestSignedTrustStoreAppendOnlyCaseInsensitive(t *testing.T) {
+	k := signedKey(t)
+	upper := batteryIssuers()
+	upper[0].PKx = "0x" + strings.ToUpper(strings.TrimPrefix(upper[0].PKx, "0x"))
+	upper[0].PKy = "0x" + strings.ToUpper(strings.TrimPrefix(upper[0].PKy, "0x"))
+	path := writeSignedTrustStore(t, k, upper)
+	prior, err := LoadSignedTrustStore(path, k, nil, time.Now, false)
+	if err != nil {
+		t.Fatalf("prior load: %v", err)
+	}
+	if _, err := LoadSignedTrustStore(path, k, prior, time.Now, false); err != nil {
+		t.Fatalf("reloading the same uppercase store reported a removal: %v", err)
 	}
 }
 
@@ -370,7 +437,7 @@ func TestSignedTrustStoreStaleNotAfter(t *testing.T) {
 // snuck through the signed loader — the unsigned loader exists for that.
 func TestSignedTrustStoreRefusesBareFile(t *testing.T) {
 	if _, err := LoadSignedTrustStore(writeIssuers(t, `{"issuers":[`+issuerJSON("n", "d", "0x"+strings.Repeat("aa", 32), "0x"+strings.Repeat("bb", 32))+`]}`),
-		signedKey(t), nil, time.Now(), false); err == nil {
+		signedKey(t), nil, time.Now, false); err == nil {
 		t.Fatal("an unsigned file loaded through the signed path")
 	}
 }

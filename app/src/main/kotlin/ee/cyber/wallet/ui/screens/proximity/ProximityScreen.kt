@@ -133,7 +133,8 @@ private fun ProximityRequestNoMatchContent(modifier: Modifier = Modifier, state:
         VSpace(24.dp)
         Text(
             style = MaterialTheme.typography.bodyMedium,
-            text = "Verifier ${state.verifier} has requested your credentials, but no matching credentials were found.",
+            text = state.refusal?.let { stringResource(it.resId) }
+                ?: "Verifier ${state.verifier} has requested your credentials, but no matching credentials were found.",
             textAlign = TextAlign.Center
         )
     }
@@ -173,6 +174,19 @@ private fun ProximityRequestContent(modifier: Modifier = Modifier, state: UiStat
             text = stringResource(R.string.presentation_footer_note, state.verifier),
             textAlign = TextAlign.Center
         )
+        // EE-POA-013: the last attestation goes out plain only with this notice in front of the
+        // user; tapping share is the explicit approval.
+        if (state.lastAgeAttestation) {
+            VSpace(24.dp)
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(R.string.presentation_last_age_attestation_notice),
+                textAlign = TextAlign.Center
+            )
+        }
         VSpace(24.dp)
         WSpace()
         Row(

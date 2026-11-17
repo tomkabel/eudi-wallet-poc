@@ -17,6 +17,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.detekt)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -24,20 +25,17 @@ android {
     namespace = "ee.cyber.wallet"
     compileSdk = 35
 
-    androidComponents {
-        beforeVariants {
-            // Disable release build
-            if (it.buildType == "release") {
-                it.enable = false
-            }
-        }
-    }
+    // The release variant stays enabled so its code can be compiled and linted (mock-class gate,
+    // lint gate). Signing still needs the RELEASE_* properties, so assembleRelease fails without them.
     defaultConfig {
         applicationId = "ee.tomkabel.walletpoc"
         minSdk = 31
         targetSdk = 35
         versionCode = project.properties["BUILD_NUMBER"]?.toString()?.toInt() ?: 9999
         versionName = "0.6.6"
+        stringBuildConfig("LONGFELLOW_RUNTIME_ARTIFACT", "multipaz-longfellow:" + libs.versions.multipaz.get())
+        val circuitDocument = groovy.json.JsonSlurper().parse(file("../verifier/circuits.json")) as Map<*, *>
+        stringBuildConfig("CIRCUIT_LIST_VERSION", circuitDocument["list_version"].toString())
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
@@ -65,8 +63,9 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(project.properties["RELEASE_KEYSTORE_FILE"]
-                ?: error("RELEASE_KEYSTORE_FILE missing — release signing not configured"))
+            // Supplied from ~/.gradle/gradle.properties or -P, never from the repo. Unset, the
+            // release config stays incomplete and AGP refuses to sign with it.
+            storeFile = project.properties["RELEASE_KEYSTORE_FILE"]?.let { file(it) }
             storePassword = project.properties["RELEASE_KEYSTORE_PASSWORD"]?.toString()
             keyAlias = project.properties["RELEASE_SIGN_KEY_ALIAS"]?.toString()
             keyPassword = project.properties["RELEASE_SIGN_KEY_PASSWORD"]?.toString()
@@ -107,6 +106,26 @@ android {
             boolBuildConfig("DEV", true)
             boolBuildConfig("USE_MOCKS", true)
         }
+    }
+    // C11: mock services live in src/local_mocks only; every other build type gets the real
+    // bindings from src/real, so no *Mock class is compiled into release, debug or local.
+    sourceSets {
+        listOf("release", "debug", "local").forEach { getByName(it).kotlin.srcDir("src/real/kotlin") }
+    }
+    // C14: lint is a security gate. These checks fail the build; findings already in the tree are
+    // frozen in lint-baseline.xml, so only new ones fail. CI runs :app:lintRelease.
+    lint {
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
+        fatal += setOf(
+            "TrustAllX509TrustManager", "BadHostnameVerifier", "SSLCertificateSocketFactoryCreateSocket",
+            "SSLCertificateSocketFactoryGetInsecure", "AllowAllHostnameVerifier", "SetJavaScriptEnabled",
+            "AddJavascriptInterface", "HardcodedDebugMode", "PackagedPrivateKey", "SecureRandom", "TrulyRandom",
+            "UnsafeDynamicallyLoadedCode", "ExportedService", "ExportedReceiver", "ExportedContentProvider",
+            "GrantAllUris", "WorldReadableFiles", "WorldWriteableFiles", "UseCheckPermission",
+            "UnprotectedSMSBroadcastReceiver", "AllowBackup", "InsecureBaseConfiguration",
+            "UnsafeProtectedBroadcastReceiver"
+        )
     }
     kotlin {
         kotlinOptions {
@@ -159,7 +178,12 @@ dependencyLocking {
     lockAllConfigurations()
 }
 
+// C7: ktlint blocks new violations only. Spotless ratchets by git: a file that changed since the
+// ref below must be ktlint-clean, an untouched file is not looked at. (Old files hold 33 findings;
+// `spotlessApply` on the whole tree would touch 30 files.) The ref is the commit before this gate
+// landed; CI needs history for it (fetch-depth: 0). Move it forward only when the tree is clean.
 spotless {
+    ratchetFrom("223b1db3169473e651521c66590f779f6fdbc9d0")
     kotlin {
         target("**/*.kt")
         targetExclude("${layout.buildDirectory}/**/*.kt")
@@ -170,6 +194,17 @@ spotless {
     kotlinGradle {
         ktlint(libs.versions.ktlint.get())
     }
+}
+
+// C7: detekt with the default rules; what it finds today is frozen in detekt-baseline.xml, so only
+// new findings fail `./gradlew :app:detekt`. Regenerate with `:app:detektBaseline` only to pay a
+// finding down (the file must shrink in review).
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom("detekt.yml")
+    baseline = file("detekt-baseline.xml")
+    source.setFrom("src/main/kotlin", "src/local_mocks/kotlin", "src/real/kotlin", "src/test/kotlin", "src/testLocal_mocks/kotlin")
+    parallel = true
 }
 
 // Setup protobuf configuration, generating lite Java and Kotlin classes
@@ -227,6 +262,14 @@ androidComponents {
     }
 }
 
+// cose-java (also reached through waltid-mdoc-credentials-jvm, where per-dependency excludes
+// do not follow the KMP redirect) drags in BouncyCastle lts8on, which duplicates jdk18on's classes.
+configurations.configureEach {
+    exclude(group = "org.bouncycastle", module = "bcprov-lts8on")
+    exclude(group = "org.bouncycastle", module = "bcpkix-lts8on")
+    exclude(group = "org.bouncycastle", module = "bcutil-lts8on")
+}
+
 dependencies {
     // Bouncy Castle
     implementation(libs.bcprov.jdk18on)
@@ -270,14 +313,8 @@ dependencies {
     implementation(libs.play.services.identity.credentials)
     implementation(libs.androidx.registry.provider.play.services)
 
-    implementation(libs.cose.java) {
-        exclude(group = "org.bouncycastle", module = "bcpkix-lts8on")
-        exclude(group = "org.bouncycastle", module = "bcprov-lts8on")
-    }
-    implementation(libs.waltid.mdoc.credentials) {
-        exclude(group = "org.bouncycastle", module = "bcpkix-lts8on")
-        exclude(group = "org.bouncycastle", module = "bcprov-lts8on")
-    }
+    implementation(libs.cose.java)
+    implementation(libs.waltid.mdoc.credentials)
 
     // Ktor
     implementation(libs.ktor.client.core)
@@ -490,3 +527,48 @@ fun readLocalProperties(): Properties =
             load(FileInputStream(file))
         }
     }
+
+// PKI plan NEW-S1-2: the certificate algorithm policy is one file, embedded by the Go verifier and
+// packaged here as the Java resource `algorithms.json`, so both engines refuse the same algorithms.
+android.sourceSets.getByName("main").resources.srcDir("../verifier/go/internal/algpolicy/policy")
+
+// The local_mocks issuer keystores are not tracked (a private key in a public repo). tools/gen-mock-keys.sh
+// mints them, plus the throwaway IACA root they chain to, into the gitignored src/local_mocks/assets/keys.
+// It is a no-op once they exist; `make keys` runs the same script by hand.
+val generateMockKeys by tasks.registering(Exec::class) {
+    commandLine("bash", "$rootDir/tools/gen-mock-keys.sh")
+    environment("KEYTOOL", File(System.getProperty("java.home"), "bin/keytool").path)
+}
+tasks.matching { it.name.startsWith("merge") && it.name.contains("Local_mocks") && it.name.endsWith("Assets") }
+    .configureEach { dependsOn(generateMockKeys) }
+
+// C9: `debug` is built for the TEST environment, whose hosts are placeholders (*.example.com), so
+// an app installed from it passes PIN entry and then fails onboarding. `local_mocks` is the
+// development variant (isDefault above). The check hangs off preDebugBuild, so every debug task
+// (assemble, install, unit test) stops here instead of producing an app that cannot onboard.
+// release also carries example.com hosts, but it is never installed for development.
+val failOnPlaceholderHosts by tasks.registering {
+    group = "verification"
+    description = "Fails the debug variant while its BuildConfig hosts are *.example.com placeholders."
+    doLast {
+        val placeholders = android.buildTypes.getByName("debug").buildConfigFields
+            .filterValues { it.value.toString().contains(".example.com") }
+            .map { (name, field) -> "$name = ${field.value}" }
+        if (placeholders.isNotEmpty()) {
+            throw GradleException(
+                "The debug variant points at placeholder hosts, so onboarding fails after PIN entry:\n  " +
+                    placeholders.joinToString("\n  ") +
+                    "\nBuild and install the local_mocks variant instead: ./gradlew :app:installLocal_mocks"
+            )
+        }
+    }
+}
+tasks.matching { it.name == "preDebugBuild" }.configureEach { dependsOn(failOnPlaceholderHosts) }
+
+// ADR-006: package the exact verifier document and public pin as generated resources.
+val generateCircuitRegistry by tasks.registering(Copy::class) {
+    from(rootProject.file("verifier/circuits.json"), rootProject.file("verifier/go/circuits/pinned-key.json"))
+    into(layout.buildDirectory.dir("generated/circuitRegistry/circuit-registry"))
+}
+android.sourceSets.getByName("main").resources.srcDir(layout.buildDirectory.dir("generated/circuitRegistry"))
+tasks.named("preBuild").configure { dependsOn(generateCircuitRegistry) }

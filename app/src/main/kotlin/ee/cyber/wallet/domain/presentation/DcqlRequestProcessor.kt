@@ -1,6 +1,7 @@
 package ee.cyber.wallet.domain.presentation
 
 import ee.cyber.wallet.domain.documents.CredentialDocument
+import ee.cyber.wallet.domain.documents.DocumentField
 import ee.cyber.wallet.ui.screens.documents.credentialType
 import ee.cyber.wallet.ui.screens.presentation.Credential
 import ee.cyber.wallet.ui.screens.presentation.MatchedField
@@ -10,6 +11,7 @@ import eu.europa.ec.eudi.openid4vp.dcql.CredentialQuery
 import eu.europa.ec.eudi.openid4vp.dcql.DCQL
 import eu.europa.ec.eudi.openid4vp.dcql.metaMsoMdoc
 import eu.europa.ec.eudi.openid4vp.dcql.metaSdJwtVc
+import kotlinx.serialization.json.JsonPrimitive
 import org.slf4j.LoggerFactory
 
 /**
@@ -107,7 +109,17 @@ class DcqlRequestProcessor {
 
         val claims = credentialQuery.claims
 
-        return if (claims.isNullOrEmpty()) {
+        return if (claims.isNullOrEmpty() && AgePredicatePolicy.isAgeAttestation(document.credentialType())) {
+            // EE-POA-030: a claim-less query for an age attestation asks for age_over_18 only,
+            // never for every predicate the attestation holds.
+            val ageOver18 = document.fields.find { it.name == "age_over_18" } ?: return null
+            Credential(
+                credentialType = document.credentialType(),
+                fields = listOf(MatchedField(ageOver18, checked = true)),
+                optionalFields = emptyList(),
+                attestation = document.attestation
+            )
+        } else if (claims.isNullOrEmpty()) {
             // OpenID4VP §6.4.1: an absent claims list requests no selectively disclosable
             // claims. Offer the fields unchecked, so nothing is disclosed unless the holder opts in.
             log.info("No specific claims requested, offering ${document.fields.size} fields unchecked")
@@ -119,7 +131,7 @@ class DcqlRequestProcessor {
             )
         } else {
             // Match specific requested claims
-            val (requiredFields, optionalFields) = matchMsoMdocClaims(claims, document)
+            val (requiredFields, optionalFields) = matchMsoMdocClaims(claims, document) ?: return null
             log.info("Matched ${requiredFields.size} required and ${optionalFields.size} optional fields")
 
             Credential(
@@ -141,7 +153,7 @@ class DcqlRequestProcessor {
     private fun matchMsoMdocClaims(
         claims: List<ClaimsQuery>,
         document: CredentialDocument.MDocDocument
-    ): Pair<List<MatchedField>, List<MatchedField>> {
+    ): Pair<List<MatchedField>, List<MatchedField>>? {
         val requiredFields = mutableListOf<MatchedField>()
         val optionalFields = mutableListOf<MatchedField>()
 
@@ -167,8 +179,13 @@ class DcqlRequestProcessor {
             }
 
             if (matchingField != null) {
-                val intentToRetain = claimQuery.intentToRetain ?: false
-                val isRequired = intentToRetain || claimQuery.values != null
+                if (!claimQuery.allows(matchingField)) {
+                    log.warn("Claim value outside the requested values: namespace=$namespace, name=$claimName")
+                    return null
+                }
+                // intent_to_retain says what the verifier keeps, not what it needs: it does not
+                // make a claim required (same rule as the SD-JWT path below).
+                val isRequired = claimQuery.values != null
 
                 // Optional claims start unchecked, as on the presentation-exchange path.
                 val matchedField = MatchedField(matchingField, checked = isRequired)
@@ -237,7 +254,7 @@ class DcqlRequestProcessor {
             )
         } else {
             // Match specific requested claims
-            val (requiredFields, optionalFields) = matchSdJwtVcClaims(claims, document)
+            val (requiredFields, optionalFields) = matchSdJwtVcClaims(claims, document) ?: return null
             log.info("Matched ${requiredFields.size} required and ${optionalFields.size} optional fields")
 
             Credential(
@@ -258,7 +275,7 @@ class DcqlRequestProcessor {
     private fun matchSdJwtVcClaims(
         claims: List<ClaimsQuery>,
         document: CredentialDocument.JwtDocument
-    ): Pair<List<MatchedField>, List<MatchedField>> {
+    ): Pair<List<MatchedField>, List<MatchedField>>? {
         val requiredFields = mutableListOf<MatchedField>()
         val optionalFields = mutableListOf<MatchedField>()
 
@@ -300,6 +317,10 @@ class DcqlRequestProcessor {
             }
 
             if (matchingField != null) {
+                if (!claimQuery.allows(matchingField)) {
+                    log.warn("SD-JWT claim value outside the requested values: name=$claimName, path=$fullPath")
+                    return null
+                }
                 // For SD-JWT VC, intent_to_retain is not applicable (mso_mdoc only)
                 // Determine if required based on presence of values constraint
                 val isRequired = claimQuery.values != null
@@ -322,3 +343,10 @@ class DcqlRequestProcessor {
         return requiredFields to optionalFields
     }
 }
+
+/**
+ * OpenID4VP §6.3: with `values` set, the claim matches only if the credential's value is one of
+ * them. Compared on the scalar's string form, which is how [DocumentField.value] stores it.
+ */
+private fun ClaimsQuery.allows(field: DocumentField): Boolean =
+    values?.any { (it as? JsonPrimitive)?.content == field.value || it == field.element } ?: true

@@ -6,23 +6,21 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.data.datastore.UserPreferencesDataSource
 import ee.cyber.wallet.data.datastore.WalletInstanceCredentialsDataSource
 import ee.cyber.wallet.data.repository.WalletCredentialsRepository
 import ee.cyber.wallet.domain.credentials.CredentialIssuanceService
-import ee.cyber.wallet.domain.credentials.CredentialIssuanceServiceMock
-import ee.cyber.wallet.domain.credentials.RpcCredentialIssuanceService
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.provider.IssuePidUseCase
-import ee.cyber.wallet.domain.provider.ageverification.AgeVerificationProviderServiceMock
+import ee.cyber.wallet.domain.provider.MockIssuance
 import ee.cyber.wallet.domain.provider.ageverification.BatchAgeIssuer
 import ee.cyber.wallet.domain.provider.ageverification.WalletProviderBatchAgeIssuer
-import ee.cyber.wallet.domain.provider.mdl.MdlProviderServiceMock
 import ee.cyber.wallet.domain.provider.pid.PidProviderService
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
 import ee.cyber.wallet.security.SecureAreaKeyManager
+import ee.cyber.wallet.security.SecureAreaBatchKeyManager
+import ee.cyber.wallet.domain.provider.wallet.WalletInstanceCredentials
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import javax.inject.Singleton
@@ -36,36 +34,19 @@ class IssuerModule {
     fun providesCredentialIssuanceService(
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher,
         @ApplicationContext context: Context,
-        userPreferencesDataSource: UserPreferencesDataSource
-    ): CredentialIssuanceService {
-        return if (AppConfig.useMocks) {
-            CredentialIssuanceServiceMock(context, dispatcher, userPreferencesDataSource)
-        } else {
-            RpcCredentialIssuanceService(AppConfig.walletProviderRpcUrl, dispatcher)
-        }
-    }
+        userPreferencesDataSource: UserPreferencesDataSource,
+        walletProviderService: WalletProviderService
+    ): CredentialIssuanceService =
+        VariantServices.credentialIssuanceService(context, dispatcher, userPreferencesDataSource, walletProviderService)
 
     @Singleton
     @Provides
-    fun providesMdlProviderServiceMock(
+    fun providesMockIssuance(
         @ApplicationContext
         context: Context,
         cryptoProviderFactory: CryptoProvider.Factory,
         credentialIssuanceService: CredentialIssuanceService
-    ): MdlProviderServiceMock {
-        return MdlProviderServiceMock(context, cryptoProviderFactory, credentialIssuanceService)
-    }
-
-    @Singleton
-    @Provides
-    fun providesAgeVerificationProviderServiceMock(
-        @ApplicationContext
-        context: Context,
-        cryptoProviderFactory: CryptoProvider.Factory,
-        credentialIssuanceService: CredentialIssuanceService
-    ): AgeVerificationProviderServiceMock {
-        return AgeVerificationProviderServiceMock(context, cryptoProviderFactory, credentialIssuanceService)
-    }
+    ): MockIssuance = VariantServices.mockIssuance(context, cryptoProviderFactory, credentialIssuanceService)
 
     /**
      * The EE-POA-003 batch transaction's key/mint plumbing: SecureArea batch keys attested by
@@ -82,14 +63,30 @@ class IssuerModule {
         credentialIssuanceService: CredentialIssuanceService,
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher
     ): BatchAgeIssuer {
+        return createWalletProviderBatchAgeIssuer(
+            secureAreaKeyManager, walletProviderService, keyAttestationDao,
+            { walletInstanceCredentialsDataSource.credentials.first() }, credentialIssuanceService, dispatcher
+        )
+    }
+
+    /** Shared factory wiring; accepts the public-key storage interface used by the batch. */
+    internal fun createWalletProviderBatchAgeIssuer(
+        secureAreaKeyManager: SecureAreaBatchKeyManager,
+        walletProviderService: WalletProviderService,
+        keyAttestationDao: ee.cyber.wallet.data.database.dao.KeyAttestationDao,
+        credentials: suspend () -> WalletInstanceCredentials,
+        credentialIssuanceService: CredentialIssuanceService,
+        dispatcher: CoroutineDispatcher
+    ): BatchAgeIssuer {
         return WalletProviderBatchAgeIssuer(
             secureAreaKeyManager = secureAreaKeyManager,
             walletProviderService = walletProviderService,
             keyAttestationDao = keyAttestationDao,
-            credentials = { walletInstanceCredentialsDataSource.credentials.first() },
-            issueCredential = { credential, keyAttestation ->
-                credentialIssuanceService.issueCredential(credential, keyAttestation)
+            credentials = credentials,
+            issueCredential = { credential, keyAttestation, avIssuance ->
+                credentialIssuanceService.issueCredential(credential, keyAttestation, avIssuance)
             },
+            createAvIssuanceContext = { credentialIssuanceService.createAvIssuanceContext(it) },
             dispatcher = dispatcher
         )
     }

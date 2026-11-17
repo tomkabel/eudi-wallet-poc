@@ -334,6 +334,22 @@ private fun PresentationContent(modifier: Modifier = Modifier, state: UiState, o
         )
         VerifiedParty()
         VSpace(24.dp)
+        // EE-PRO-010/010a, BCP 247: say how the request arrived before the user approves. A QR
+        // scanned by the wallet is cross-device with no proximity check, so a phisher can show
+        // someone else's request; the user is the only check left, and is told so.
+        Text(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (state.scanned) FontWeight.SemiBold else null,
+            text = stringResource(
+                if (state.scanned) R.string.presentation_channel_scanned_notice else R.string.presentation_channel_link_notice,
+                state.verifier
+            ),
+            textAlign = TextAlign.Center
+        )
+        VSpace(24.dp)
         Text(
             style = MaterialTheme.typography.bodyMedium,
             text = stringResource(R.string.presentation_requests_following_data_to),
@@ -353,6 +369,19 @@ private fun PresentationContent(modifier: Modifier = Modifier, state: UiState, o
             text = stringResource(R.string.presentation_footer_note, state.verifier),
             textAlign = TextAlign.Center
         )
+        // EE-POA-013: the last attestation of a batch goes out plain only with this notice in
+        // front of the user; tapping share is the explicit approval.
+        if (state.lastAgeAttestation) {
+            VSpace(24.dp)
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(R.string.presentation_last_age_attestation_notice),
+                textAlign = TextAlign.Center
+            )
+        }
         VSpace(24.dp)
         WSpace()
         Row(

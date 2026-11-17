@@ -26,6 +26,7 @@ import org.multipaz.crypto.X509CertChain
 import org.multipaz.crypto.javaX509Certificate
 import org.multipaz.mdoc.zkp.ZkSystemSpec
 import ee.cyber.wallet.security.CertificateChainValidator
+import ee.cyber.wallet.security.TrustDomain
 import java.security.cert.X509Certificate
 import java.util.UUID
 
@@ -179,7 +180,8 @@ class DeviceRequestParser(
                             // = false means for the request).
                             CertificateChainValidator.validateCertificateChain(
                                 readerCertChain.certificates.map { it.javaX509Certificate },
-                                trustedReaderRoots
+                                trustedReaderRoots,
+                                domain = TrustDomain.STATIC_AND_LOTL
                             )
                         } catch (e: Exception) {
                             false

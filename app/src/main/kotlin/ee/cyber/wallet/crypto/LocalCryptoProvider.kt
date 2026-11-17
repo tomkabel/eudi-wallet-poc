@@ -153,10 +153,18 @@ class LocalCryptoProvider(
     override fun supports(keyType: KeyType): Boolean = keyType == KeyType.EC || keyType == KeyType.RSA
 
     override suspend fun clearAll() {
-        runCatching {
-            keyStoreManager.clearAll()
-            keyAttestationDao.deleteAll()
+        keyStoreManager.clearAll()
+        keyAttestationDao.deleteAll()
+    }
+
+    override suspend fun deleteKey(keyId: String) {
+        val keyType = runCatching { getKeyAttestation(keyId).keyType }.getOrNull()
+        when (keyType) {
+            KeyType.EC -> secureAreaKeyManager.deleteKey(keyId)
+            KeyType.RSA -> keyStoreManager.deleteKey(keyId)
+            null -> Unit
         }
+        keyAttestationDao.deleteById(keyId)
     }
 
     private suspend fun createKeyAttestation(keyType: KeyType, keyId: String): KeyAttestation =

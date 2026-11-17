@@ -6,14 +6,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.domain.credentials.CredentialIssuanceService
 import ee.cyber.wallet.domain.provider.pid.PidProviderService
-import ee.cyber.wallet.domain.provider.pid.PidProviderServiceMock
-import ee.cyber.wallet.domain.provider.pid.PidProviderServiceRpc
 import ee.cyber.wallet.domain.provider.wallet.WalletProviderService
-import ee.cyber.wallet.domain.provider.wallet.WalletProviderServiceMock
-import ee.cyber.wallet.domain.provider.wallet.WalletProviderServiceRpc
 import ee.cyber.wallet.security.EncryptedKeyStoreManager
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
@@ -27,13 +22,7 @@ class WalletProviderModule {
     fun providesWalletProviderService(
         keyStoreManager: EncryptedKeyStoreManager,
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher
-    ): WalletProviderService {
-        return if (AppConfig.useMocks) {
-            WalletProviderServiceMock(keyStoreManager, dispatcher)
-        } else {
-            WalletProviderServiceRpc(AppConfig.walletProviderRpcUrl, dispatcher)
-        }
-    }
+    ): WalletProviderService = VariantServices.walletProviderService(keyStoreManager, dispatcher)
 
     @Singleton
     @Provides
@@ -42,11 +31,5 @@ class WalletProviderModule {
         context: Context,
         credentialIssuanceService: CredentialIssuanceService,
         @Dispatcher(WalletDispatchers.IO) dispatcher: CoroutineDispatcher
-    ): PidProviderService {
-        return if (AppConfig.useMocks) {
-            PidProviderServiceMock(context, credentialIssuanceService)
-        } else {
-            PidProviderServiceRpc(AppConfig.pidProviderUrl, dispatcher)
-        }
-    }
+    ): PidProviderService = VariantServices.pidProviderService(context, credentialIssuanceService, dispatcher)
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.eudi.externalcarrier.RepositoryCarrierVectorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-11T21:21:34.062Z" hostname="cachy" time="1.968">
+  <properties/>
+  <testcase name="feedBothVectors[jvm]" classname="org.eudi.externalcarrier.RepositoryCarrierVectorTest" time="1.968"/>
+  <system-out><![CDATA[2026-11-11T23:21:34.467432431: INFO: LongfellowZkSystem: Verifying proof using ZkSystemSpec(id=longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121, system=longfellow-libzk-v1)
+2026-11-11T23:21:36.011716246: INFO: LongfellowZkSystem: Verification Code: 0
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

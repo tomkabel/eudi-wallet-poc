@@ -85,6 +85,21 @@ def main() -> int:
         return 0
 
     failures = []
+    original_inputs = (CLIENT_ID, NONCE, THUMBPRINT, RESPONSE_URI)
+    for index, property_name in enumerate(("client_id", "nonce", "jwk_thumbprint", "response_uri")):
+        changed = present.controlled_transcript_inputs(*original_inputs, property_name)
+        if [i for i, pair in enumerate(zip(original_inputs, changed, strict=True)) if pair[0] != pair[1]] != [index]:
+            failures.append(f"{property_name} control did not change exactly its own input")
+        if present.session_transcript(*changed).hex() == got_enc:
+            failures.append(f"{property_name} control did not change the transcript")
+    if present.controlled_transcript_inputs(*original_inputs) != original_inputs:
+        failures.append("default control changed the transcript inputs")
+    try:
+        present.controlled_transcript_inputs(CLIENT_ID, NONCE, None, RESPONSE_URI, "jwk_thumbprint")
+        failures.append("thumbprint tampering silently accepted an unencrypted request")
+    except ValueError:
+        pass
+
     if got_plain != UNENCRYPTED:
         failures.append(f"direct_post transcript:\n  got  {got_plain}\n  want {UNENCRYPTED}")
     if got_enc != ENCRYPTED:

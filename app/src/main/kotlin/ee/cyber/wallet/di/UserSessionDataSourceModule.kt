@@ -15,6 +15,7 @@ import dagger.hilt.components.SingletonComponent
 import ee.cyber.wallet.UserSessionProto
 import ee.cyber.wallet.data.datastore.UserSessionDataSource
 import ee.cyber.wallet.security.AndroidEncryptionManager
+import ee.cyber.wallet.security.PinVerifier
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import java.io.InputStream
@@ -28,8 +29,8 @@ object UserSessionDataSourceModule {
 
     @Singleton
     @Provides
-    fun providesUserSessionDataSource(dataStore: DataStore<UserSessionProto>) =
-        UserSessionDataSource(dataStore)
+    fun providesUserSessionDataSource(dataStore: DataStore<UserSessionProto>, pinVerifier: PinVerifier) =
+        UserSessionDataSource(dataStore, pinVerifier)
 
     @Provides
     @Singleton

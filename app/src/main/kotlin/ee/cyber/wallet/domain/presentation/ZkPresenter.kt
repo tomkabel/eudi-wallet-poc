@@ -77,8 +77,8 @@ class LongfellowZkPresenter(private val zkSystem: ZkSystem?) : ZkPresenter {
 
 /**
  * EE-ZKP-004 seam helper: which held spec a request resolves to, as a scheme id. Kept off
- * [ZkPresenter] so the decision (reader-advertised hashes + attribute count) stays unit-testable
- * through [HolderObligations.strongestMatchingSpec] while the presenter stays a pure executor.
+ * [ZkPresenter] so the complete reader-advertised circuit identity and attribute count remain
+ * unit-testable while the presenter stays a pure executor.
  */
 fun resolveSchemeId(
     zkSystem: ZkSystem?,
@@ -86,18 +86,22 @@ fun resolveSchemeId(
     numAttributes: Int
 ): String? {
     val system = zkSystem ?: return null
-    val advertisedCircuitHashes = requested.mapNotNull { it.getParam<String>("circuit_hash") }.toSet()
-    val held = system.systemSpecs.map {
-        HolderObligations.SpecFingerprint(
-            circuitHash = it.getParam<String>("circuit_hash"),
-            numAttributes = it.getParam<Long>("num_attributes"),
-            version = it.getParam<Long>("version")
-        )
-    }
-    val best = HolderObligations.strongestMatchingSpec(held, advertisedCircuitHashes, numAttributes)
-        ?: return null
-    return system.systemSpecs[held.indexOf(best)].id
+    val held = system.systemSpecs
+    // Every offered identity component binds the request. Hash-only matching could
+    // accept a request whose version, block parameters or SpecID named another circuit.
+    return held.filter { candidate ->
+        candidate.getParam<Long>("num_attributes") == numAttributes.toLong() &&
+            requested.any { offered -> sameCircuitIdentity(candidate, offered) }
+    }.maxByOrNull { it.getParam<Long>("version") ?: Long.MIN_VALUE }?.id
 }
+
+internal fun sameCircuitIdentity(held: ZkSystemSpec, offered: ZkSystemSpec): Boolean = runCatching {
+    held.id == offered.id &&
+        held.getParam<String>("circuit_hash")?.let { it == offered.getParam<String>("circuit_hash") } == true &&
+        listOf("version", "num_attributes", "block_enc_hash", "block_enc_sig").all { parameter ->
+            held.getParam<Long>(parameter)?.let { it == offered.getParam<Long>(parameter) } == true
+        }
+}.getOrDefault(false)
 
 /**
  * The ZK specs each doc request advertised, keyed by its `docType`, so a credential resolves only

@@ -5,67 +5,85 @@
    "sha256": "f69dbdabcf8ead0b78d6d36098538f0febbfa38b07114b1965816741b671419e",
    "sources": [
     "central",
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-20250317.122639-2/cose-java-1.1.1-WALT-20250317.122639-2.pom",
    "sha256": "3638b3a4df74a42dc455204a657c7b96af759650cabfc49009bf5fa5e8de2654",
    "sources": [
     "central",
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-20250317.122639-2/cose-java-1.1.1-WALT-20250317.122639-2-sources.jar",
    "sha256": "8fc17a7c02b21a2d5326853986840ad098dfc51a53b21a5f1468c001685142a3",
    "sources": [
     "central",
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-20250317.122639-2/cose-java-1.1.1-WALT-20250317.122639-2-javadoc.jar",
    "sha256": "57fb75ba33792d6c47fe320369eba077dcad08f2205ed5d1443f2a29a75d5332",
    "sources": [
     "central",
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/maven-metadata.xml",
    "sha256": "b83d95eb3f83fe126a6e571c53c775f4ff897c587b1d9aee48e182965a9ef993",
    "sources": [
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT.jar",
    "sha256": "f69dbdabcf8ead0b78d6d36098538f0febbfa38b07114b1965816741b671419e",
    "sources": [
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT.pom",
    "sha256": "3638b3a4df74a42dc455204a657c7b96af759650cabfc49009bf5fa5e8de2654",
    "sources": [
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT-sources.jar",
    "sha256": "8fc17a7c02b21a2d5326853986840ad098dfc51a53b21a5f1468c001685142a3",
    "sources": [
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "org/cose/cose-java/1.1.1-WALT-SNAPSHOT/cose-java-1.1.1-WALT-SNAPSHOT-javadoc.jar",
    "sha256": "57fb75ba33792d6c47fe320369eba077dcad08f2205ed5d1443f2a29a75d5332",
    "sources": [
-    "waltid"
-   ]
+    "waltid",
+    "vendored"
+   ],
+   "licence": "BSD3"
   },
   {
    "path": "com/signerry/androidawt/1.0.4/androidawt-1.0.4.aar",
@@ -75,7 +93,8 @@
     "gpr:signerry/android-awt",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "UNKNOWN [UNVERIFIED]: no <licenses> in the POM and no upstream licence located"
   },
   {
    "path": "com/signerry/androidawt/1.0.4/androidawt-1.0.4.module",
@@ -85,7 +104,8 @@
     "gpr:signerry/android-awt",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "UNKNOWN [UNVERIFIED]: no <licenses> in the POM and no upstream licence located"
   },
   {
    "path": "com/signerry/androidawt/1.0.4/androidawt-1.0.4.pom",
@@ -95,7 +115,8 @@
     "gpr:signerry/android-awt",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "UNKNOWN [UNVERIFIED]: no <licenses> in the POM and no upstream licence located"
   },
   {
    "path": "com/signerry/dss-android/dss-alert/1.02.08/dss-alert-1.02.08.aar",
@@ -105,7 +126,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-alert/1.02.08/dss-alert-1.02.08.module",
@@ -115,7 +137,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-alert/1.02.08/dss-alert-1.02.08.pom",
@@ -125,7 +148,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-android-compatibility/1.02.08/dss-android-compatibility-1.02.08.aar",
@@ -135,7 +159,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-android-compatibility/1.02.08/dss-android-compatibility-1.02.08.module",
@@ -145,7 +170,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-android-compatibility/1.02.08/dss-android-compatibility-1.02.08.pom",
@@ -155,7 +181,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-crl-parser/1.02.08/dss-crl-parser-1.02.08.aar",
@@ -165,7 +192,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-crl-parser/1.02.08/dss-crl-parser-1.02.08.module",
@@ -175,7 +203,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-crl-parser/1.02.08/dss-crl-parser-1.02.08.pom",
@@ -185,7 +214,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-detailed-report-jaxb/1.02.08/dss-detailed-report-jaxb-1.02.08.aar",
@@ -195,7 +225,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-detailed-report-jaxb/1.02.08/dss-detailed-report-jaxb-1.02.08.module",
@@ -205,7 +236,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-detailed-report-jaxb/1.02.08/dss-detailed-report-jaxb-1.02.08.pom",
@@ -215,7 +247,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-diagnostic-jaxb/1.02.08/dss-diagnostic-jaxb-1.02.08.aar",
@@ -225,7 +258,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-diagnostic-jaxb/1.02.08/dss-diagnostic-jaxb-1.02.08.module",
@@ -235,7 +269,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-diagnostic-jaxb/1.02.08/dss-diagnostic-jaxb-1.02.08.pom",
@@ -245,7 +280,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-document/1.02.08/dss-document-1.02.08.aar",
@@ -255,7 +291,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-document/1.02.08/dss-document-1.02.08.module",
@@ -265,7 +302,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-document/1.02.08/dss-document-1.02.08.pom",
@@ -275,7 +313,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-enumerations/1.02.08/dss-enumerations-1.02.08.aar",
@@ -285,7 +324,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-enumerations/1.02.08/dss-enumerations-1.02.08.module",
@@ -295,7 +335,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-enumerations/1.02.08/dss-enumerations-1.02.08.pom",
@@ -305,7 +346,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-i18n/1.02.08/dss-i18n-1.02.08.aar",
@@ -315,7 +357,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-i18n/1.02.08/dss-i18n-1.02.08.module",
@@ -325,7 +368,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-i18n/1.02.08/dss-i18n-1.02.08.pom",
@@ -335,7 +379,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-jaxb-common/1.02.08/dss-jaxb-common-1.02.08.aar",
@@ -345,7 +390,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-jaxb-common/1.02.08/dss-jaxb-common-1.02.08.module",
@@ -355,7 +401,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-jaxb-common/1.02.08/dss-jaxb-common-1.02.08.pom",
@@ -365,7 +412,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-jaxb-parsers/1.02.08/dss-jaxb-parsers-1.02.08.aar",
@@ -375,7 +423,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-jaxb-parsers/1.02.08/dss-jaxb-parsers-1.02.08.module",
@@ -385,7 +434,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-jaxb-parsers/1.02.08/dss-jaxb-parsers-1.02.08.pom",
@@ -395,7 +445,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-model/1.02.08/dss-model-1.02.08.aar",
@@ -405,7 +456,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-model/1.02.08/dss-model-1.02.08.module",
@@ -415,7 +467,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-model/1.02.08/dss-model-1.02.08.pom",
@@ -425,7 +478,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-policy-jaxb/1.02.08/dss-policy-jaxb-1.02.08.aar",
@@ -435,7 +489,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-policy-jaxb/1.02.08/dss-policy-jaxb-1.02.08.module",
@@ -445,7 +500,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-policy-jaxb/1.02.08/dss-policy-jaxb-1.02.08.pom",
@@ -455,7 +511,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-service/1.02.08/dss-service-1.02.08.aar",
@@ -465,7 +522,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-service/1.02.08/dss-service-1.02.08.module",
@@ -475,7 +533,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-service/1.02.08/dss-service-1.02.08.pom",
@@ -485,7 +544,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-simple-certificate-report-jaxb/1.02.08/dss-simple-certificate-report-jaxb-1.02.08.aar",
@@ -495,7 +555,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-simple-certificate-report-jaxb/1.02.08/dss-simple-certificate-report-jaxb-1.02.08.module",
@@ -505,7 +566,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-simple-certificate-report-jaxb/1.02.08/dss-simple-certificate-report-jaxb-1.02.08.pom",
@@ -515,7 +577,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-simple-report-jaxb/1.02.08/dss-simple-report-jaxb-1.02.08.aar",
@@ -525,7 +588,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-simple-report-jaxb/1.02.08/dss-simple-report-jaxb-1.02.08.module",
@@ -535,7 +599,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-simple-report-jaxb/1.02.08/dss-simple-report-jaxb-1.02.08.pom",
@@ -545,7 +610,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-spi/1.02.08/dss-spi-1.02.08.aar",
@@ -555,7 +621,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-spi/1.02.08/dss-spi-1.02.08.module",
@@ -565,7 +632,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-spi/1.02.08/dss-spi-1.02.08.pom",
@@ -575,7 +643,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-token/1.02.08/dss-token-1.02.08.aar",
@@ -585,7 +654,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-token/1.02.08/dss-token-1.02.08.module",
@@ -595,7 +665,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-token/1.02.08/dss-token-1.02.08.pom",
@@ -605,7 +676,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-tsl-validation/1.02.08/dss-tsl-validation-1.02.08.aar",
@@ -615,7 +687,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-tsl-validation/1.02.08/dss-tsl-validation-1.02.08.module",
@@ -625,7 +698,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-tsl-validation/1.02.08/dss-tsl-validation-1.02.08.pom",
@@ -635,7 +709,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-utils-google-guava/1.02.08/dss-utils-google-guava-1.02.08.aar",
@@ -645,7 +720,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-utils-google-guava/1.02.08/dss-utils-google-guava-1.02.08.module",
@@ -655,7 +731,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-utils-google-guava/1.02.08/dss-utils-google-guava-1.02.08.pom",
@@ -665,7 +742,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-utils/1.02.08/dss-utils-1.02.08.aar",
@@ -675,7 +753,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-utils/1.02.08/dss-utils-1.02.08.module",
@@ -685,7 +764,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-utils/1.02.08/dss-utils-1.02.08.pom",
@@ -695,7 +775,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xades/1.02.08/dss-xades-1.02.08.aar",
@@ -705,7 +786,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xades/1.02.08/dss-xades-1.02.08.module",
@@ -715,7 +797,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xades/1.02.08/dss-xades-1.02.08.pom",
@@ -725,7 +808,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xml-common/1.02.08/dss-xml-common-1.02.08.aar",
@@ -735,7 +819,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xml-common/1.02.08/dss-xml-common-1.02.08.module",
@@ -745,7 +830,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xml-common/1.02.08/dss-xml-common-1.02.08.pom",
@@ -755,7 +841,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xml-utils/1.02.08/dss-xml-utils-1.02.08.aar",
@@ -765,7 +852,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xml-utils/1.02.08/dss-xml-utils-1.02.08.module",
@@ -775,7 +863,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/dss-xml-utils/1.02.08/dss-xml-utils-1.02.08.pom",
@@ -785,7 +874,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-trusted-list/1.02.08/specs-trusted-list-1.02.08.aar",
@@ -795,7 +885,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-trusted-list/1.02.08/specs-trusted-list-1.02.08.module",
@@ -805,7 +896,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-trusted-list/1.02.08/specs-trusted-list-1.02.08.pom",
@@ -815,7 +907,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-validation-report/1.02.08/specs-validation-report-1.02.08.aar",
@@ -825,7 +918,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-validation-report/1.02.08/specs-validation-report-1.02.08.module",
@@ -835,7 +929,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-validation-report/1.02.08/specs-validation-report-1.02.08.pom",
@@ -845,7 +940,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-xades/1.02.08/specs-xades-1.02.08.aar",
@@ -855,7 +951,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-xades/1.02.08/specs-xades-1.02.08.module",
@@ -865,7 +962,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-xades/1.02.08/specs-xades-1.02.08.pom",
@@ -875,7 +973,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-xmldsig/1.02.08/specs-xmldsig-1.02.08.aar",
@@ -885,7 +984,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-xmldsig/1.02.08/specs-xmldsig-1.02.08.module",
@@ -895,7 +995,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/specs-xmldsig/1.02.08/specs-xmldsig-1.02.08.pom",
@@ -905,7 +1006,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/validation-policy/1.02.08/validation-policy-1.02.08.aar",
@@ -915,7 +1017,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/validation-policy/1.02.08/validation-policy-1.02.08.module",
@@ -925,7 +1028,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/dss-android/validation-policy/1.02.08/validation-policy-1.02.08.pom",
@@ -935,7 +1039,8 @@
     "gpr:aarmam/packages",
     "gpr:signerry/packages",
     "gpr:signerry/android-awt"
-   ]
+   ],
+   "licence": "LGPL-2.1-or-later (signerry/dss-android LICENSE; the fork POM omits <licenses>)"
   },
   {
    "path": "com/signerry/santuario/xmlsec/2.3.4/xmlsec-2.3.4.jar",
@@ -944,7 +1049,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Apache-2.0"
   },
   {
    "path": "com/signerry/santuario/xmlsec/2.3.4/xmlsec-2.3.4.pom",
@@ -953,7 +1059,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Apache-2.0"
   },
   {
    "path": "com/sun/xml/bind/jaxb-bom-ext/2.3.2/jaxb-bom-ext-2.3.2.pom",
@@ -962,7 +1069,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0 [UNVERIFIED: BOM POM omits <licenses>; the jaxb modules it pins are EDL 1.0]"
   },
   {
    "path": "com/sun/xml/bind/jaxb-bom-ext/3.1.6/jaxb-bom-ext-3.1.6.pom",
@@ -971,7 +1079,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0 [UNVERIFIED: BOM POM omits <licenses>; the jaxb modules it pins are EDL 1.0]"
   },
   {
    "path": "com/sun/xml/bind/mvn/jaxb-parent/2.3.2/jaxb-parent-2.3.2.pom",
@@ -980,7 +1089,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "com/sun/xml/bind/mvn/jaxb-parent/3.1.6/jaxb-parent-3.1.6.pom",
@@ -989,7 +1099,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "com/sun/xml/bind/mvn/jaxb-runtime-parent/2.3.2/jaxb-runtime-parent-2.3.2.pom",
@@ -998,7 +1109,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "com/sun/xml/bind/mvn/jaxb-runtime-parent/3.1.6/jaxb-runtime-parent-3.1.6.pom",
@@ -1007,7 +1119,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "com/sun/xml/bind/mvn/jaxb-txw-parent/2.3.2/jaxb-txw-parent-2.3.2.pom",
@@ -1016,7 +1129,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "com/sun/xml/bind/mvn/jaxb-txw-parent/3.1.6/jaxb-txw-parent-3.1.6.pom",
@@ -1025,7 +1139,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-bom/2.3.2/jaxb-bom-2.3.2.pom",
@@ -1034,7 +1149,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0 [UNVERIFIED: BOM POM omits <licenses>; the jaxb modules it pins are EDL 1.0]"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-bom/3.1.6/jaxb-bom-3.1.6.pom",
@@ -1043,7 +1159,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0 [UNVERIFIED: BOM POM omits <licenses>; the jaxb modules it pins are EDL 1.0]"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-core/3.1.6/jaxb-core-3.1.6.jar",
@@ -1052,7 +1169,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-core/3.1.6/jaxb-core-3.1.6.pom",
@@ -1061,7 +1179,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.jar",
@@ -1070,7 +1189,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-runtime/2.3.2/jaxb-runtime-2.3.2.pom",
@@ -1079,7 +1199,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-runtime/3.1.6/jaxb-runtime-3.1.6.jar",
@@ -1088,7 +1209,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/jaxb-runtime/3.1.6/jaxb-runtime-3.1.6.pom",
@@ -1097,7 +1219,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.jar",
@@ -1106,7 +1229,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/txw2/2.3.2/txw2-2.3.2.pom",
@@ -1115,7 +1239,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/txw2/3.1.6/txw2-3.1.6.jar",
@@ -1124,7 +1249,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   },
   {
    "path": "org/glassfish/jaxb/txw2/3.1.6/txw2-3.1.6.pom",
@@ -1133,7 +1259,8 @@
     "central",
     "gpr:signerry/packages",
     "gpr:aarmam/packages"
-   ]
+   ],
+   "licence": "Eclipse Distribution License - v 1.0"
   }
  ],
  "mirror_root": "https://tomkabel.github.io/eudi-wallet-poc/maven"

@@ -1,0 +1,1 @@
+JAVA_HOME="/usr/lib/jvm/java-17-openjdk" ./gradlew --console=plain -q :app:spotlessCheck :app:detekt

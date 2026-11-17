@@ -1,0 +1,17 @@
+{
+  "name": "Multipaz sample wallet 0.99.0",
+  "source_url": "https://github.com/openwallet-foundation/multipaz.git",
+  "tag": "0.99.0",
+  "revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+  "tag_object": "e8a55fb5f9083d433ed69ca45e4faa16edeccafb",
+  "verified_on": "2026-11-11",
+  "verification_command": "git ls-remote https://github.com/openwallet-foundation/multipaz.git refs/tags/0.99.0 refs/tags/0.99.0^{}",
+  "rationale": "Existing carrier fixtures derive from Multipaz 0.99.0 ZK serialization. Its public sample wallet provides an attributable independent implementation target; fixture provenance establishes no external compatibility.",
+  "preparation": [
+    "git clone --depth 1 --branch 0.99.0 https://github.com/openwallet-foundation/multipaz.git /tmp/eudi-carrier-multipaz-0.99.0",
+    "git -C /tmp/eudi-carrier-multipaz-0.99.0 rev-parse HEAD",
+    "python3 tests/run_external_carrier.py --checkout /tmp/eudi-carrier-multipaz-0.99.0 --prepare-command 'adb devices -l' --prepare-command './gradlew --no-daemon --console=plain :samples:testapp:assembleDebug' --timeout 120 --json /tmp/external-carrier.json --markdown /tmp/external-carrier.md"
+  ],
+  "network_policy": "Offline checks never download or execute upstream code.",
+  "scope": "Repository agent execution is not independent operator evidence; publication and independent reproduction remain outstanding."
+}

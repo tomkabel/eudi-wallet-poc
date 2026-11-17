@@ -1,0 +1,444 @@
+{
+  "schema_version": 2,
+  "generated_at": "2026-11-11T21:25:30.817541+00:00",
+  "scope": "Repository vector compatibility only; zero of 19 flow cases executed",
+  "target": {
+    "name": "Multipaz sample wallet 0.99.0",
+    "source_url": "https://github.com/openwallet-foundation/multipaz.git",
+    "tag": "0.99.0",
+    "revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+    "tag_object": "e8a55fb5f9083d433ed69ca45e4faa16edeccafb",
+    "verified_on": "2026-11-11",
+    "verification_command": "git ls-remote https://github.com/openwallet-foundation/multipaz.git refs/tags/0.99.0 refs/tags/0.99.0^{}",
+    "rationale": "Existing carrier fixtures derive from Multipaz 0.99.0 ZK serialization. Its public sample wallet provides an attributable independent implementation target; fixture provenance establishes no external compatibility.",
+    "preparation": [
+      "git clone --depth 1 --branch 0.99.0 https://github.com/openwallet-foundation/multipaz.git /tmp/eudi-carrier-multipaz-0.99.0",
+      "git -C /tmp/eudi-carrier-multipaz-0.99.0 rev-parse HEAD",
+      "python3 tests/run_external_carrier.py --checkout /tmp/eudi-carrier-multipaz-0.99.0 --prepare-command 'adb devices -l' --prepare-command './gradlew --no-daemon --console=plain :samples:testapp:assembleDebug' --timeout 120 --json /tmp/external-carrier.json --markdown /tmp/external-carrier.md"
+    ],
+    "network_policy": "Offline checks never download or execute upstream code.",
+    "scope": "Repository agent execution is not independent operator evidence; publication and independent reproduction remain outstanding."
+  },
+  "checkout": "/tmp/eudi-carrier-multipaz-0.99.0",
+  "host": {
+    "platform": "Linux-7.3.3-1-cachyos-x86_64-with-glibc2.44",
+    "machine": "x86_64",
+    "python": "3.14.9",
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk",
+    "ANDROID_HOME": "/opt/android-sdk"
+  },
+  "timeout_seconds": 600,
+  "output_limit_bytes": 4194304,
+  "executions": [
+    {
+      "name": "revision-before",
+      "status": "PASS",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "returncode": 0,
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "origin-before",
+      "status": "PASS",
+      "command": [
+        "git",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "returncode": 0,
+      "output": "https://github.com/openwallet-foundation/multipaz.git\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "cleanliness-before",
+      "status": "PASS",
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "returncode": 0,
+      "output": "",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "java-version",
+      "status": "PASS",
+      "command": [
+        "/usr/lib/jvm/java-17-openjdk/bin/java",
+        "-version"
+      ],
+      "returncode": 0,
+      "output": "openjdk version \"17.0.20.1\" 2026-08-18\nOpenJDK Runtime Environment (build 17.0.20.1+1)\nOpenJDK 64-Bit Server VM (build 17.0.20.1+1, mixed mode, sharing)\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "host-target-test",
+      "status": "PASS",
+      "command": [
+        "./gradlew",
+        "--offline",
+        "--configure-on-demand",
+        "--init-script",
+        "/home/notroot/Documents/eudi-wallet-poc/docs/profiles/carrier/external-host-2026-11-11/vector-harness/init.gradle",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2",
+        ":multipaz-longfellow:jvmTest",
+        "--tests",
+        "org.eudi.externalcarrier.RepositoryCarrierVectorTest.feedBothVectors"
+      ],
+      "returncode": 0,
+      "output": "To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\nDaemon will be stopped at the end of the build \nConfiguration on demand is an incubating feature.\nType-safe project accessors is an incubating feature.\n\n> Configure project :multipaz-longfellow\nSkipping artifact signing for multipaz-longfellow: No signing keys configured.\n\n> Configure project :multipaz-compose\n\nThe Kotlin Gradle plugin was loaded multiple times in different subprojects, which is not supported and may break the build. \nThis might happen in subprojects that apply the Kotlin plugins with the Gradle 'plugins { ... }' DSL if they specify explicit versions, even if the versions are equal.\nPlease add the Kotlin plugin to the common parent project or the root project, then remove the versions in the subprojects.\nIf the parent project does not need the plugin, add 'apply false' to the plugin line.\nSee: https://docs.gradle.org/current/userguide/plugins.html#sec:subprojects_plugins_dsl\nThe Kotlin plugin was loaded in the following projects: ':conventions', ':dokka-known-subclasses-plugin'\n\n> Task :build-logic:conventions:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :build-logic:lokalize:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :build-logic:lokalize:compileKotlin UP-TO-DATE\n> Task :build-logic:lokalize:compileJava NO-SOURCE\n> Task :build-logic:conventions:compileKotlin UP-TO-DATE\n> Task :build-logic:conventions:compileJava NO-SOURCE\n> Task :build-logic:conventions:pluginDescriptors UP-TO-DATE\n> Task :build-logic:conventions:processResources UP-TO-DATE\n> Task :build-logic:conventions:classes UP-TO-DATE\n> Task :build-logic:conventions:jar UP-TO-DATE\n> Task :build-logic:lokalize:pluginDescriptors UP-TO-DATE\n> Task :build-logic:lokalize:processResources UP-TO-DATE\n> Task :build-logic:lokalize:classes UP-TO-DATE\n> Task :build-logic:lokalize:jar UP-TO-DATE\n\n> Configure project :multipaz-compose\nSkipping artifact signing for multipaz-compose: No signing keys configured.\nXML format detected for multipaz-compose - generateMultipazStrings will skip execution\n\n> Configure project :multipaz\nSkipping artifact signing for multipaz: No signing keys configured.\nw: \u26a0\ufe0f Invalid Source Set Dependency Across Trees\nKotlin Source Set 'androidInstrumentedTest' can't depend on 'commonTest' as they are from different Source Set Trees.\nSolution: Please remove this dependency edge.\n\n\n> Configure project :multipaz-cbor-rpc\nSkipping artifact signing for multipaz-cbor-rpc: No signing keys configured.\n\n> Task :multipaz:kmpPartiallyResolvedDependenciesChecker\n> Task :multipaz:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :multipaz:generateBuildConfigClasses UP-TO-DATE\n> Task :multipaz:generateJavaSharedMainBuildConfigClasses SKIPPED\n> Task :multipaz:generateJvmMainBuildConfigClasses SKIPPED\n> Task :multipaz:transformCommonMainDependenciesMetadata UP-TO-DATE\n> Task :multipaz-cbor-rpc:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :multipaz-cbor-rpc:compileKotlin UP-TO-DATE\n> Task :multipaz-cbor-rpc:compileJava NO-SOURCE\n> Task :multipaz-cbor-rpc:processResources UP-TO-DATE\n> Task :multipaz-cbor-rpc:classes UP-TO-DATE\n> Task :multipaz-cbor-rpc:jar UP-TO-DATE\n> Task :multipaz:kspCommonMainKotlinMetadata UP-TO-DATE\n> Task :multipaz:kspKotlinJvm SKIPPED\n> Task :multipaz:compileKotlinJvm UP-TO-DATE\n> Task :multipaz:compileJvmMainJava NO-SOURCE\n> Task :multipaz:jvmProcessResources NO-SOURCE\n> Task :multipaz:processJvmMainResources SKIPPED\n> Task :multipaz:jvmMainClasses UP-TO-DATE\n> Task :multipaz:jvmJar UP-TO-DATE\n> Task :multipaz-longfellow:kmpPartiallyResolvedDependenciesChecker\n> Task :multipaz-longfellow:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :multipaz-longfellow:generatePayloads UP-TO-DATE\n> Task :multipaz-longfellow:kspKotlinJvm SKIPPED\n> Task :multipaz-longfellow:compileKotlinJvm UP-TO-DATE\n> Task :multipaz-longfellow:compileJvmMainJava NO-SOURCE\n> Task :multipaz-longfellow:jvmProcessResources UP-TO-DATE\n> Task :multipaz-longfellow:processJvmMainResources SKIPPED\n> Task :multipaz-longfellow:jvmMainClasses UP-TO-DATE\n> Task :multipaz-longfellow:jvmJar UP-TO-DATE\n> Task :multipaz-longfellow:kspTestKotlinJvm SKIPPED\n> Task :multipaz-longfellow:compileTestKotlinJvm UP-TO-DATE\n> Task :multipaz-longfellow:compileJvmTestJava NO-SOURCE\n> Task :multipaz-longfellow:jvmTestProcessResources NO-SOURCE\n> Task :multipaz-longfellow:processJvmTestResources SKIPPED\n> Task :multipaz-longfellow:jvmTestClasses UP-TO-DATE\n\n> Task :multipaz-longfellow:jvmTest\n\nRepositoryCarrierVectorTest[jvm] > feedBothVectors[jvm] STANDARD_OUT\n    2026-11-11T23:26:40.997577223: INFO: LongfellowZkSystem: Verifying proof using ZkSystemSpec(id=longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121, system=longfellow-libzk-v1)\n\n[INFO][+  232.293 ms] bytes len: 98932952\n[INFO][+  987.373 ms] circuit created. h[in:85118], s[in:3739]\n[INFO][+    1.568 ms] proof params: h[nl:17, ni:85118], s[nl:21, ni:3739] hc[b:461 r:266] sc[b:455 r:19]\n[INFO][+    4.862 ms] proofs read\n[INFO][+    0.101 ms] verifier: recv commit\n[INFO][+    0.002 ms] verifier: recv commit\n[INFO][+    6.519 ms] verifier: verify\n[INFO][+  912.881 ms] verify done: ok\n[INFO][+    0.019 ms] verifier: verify\n[INFO][+  604.891 ms] verify done: ok\n\n> Task :multipaz-longfellow:jvmTest\n    2026-11-11T23:26:44.132670496: INFO: LongfellowZkSystem: Verification Code: 0\n\n[Incubating] Problems report is available at: file:///tmp/eudi-carrier-multipaz-0.99.0/build/reports/problems/problems-report.html\n\nDeprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.\n\nYou can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.\n\nFor more on this, please refer to https://docs.gradle.org/8.14.2/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.\n\nBUILD SUCCESSFUL in 1m 13s\n24 actionable tasks: 3 executed, 21 up-to-date\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "revision-after",
+      "status": "PASS",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "returncode": 0,
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "origin-after",
+      "status": "PASS",
+      "command": [
+        "git",
+        "remote",
+        "get-url",
+        "origin"
+      ],
+      "returncode": 0,
+      "output": "https://github.com/openwallet-foundation/multipaz.git\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "cleanliness-after",
+      "status": "PASS",
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "returncode": 0,
+      "output": "",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "1",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "2",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "3",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "4",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "5",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "6",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "7",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "8",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "9",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "10",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "11",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "12",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "13",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "14",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "15",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "16",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "17",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "18",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "19",
+      "path_label": "NOT_OBSERVED",
+      "carrier": "NOT_OBSERVED",
+      "carriers": [],
+      "declared_response_mode": "NOT_OBSERVED",
+      "declared_outcome": "child-did-not-report",
+      "result": "NOT_EXECUTED",
+      "binding_property": "NOT_OBSERVED",
+      "assertion_result": "NOT_EXECUTED"
+    }
+  ],
+  "assertions": {
+    "carrier_cases_executed": 0,
+    "repository_vectors_executed": 2
+  },
+  "process_status": "PASS",
+  "result": "FAIL",
+  "compatibility_result": "FAIL",
+  "suite_provenance": {
+    "observed_at": "2026-11-11T21:25:31.130358+00:00",
+    "revision": "62ccf9292cac0d1e2633a2ee2050b47d859d3337",
+    "dirty": true,
+    "executions": [
+      {
+        "name": "suite-revision",
+        "status": "PASS",
+        "command": [
+          "git",
+          "rev-parse",
+          "HEAD"
+        ],
+        "returncode": 0,
+        "output": "62ccf9292cac0d1e2633a2ee2050b47d859d3337\n",
+        "detail": "",
+        "cwd": "/home/notroot/Documents/eudi-wallet-poc"
+      },
+      {
+        "name": "suite-cleanliness",
+        "status": "PASS",
+        "command": [
+          "git",
+          "status",
+          "--porcelain",
+          "--untracked-files=all"
+        ],
+        "returncode": 0,
+        "output": "M  Makefile\n M _bmad-output/implementation-artifacts/spec-2-4-external-carrier-run-and-published-result.md\n M docs/README.md\n M docs/profiles/CARRIER-CONFORMANCE-RUNNER.md\nA  docs/profiles/carrier/external-build-2026-11-11/README.md\nA  docs/profiles/carrier/external-build-2026-11-11/report.json\nA  docs/profiles/carrier/external-rerun-2026-11-11/README.md\nA  docs/profiles/carrier/external-rerun-2026-11-11/report.json\nM  tests/README.md\nM  tests/run_carrier_conformance.py\nM  tests/run_external_carrier.py\nM  tests/test_carrier_conformance.py\nM  tests/test_external_carrier.py\n?? docs/profiles/carrier/external-host-2026-11-11/README.md\n?? docs/profiles/carrier/external-host-2026-11-11/RepositoryCarrierVectorTest-attempt-3.xml\n?? docs/profiles/carrier/external-host-2026-11-11/RepositoryCarrierVectorTest.xml\n?? docs/profiles/carrier/external-host-2026-11-11/host-proof.json\n?? docs/profiles/carrier/external-host-2026-11-11/host-proof.md\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors-attempt-1.json\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors-attempt-1.md\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors-attempt-2.json\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors-attempt-2.md\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors-attempt-3.json\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors-attempt-3.md\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors-test.xml\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors.json\n?? docs/profiles/carrier/external-host-2026-11-11/host-vectors.md\n?? docs/profiles/carrier/external-host-2026-11-11/run-host-proof.py\n?? docs/profiles/carrier/external-host-2026-11-11/test_host_evidence.py\n?? docs/profiles/carrier/external-host-2026-11-11/upstream-SystemTest.xml\n?? docs/profiles/carrier/external-host-2026-11-11/vector-harness/RepositoryCarrierVectorTest.kt\n?? docs/profiles/carrier/external-host-2026-11-11/vector-harness/init.gradle\n?? docs/profiles/carrier/external-host-2026-11-11/vector-results-attempt-3.json\n?? docs/profiles/carrier/external-host-2026-11-11/vector-results.json\n",
+        "detail": "",
+        "cwd": "/home/notroot/Documents/eudi-wallet-poc"
+      }
+    ],
+    "sha256": {
+      "tests/run_external_carrier.py": "8142edaf313ecdbae86b82999d17333d3fddaece87a47e3bedb4f6c5d62bd9db",
+      "tests/run_carrier_conformance.py": "7a2860908a34836ccb3e57a0c5b1926dbf5a64b3110e43ac969edba03791b55a",
+      "tests/e2e.sh": "f51d6783c86f748c1ab24fa701d1625cbfc3bd2d5fc55b2041848afd923568aa",
+      "docs/profiles/carrier/external-target.json": "f031f87726a3c408481a393cbaa5ddb698ad7fbef5f149f92e35a3b71f40b717",
+      "tests/vectors/carrier-v1/device_response.cbor": "23978eb511a13d4a38a743260d5ef44a7fd9488d47806c33631fe092adc7c4aa",
+      "tests/vectors/carrier-v1/device_response.cbor.b64": "507ebf7ad0a5c726a54ea42e63c774fb9ab093c480af1cf13712dca05cf523e3",
+      "tests/vectors/carrier-v1/device_response.json.b64": "0137786051da14b4d37cffa4ed547c1762080893827ef966e4f0fb5927bbecb5",
+      "tests/vectors/carrier-v1/device_response_transcript.bin": "544b2287e816c6bdd4cfb9c666672014c7774f18ec09880eabe8f46032a5aaa6",
+      "tests/vectors/carrier-v1/manifest.json": "9405fc1bff0d9029049a07bf78fc647e4d61f36033a70ef5f230587cfa28eca4",
+      "tests/vectors/carrier-v1/request.json": "4586ada2b2833fa5f3b20de5d4d2720dacd7ec3a5d1f6944cc5d96e4144b5e83"
+    }
+  },
+  "input_sha256": {
+    "docs/profiles/carrier/external-host-2026-11-11/run-host-proof.py": "a12d446d2769a3ed277f87ba624500d23c25795790337b040c7d7163e8d25406",
+    "docs/profiles/carrier/external-host-2026-11-11/vector-harness/init.gradle": "ffc4ab44c9ed639e1928799facea35786871c551fa0edf56202de70092e52999",
+    "docs/profiles/carrier/external-host-2026-11-11/vector-harness/RepositoryCarrierVectorTest.kt": "26f0c24361253d26256d18b62c60f8805ec02dfa0a559be868beebc70360e868",
+    "tests/vectors/carrier-v1/device_response.json.b64": "0137786051da14b4d37cffa4ed547c1762080893827ef966e4f0fb5927bbecb5",
+    "tests/vectors/carrier-v1/device_response.cbor.b64": "507ebf7ad0a5c726a54ea42e63c774fb9ab093c480af1cf13712dca05cf523e3",
+    "tests/vectors/carrier-v1/device_response_transcript.bin": "544b2287e816c6bdd4cfb9c666672014c7774f18ec09880eabe8f46032a5aaa6"
+  },
+  "executed_test_count": 1,
+  "vector_observations": {
+    "schema_version": 1,
+    "scope": "Repository vector compatibility only; zero of 19 flow cases executed",
+    "target_revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+    "carrier_vectors": [
+      {
+        "carrier": "interim-json",
+        "result": "FAIL",
+        "parsed": false,
+        "proof_verified": false,
+        "evidence": "java.lang.IllegalArgumentException: Out of bounds decoding data"
+      },
+      {
+        "carrier": "mso-mdoc-zk-cbor",
+        "result": "PASS",
+        "parsed": true,
+        "proof_verified": true,
+        "evidence": "Exact repository vector parsed and native proof verified by Multipaz 0.99.0 public APIs"
+      }
+    ]
+  },
+  "finished_at": "2026-11-11T21:26:44.912608+00:00"
+}

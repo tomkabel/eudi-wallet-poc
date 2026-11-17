@@ -14,5 +14,42 @@
     "device_response.cbor": "23978eb511a13d4a38a743260d5ef44a7fd9488d47806c33631fe092adc7c4aa",
     "device_response_transcript.bin": "544b2287e816c6bdd4cfb9c666672014c7774f18ec09880eabe8f46032a5aaa6",
     "request.json": "4586ada2b2833fa5f3b20de5d4d2720dacd7ec3a5d1f6944cc5d96e4144b5e83"
+  },
+  "provenance": {
+    "device_response.json.b64": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "repository-policy"
+      ]
+    },
+    "device_response.cbor.b64": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "repository-policy"
+      ]
+    },
+    "device_response.cbor": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "repository-policy"
+      ]
+    },
+    "device_response_transcript.bin": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "openid4vp-1.0-final",
+        "multipaz-0.99.0"
+      ]
+    },
+    "request.json": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "openid4vp-1.0-final",
+        "multipaz-0.99.0"
+      ]
+    }
   }
 }

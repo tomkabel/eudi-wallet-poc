@@ -25,7 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
-import ee.cyber.wallet.BuildConfig
 import ee.cyber.wallet.R
 import ee.cyber.wallet.ui.components.AppContent
 import ee.cyber.wallet.ui.components.ConfirmationDialog
@@ -68,7 +67,6 @@ fun SettingsScreen(viewModel: SettingsViewModel, navigationHandler: SettingsNavi
         state = state,
         onDeleteAllClicked = { showDeleteConfirmation = true },
         onBleModeToggle = { viewModel.toggleBleMode() },
-        onTrustAllValidatorToggle = { viewModel.toggleTrustAllValidator() },
         onDcApiDisclosureToggle = { viewModel.toggleDcApiDisclosure() },
         navigationHandler = navigationHandler
     )
@@ -100,7 +98,6 @@ private fun SettingsContent(
     state: UiState,
     onDeleteAllClicked: () -> Unit = {},
     onBleModeToggle: () -> Unit = {},
-    onTrustAllValidatorToggle: () -> Unit = {},
     onDcApiDisclosureToggle: () -> Unit = {},
     navigationHandler: SettingsNavigationHandler = SettingsNavigationHandler()
 ) {
@@ -112,9 +109,6 @@ private fun SettingsContent(
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             SettingItem(title = stringResource(R.string.settings_language), subtitle = stringResource(state.language.resId), onClick = navigationHandler.navigateToLanguage)
             BleModeSettingItem(isPeripheralMode = state.blePeripheralMode, onToggle = onBleModeToggle)
-            if (BuildConfig.DEBUG) {
-                TrustAllValidatorSettingItem(isTrustAll = state.trustAllValidator, onToggle = onTrustAllValidatorToggle)
-            }
             DcApiDisclosureSettingItem(isEnabled = state.dcApiDisclosureEnabled, onToggle = onDcApiDisclosureToggle)
             if (state.lotlEnabled) {
                 LotlStatusItem(isSynced = state.lotlSynced, certificateCount = state.lotlCertificateCount)
@@ -204,35 +198,6 @@ private fun BleModeSettingItem(isPeripheralMode: Boolean, onToggle: () -> Unit =
             }
             Switch(
                 checked = isPeripheralMode,
-                onCheckedChange = { onToggle() }
-            )
-        }
-    }
-}
-
-@Composable
-private fun TrustAllValidatorSettingItem(isTrustAll: Boolean, onToggle: () -> Unit = {}) {
-    Card {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(48.dp)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.settings_trust_all_validator_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = stringResource(R.string.settings_trust_all_validator_description),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Switch(
-                checked = isTrustAll,
                 onCheckedChange = { onToggle() }
             )
         }

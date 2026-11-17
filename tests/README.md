@@ -5,10 +5,226 @@ Every test and check in this repository, where it lives, and what it proves.
 [`docs/DEVELOPMENT.md`](../docs/DEVELOPMENT.md) ("Running the checks locally").
 
 Unit tests sit beside the code they test — Go under `verifier/go/`, the
-cross-language transcript check in `wallet/`. This directory holds only the
-end-to-end and load harnesses. Do not move or rename anything here: ci.yml
-invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh` and
-`tests/*.sh`.
+cross-language transcript check in `wallet/`. This directory holds the
+end-to-end and load harnesses and offline registry checks. Do not move or rename anything here: ci.yml
+invokes `tests/e2e.sh` by path and shellchecks the globs `scripts/*.sh`,
+`tests/*.sh`, `tools/*.sh` and `demo/*.sh`.
+
+## Carrier conformance runner
+
+`python3 tests/run_carrier_conformance.py --json /tmp/carrier-report.json` runs
+the Go carrier dispatch/parser checks, the committed carrier-vector verifier
+test, then `tests/e2e.sh`. The E2E script keeps its human-readable assertions
+and writes JSONL case observations to a private path supplied by the runner.
+The report has one ordered row for each of the 19 numbered assertions, with
+`path_label`, observed carrier, declared response mode, declared outcome, binding_property, assertion_result and result. Cases that do not
+carry a presentation (for example, proving the response key is published) have
+carrier `NOT_OBSERVED`; encrypted transport mode does not infer one. Child
+failures remain `FAIL`/`ERROR`, and cases the E2E child never reports remain
+`NOT_EXECUTED`.
+
+The E2E inventory exercises the OpenID4VP interim PoC path. Its rows do not
+claim that all 19 assertions exercise both encodings. The second layer runs the
+same-proof committed vectors for `interim-json` and `mso-mdoc-zk-cbor`, whose
+byte hashes and provenance are in `tests/vectors/carrier-v1/manifest.json`.
+The runner requires `make deps` (including the Rust static library, prover and
+verifier) and `make py-deps` (the locked Python inputs); `make e2e` invokes
+it. `make check` runs only its fake-child inventory controls and remains
+Rust-free.
+
+Run the focused runner controls with
+`python3 -m unittest discover -s tests -p 'test_carrier_conformance.py'`.
+These test event order, exact/unique inventory, malformed records and missing
+child behavior. Local execution establishes repository behavior only; it does
+not prove independent-wallet behavior or external conformance. The OpenID4VP
+`mso_mdoc_zk` path is profiled but unofficial; the Digital Credentials API is
+the mandated ZK path. Story 2.4 remains the independent evidence gate. See the
+[runner profile](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md).
+
+The separate external runner is `tests/run_external_carrier.py`. The selected
+target is public Multipaz sample wallet 0.99.0 at canonical source commit
+`7486ddbca490038c3580513d8273b9bbf18c6b70`;
+[target metadata](../docs/profiles/carrier/external-target.json) records its
+rationale and explicit checkout/preparation commands. Its historical
+[2026-11-11 attempt](../docs/profiles/carrier/external-run-2026-11-11/README.md)
+is `BLOCKED` after a bounded build timeout, with no connected device and all
+19 assertions/two vectors unexecuted. The report is prepared in-repository;
+public publication and independent operator reproduction remain outstanding.
+
+Run offline external controls directly with
+`python3 -m unittest discover -s tests -p 'test_external_carrier.py'`, or run
+all carrier controls through `make test-carrier-conformance` (also in
+`make check` and fast CI). These use fake evidence and bounded local children,
+without downloading or building upstream code. They cover the PASS/FAIL/
+BLOCKED/ERROR matrix, strict inventory and provenance, malformed evidence,
+runtime/CLI report semantics, descendant cleanup and safe diagnostic rendering.
+The [runner profile](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md#explicit-external-invocation)
+documents the external invocation, adapter environment and exact case/vector
+schema. No target adapter is shipped. Local PASS, fixtures, upstream self-tests,
+build success and adapter exit code alone cannot satisfy external acceptance.
+
+The separately retained [host vector feed](../docs/profiles/carrier/external-host-2026-11-11/README.md)
+actually invokes the pinned Multipaz parser and native verifier with both exact
+repository vectors. Its partial result is FAIL: CBOR parses and verifies, while
+the interim JSON envelope is rejected. All 19 flow cases remain NOT_EXECUTED.
+Run its offline evidence-classification controls with
+`python3 -m unittest discover -s docs/profiles/carrier/external-host-2026-11-11 -p test_host_evidence.py`.
+These six supplemental controls validate provenance and fresh-evidence accounting;
+they do not execute the external target. Explicit host reproduction commands live
+with the retained evidence and are excluded from ordinary offline CI.
+
+## AV Profile registry checks (Python standard library, offline)
+
+- `python3 tests/check_av_registry.py` validates the public Annex A revision/date
+  and digest pins, retained excerpt/license bytes, complete ordered source-block
+  and clause accounting, exactly one scoped test mapping or explicit v1 exclusion,
+  and real referenced Go test files/symbols. It derives source blocks directly
+  from retained Markdown, including declarative/inherited requirements and table
+  rows. It prints mapped/excluded counts and exits nonzero on drift.
+- `python3 -m unittest discover -s tests -p 'test_av_registry.py'` runs malformed
+  input controls for missing coverage (even when block and clause entries are
+  removed together), duplicate IDs, changed order/text/pins, empty or conflicting
+  dispositions, dangling mappings, missing files/symbols and orphan tests.
+- Both commands run through `make test-av-registry`, `make check` and the fast CI
+  job. They require no network, Go/Rust build or third-party Python dependencies.
+  They establish traceability structure, not executed AV conformance. Mapped
+  protocol tests have their own build requirements and are not run by this
+  validator. The full original digest is checked against fixed metadata; only
+  the normative excerpt and license bytes are retained for offline hashing.
+
+The [registry guide](../docs/profiles/AV-PROFILE-CLAUSE-REGISTRY.md) documents the
+schema, source pin, 20 partial mappings, exclusions and refresh procedure.
+
+## AV Profile fixture checks (Python standard library and Go, no Rust)
+
+- `python3 tools/build_av_fixtures.py --check` compares all 49 committed files in
+  `tests/vectors/av-profile/`, including the version/provenance manifest, against
+  an in-memory rebuild; missing/extra files and changed source/provenance pins fail.
+  This command writes nothing and never reserializes decoded golden CBOR.
+- `python3 -m unittest discover -s tests -p 'test_av_fixtures.py'` checks source,
+  local input, provenance, manifest and output corruption plus complete inventory
+  failures and read-only CLI behavior.
+- `cd verifier/go && go test ./oid4vp -run '^TestAVProfile'` independently checks
+  all 32 A.11 literal bodies, ten direct binary decodes, selected outer containers,
+  AV docType/namespace/age predicate, nested tuple values and local request bytes
+  against runtime `DeviceRequest`/`ZkAgeQuery`. The actual allowlist accepts the
+  local positive tuple and refuses all five missing and five tampered parameters,
+  an unknown system and all four external version-6 tuples.
+- `make test-av-fixtures`, `make check` and fast CI run the Python checks; the Go
+  tests run through that job's existing package tests. No network, new keys or
+  cryptographic proof generation is required.
+
+See the [fixture guide](../docs/profiles/AV-PROFILE-FIXTURES.md) for regeneration
+and version/origin details. Public examples remain version 6; local data uses
+version 7. Encrypted examples stay opaque and the copied minted proof retains
+its OpenID4VPHandover binding. These tests do not verify proofs or establish AV
+transport conformance, scheme-owner circuit acceptance or certification.
+
+## AVSUA-equivalent issuance (Android JVM)
+
+- `AvsuaIssuanceTest` in `app/src/test/kotlin/ee/cyber/wallet/domain/provider/wallet/`
+  calls the actual `CredentialIssuanceServiceMock` mint, decodes its AV mdoc docType
+  and bound device key, and verifies the issuer signature. It refuses withheld
+  bundle/instance/key evidence at the outer boundary and public AV helper;
+  separately tampered instance and key signatures; an untrusted signer with a
+  supplied x5c; wrong key/audience/transaction/challenge and signed bindings;
+  expired/future/missing/oversized validity; absent/negative integrity and absent,
+  wrong-value or wrong-type key-security assertions. Fresh contexts/tokens across
+  local APs omit account identifiers in claims and JOSE headers and reject replay.
+  Separate controls isolate the AP context's original key binding and cross-AP
+  ownership with shared provider trust and holder key. Fixed-clock controls
+  isolate exact token and AP context expiry, including expiry during trust
+  resolution and refusal after expired-context pruning; concurrent reuse allows
+  exactly one mint. Additional controls
+  cover malformed/type/algorithm/jti/demo markers, absent or failing trust,
+  cancellation, provider reset and signing-failure retry. Actual application
+  factory tests establish configured trust before asset loading and evidence
+  forwarding to the real mint. The real `WalletProviderBatchAgeIssuer` loop runs
+  with fake Android key storage and Room, forwards evidence for generated keys,
+  rolls back all keys/rows on a later mint refusal or evidence-provider failure
+  and cancellation, and preserves EE-PoA issuance
+  without AVSUA. The platform keystore and actual platform integrity are outside
+  JVM coverage; generated JVM issuer keys replace Android asset loading only.
+- The `local_mocks` issuer keys are not tracked: Gradle runs `tools/gen-mock-keys.sh` (also `make keys`) before the asset merge and writes
+  them, with a throwaway IACA root they chain to, into the gitignored `app/src/local_mocks/assets/keys/`.
+- Run `JAVA_HOME=/usr/lib/jvm/java-17-openjdk ANDROID_HOME=/opt/android-sdk ./gradlew :app:testLocal_mocksUnitTest :app:assembleLocal_mocks`.
+  To select this test class use the unit task alone with
+  `--tests ee.cyber.wallet.domain.provider.wallet.AvsuaIssuanceTest`.
+- [AVSUA-ISSUANCE.md](../docs/profiles/AVSUA-ISSUANCE.md) documents the primary
+  requirements, local format, configured provider trust, refusal causes and
+  demonstration-only assertions. This is local mock equivalence, not TS3 or
+  external-provider conformance. Registry A.5 exclusions remain: its runner
+  executes Go probes and does not execute these JVM tests.
+
+## AV issuance invocation (Android JVM and adb surface)
+
+- `AvVciInvocationTest` in `app/src/test/kotlin/ee/cyber/wallet/domain/credentials/`
+  exercises the pure parser and the actual shared dispatch callbacks used by
+  WalletApp: valid offers, inert public grants, missing/empty offers, strict JSON
+  and duplicate keys, invalid percent escapes/UTF-8, query duplicates/conflicts,
+  encoded separators and one-pass decoding, invalid issuer/configuration IDs,
+  authority/path/fragment refusals, unsupported query parameters and schemes,
+  preserved presentation/onboarding generic callbacks and visible navigation
+  failures. Every refusal asserts its full parameter/reason and that the entry
+  callback was never invoked; Unicode percent-hex digits are rejected.
+  Regressions also cover issuer query/empty-port/bidi-control refusals, bounded
+  JSON depth and exact-limit/oversized AV offers.
+- `WalletInvocationViewModelTest` in `app/src/test/kotlin/ee/cyber/wallet/ui/navigation/app/`
+  covers retained typed/provider state, FIFO refusals, repeated-offer reset,
+  stale callback protection, bounded capacity/counting and oversized AV/existing
+  links without retained raw data. These two classes run with the unit command
+  below; use `--tests ee.cyber.wallet.domain.credentials.AvVciInvocationTest
+  --tests ee.cyber.wallet.ui.navigation.app.WalletInvocationViewModelTest` to
+  select only invocation coverage.
+  Run `JAVA_HOME=/usr/lib/jvm/java-17-openjdk ./gradlew :app:testLocal_mocksUnitTest`
+  (the Android CI unit suite). JVM Android methods are stubbed; this establishes
+  parser/dispatch behavior, not manifest or Compose surface evidence.
+- `python3 tests/test_av_vci_android.py --help` documents the standard-library
+  adb smoke harness. Install the current `:app:installLocal_mocks` APK on an
+  unlocked Android 31+ emulator/device and run
+  `python3 tests/test_av_vci_android.py --serial emulator-5554`. The test verifies
+  VIEW/BROWSABLE manifest resolution, cold/warm valid entry with distinct issuers,
+  visible `eu.europa.ec.av.1`, Cancel and provider-unavailable Continue, named
+  missing/malformed/unsupported explanations, known-scheme unmatched navigation,
+  and an unknown explicit intent. Night-mode recreation checks cold/warm valid,
+  provider-unavailable and refusal state; queued refusals must precede the next
+  valid offer. Existing onboarding/presentation links reach NavController and
+  destination UI. Cancel/Close must actually dismiss the previous dialog.
+  Recreation must change the local Activity instance before restored UI is
+  accepted. A full inbox followed by five excess arrivals must eventually show
+  the exact localized capacity count and allow dismissal. Duplicate query
+  parameters and malformed percent input are also checked on Android.
+  API33+ executes English and Estonian and restores the original app locale and
+  night mode in `finally`. API31/32 require two separately configured language
+  passes with `--legacy-locale en` and `--legacy-locale et`; no unsupported locale
+  shell command is issued. The harness force-stops without clearing app data.
+  An unavailable runtime is a verification gap, never a surface-test pass.
+  The App workflow runs this harness on Android 35 for app and harness changes;
+  it installs `local_mocks` and checks both languages in an emulator job.
+
+See [the invocation guide](../docs/profiles/AV-VCI-INVOCATION.md) for grammar,
+example generation and the normative `av-vci://` versus public-example `av://`
+discrepancy. These checks cover external issuance entry only; the provider is
+not integrated, no mock is minted and no AVSUA/conformance claim follows.
+
+## PKI gates and trust vectors
+
+From [the PKI remediation plan](../docs/planning/PKI-REMEDIATION-PLAN.md). Each
+gate has a seeded failure that proves it turns red.
+
+| Check | What fails it | Run |
+|---|---|---|
+| `tests/check_pki_gates.py` | a `.gitleaks.toml` allowlist naming a path that holds a private key at HEAD; trust-all switch back in the wallet; `*Mock` class or mock status URI outside `local_mocks`; `-ignore-trust-freshness` outside a `devflags` build; trust material unlisted in `trust/MANIFEST.json`, changed without `--update`, or under 30 days from `notAfter`; a private key not marked test-only; a mirrored Maven file unpinned or without a licence | `make pki-gates` |
+| `tests/test_pki_gates.py` | a gate that stays green on its seeded defect | `make pki-gates` |
+| `tests/vectors/trust/cases.json` | Go (`oid4vp.TestSharedTrustVectors`) or Kotlin (`SharedTrustVectorsTest`) disagreeing with a case's `expect`: IACA→DS profile, path length, expiry, algorithm policy. Regenerate with `tools/build_trust_vectors.py` | both unit suites |
+| `issuer/test_mint_custody.py` | a self-signed DSC; an unencrypted persisted issuer key outside `--test-mode` | `make test-py` |
+| `tools/publish_guard.py`, `tests/test_publish_guard.py` | a tracked `demo-data/` path, `*.p12`/`*.jks`/`*.keystore`, or PEM with a `PRIVATE KEY` header outside `tools/publish-guard.allow`; the test plants a key in a throwaway repo and asserts the guard fails | `make publish-guard` |
+| `tools/pin_gate.py`, `tests/test_pin_gate.py` | a `uses:` under `.github/` not pinned to a 40-hex commit SHA, or a Dockerfile `FROM` without `@sha256:`, outside `tools/pin-gate.allow` (one reasoned entry: the sandbox image, Phase 6); the test plants unpinned references in a throwaway repo | `make pin-gate` |
+| `security.yml` | gitleaks (pinned by commit) over full history and a seeded key it must flag, the publish guard, the pin gate, zizmor (blocking, version 1.32.0, online audits), pip-audit over the `uv export` of `uv.lock`, govulncheck, gosec outside `verifier/go/.gosec-baseline.json` | CI |
+| `sbom.yml` | CycloneDX SBOMs, uploaded as artefacts: Gradle (`./gradlew cyclonedxBom`), Rust (`cargo cyclonedx` on `verifier/zkverify-ffi`), Python (`cyclonedx-py` over the `uv sync --locked` environment) | CI |
+| `mirror.yml`, `.github/maven-mirror/` | `fetch.py` rebuilds the whole gh-pages Maven mirror from `manifest.json` (sha256 per file; upstream sources, plus `vendored/` for the cose-java snapshot upstream no longer serves) and fails on any mismatch | CI (weekly, manual) |
+| `app.yml` | `:app:lintRelease` security checks outside `app/lint-baseline.xml`; a `*Mock` class in release bytecode | CI |
+| `codeql.yml` | CodeQL `security-extended` alerts for Go, Python, Kotlin | CI |
 
 ## Unit tests beside the code
 
@@ -38,9 +254,9 @@ Run by the `fast` CI job as `go test ./oid4vp/...`.
 its test binary cannot be linked without a Rust build. The `e2e` job runs it;
 the `fast` job cannot.
 
-- `TestCircuitHashKnown` (:5): `CircuitHash(7, 1)` equals the pinned hash `8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121`.
-- `TestCircuitHashUnknown` (:16): `CircuitHash(99, 1)` returns an error.
-- `TestRegistryRejectsUnlisted` (:22): a registry listing only hash `deadbeef` rejects `Check(7, 1)` — an unlisted circuit cannot pass the accepted-circuit allowlist (EE-ZKP-023).
+- `TestCircuitHashKnown` (:12): `CircuitHash(7, 1)` equals the pinned hash `8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121`.
+- `TestCircuitHashUnknown` (:23): `CircuitHash(99, 1)` returns an error.
+- `TestRegistryRejectsUnlisted` (:29): a registry listing only hash `deadbeef` rejects `Check(7, 1)` — an unlisted circuit cannot pass the accepted-circuit allowlist (EE-ZKP-023).
 
 ### `wallet/test_transcript.py` — cross-language vectors, the Python side
 
@@ -57,7 +273,7 @@ W6), merges all three issuer lists into one trust store, starts
 drives `wallet/present.py` once per case and greps the verifier's answer out
 of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 `EE_VERIFIER` optionally overrides the verifier path; the wallet needs python
-`cbor2`, `cryptography` and `jwcrypto`. Thirteen assertions:
+`cbor2`, `cryptography` and `jwcrypto`. Nineteen assertions:
 
 1. Happy path, plain mode: the adult proves `age_over_18`; output must contain `"valid": true`.
 2. Transcript binding: `--tamper-nonce` makes the proof cover a different nonce; the verifier must answer `"valid": false`.
@@ -72,8 +288,21 @@ of the wallet output. Requires `EE_PROVER` (the `ee_poa_demo` binary);
 11. Default mode: a fresh `/present/new` without flags answers `direct_post.jwt`.
 12. Multi-credential (W6): with `-multi-credentials 2`, one session requests the national PoA and the AV doctype (two issuers); a wallet holding both answers both entries and the verifier answers `valid: true` with `all 2 credentials proved in zero knowledge`.
 13. Multi-credential all-or-error: a response answering only one of two queried credentials fails the session, with the missing credential id named in the detail.
+14. Unknown carrier bytes: a vp_token entry matching neither carrier is refused as `unknown-carrier`, not parsed as JSON.
+15. Malformed envelope: a truncated JSON envelope is refused as `malformed-envelope`, not `unknown-carrier`.
 
-Output is `PASS: 13/13` or `FAIL: n of 13 assertions failed`; exit status is
+16. Controlled client_id transcript mutation in encrypted mode: HTTP 200 valid:false with transcript-binding.
+17. Controlled response_uri transcript mutation: same refusal, while posting to the original destination.
+18. Controlled jwk_thumbprint transcript mutation: same refusal, while encrypting to the original response key.
+19. Well-formed empty CBOR: HTTP 400 valid:false on the plain sniff path with no-presentation and the same persisted polling detail.
+
+The six controlled binding cases require exact case-specific property labels;
+missing/wrong/generic labels fail runner validation. Nonce, replay, predicate and
+decryption assertions require stable runtime names. Runtime opaque proof failures
+name transcript-binding without attributing an individual input. See
+[failure reasons](../docs/profiles/CARRIER-FAILURE-REASONS.md).
+
+Output is `PASS: 19/19` or `FAIL: n of 19 assertions failed`; exit status is
 non-zero when any assertion fails. Note what is absent: there is no
 untrusted-issuer case (the script deliberately trusts all minted issuer keys,
 which is why case 4 fails on the predicate value rather than on trust) and no
@@ -87,18 +316,115 @@ unlisted-circuit POST case; unlisted-circuit rejection is covered only by
 - Demonstrates why the limit exists: `zk.Verify` is a cgo call that pins an OS thread for its duration, so without shed-load behaviour 200 simultaneous proofs would walk the process toward Go's thread cap — a remote kill switch, one HTTP request per thread.
 - Mints and proves once (~15 s the first time); `--work DIR` reuses a previous run's proof; `--max-concurrent-verify` is passed to the verifier (0 leaves it at its default). Not invoked by ci.yml; run it by hand against a built prover and verifier.
 
+## AV conformance runner
+
+`python3 tests/run_av_conformance.py --json /tmp/av-report.json --html /tmp/av-report.html` executes the
+repository verifier's Go tests mapped by `docs/profiles/av/clause-registry.json`
+and the dedicated `TestAVConformance*` probes. It prints per-clause results and
+writes sibling JSON and offline English HTML reports. Omitting `--html` uses
+the JSON filename with an `.html` suffix. Both carry canonical Git/profile
+revisions, clean/dirty status, CPU baseline and advertised flags, Rust/Cargo/Go
+and installed JDK versions (or unavailable), required CPU/Rust baseline versus
+observed FFI configuration and environment, the sibling Longfellow
+pin/revision/mismatch, registry path/SHA-256 and staticlib hash. Effective
+`go env -json` captures overlay flags in GOFLAGS, workspace/GOENV, CGO settings,
+compilers/flags, target and toolchain selection from the module directory;
+current settings do not attest historical compilation.
+Per-test Go assertion output is retained; package startup/build errors remain
+ERROR diagnostics rather than conformance FAIL. Expandable HTML also includes
+exact Go commands, package exit codes/output, all selected named probe results
+and passing/failing/skipped negative controls. Supplementary probe
+FAIL/ERROR/NOT_EXECUTED states affect the verdict independently of clause and
+negative thresholds. All clauses appear per candidate
+in profile order with inline test identifiers or exclusion reasons. See
+[clean-checkout reproduction](../docs/profiles/AV-REPORT-REPRODUCTION.md) and the
+[committed report](../docs/profiles/av/report.html). The pinned registry denominator remains the
+94 retained clauses; this run maps 20 distinct clauses and records negative
+controls separately. The audit is expected to exit nonzero while known AV
+fallback mismatches remain and while no independent candidate is configured.
+Do not interpret partial primitive checks as complete AV or ISO conformance.
+
+An external adapter is invoked with `--candidate-command '<command>'`.
+`shlex.split` preserves quoted arguments; the resulting argv executes directly,
+without interpreting shell operators, expansion or globbing. For example,
+`--candidate-command 'python3 "/path with spaces/adapter.py"'` retains the script
+path as one argument. Shell users must explicitly invoke their script or shell
+as the adapter. Missing executables, malformed quoting and empty argv become
+`NOT_EXECUTED` with startup detail; a launched executable exiting nonzero,
+including 126/127, becomes `ERROR` with its diagnostic. A shell/script adapter
+must express failed inner candidate startup as `NOT_EXECUTED` schema results.
+
+Both output streams must be valid UTF-8. The adapter must print one JSON object
+to stdout with integer `schema_version: 1` (not `true` or `1.0`), a `candidate` object
+containing nonempty `name` and `revision`, and a `results` array. Each result
+must identify a registry `test_id`, a named `property`, a state (`PASS`, `FAIL`,
+`ERROR`, or `NOT_EXECUTED`), and execution evidence. Missing or invalid evidence
+must remain unavailable/error evidence. Independent candidate setup is not
+available in this checkout; the report lists the operator actions instead of
+inventing a result. Malformed UTF-8 in either stream, malformed JSON/text
+(including unpaired surrogate escapes, nonfinite numbers and excessive
+nesting), duplicate JSON object keys at any
+depth, duplicate test IDs, crashes and timeouts make every external mapped row
+`ERROR`, with the cause retained in JSON and HTML. `--timeout` bounds each
+local Go command and adapter execution. Adapter timeouts kill its original POSIX
+process group, including members holding output pipes open, allow up to one
+additional second to drain output, then close remaining pipes and reap the
+direct adapter before returning. Deliberately detached sessions are outside
+that group and may survive; retained pipes produce a bounded-drain ERROR.
+Host init reaps orphaned children. Captured output has no byte quota, a
+pre-existing limitation.
+
+`python3 -m unittest discover -s tests -p 'test_av_conformance.py'` tests local
+coverage/negative-control accounting and retained known failure assertions;
+complete ordered clauses and inline exclusions in JSON/HTML; all result states;
+literal HTML escaping with no network resources; canonical provenance and
+required baseline/observed configuration, effective Go settings and registry
+validation/fingerprints; supplementary probe verdicts and pass-only qualified
+negative counts; actual clean/modified/untracked Git evidence; skipped, missing,
+malformed UTF-8 in both streams, conflicting raw JSON keys at all depths,
+escaped surrogate text, excessive nesting, nonfinite numbers, exact integer
+schema versions, quoted literal argv, startup versus executed 126/127,
+and independently supervised timeout controls with child readiness, pipe-holding
+process-group members, detached sessions, watchdogs and delayed-write controls;
+package-specific linker errors, unavailable Go, SIGILL and host/JDK
+diagnostics, unavailable Git provenance and unreadable host inputs; explicit
+HTML output and resolved-path/hardlink collisions. These controls use
+synthetic evidence where needed and do not establish independent conformance.
+A successful audit control uses synthetic passing mapped/supplementary Go
+events, eight negative passes, a sufficient host diagnostic baseline and an
+actual synthetic adapter subprocess. It verifies return 0, matching JSON
+verdict/thresholds/zero failures, readable HTML and retained operator actions.
+They run through the existing Makefile/fast-CI target and again in e2e after
+the staticlib build, so the actual local-audit case executes there. Fast CI
+uses synthetic controls and skips only that actual audit when the library is
+absent. External reproduction remains
+UNPERFORMED with imperative operator actions in every report.
+
 ## What CI runs, and where the Rust toolchain matters
 
 `fast` (no Rust toolchain): `gofmt -l .` in `verifier/go` (output is the
 signal — `gofmt -l` exits 0 either way), `go vet ./...` (type-checks the cgo
 package without linking, covering every package), `go test ./oid4vp/...
-./internal/... ./circuits/...`,
-`python3 -m compileall -q issuer verifier wallet tests`, `ruff check
---isolated --select F,E9 --exclude eudi-arf .` (ruff 0.16.6),
+./internal/... ./circuits/...` with `-race`,
+`python3 -m compileall -q issuer verifier wallet tests sandbox`, `ruff check
+--isolated --select F,E9 --exclude eudi-arf,_bmad,.agents,.claude .` (ruff 0.16.6),
+`python3 tests/check_av_registry.py` and
+`python3 -m unittest discover -s tests -p 'test_av_registry.py'` (offline AV
+traceability and mutation controls),
+`python3 tools/build_av_fixtures.py --check` and
+`python3 -m unittest discover -s tests -p 'test_av_fixtures.py'` (read-only fixture
+bytes/provenance and corruption controls),
 `python3 wallet/test_transcript.py` (the wallet's half of the golden vectors; the
-step installs `cbor2` and `cryptography`, which `present.py` imports),
-and `shellcheck --severity=warning scripts/*.sh tests/*.sh`. `make lint`
-runs the same set.
+step installs the locked `ci` group (`uv sync --locked`, hashes in `uv.lock`), since `present.py` imports
+`cbor2` and `cryptography`), `python3 issuer/test_mint_device_key.py`,
+`python3 sandbox/test_age.py` (the sandbox issuer's age reckoning, EE-POA-027), and
+`shellcheck --severity=warning scripts/*.sh tests/*.sh tools/*.sh demo/*.sh`.
+`python3 -m unittest discover -s tests -p 'test_doctor.py'` (`make test-doctor`: `tools/doctor.py`
+fails, one line per check, with no prover and no longfellow checkout). `make check` runs the same set.
+
+CI is path-scoped: a `changes` job (`dorny/paths-filter`) gates `fast` and `e2e` in `ci.yml` and the
+two Android jobs in `app.yml`; `ci-ok` and `app-ok` are the checks to require, and they treat a
+skipped job as success.
 
 `e2e` (needs a Rust toolchain): checks out `google/longfellow-zk` as a sibling
 of this repository at the revision committed in `verifier/zkverify-ffi/longfellow-rev.txt`
@@ -106,8 +432,9 @@ of this repository at the revision committed in `verifier/zkverify-ffi/longfello
 builds the prover examples with `RUSTFLAGS=-C target-cpu=x86-64-v3` and asserts
 `ee_poa_demo` exists (`test -x`), builds the verifier
 (`cargo build --release` in `verifier/zkverify-ffi`, then
-`go build -o ../zkverify .`), runs `go test . ./zk/...`, then `pip install cbor2
-cryptography` and `tests/e2e.sh` with `EE_PROVER` set. The `zk` and package
+`go build -o ../zkverify .`), runs `go test -race . ./zk/...` and the Python
+`test_av_conformance.py` suite with the actual local audit, then `uv sync --locked
+--only-group ci` and `tests/e2e.sh` with `EE_PROVER` set. The `zk` and package
 `main` tests are here and not in `fast` because package `zk` links the Rust
 staticlib through cgo and `main` imports it — neither test binary can be linked
 without the Rust build. Between the two jobs
@@ -115,35 +442,21 @@ each package is tested exactly once.
 
 ## Running the checks locally
 
-The `fast` job, from the repository root:
+From the repository root. The `fast` job:
 
 ```bash
-cd verifier/go
-gofmt -l .
-go vet ./...
-go test ./oid4vp/... ./internal/... ./circuits/...
-cd ../..
-python3 -m compileall -q issuer verifier wallet tests
-pip install ruff==0.16.6
-ruff check --isolated --select F,E9 --exclude eudi-arf .
-pip install cbor2 cryptography          # present.py imports them
-python3 wallet/test_transcript.py
-shellcheck --severity=warning scripts/*.sh tests/*.sh
+pip install ruff==0.16.6 && make py-deps   # pinned as in ci.yml; py-deps builds .venv from uv.lock
+make check          # lint + fast Go/Python tests + AV registry/fixture checks
 ```
 
-The `e2e` job — `longfellow-zk` checked out as a sibling at the revision committed in
-`verifier/zkverify-ffi/longfellow-rev.txt`:
+The `e2e` job — `make deps` checks out `longfellow-zk` as a sibling at the revision
+committed in `verifier/zkverify-ffi/longfellow-rev.txt` and builds the prover and the
+verifier (expanded form: `docs/DEVELOPMENT.md` "Build both"):
 
 ```bash
-export RUSTFLAGS=-C target-cpu=x86-64-v3   # ci.yml sets this on the prover build step
-mkdir -p ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples
-cp zk-age-poc/*.rs ../longfellow-zk/rust/applications/mdoc_zk/runtime/examples/
-(cd ../longfellow-zk/rust/applications/mdoc_zk/runtime && cargo build --release --examples --features testonly)
-(cd verifier/zkverify-ffi && cargo build --release)
-(cd verifier/go && go build -o ../zkverify .)
-(cd verifier/go && go test . ./zk/...)
-pip install cbor2 cryptography
-EE_PROVER=../longfellow-zk/rust/target/release/examples/ee_poa_demo tests/e2e.sh
+make deps           # also records the prover's sha256 and revision; `make doctor` re-checks them
+make test-go-zk     # go test -race . ./zk/..., with EE_BENCH_SKIP=1 as in CI
+make e2e            # tests/e2e.sh against the built prover and verifier
 ```
 
 By hand, not in CI:
@@ -161,6 +474,131 @@ builds anything — build the prover and `verifier/zkverify` first.
 - Issuer trust: `oid4vp/trust.go` loads and validates a trust store, but no automated test asserts that a presentation from an issuer absent from it is rejected (`verifier/README.md`'s measured table records a manual case: issuer not in the trust store → `200` `valid:false`).
 - The verifier's HTTP surface (`main.go`, `present.go`: `/present/new`, `/present/response`, `/present/result`, `/healthz`, `/zkverify`): no unit tests; exercised only indirectly by `tests/e2e.sh` and `tests/load_test.py`.
 - `issuer/mint_ee_poa.py` and the wallet's presentation logic beyond the transcript: no unit tests; `compileall` only checks that they parse.
-- Rust: neither `verifier/zkverify-ffi/` nor `zk-age-poc/` contains `#[cfg(test)]`, and ci.yml runs no `cargo test`; the Rust side is covered only by building and by e2e.sh case 5.
+- Rust: `verifier/zkverify-ffi/src/lib.rs` has one `#[cfg(test)]` unit test (`oversize_inputs_are_rejected_not_aborted`), but ci.yml runs no `cargo test`, so it only runs by hand; `zk-age-poc/` has none. In CI the Rust side is covered only by building and by e2e.sh case 5.
 - `tests/load_test.py` is not invoked by ci.yml — run it by hand. (Only `tests/e2e.sh` runs in CI; the root `README.md` says so.)
 - No coverage measurement anywhere.
+
+### Carrier version evidence
+
+Run the offline, read-only assertion with stdlib Python:
+
+    python3 tests/check_carrier_versions.py
+    make test-carrier-conformance
+
+The target is part of make check. It checks every discovered numbered carrier
+profile rule and every published carrier-v1 file against the profile Version
+header, resolving per-item source references through
+[carrier-versions.json](../docs/profiles/carrier-versions.json). Mutation controls
+cover absent, malformed and stale labels; header-only revisions; newly added or
+duplicate rules/files; missing indexed files and orphan metadata; unknown sources,
+missing source versions/dispositions/evidence and missing §23 uncertainty records.
+A coordinated new version passes, demonstrating there is no hardcoded 1.0 gate.
+Runner controls show invalid evidence prevents passing vector/report results even
+when child proof tests pass. These are provenance checks, not crypto verification
+or independent conformance. See the [maintenance procedure](../docs/profiles/CARRIER-CONFORMANCE-RUNNER.md).
+
+## RP deployment profile (Story 3.1)
+
+`make test-rp-kit` requires `make py-deps` and `make deps`; it rebuilds Go
+against the existing Rust staticlib and runs [rp_kit_test.py](rp_kit_test.py).
+The bounded real-process harness checks health, default `direct_post.jwt`
+request, generated and installed P-256 key permissions, stable JWKS across restart,
+key-file swap/drain/rotation with persistent replacement JWKS, pending
+identity, repeated missing-callback 410 after a janitor tick, identifiable 404
+on both routes, rejection of zero/negative TTL and plain mode alone, the paired
+plain negative control, and SIGTERM exit. Temporary local issuer material is
+removed on exit. Native unit syntax is also checked with a staged executable
+when `systemd-analyze` is installed (otherwise explicitly skipped). This does not
+run the service account or systemd sandbox. No external deployment is claimed.
+
+`verifier/go/oid4vp/session_test.go` covers expiry before/after sweep,
+metadata-only retention, late mutation/reuse refusal, fixed retention deadline,
+FIFO capacity and cleanup. `verifier/go/result_expiry_test.go` covers pending,
+repeated expiry and unknown-id identity on both result routes. Run via
+`make test-go-fast` and `make test-go-zk` respectively (race detector).
+Operations: [RP profile](../rp-kit/README.md).
+
+## TARA reference contract (Story 3.2)
+
+After make py-deps, make test-tara-contract runs offline real-loopback HTTP
+provider controls with generated RSA signatures: browser/state/nonce binding,
+callback replay and expiry, missing runtime attestations (no network), discovery
+issuer and endpoint restrictions, Basic form encoding, redirect refusal, invalid
+claims/keys/signatures/assurance, body/transaction bounds and sanitized CLI outcomes.
+It is included in make check and fast CI. Synthetic success is LOCAL_TEST, never
+live PASS. make test-tara-integration is opt-in and exits nonzero with BLOCKED
+when prerequisites are absent. See the [TARA contract](../rp-kit/TARA-CONTRACT.md)
+and [retained external attempt](../rp-kit/tara/evidence/attempt-2026-11-12.json).
+
+## RP-register (Story 3.3)
+
+`make test-go-fast` runs `verifier/go/rpregister` with the race detector: strict
+model/corpus, absence, TTL boundary, no error caching or stale fallback, identity
+isolation, defensive copies, capacity eviction, concurrent use, HTTP timeout/body
+bounds, redirect refusal and malformed/mismatched answers. `make test-go-zk`
+runs real HTTP-handler controls in `verifier/go/register_test.go`: both flows,
+nil, missing identity, unauthorized claims, release/callback surfaces, configured
+connection/timeout/5xx refusal, and stored session policy. `make test-rp-kit` first
+proves the shipped unconfigured service refuses both flows, then explicitly opts
+into the shared synthetic corpus for positive profile checks. `make e2e` likewise
+selects that mock for proof/carrier flows. Run `tests/drain_test.sh` separately
+with `EE_PROVER` set to the pinned prover to exercise drain; it also explicitly
+selects the shared mock. These are synthetic local
+controls, never authority-service evidence.
+Contract: [REGISTER-CONTRACT.md](../rp-kit/REGISTER-CONTRACT.md).
+
+## Estonian acceptance cases (Story 3.5)
+
+Run the fast report integrity controls with
+
+```sh
+make test-estonian-acceptance
+```
+
+The [acceptance guide](../rp-kit/ACCEPTANCE.md) describes the seven ordered rows,
+fresh external adapter schema, source/session provenance and operator handoff.
+tests/test_estonian_acceptance.py covers missing/duplicate/unknown/malformed and
+skipped evidence, stale sessions/XML, artifact digests/path escape, zero-exit
+without observations, fallback version/SpecID/hash drift, CLI nonzero semantics
+and bounded process groups/output/timeouts. It also tests bounded reads before
+hash/decode, nesting errors, missing Longfellow pins with seven retained rows,
+complete before/after source manifests (including untracked implementation),
+source-mutation invalidation, rejection of another checkout with this repository's
+history, wallet-build provenance and stale wire inside fresh wrappers. Synthetic records in those controls
+are never foreign-wallet evidence. The suite is included in make check and fast CI.
+
+The full local report command is:
+
+```sh
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk .venv/bin/python3 \
+  tests/run_estonian_acceptance.py --json /tmp/estonian-acceptance.json
+```
+
+It requires the locked Python dependencies, built prover/staticlib, JDK17 and
+Android SDK. The runner rebuilds the verifier, stages the shipped profile and
+tests both real creation HTTP routes (403/register-not-found). The linked
+TestEstonianAbsentRegistrationNoSession additionally asserts zero live-session
+allocation through the production handlers. A real locally minted EE AV is
+proved and verified with the encrypted default as supplementary evidence.
+make estonian-acceptance-linked runs this process/proof portion in linked CI.
+
+The fresh Go TestPinnedOfflineAcceptance and JVM SignedCircuitFallbackTest
+exercise both actual production signed fallback consumers. The JVM
+EstonianViewModelAcceptanceTest drives wire JSON/CBOR and proximity transfer
+events through actual production ViewModel entry points, real matcher results,
+capability/policy evaluation, consent state, retained refusal and actual transport
+boundaries. It asserts zero response even after share/PIN actions, unsupported
+unsigned OpenID, missing/signed-untrusted readerAuth and incapable-device positive
+controls. EstonianAcceptanceDispatchTest retains helper regression coverage.
+SignedCircuitFallbackTest uses the exact production factory with injected native
+and list dependencies, tests named failure retention and expiry after loading,
+and requires every requested circuit identity parameter to match. Both language
+decoders consume tests/vectors/circuits/optional-metadata.json. The generator's
+actual CLI subprocess roundtrip tests run in make test-go-fast and fast CI;
+linked handler tests prove expiry causes no new session or FFI call. The existing Android unit-test job
+runs these suites; signed artifact/key/runtime paths also trigger that workflow.
+The complete runner forces fresh selected JVM output and compares both actual
+resolver observations to the pinned signed document. It deliberately exits 1
+and preserves foreign PID/AV NOT_EXECUTED until genuine external sessions exist.
+The [retained 13 November execution](../rp-kit/evidence/acceptance-2026-11-13/README.md)
+contains the report/transcript and both JVM XML files with dirty-source limits.

@@ -47,6 +47,7 @@ serve)
 	echo "WARNING: binding 0.0.0.0:$port — the verifier accepts connections from the whole LAN (trusted-network demo only)." >&2
 	echo "verifier: http://$ip:$port  (phone and laptop must share this network)"
 	exec "$repo/verifier/zkverify" \
+		-rp-register-file "$repo/rp-kit/register/synthetic-v1.json" \
 		-registry "$repo/verifier/circuits.json" \
 		-issuers "$data/issuers.json" \
 		-addr "0.0.0.0:$port" \

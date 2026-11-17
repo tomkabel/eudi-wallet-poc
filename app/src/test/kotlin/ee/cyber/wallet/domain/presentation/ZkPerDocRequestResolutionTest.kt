@@ -54,13 +54,12 @@ class ZkPerDocRequestResolutionTest {
             addParam("circuit_hash", circuitHash)
             addParam("num_attributes", numAttributes)
             addParam("version", version)
+            addParam("block_enc_hash", 4151L)
+            addParam("block_enc_sig", 4096L)
         }
 
     private fun advertisedSpec(id: String, circuitHash: String, numAttributes: Long) =
-        ZkSystemSpec(id, "longfellow").apply {
-            addParam("circuit_hash", circuitHash)
-            addParam("num_attributes", numAttributes)
-        }
+        heldSpec(id, circuitHash, numAttributes)
 
     /** A parser-shaped doc request carrying exactly the specs given. */
     private suspend fun docRequest(docType: String, specs: List<ZkSystemSpec>): DeviceRequestParser.DocRequest {
@@ -108,7 +107,7 @@ class ZkPerDocRequestResolutionTest {
     fun `the pooled flatMap would have satisfied doc request 1 - the per-request map does not`() = runTest {
         val requests = listOf(
             docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("attacker", "fff", numAttributes = 1))),
-            docRequest("org.iso.18013.5.1.mDL", listOf(advertisedSpec("held", "aaa", numAttributes = 1)))
+            docRequest("org.iso.18013.5.1.mDL", listOf(advertisedSpec("scheme-a-1", "aaa", numAttributes = 1)))
         )
         val byDocType = zkSpecsByDocType(requests)
 
@@ -122,7 +121,7 @@ class ZkPerDocRequestResolutionTest {
     fun `a doc request that advertised nothing resolves to nothing`() = runTest {
         val requests = listOf(
             docRequest("eu.europa.ec.av.1", emptyList()),
-            docRequest("org.iso.18013.5.1.mDL", listOf(advertisedSpec("held", "aaa", numAttributes = 1)))
+            docRequest("org.iso.18013.5.1.mDL", listOf(advertisedSpec("scheme-a-1", "aaa", numAttributes = 1)))
         )
         val byDocType = zkSpecsByDocType(requests)
         assertNull(resolveSchemeId(zkSystem, byDocType["eu.europa.ec.av.1"].orEmpty(), 1))
@@ -131,7 +130,7 @@ class ZkPerDocRequestResolutionTest {
     @Test
     fun `an unknown docType resolves to nothing`() = runTest {
         val requests = listOf(
-            docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("held", "aaa", numAttributes = 1)))
+            docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("scheme-a-1", "aaa", numAttributes = 1)))
         )
         val byDocType = zkSpecsByDocType(requests)
         assertNull(resolveSchemeId(zkSystem, byDocType["ee.riik.poa.1"].orEmpty(), 1))
@@ -140,7 +139,7 @@ class ZkPerDocRequestResolutionTest {
     @Test
     fun `null zkSystem never resolves`() = runTest {
         val requests = listOf(
-            docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("held", "aaa", numAttributes = 1)))
+            docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("scheme-a-1", "aaa", numAttributes = 1)))
         )
         val byDocType = zkSpecsByDocType(requests)
         assertNull(resolveSchemeId(null, byDocType["eu.europa.ec.av.1"].orEmpty(), 1))
@@ -150,7 +149,7 @@ class ZkPerDocRequestResolutionTest {
     fun `first doc request wins on a duplicate docType`() = runTest {
         val requests = listOf(
             docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("attacker", "fff", numAttributes = 1))),
-            docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("held", "aaa", numAttributes = 1)))
+            docRequest("eu.europa.ec.av.1", listOf(advertisedSpec("scheme-a-1", "aaa", numAttributes = 1)))
         )
         val byDocType = zkSpecsByDocType(requests)
         assertNull(

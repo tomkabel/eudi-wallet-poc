@@ -53,6 +53,20 @@ def session_transcript(client_id: str, nonce: str, jwk_thumbprint, response_uri:
     return cbor2.dumps([None, None, ["OpenID4VPHandover", digest]], canonical=True)
 
 
+P256_SPKI_PREFIX = bytes.fromhex("3059301306072a8648ce3d020106082a8648ce3d030107034200")
+
+
+def issuer_kid(pkx: str, pky: str) -> str:
+    """Hex SHA-256 of the issuer key's DER SubjectPublicKeyInfo.
+
+    The interim envelope's issuer_kid hint; must match KeyIDOf in
+    verifier/go/oid4vp/trust.go. It only selects among the verifier's trusted
+    keys, so the verifier runs one ZK verification instead of one per issuer.
+    """
+    point = b"\x04" + bytes.fromhex(pkx.removeprefix("0x")) + bytes.fromhex(pky.removeprefix("0x"))
+    return hashlib.sha256(P256_SPKI_PREFIX + point).hexdigest()
+
+
 def resign_device_auth(mdoc: bytes, device_key, transcript: bytes, doc_type: str) -> bytes:
     """Replace deviceSignature so it covers this session's transcript."""
     doc = cbor2.loads(mdoc)
@@ -111,6 +125,59 @@ def encrypt_vp_token(vp_token: dict, jwks_json: dict) -> str:
     return jwe.serialize(compact=True)
 
 
+def b64u_decode(s: str) -> bytes:
+    return base64.urlsafe_b64decode(s + "=" * (-len(s) % 4))
+
+
+def verify_jar(signed: dict, pinned_pem) -> dict:
+    """Verify a signed request object ({"request": compact JWS, "jwk": key}) and
+    return its payload. ES256 and typ JWT only; with a pinned key the served
+    jwk must be that key, otherwise the check proves integrity, not origin."""
+    header_b64, payload_b64, sig_b64 = signed["request"].split(".")
+    header = json.loads(b64u_decode(header_b64))
+    if header.get("alg") != "ES256" or header.get("typ") != "JWT":
+        sys.exit(f"request object header {header} is not the ES256/JWT profile")
+    jwk = signed["jwk"]
+    key = ec.EllipticCurvePublicNumbers(
+        int.from_bytes(b64u_decode(jwk["x"]), "big"),
+        int.from_bytes(b64u_decode(jwk["y"]), "big"),
+        ec.SECP256R1()).public_key()
+    if pinned_pem:
+        pinned = serialization.load_pem_public_key(open(pinned_pem, "rb").read())
+        if not isinstance(pinned, ec.EllipticCurvePublicKey):
+            sys.exit("--request-key is not an EC public key")
+        if pinned.public_numbers() != key.public_numbers():
+            sys.exit("the request object is signed by a key other than --request-key")
+    else:
+        print("warning    : request signature checked against the served key only (no --request-key)")
+    sig = b64u_decode(sig_b64)
+    if len(sig) != 64:
+        sys.exit("request object signature is not 64-byte r||s")
+    der = asym_utils.encode_dss_signature(int.from_bytes(sig[:32], "big"), int.from_bytes(sig[32:], "big"))
+    try:
+        key.verify(der, f"{header_b64}.{payload_b64}".encode(), ec.ECDSA(hashes.SHA256()))
+    except Exception:
+        sys.exit("request object signature does not verify")
+    return json.loads(b64u_decode(payload_b64))
+
+
+def controlled_transcript_inputs(client_id, nonce, thumbprint, response_uri, property_name=None):
+    """Mutate exactly one proof input; never change the request or JWE key."""
+    if property_name == "client_id":
+        client_id += "-controlled-tamper"
+    elif property_name == "nonce":
+        nonce += "-controlled-tamper"
+    elif property_name == "response_uri":
+        response_uri += "-controlled-tamper"
+    elif property_name == "jwk_thumbprint":
+        if thumbprint is None:
+            raise ValueError("jwk_thumbprint control requires direct_post.jwt")
+        thumbprint = bytes([thumbprint[0] ^ 1]) + thumbprint[1:]
+    elif property_name is not None:
+        raise ValueError("unknown transcript control")
+    return client_id, nonce, thumbprint, response_uri
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -131,26 +198,44 @@ def main() -> None:
                          "key (the {keys:[…]} document, inline in the request's client_metadata.jwks "
                          "or at GET /present/jwks.json). This mirrors what a real wallet's response "
                          "encryption does; jwcrypto does the JWE (see ADR-003 for the profile).")
-    ap.add_argument("--tamper-nonce", action="store_true",
-                    help="prove against a different nonce, to show the binding holds")
+    tamper = ap.add_mutually_exclusive_group()
+    for flag in ("nonce", "client-id", "response-uri", "jwk-thumbprint"):
+        tamper.add_argument("--tamper-" + flag, dest="tamper_property",
+                            action="store_const", const=flag.replace("-", "_"),
+                            help="prove against a deliberately different " + flag)
     ap.add_argument("--replay", action="store_true",
                     help="post the same vp_token twice, to show the nonce is single-use")
     ap.add_argument("--allow-false-predicate", action="store_true",
                     help="prove a predicate the attestation says is false, to show the "
                          "verifier refuses it on its own")
     ap.add_argument("--keep", action="store_true", help="keep the temporary session directory")
+    ap.add_argument("--request-key", dest="request_key", default=None, metavar="PEM",
+                    help="the verifier's request-signing public key (PEM). A signed request "
+                         "object must verify under it; without it the key served beside the "
+                         "JWS is used, which proves integrity only, not who signed")
+    ap.add_argument("--request-file", dest="request_file", default=None, metavar="JSON",
+                    help="answer a request object the wallet already fetched from its "
+                         "request_uri (the body as served; request_uri is single-fetch) "
+                         "instead of starting one at --verifier/present/new")
     args = ap.parse_args()
 
     if not os.path.exists(args.prover):
         sys.exit(f"prover not found at {args.prover}; pass --prover or set EE_PROVER")
 
-    # 1. Ask the verifier for a presentation request.
-    status, started = http_json(f"{args.verifier}/present/new", {"element": args.element})
-    if status != 201:
-        sys.exit(f"could not start a presentation: {status} {started}")
-    status, req = http_json(started["request_uri"])
-    if status != 200:
-        sys.exit(f"could not fetch the request object: {status} {req}")
+    # 1. Ask the verifier for a presentation request, unless the wallet already
+    # fetched one (a consent screen shows it before anything is proved).
+    if args.request_file:
+        with open(args.request_file) as f:
+            req = json.load(f)
+    else:
+        status, started = http_json(f"{args.verifier}/present/new", {"element": args.element})
+        if status != 201:
+            sys.exit(f"could not start a presentation: {status} {started}")
+        status, req = http_json(started["request_uri"])
+        if status != 200:
+            sys.exit(f"could not fetch the request object: {status} {req}")
+    if "request" in req:
+        req = verify_jar(req, args.request_key)
     queries = req["dcql_query"]["credentials"]
     print(f"request    : {len(queries)} credential(s): "
           + ", ".join(c["id"] + "=" + c["meta"]["doctype_value"] for c in queries))
@@ -161,7 +246,6 @@ def main() -> None:
     # direct_post.jwt the third element is the verifier response key's RFC 7638
     # thumbprint, taken from the request's own client_metadata.jwks (never from
     # a second fetch — the transcript is fixed before anything is posted).
-    nonce = "A" * 43 if args.tamper_nonce else req["nonce"]
     jwks = None
     thumbprint = None
     if req.get("response_mode") == "direct_post.jwt":
@@ -178,9 +262,14 @@ def main() -> None:
                               separators=(",", ":"), sort_keys=True).encode()
         thumbprint = hashlib.sha256(tp_input).digest()
         print(f"resp key   : P-256, thumbprint {thumbprint.hex()[:16]}…")
-    transcript = session_transcript(req["client_id"], nonce, thumbprint, req["response_uri"])
+    try:
+        inputs = controlled_transcript_inputs(req["client_id"], req["nonce"], thumbprint,
+                                              req["response_uri"], args.tamper_property)
+    except ValueError as exc:
+        sys.exit(str(exc))
+    transcript = session_transcript(*inputs)
     print(f"transcript : {len(transcript)} bytes, sha256 {hashlib.sha256(transcript).hexdigest()[:16]}…"
-          + ("   (DELIBERATELY WRONG NONCE)" if args.tamper_nonce else ""))
+          + (f"   (CONTROLLED {args.tamper_property})" if args.tamper_property else ""))
 
     # 3. Re-sign deviceAuth over it and prove — one presentation per queried
     # credential. A multi-credential request (W6) carries one DCQL credential
@@ -251,6 +340,7 @@ def main() -> None:
                 "attr_id": element,
                 "attr_cbor_hex": request_json["attr_cbor_hex"],
                 "proof_b64": base64.b64encode(proof).decode(),
+                "issuer_kid": issuer_kid(params[0], params[1]),
             },
         })
 

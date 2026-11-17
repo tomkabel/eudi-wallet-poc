@@ -7,7 +7,8 @@ that date. Where a README and the code disagree, this document notes the disagre
 rather than resolving it silently; each claim names the file it was read from.
 
 > **Imported from ee-eudiw at `e368fc1`.** This describes that repository. Its `README.md`,
-> `AGENTS.md` and `.gitmodules` citations are ee-eudiw's files, and `ui-mock-bilt-me` was not
+> `AGENTS.md` and `.gitmodules` citations are ee-eudiw's files (this repository's own
+> `AGENTS.md` is a different file, and its line numbers do not match), and `ui-mock-bilt-me` was not
 > imported. The Android holder that §"The Android holder, outside this tree" places in a
 > separate fork is `app/` in this repository. The verifier's Go module is now
 > `github.com/tomkabel/eudi-wallet-poc/verifier/go`.
@@ -17,9 +18,9 @@ rather than resolving it silently; each claim names the file it was read from.
 One repository holds two things on purpose (`AGENTS.md`:12-14):
 
 - `spec/EE-EUDIW-TS-1.0.md` — **the deliverable**: an independent Estonian EUDIW
-  technical specification, 187 normative `EE-<AREA>-<nnn>` requirements, traceable to an
+  technical specification, 193 normative `EE-<AREA>-<nnn>` requirements, traceable to an
   ARF high-level requirement, an implementing act or Estonian statute, with Annex E carrying the
-  matrix as an extract (105 of the 187); content revision 1.4 (`README.md`:32; `AGENTS.md`:16; `spec/EE-EUDIW-TS-1.0.md`:7).
+  matrix as an extract (106 of the 193); content revision 1.5 (`README.md`:32; `AGENTS.md`:16; `spec/EE-EUDIW-TS-1.0.md`:7).
 - `issuer/`, `wallet/`, `verifier/`, `zk-age-poc/` — **the reference implementation**:
   Python mints and presents, Go verifies over the Rust Longfellow runtime, and
   `zk-age-poc/` is the standalone measured PoC (`AGENTS.md`:14).

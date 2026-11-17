@@ -1,0 +1,77 @@
+# Install, onboarding, PIN entry and the first credential, on the local_mocks build.
+#
+# Selectors are the visible strings of app/src/main/res/values/strings.xml (English): the screens
+# carry no test tags. The wallet starts in English on the emulator image the CI job uses; if a
+# string changes, this flow fails on the screen that changed, which is the point.
+#
+#   ./gradlew :app:installLocal_mocks
+#   maestro test tests/maestro/onboarding.yaml
+#
+# local_mocks installs as ee.tomkabel.walletpoc.debug (applicationIdSuffix of the debug build type).
+appId: ee.tomkabel.walletpoc.debug
+---
+- clearState
+- launchApp:
+    clearState: true
+# welcome_title, then welcome_create_pin
+- assertVisible: "Set up your Wallet"
+- tapOn: "Continue"
+# PinActivity, flow CREATE: pin_enter_your_new_pin, six digits (PIN_LENGTH)
+- assertVisible: "Select PIN"
+- tapOn: "4"
+- tapOn: "8"
+- tapOn: "2"
+- tapOn: "9"
+- tapOn: "1"
+- tapOn: "6"
+# pin_re_enter_your_pin
+- assertVisible: "Re-enter PIN"
+- tapOn: "4"
+- tapOn: "8"
+- tapOn: "2"
+- tapOn: "9"
+- tapOn: "1"
+- tapOn: "6"
+# pin_pin_successfully_created, continue_btn
+- assertVisible:
+    text: "PIN successfully.*"
+- tapOn: "Continue"
+# BoardingRoute.Activation (activation_title); with mocks "same device" opens the mock auth flow
+- assertVisible: "Add Estonian Digital ID"
+- tapOn: "Continue on this device"
+# AuthenticationMeansScreen (mock_auth_auth_mean), then Mobile-ID with the prefilled test identity
+- assertVisible: "How would you like to authenticate?"
+- tapOn: "Mobile-ID"
+- assertVisible: "Country code and phone number"
+- tapOn: "Confirm"
+# MobileIdControlCodeScreen (mock_auth_mobile_id_control_code)
+- assertVisible: "Control code"
+- tapOn: "Confirm"
+# MobileIdPin1Screen: six digits end the step by themselves
+- assertVisible: "Enter Mobiil-ID PIN1"
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "3"
+- tapOn: "4"
+- tapOn: "5"
+- tapOn: "6"
+# MobileIdSuccessScreen (mock_auth_mobile_id_sucess)
+- assertVisible: "Identification using Mobile ID was successful"
+- tapOn: "Continue"
+# Issuance asks for the wallet PIN (pin_confirm_issuance_by, pin_enter_wallet_pin)
+- assertVisible: "Enter Wallet PIN"
+- tapOn: "4"
+- tapOn: "8"
+- tapOn: "2"
+- tapOn: "9"
+- tapOn: "1"
+- tapOn: "6"
+# The first credential: issuance_title, issuance_add_to_wallet
+- extendedWaitUntil:
+    visible: "Document received!"
+    timeout: 60000
+- tapOn: "Add to wallet"
+# Dashboard with the credential in the wallet (dashboard_my_documents)
+- extendedWaitUntil:
+    visible: "My documents"
+    timeout: 30000

@@ -68,10 +68,12 @@ class RemoteCryptoProvider(
 
     override fun supports(keyType: KeyType): Boolean = walletProviderService.supportsKey(keyType)
 
+    // The key lives with the wallet provider, which offers no per-key deletion; dropping the
+    // record is all the wallet can do.
+    override suspend fun deleteKey(keyId: String) = keyAttestationDao.deleteById(keyId)
+
     override suspend fun clearAll() {
-        runCatching {
-            walletInstanceCredentialsDataSource.clearAll()
-            keyAttestationDao.deleteAll()
-        }
+        walletInstanceCredentialsDataSource.clearAll().getOrThrow()
+        keyAttestationDao.deleteAll()
     }
 }

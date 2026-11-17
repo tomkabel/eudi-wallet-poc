@@ -1,0 +1,4 @@
+{"question":"NFR16/PRD NFR-17: where to record the new-attestation scope decision (PRD lives only on the read-only archive branch)","choices":[
+ {"label":"Record it in epics.md Sequencing and the proposal; leave the archived PRD untouched","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+ {"label":"Treat por.1 as a test fixture, not scope widening; record nothing","evidence":60,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":20}},
+ {"label":"Edit the PRD on archive/bmad-output-2026-11-04","feasible":false,"note":"AGENTS.md: the archive branch is read-only"}]}

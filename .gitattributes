@@ -1,0 +1,18 @@
+# Hash-pinned source, outputs and local inputs must bypass line-ending conversion.
+docs/profiles/av/** -text
+tests/vectors/av-profile/** -text
+verifier/circuits.json -text
+verifier/go/zk/testdata/step8-7-openid4vp-zk/device_response.cbor -text
+verifier/go/zk/testdata/step8-7-openid4vp-zk/request.json -text
+verifier/go/zk/testdata/step8-7-openid4vp-zk/GENERATED-BY -text
+
+# CBOR and transcript bytes need binary diffs even when they contain no NUL.
+tests/vectors/av-profile/**/*.cbor binary
+tests/vectors/av-profile/**/*.bin binary
+
+# Retained upstream literal bodies: preserve their pinned trailing blank lines.
+tests/vectors/av-profile/external/06-offer-authorization-uri.txt whitespace=-blank-at-eof
+tests/vectors/av-profile/external/15-dcapi-request.diag.txt whitespace=-blank-at-eof
+tests/vectors/av-profile/external/17-dcapi-response.diag.txt whitespace=-blank-at-eof
+tests/vectors/av-profile/external/21-dcapi-zkp-request.diag.txt whitespace=-blank-at-eof
+tests/vectors/av-profile/external/30-oid4vp-response.diag.txt whitespace=-blank-at-eof

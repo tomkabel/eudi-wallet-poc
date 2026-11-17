@@ -1,0 +1,5 @@
+{"question":"checklist 4.4: path forward","choices":[
+ {"label":"Direct Adjustment: add Story 10.6 to Epic 10 and annotate spec 8/23","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":90}},
+ {"label":"Park: record the position, no backlog change","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":60}},
+ {"label":"MVP Review: reduce scope or modify goals","evidence":60,"scores":{"fit_to_constraints":20,"reversibility":60,"precedent":60}},
+ {"label":"Potential Rollback: revert completed stories","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":60,"precedent":20}}]}

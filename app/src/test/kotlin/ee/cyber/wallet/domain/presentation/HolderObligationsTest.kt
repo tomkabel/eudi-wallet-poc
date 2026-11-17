@@ -1,6 +1,7 @@
 package ee.cyber.wallet.domain.presentation
 
 import ee.cyber.wallet.R
+import ee.cyber.wallet.domain.AppError
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,26 +21,59 @@ class HolderObligationsTest {
         val refused = HolderObligations.refusePlainFallback(
             zkCapable = true,
             proofRequested = true,
-            satisfiable = false
+            satisfiable = false,
+            authenticated = true,
+            lastAttestation = false
         )
         assertTrue(refused)
     }
 
     @Test
     fun `allows plain fallback when the advertised specs are satisfiable`() {
-        assertFalse(HolderObligations.refusePlainFallback(zkCapable = true, proofRequested = true, satisfiable = true))
+        assertFalse(refuse(zkCapable = true, proofRequested = true, satisfiable = true))
     }
 
     @Test
     fun `allows plain fallback when the device cannot prove at all`() {
         // EE-ZKP-050 obliges the wallet to fall back here; the notice of EE-ZKP-042 covers it.
-        assertFalse(HolderObligations.refusePlainFallback(zkCapable = false, proofRequested = true, satisfiable = false))
+        assertFalse(refuse(zkCapable = false, proofRequested = true, satisfiable = false))
+        // ...also for an unauthenticated request or the last attestation (EE-POA-013 notice path).
+        assertFalse(refuse(zkCapable = false, proofRequested = false, satisfiable = false, authenticated = false, last = true))
     }
 
     @Test
     fun `allows plain fallback when the party never asked for a proof`() {
-        assertFalse(HolderObligations.refusePlainFallback(zkCapable = true, proofRequested = false, satisfiable = false))
+        assertFalse(refuse(zkCapable = true, proofRequested = false, satisfiable = false))
     }
+
+    // EE-ZKP-055a: no authentication is the least-trusted case, never "no ZKP requirement".
+    @Test
+    fun `refuses plain fallback for an unauthenticated request on a capable device`() {
+        assertTrue(refuse(zkCapable = true, proofRequested = false, satisfiable = false, authenticated = false))
+        assertEquals(
+            AppError.PRESENTATION_UNAUTHENTICATED_REQUEST,
+            HolderObligations.plainRefusalReason(proofRequested = false, authenticated = false)
+        )
+    }
+
+    // EE-POA-013: the last attestation goes over Tier 2 where the device can prove.
+    @Test
+    fun `refuses plain fallback for the last attestation on a capable device`() {
+        assertTrue(refuse(zkCapable = true, proofRequested = false, satisfiable = false, last = true))
+        assertFalse(refuse(zkCapable = true, proofRequested = true, satisfiable = true, last = true))
+        assertEquals(
+            AppError.PRESENTATION_LAST_AGE_ATTESTATION,
+            HolderObligations.plainRefusalReason(proofRequested = false, authenticated = true)
+        )
+    }
+
+    private fun refuse(
+        zkCapable: Boolean,
+        proofRequested: Boolean,
+        satisfiable: Boolean,
+        authenticated: Boolean = true,
+        last: Boolean = false
+    ) = HolderObligations.refusePlainFallback(zkCapable, proofRequested, satisfiable, authenticated, last)
 
     // EE-ZKP-042: the notice wording follows whether the party asked for a proof or not.
     @Test
@@ -83,11 +117,12 @@ class HolderObligationsTest {
         listOf(true, false).forEach { capable ->
             listOf(true, false).forEach { requested ->
                 listOf(true, false).forEach { satisfiable ->
-                    if (HolderObligations.refusePlainFallback(capable, requested, satisfiable)) {
-                        assertEquals(
-                            PresentationTier.PLAIN_NO_MATCHING_CIRCUIT,
-                            HolderObligations.expectedPlainTier(capable, requested, satisfiable)
-                        )
+                    listOf(true, false).forEach { authenticated ->
+                        listOf(true, false).forEach { last ->
+                            if (refuse(capable, requested, satisfiable, authenticated, last)) {
+                                assertTrue(HolderObligations.expectedPlainTier(capable, requested, satisfiable)?.isLinkable == true)
+                            }
+                        }
                     }
                 }
             }

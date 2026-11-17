@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.multipaz.mdoc.zkp.longfellow.SystemTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-11T21:16:26.854Z" hostname="cachy" time="7.493">
+  <properties/>
+  <testcase name="testProofFullFlow_success[jvm]" classname="org.multipaz.mdoc.zkp.longfellow.SystemTest" time="7.493"/>
+  <system-out><![CDATA[2026-11-11T23:16:27.555116008: INFO: TAG: nameSpaces: 1 bytes of CBOR: a0
+In diagnostic notation:
+{}
+2026-11-11T23:16:27.693381855: INFO: LongfellowZkSystem: Generating proof using ZkSystemSpec(id=one_longfellow-libzk-v1, system=longfellow-libzk-v1)
+2026-11-11T23:16:32.006564202: INFO: LongfellowZkSystem: Verifying proof using ZkSystemSpec(id=one_longfellow-libzk-v1, system=longfellow-libzk-v1)
+2026-11-11T23:16:34.321172121: INFO: LongfellowZkSystem: Verification Code: 0
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

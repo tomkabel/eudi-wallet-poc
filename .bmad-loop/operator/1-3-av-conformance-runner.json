@@ -1,0 +1,10 @@
+{
+  "actions": [
+    "Build an independent wallet or verifier at a recorded revision and provide its executable audit adapter.",
+    "Run the adapter against all mapped test IDs and retain machine-readable evidence."
+  ],
+  "parked_at": "2026-10-23",
+  "run_id": "20261023-080735-fa7c",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-1-3-av-conformance-runner.md",
+  "story_key": "1-3-av-conformance-runner"
+}

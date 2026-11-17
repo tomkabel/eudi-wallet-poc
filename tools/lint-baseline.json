@@ -1,0 +1,41 @@
+{
+ "pyright": {
+  "tests/run_av_conformance.py": 2,
+  "tests/run_carrier_conformance.py": 19,
+  "tests/test_av_conformance.py": 39,
+  "tests/test_av_fixtures.py": 3,
+  "tests/test_av_vci_android.py": 1,
+  "tests/test_carrier_conformance.py": 9,
+  "tests/test_pki_gates.py": 3,
+  "tools/lint_ratchet.py": 1
+ },
+ "ruff": {
+  "B023": 6,
+  "B905": 5,
+  "C408": 2,
+  "E101": 6,
+  "E401": 9,
+  "E501": 777,
+  "E701": 27,
+  "E702": 11,
+  "E731": 3,
+  "I001": 14,
+  "RUF001": 1,
+  "RUF100": 3,
+  "S101": 52,
+  "S310": 18,
+  "S314": 2,
+  "S505": 1,
+  "S603": 39,
+  "S607": 14,
+  "SIM102": 1,
+  "SIM105": 5,
+  "SIM115": 22,
+  "SIM905": 1,
+  "UP017": 13,
+  "UP035": 1,
+  "UP037": 1,
+  "W293": 9
+ },
+ "ruff_families": "E,W,I,B,UP,SIM,C4,RUF,S"
+}

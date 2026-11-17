@@ -8,6 +8,12 @@ GitHub Packages registries (fork rebuilds that exist nowhere public without
 auth). Any valid GitHub token reads these packages - they are all public -
 so the workflow's own GITHUB_TOKEN suffices.
 
+The `vendored` source reads <here>/vendored/<path>, a checked-in copy used
+only where upstream no longer serves the bytes (the org.cose cose-java
+1.1.1-WALT snapshot, 404 on maven.waltid.dev). It is verified against the same
+sha256 as every other source. Nothing else is committed: the output tree is
+build output and is gitignored.
+
 Output: $MIRROR_SITE_DIR/maven/<group-path>/<module>/<version>/<file>
 (default: <repo>/.github/maven-mirror/site/maven/...) ready for GitHub Pages.
 
@@ -44,6 +50,12 @@ def sha256_file(path):
 
 
 def fetch(url, auth):
+    if url.startswith('file:'):
+        try:
+            with open(url[5:], 'rb') as fh:
+                return fh.read()
+        except OSError:
+            return None
     req = urllib.request.Request(url)
     if auth:
         req.add_header('Authorization', f'Bearer {TOKEN}')
@@ -60,6 +72,8 @@ def source_url(name, path):
         return CENTRAL + '/' + path, False
     if name == 'waltid':
         return WALTID_SNAPSHOTS + '/' + path, False
+    if name == 'vendored':
+        return 'file:' + os.path.join(HERE, 'vendored', path), False
     if name.startswith('gpr:'):
         return f'https://maven.pkg.github.com/{name[4:]}/{path}', True
     raise ValueError(f'unknown source {name!r}')

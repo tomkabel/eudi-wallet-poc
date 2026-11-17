@@ -16,18 +16,21 @@ import (
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/jose"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/rpregister"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
 )
 
 // presenter holds everything one relying party needs to run presentations.
 type presenter struct {
-	store    *oid4vp.Store
-	trust    *oid4vp.TrustStore
-	registry *circuits.Registry
-	clientID string
-	baseURL  string
-	docType  string
-	nsID     string
+	register        rpregister.RPRegister
+	registerService string
+	store           *oid4vp.Store
+	trust           *oid4vp.TrustStore
+	registry        *circuits.Registry
+	clientID        string
+	baseURL         string
+	docType         string
+	nsID            string
 	// carrier forces one vp_token carrier for every session (-carrier flag,
 	// for tests); nil dispatches per query format, sniffing the entry bytes
 	// (oid4vp.CarrierForBytes).
@@ -44,11 +47,10 @@ type presenter struct {
 	allowPlain  bool
 
 	// requestKey is the JAR signing key (-request-key-file, EC P-256); nil
-	// keeps the request object unsigned (development). requestKeyPublic is
-	// its published half, embedded as the JWS `jwk` header member so a
-	// wallet can verify without a second fetch (the response-key pattern).
-	requestKey       *jose.JWK
-	requestKeyPublic *jose.JWK
+	// keeps the request object unsigned (development). Its public half is
+	// served beside the JWS so a wallet can verify without a second fetch
+	// (the response-key pattern).
+	requestKey *jose.JWK
 
 	// dcapiOrigin is the -dcapi-origin value the ISO 18013-7 Annex C handover
 	// binds; empty disables that path. offered is the circuit set the ISO
@@ -144,19 +146,13 @@ func (p *presenter) signedRequest(s *oid4vp.Session) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	pub := p.requestKeyPublic
-	if pub == nil {
-		pk := p.requestKey.Public()
-		pub = &pk
-	}
-	if pub.Kid == "" {
-		pub.Kid = jose.ThumbprintB64(pub)
-	}
+	// Read-only: main sets the kid on the key before any request is served.
+	pub := p.requestKey.Public()
 	tok, err := jose.SignJWS(*p.requestKey, jose.JWSTypObject, string(body))
 	if err != nil {
 		return nil, err
 	}
-	return signedJAR{JWS: tok, JWK: *pub}, nil
+	return signedJAR{JWS: tok, JWK: pub}, nil
 }
 
 // signedJAR is the request_uri response body for a signed request object:
@@ -184,6 +180,10 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.Element == "" {
 		body.Element = "age_over_18"
+	}
+	if err := p.registry.CurrentError(); err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": err.Error()})
+		return
 	}
 
 	// The demo surface asks for the doctype this server is configured for. A
@@ -214,6 +214,9 @@ func (p *presenter) handleNew(w http.ResponseWriter, r *http.Request) {
 
 // startSession finishes handleNew for a single-credential query.
 func (p *presenter) startSession(w http.ResponseWriter, q oid4vp.DCQL) {
+	if !p.registerGate(w, p.clientID, q) {
+		return
+	}
 	var tp []byte
 	if p.responseKey != nil {
 		// direct_post.jwt (ADR-003): the handover binds this key's
@@ -232,6 +235,9 @@ func (p *presenter) startSession(w http.ResponseWriter, q oid4vp.DCQL) {
 // startSessionMulti finishes handleNew for a multi-credential query, under
 // this server's -max-credentials cap.
 func (p *presenter) startSessionMulti(w http.ResponseWriter, q oid4vp.DCQL) {
+	if !p.registerGate(w, p.clientID, q) {
+		return
+	}
 	var tp []byte
 	if p.responseKey != nil {
 		var tpErr error
@@ -271,6 +277,9 @@ func (p *presenter) handleRequest(w http.ResponseWriter, r *http.Request) {
 	s, err := p.store.Get(id)
 	if err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		return
+	}
+	if !p.registerGate(w, s.ClientID, s.Query) {
 		return
 	}
 	if err := p.store.ConsumeRequestFetch(s.ID); err != nil {
@@ -313,6 +322,11 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if peek.Answered {
+		writeJSON(w, http.StatusGone, map[string]string{"error": oid4vp.ErrAlreadyUsed.Error()})
+		return
+	}
+
 	var token oid4vp.VPToken
 	ct := r.Header.Get("Content-Type")
 	switch {
@@ -352,7 +366,7 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 			// and the distinction stays in the log.
 			log.Printf("/present/response/%s: jwe decrypt failed: %v", id, err)
 			writeJSON(w, http.StatusBadRequest, map[string]string{
-				"error": "the encrypted response could not be decrypted",
+				"error": "decryption: the encrypted response could not be decrypted",
 			})
 			return
 		}
@@ -409,18 +423,25 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	if !p.registerGate(w, peek.ClientID, peek.Query) {
+		return
+	}
+
 	// Claim marks the session answered, so the same nonce cannot be used twice.
 	s, err := p.store.Claim(id)
 	if err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
-	valid, detail, code := p.check(s, token)
+	valid, detail, code, carriers := p.check(s, token)
 	if _, err := p.store.Complete(id, valid, detail); err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
 	}
-	writeJSON(w, code, map[string]any{"valid": valid, "detail": detail})
+	if carriers == nil {
+		carriers = []string{}
+	}
+	writeJSON(w, code, map[string]any{"valid": valid, "detail": detail, "carriers": carriers})
 }
 
 // check runs the actual verification and returns a plain answer.
@@ -440,13 +461,13 @@ func (p *presenter) handleResponse(w http.ResponseWriter, r *http.Request) {
 // credential verifies, and a failure on any credential ends the walk — partial
 // results are never returned, so "learn whether the holder presented" is all
 // the outcome ever reveals.
-func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string, int) {
-	qs, err := s.Query.Validate(0)
+func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string, int, []string) {
+	qs, err := s.Query.Validate(p.maxCredentials)
 	if err != nil {
 		// The session's own stored query; a validation failure here is a
 		// construction bug, not holder input.
 		log.Printf("/present/response/%s: session query is unusable: %v", s.ID, err)
-		return false, "verifier configuration error", http.StatusInternalServerError
+		return false, "verifier configuration error", http.StatusInternalServerError, nil
 	}
 	if len(qs) > 1 {
 		return p.checkMulti(s, qs, token)
@@ -462,13 +483,24 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 		// The holder sent this; telling them exactly what was wrong with it is
 		// the whole value of the answer. A forced carrier that does not match
 		// the bytes is refused here too — an override never falls back.
-		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest, carrierNames(carrier)
 	}
 	pres, proof, err := interimOfChecked(cp, carrier)
 	if err != nil {
-		return false, err.Error(), http.StatusBadRequest
+		return false, err.Error(), http.StatusBadRequest, carrierNames(carrier)
 	}
-	return p.verifyPlain(s, pres, proof)
+	valid, detail, code := p.verifyPlain(s, pres, proof)
+	return valid, detail, code, carrierNames(carrier)
+}
+
+func carrierNames(carriers ...oid4vp.Carrier) []string {
+	names := make([]string, 0, len(carriers))
+	for _, carrier := range carriers {
+		if carrier != nil {
+			names = append(names, carrier.Name())
+		}
+	}
+	return names
 }
 
 // checkMulti verifies every credential in a multi-credential session. The
@@ -480,12 +512,13 @@ func (p *presenter) check(s *oid4vp.Session, token oid4vp.VPToken) (bool, string
 // refused presentation, a proof that does not verify — fails the whole
 // session, naming the offending credential id; partial results are never
 // returned, so the outcome still reveals nothing beyond "did they present".
-func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int) {
+func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int, []string) {
 	// Parse every credential first: a missing, extra, or malformed entry is
 	// refused before any FFI work runs, for any credential.
 	cps, carriers, err := token.ParseCarrierMulti(qs, p.carrier)
+	selected := carrierNames(carriers...)
 	if err != nil {
-		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest, selected
 	}
 	for i, cq := range qs {
 		var valid bool
@@ -499,7 +532,7 @@ func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, t
 			// keeps its own verifier; one session may carry either shape.
 			pres, proof, perr := interimOfChecked(cps[i], carriers[i])
 			if perr != nil {
-				return false, fmt.Sprintf("credential %q: %s", cq.ID, perr.Error()), http.StatusBadRequest
+				return false, fmt.Sprintf("credential %q: %s", cq.ID, perr.Error()), http.StatusBadRequest, selected
 			}
 			valid, detail, code = p.verifyPlain(s, pres, proof)
 		} else {
@@ -508,10 +541,10 @@ func (p *presenter) checkMulti(s *oid4vp.Session, qs []oid4vp.CredentialQuery, t
 		if !valid || code != http.StatusOK {
 			// All-or-error: name the credential that failed so the holder can
 			// act on it, but the session never reports a partial pass.
-			return false, fmt.Sprintf("credential %q: %s", cq.ID, detail), code
+			return false, fmt.Sprintf("credential %q: %s", cq.ID, detail), code, selected
 		}
 	}
-	return true, fmt.Sprintf("all %d credentials proved in zero knowledge", len(qs)), http.StatusOK
+	return true, fmt.Sprintf("all %d credentials proved in zero knowledge", len(qs)), http.StatusOK, selected
 }
 
 // interimOfChecked rebuilds the interim envelope the plain path verifies from
@@ -534,21 +567,47 @@ func interimOfChecked(cp *oid4vp.CheckedPresentation, carrier oid4vp.Carrier) (*
 		AttrID:        cp.AttrID,
 		AttrCBORHex:   "f5",
 		ProofB64:      base64.RawStdEncoding.EncodeToString(cp.Proof),
+		IssuerKID:     cp.IssuerKID,
 	}, cp.Proof, nil
 }
 
+// zkVerify is zk.Verify; a variable only so tests can count FFI calls.
+var zkVerify = zk.Verify
+
+// maxPlainIssuerScan bounds how many trusted issuers the plain path tries when
+// the envelope carries no issuer_kid. Each try is a ~2.5s ZK verification, so
+// 4 keys ≈ 10s worst case against the 60s WriteTimeout. A doctype with more
+// keys is refused unless the holder names its issuer by issuer_kid.
+const maxPlainIssuerScan = 4
+
 // verifyPlain runs the plain-path verification on a parsed interim envelope:
-// trust store, circuit allowlist, transcript, zk.Verify over every trusted
-// issuer for the doctype.
+// trust store, circuit allowlist, transcript, then zk.Verify once against the
+// issuer named by issuer_kid — or, without the hint, against each trusted
+// issuer for the doctype, up to maxPlainIssuerScan of them.
 func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, proof []byte) (bool, string, int) {
 	if s.ExpectedNow == "" {
 		return false, "session has no expected_now", http.StatusInternalServerError
 	}
 
-	// The issuer key comes from the trust store, never from the presentation.
-	issuers, err := p.trust.For(pres.DocType)
-	if err != nil {
-		return false, err.Error(), http.StatusForbidden
+	// The issuer key comes from the trust store, never from the presentation;
+	// issuer_kid can only pick one of the store's keys.
+	var issuers []oid4vp.Issuer
+	if pres.IssuerKID != "" {
+		is, err := p.trust.SelectByKeyID(pres.DocType, pres.IssuerKID)
+		if err != nil {
+			return false, err.Error(), http.StatusForbidden
+		}
+		issuers = []oid4vp.Issuer{is}
+	} else {
+		var err error
+		issuers, err = p.trust.For(pres.DocType)
+		if err != nil {
+			return false, err.Error(), http.StatusForbidden
+		}
+		if len(issuers) > maxPlainIssuerScan {
+			return false, fmt.Sprintf("doctype %q has %d trusted issuers, more than the %d this verifier tries without a hint; send issuer_kid (hex SHA-256 of the issuer key's DER SubjectPublicKeyInfo)",
+				pres.DocType, len(issuers), maxPlainIssuerScan), http.StatusBadRequest
+		}
 	}
 	// EE-ZKP-023: circuit allowlist first — it is ~200x cheaper than verifying.
 	if hash, err := zk.CheckCircuit(p.registry, pres.Version, pres.NumAttributes); err != nil {
@@ -569,7 +628,7 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 	// Any trusted issuer for this doctype may have issued it.
 	var lastErr error
 	for _, is := range issuers {
-		err := zk.Verify(zk.Request{
+		err := zkVerify(zk.Request{
 			Version: pres.Version, NumAttributes: pres.NumAttributes,
 			PKx: is.PKx, PKy: is.PKy,
 			DocType: pres.DocType, Namespace: pres.Namespace,
@@ -584,7 +643,7 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 	}
 	log.Printf("/present/response/%s: no issuer verified the proof, last error: %v", s.ID, lastErr)
 	if errors.Is(lastErr, zk.ErrInvalid) {
-		return false, "no trusted issuer's key verifies this proof", http.StatusOK
+		return false, "transcript-binding: the proof did not verify", http.StatusOK
 	}
 	return false, verifyErrorCategory(lastErr), http.StatusBadRequest
 }
@@ -594,24 +653,26 @@ func (p *presenter) verifyPlain(s *oid4vp.Session, pres *oid4vp.ZKPresentation, 
 // carrying zkDocuments, the proof binds the B.2.6.1 OpenID4VPHandover
 // transcript this session's request was issued under, and the circuit
 // allowlist is resolved here from the session's own (verifier-built)
-// zk_system_type. The caller must hold a verification slot: this may call
-// zk.Verify once per trusted issuer for the doctype.
+// zk_system_type. The caller must hold a verification slot: this calls
+// zk.Verify at most once, against the issuer msoX5chain selects.
 //
 // Rule order mirrors the ISO path: the advertised-circuit allowlist (EE-ZKP-023,
 // before any FFI work), then the per-zkDocument rules, then zk.Verify.
-func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int) {
-	cp, _, err := token.ParseCarrier(cq, p.carrier)
+func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token oid4vp.VPToken) (bool, string, int, []string) {
+	cp, carrier, err := token.ParseCarrier(cq, p.carrier)
+	selected := carrierNames(carrier)
 	if err != nil {
 		if errors.Is(err, oid4vp.ErrNoZkDocument) {
 			// The wallet answered with no provable document. That is an
 			// answer, not an error — but not the yes the verifier asked for.
-			return false, err.Error(), http.StatusOK
+			return false, err.Error(), http.StatusOK, selected
 		}
 		// The holder sent this; telling them exactly what was wrong with it is
 		// the whole value of the answer.
-		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest
+		return false, holderDetail("/present/response/"+s.ID, err), http.StatusBadRequest, selected
 	}
-	return p.verifyZkPresentation(s, cq, cp)
+	valid, detail, code := p.verifyZkPresentation(s, cq, cp)
+	return valid, detail, code, selected
 }
 
 // verifyZkPresentation runs the rule chain on an already-parsed mso_mdoc_zk
@@ -621,6 +682,9 @@ func (p *presenter) checkZk(s *oid4vp.Session, cq oid4vp.CredentialQuery, token 
 // multi-credential path parses every credential once (ParseCarrierMulti) and
 // then walks the rules per credential.
 func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.CredentialQuery, cp *oid4vp.CheckedPresentation) (bool, string, int) {
+	if err := p.registry.CurrentError(); err != nil {
+		return false, err.Error(), http.StatusForbidden
+	}
 	// The advertised circuits come from this session's own (verifier-built)
 	// query; resolve them against the registry here, before any FFI work, so
 	// verify uses the registry entry, never the query's copy.
@@ -680,7 +744,7 @@ func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.Credential
 		return false, "verifier configuration error", http.StatusInternalServerError
 	}
 
-	err = zk.Verify(zk.Request{
+	err = zkVerify(zk.Request{
 		Version:       circuit.Version,
 		NumAttributes: circuit.NumAttributes,
 		PKx:           issuer.PKx,
@@ -700,7 +764,7 @@ func (p *presenter) verifyZkPresentation(s *oid4vp.Session, cq oid4vp.Credential
 		// A proof that does not verify is an answer, not a failure: 200,
 		// valid:false. Only the runtime's wording stays server-side.
 		log.Printf("/present/response/%s: proof invalid: %v", s.ID, err)
-		return false, "the proof did not verify", http.StatusOK
+		return false, "transcript-binding: the proof did not verify", http.StatusOK
 	default:
 		log.Printf("/present/response/%s: %v", s.ID, err)
 		return false, verifyErrorCategory(err), http.StatusBadRequest
@@ -712,7 +776,7 @@ func (p *presenter) handleResult(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/present/result/")
 	s, err := p.store.Get(id)
 	if err != nil {
-		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		writeJSON(w, statusFor(err), map[string]string{"id": id, "error": err.Error()})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{

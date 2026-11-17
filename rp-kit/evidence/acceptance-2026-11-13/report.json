@@ -1,0 +1,405 @@
+{
+  "agent_controls_passed": true,
+  "cases": [
+    {
+      "case_id": "foreign-pid",
+      "evidence": [],
+      "outcome": "not-executed",
+      "state": "NOT_EXECUTED"
+    },
+    {
+      "case_id": "foreign-av",
+      "evidence": [],
+      "outcome": "not-executed",
+      "state": "NOT_EXECUTED"
+    },
+    {
+      "artifacts": [
+        {
+          "exists": true,
+          "modified_ns": 1794549754211885576,
+          "path": "/home/notroot/Documents/eudi-wallet-poc/app/build/test-results/testLocal_mocksUnitTest/TEST-ee.cyber.wallet.domain.presentation.EstonianAcceptanceDispatchTest.xml",
+          "sha256": "d5c1ab1f9da263c3828a2f1038c5238df7aacaf848d833fd4f894fe5b3a4509a",
+          "size_bytes": 31523
+        },
+        {
+          "exists": true,
+          "modified_ns": 1794549754199885471,
+          "path": "/home/notroot/Documents/eudi-wallet-poc/app/build/test-results/testLocal_mocksUnitTest/TEST-ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest.xml",
+          "sha256": "22d0746ae6e8e2f7035691715a996c4bee9659dfbe5ae1bc040ea41b111eb552",
+          "size_bytes": 1093
+        }
+      ],
+      "case_id": "unattested-openid-dcapi",
+      "evidence": [
+        {
+          "case_id": "unattested-openid-dcapi",
+          "evidence_kind": "production-dispatch",
+          "outcome": "UNSUPPORTED_PROTOCOL",
+          "refused": true,
+          "requests": 1,
+          "responses": 0
+        }
+      ],
+      "outcome": "UNSUPPORTED_PROTOCOL",
+      "state": "PASS"
+    },
+    {
+      "case_id": "unregistered-rp",
+      "evidence": [
+        {
+          "case_id": "unregistered-rp",
+          "outcome": "register-not-found",
+          "routes": [
+            {
+              "http_status": 403,
+              "reason": "register-not-found",
+              "route": "/present/new",
+              "session_released": false
+            },
+            {
+              "http_status": 403,
+              "reason": "register-not-found",
+              "route": "/present/dcapi/new",
+              "session_released": false
+            }
+          ]
+        },
+        {
+          "live_sessions_after": 0,
+          "live_sessions_before": 0,
+          "outcome": "register-not-found",
+          "routes": 2
+        }
+      ],
+      "outcome": "register-not-found",
+      "state": "PASS"
+    },
+    {
+      "case_id": "shared-offline-fallback",
+      "evidence": [
+        {
+          "consumer": "verifier",
+          "document_sha256": "b34a8261cfd1aac39009a13143c9075efb3ef90db121ff5fee8f04e7c8dbc665",
+          "fetched": false,
+          "list_version": "1",
+          "signature_valid": true,
+          "spec_id": "longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121"
+        },
+        {
+          "consumer": "wallet",
+          "document_sha256": "b34a8261cfd1aac39009a13143c9075efb3ef90db121ff5fee8f04e7c8dbc665",
+          "fetched": false,
+          "list_version": "1",
+          "signature_valid": true,
+          "spec_id": "longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121"
+        }
+      ],
+      "outcome": "shared-signed-fallback-resolved",
+      "state": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "exists": true,
+          "modified_ns": 1794549754211885576,
+          "path": "/home/notroot/Documents/eudi-wallet-poc/app/build/test-results/testLocal_mocksUnitTest/TEST-ee.cyber.wallet.domain.presentation.EstonianAcceptanceDispatchTest.xml",
+          "sha256": "d5c1ab1f9da263c3828a2f1038c5238df7aacaf848d833fd4f894fe5b3a4509a",
+          "size_bytes": 31523
+        },
+        {
+          "exists": true,
+          "modified_ns": 1794549754199885471,
+          "path": "/home/notroot/Documents/eudi-wallet-poc/app/build/test-results/testLocal_mocksUnitTest/TEST-ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest.xml",
+          "sha256": "22d0746ae6e8e2f7035691715a996c4bee9659dfbe5ae1bc040ea41b111eb552",
+          "size_bytes": 1093
+        }
+      ],
+      "case_id": "unauthenticated-iso-mdoc",
+      "evidence": [
+        {
+          "case_id": "unauthenticated-iso-mdoc",
+          "evidence_kind": "production-dispatch",
+          "outcome": "PRESENTATION_UNAUTHENTICATED_REQUEST",
+          "refused": true,
+          "requests": 1,
+          "responses": 0
+        }
+      ],
+      "outcome": "PRESENTATION_UNAUTHENTICATED_REQUEST",
+      "state": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "exists": true,
+          "modified_ns": 1794549754211885576,
+          "path": "/home/notroot/Documents/eudi-wallet-poc/app/build/test-results/testLocal_mocksUnitTest/TEST-ee.cyber.wallet.domain.presentation.EstonianAcceptanceDispatchTest.xml",
+          "sha256": "d5c1ab1f9da263c3828a2f1038c5238df7aacaf848d833fd4f894fe5b3a4509a",
+          "size_bytes": 31523
+        },
+        {
+          "exists": true,
+          "modified_ns": 1794549754199885471,
+          "path": "/home/notroot/Documents/eudi-wallet-poc/app/build/test-results/testLocal_mocksUnitTest/TEST-ee.cyber.wallet.domain.presentation.SignedCircuitFallbackTest.xml",
+          "sha256": "22d0746ae6e8e2f7035691715a996c4bee9659dfbe5ae1bc040ea41b111eb552",
+          "size_bytes": 1093
+        }
+      ],
+      "case_id": "unauthenticated-proximity",
+      "evidence": [
+        {
+          "case_id": "unauthenticated-proximity",
+          "evidence_kind": "production-dispatch",
+          "outcome": "PRESENTATION_UNAUTHENTICATED_REQUEST",
+          "refused": true,
+          "requests": 1,
+          "responses": 0
+        }
+      ],
+      "outcome": "PRESENTATION_UNAUTHENTICATED_REQUEST",
+      "state": "PASS"
+    }
+  ],
+  "diagnostics": [],
+  "executions": [
+    {
+      "command": [
+        "go",
+        "build",
+        "-ldflags",
+        "-X main.longfellowRev=61a8a735964d1b22bccf79bf14ef6767249cdf92",
+        "-o",
+        "/tmp/estonian-acceptance-onspvkj9/zkverify",
+        "."
+      ],
+      "detail": "",
+      "name": "fresh-verifier-build",
+      "output": "",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "/home/notroot/Documents/eudi-wallet-poc/.venv/bin/python3",
+        "/home/notroot/Documents/eudi-wallet-poc/tests/estonian_local_acceptance.py",
+        "--run-id",
+        "e333ee01-dc98-416f-a483-5c90dba72663",
+        "--output",
+        "/tmp/estonian-acceptance-onspvkj9/local.json"
+      ],
+      "detail": "",
+      "name": "local-rp-process-and-av-proof",
+      "output": "PASS systemd unit syntax (staged executable)\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "-json",
+        "-run",
+        "^TestEstonianAbsentRegistrationNoSession$",
+        "."
+      ],
+      "detail": "",
+      "name": "registration-before-session-allocation",
+      "output": "{\"Time\":\"2026-11-13T07:58:40.492778533+02:00\",\"Action\":\"start\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\"}\n{\"Time\":\"2026-11-13T07:58:40.501841472+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Test\":\"TestEstonianAbsentRegistrationNoSession\"}\n{\"Time\":\"2026-11-13T07:58:40.501945436+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Test\":\"TestEstonianAbsentRegistrationNoSession\",\"Output\":\"=== RUN   TestEstonianAbsentRegistrationNoSession\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:40.506654876+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Test\":\"TestEstonianAbsentRegistrationNoSession\",\"Output\":\"2026/11/13 07:58:40 rp-register decision=refuse reason=register-not-found\\n\"}\n{\"Time\":\"2026-11-13T07:58:40.506695013+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Test\":\"TestEstonianAbsentRegistrationNoSession\",\"Output\":\"2026/11/13 07:58:40 rp-register decision=refuse reason=register-not-found\\n\"}\n{\"Time\":\"2026-11-13T07:58:40.50670305+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Test\":\"TestEstonianAbsentRegistrationNoSession\",\"Output\":\"    estonian_acceptance_test.go:43: ESTONIAN_REGISTRATION={\\\"routes\\\":2,\\\"live_sessions_before\\\":0,\\\"live_sessions_after\\\":0,\\\"outcome\\\":\\\"register-not-found\\\"}\\n\"}\n{\"Time\":\"2026-11-13T07:58:40.506721436+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Test\":\"TestEstonianAbsentRegistrationNoSession\",\"Output\":\"--- PASS: TestEstonianAbsentRegistrationNoSession (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:40.506728363+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Test\":\"TestEstonianAbsentRegistrationNoSession\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:40.506741997+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Output\":\"PASS\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:40.507388816+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Output\":\"ok  \\tgithub.com/tomkabel/eudi-wallet-poc/verifier/go\\t0.014s\\n\"}\n{\"Time\":\"2026-11-13T07:58:40.50741973+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go\",\"Elapsed\":0.015}\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "go",
+        "test",
+        "-count=1",
+        "-json",
+        "./circuits/..."
+      ],
+      "detail": "",
+      "name": "verifier-offline-fallback",
+      "output": "{\"Time\":\"2026-11-13T07:58:41.527972125+02:00\",\"Action\":\"start\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\"}\n{\"Time\":\"2026-11-13T07:58:41.535404585+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals\"}\n{\"Time\":\"2026-11-13T07:58:41.535513746+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals\",\"Output\":\"=== RUN   TestSignedDocumentRefusals\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.535567511+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/stale\"}\n{\"Time\":\"2026-11-13T07:58:41.535574232+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/stale\",\"Output\":\"=== RUN   TestSignedDocumentRefusals/stale\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.543915491+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/stale\",\"Output\":\"--- PASS: TestSignedDocumentRefusals/stale (0.01s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.543983514+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/stale\",\"Elapsed\":0.01}\n{\"Time\":\"2026-11-13T07:58:41.544010948+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/incompatible\"}\n{\"Time\":\"2026-11-13T07:58:41.544016815+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/incompatible\",\"Output\":\"=== RUN   TestSignedDocumentRefusals/incompatible\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.544033124+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/incompatible\",\"Output\":\"--- PASS: TestSignedDocumentRefusals/incompatible (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.544039862+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/incompatible\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.54404715+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-tuple\"}\n{\"Time\":\"2026-11-13T07:58:41.544052416+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-tuple\",\"Output\":\"=== RUN   TestSignedDocumentRefusals/duplicate-tuple\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.54470044+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-tuple\",\"Output\":\"--- PASS: TestSignedDocumentRefusals/duplicate-tuple (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.544731816+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-tuple\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.544742551+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-hash\"}\n{\"Time\":\"2026-11-13T07:58:41.544746957+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-hash\",\"Output\":\"=== RUN   TestSignedDocumentRefusals/duplicate-hash\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.544757547+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-hash\",\"Output\":\"--- PASS: TestSignedDocumentRefusals/duplicate-hash (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.544764084+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/duplicate-hash\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.545159406+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/tamper\"}\n{\"Time\":\"2026-11-13T07:58:41.545172793+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/tamper\",\"Output\":\"=== RUN   TestSignedDocumentRefusals/tamper\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.546028402+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/tamper\",\"Output\":\"--- PASS: TestSignedDocumentRefusals/tamper (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.546053579+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/tamper\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.546060574+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/unknown-key\"}\n{\"Time\":\"2026-11-13T07:58:41.546064616+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/unknown-key\",\"Output\":\"=== RUN   TestSignedDocumentRefusals/unknown-key\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.54607133+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/unknown-key\",\"Output\":\"--- PASS: TestSignedDocumentRefusals/unknown-key (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.546076583+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/unknown-key\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.546080792+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/missing-signature\"}\n{\"Time\":\"2026-11-13T07:58:41.546084778+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/missing-signature\",\"Output\":\"=== RUN   TestSignedDocumentRefusals/missing-signature\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.546090882+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/missing-signature\",\"Output\":\"--- PASS: TestSignedDocumentRefusals/missing-signature (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.546095828+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals/missing-signature\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.546443616+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals\",\"Output\":\"--- PASS: TestSignedDocumentRefusals (0.01s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.546466555+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentRefusals\",\"Elapsed\":0.01}\n{\"Time\":\"2026-11-13T07:58:41.546474001+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentDeprecation\"}\n{\"Time\":\"2026-11-13T07:58:41.546478146+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentDeprecation\",\"Output\":\"=== RUN   TestSignedDocumentDeprecation\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.550883567+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentDeprecation\",\"Output\":\"--- PASS: TestSignedDocumentDeprecation (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.550932596+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestSignedDocumentDeprecation\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.550943557+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestJCSIntegerProfile\"}\n{\"Time\":\"2026-11-13T07:58:41.550948688+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestJCSIntegerProfile\",\"Output\":\"=== RUN   TestJCSIntegerProfile\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.550956682+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestJCSIntegerProfile\",\"Output\":\"--- PASS: TestJCSIntegerProfile (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.550962801+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestJCSIntegerProfile\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.550967709+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestPinnedOfflineAcceptance\"}\n{\"Time\":\"2026-11-13T07:58:41.550971379+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestPinnedOfflineAcceptance\",\"Output\":\"=== RUN   TestPinnedOfflineAcceptance\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552651021+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestPinnedOfflineAcceptance\",\"Output\":\"ESTONIAN_FALLBACK={\\\"consumer\\\":\\\"verifier\\\",\\\"document_sha256\\\":\\\"b34a8261cfd1aac39009a13143c9075efb3ef90db121ff5fee8f04e7c8dbc665\\\",\\\"fetched\\\":false,\\\"list_version\\\":\\\"1\\\",\\\"signature_valid\\\":true,\\\"spec_id\\\":\\\"longfellow-libzk-v1_7_1_4151_4096_8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121\\\"}\\n\"}\n{\"Time\":\"2026-11-13T07:58:41.552702193+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestPinnedOfflineAcceptance\",\"Output\":\"--- PASS: TestPinnedOfflineAcceptance (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552710568+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestPinnedOfflineAcceptance\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.55271903+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedInvisibleToMapAndList\"}\n{\"Time\":\"2026-11-13T07:58:41.552724091+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedInvisibleToMapAndList\",\"Output\":\"=== RUN   TestDeprecatedInvisibleToMapAndList\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552736904+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedInvisibleToMapAndList\",\"Output\":\"--- PASS: TestDeprecatedInvisibleToMapAndList (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552745729+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedInvisibleToMapAndList\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.552751181+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLookupMapAndListAgreement\"}\n{\"Time\":\"2026-11-13T07:58:41.552755347+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLookupMapAndListAgreement\",\"Output\":\"=== RUN   TestLookupMapAndListAgreement\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552762318+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLookupMapAndListAgreement\",\"Output\":\"--- PASS: TestLookupMapAndListAgreement (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552767473+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLookupMapAndListAgreement\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.552779707+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateLiveTupleRejected\"}\n{\"Time\":\"2026-11-13T07:58:41.552787715+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateLiveTupleRejected\",\"Output\":\"=== RUN   TestDuplicateLiveTupleRejected\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552795198+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateLiveTupleRejected\",\"Output\":\"--- PASS: TestDuplicateLiveTupleRejected (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552800999+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateLiveTupleRejected\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.552806219+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateHashRejected\"}\n{\"Time\":\"2026-11-13T07:58:41.552810251+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateHashRejected\",\"Output\":\"=== RUN   TestDuplicateHashRejected\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552817352+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateHashRejected\",\"Output\":\"--- PASS: TestDuplicateHashRejected (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552823027+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDuplicateHashRejected\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.552827767+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedTwinsAllowed\"}\n{\"Time\":\"2026-11-13T07:58:41.552832005+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedTwinsAllowed\",\"Output\":\"=== RUN   TestDeprecatedTwinsAllowed\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552840522+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedTwinsAllowed\",\"Output\":\"--- PASS: TestDeprecatedTwinsAllowed (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552845671+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestDeprecatedTwinsAllowed\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.552851637+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestAcceptedReturnsCopy\"}\n{\"Time\":\"2026-11-13T07:58:41.552855877+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestAcceptedReturnsCopy\",\"Output\":\"=== RUN   TestAcceptedReturnsCopy\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552864481+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestAcceptedReturnsCopy\",\"Output\":\"--- PASS: TestAcceptedReturnsCopy (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.552878462+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestAcceptedReturnsCopy\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.552883771+02:00\",\"Action\":\"run\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLoadErrorMatrix\"}\n{\"Time\":\"2026-11-13T07:58:41.552892149+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLoadErrorMatrix\",\"Output\":\"=== RUN   TestLoadErrorMatrix\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.55342696+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLoadErrorMatrix\",\"Output\":\"--- PASS: TestLoadErrorMatrix (0.00s)\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.553452581+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Test\":\"TestLoadErrorMatrix\",\"Elapsed\":0}\n{\"Time\":\"2026-11-13T07:58:41.553461938+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Output\":\"PASS\\n\",\"OutputType\":\"frame\"}\n{\"Time\":\"2026-11-13T07:58:41.554048837+02:00\",\"Action\":\"output\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Output\":\"ok  \\tgithub.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\\t0.025s\\n\"}\n{\"Time\":\"2026-11-13T07:58:41.554091379+02:00\",\"Action\":\"pass\",\"Package\":\"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits\",\"Elapsed\":0.026}\n",
+      "returncode": 0,
+      "status": "PASS"
+    },
+    {
+      "command": [
+        "/home/notroot/Documents/eudi-wallet-poc/gradlew",
+        ":app:testLocal_mocksUnitTest",
+        "--rerun-tasks",
+        "--console=plain",
+        "--tests",
+        "*EstonianAcceptanceDispatchTest",
+        "--tests",
+        "*SignedCircuitFallbackTest"
+      ],
+      "detail": "",
+      "name": "wallet-dispatch-and-offline-fallback",
+      "output": "\n> Configure project :\nThe Dependency Analysis plugin is only known to work with versions of AGP between 8.0.0 and 8.4.0-alpha01. You are using 8.9.2. Proceed at your own risk.\n\n> Task :app:generateCircuitRegistry\n> Task :app:preBuild\n> Task :app:preLocal_mocksBuild\n> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED\n> Task :app:generateLocal_mocksBuildConfig\n> Task :app:extractIncludeLocal_mocksProto\n> Task :app:extractLocal_mocksProto\n> Task :app:extractProto\n> Task :app:generateLocal_mocksProto\n> Task :app:generateSafeArgsLocal_mocks\n> Task :app:generateLocal_mocksResValues\n> Task :app:mapLocal_mocksSourceSetPaths\n> Task :app:generateLocal_mocksResources\n> Task :app:checkLocal_mocksAarMetadata\n> Task :app:packageLocal_mocksResources\n> Task :app:createLocal_mocksCompatibleScreenManifests\n> Task :app:extractDeepLinksLocal_mocks\n> Task :app:parseLocal_mocksLocalResources\n> Task :app:processLocal_mocksMainManifest\n> Task :app:mergeLocal_mocksResources\n> Task :app:processLocal_mocksManifest\n> Task :app:preLocal_mocksUnitTestBuild\n> Task :app:extractTestLocal_mocksProto\n> Task :app:extractTestProto\n> Task :app:javaPreCompileLocal_mocksUnitTest\n> Task :app:processLocal_mocksManifestForPackage\n> Task :app:javaPreCompileLocal_mocks\n> Task :app:processLocal_mocksResources\n> Task :app:kspLocal_mocksKotlin\n> Task :app:compileLocal_mocksKotlin\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/crypto/CryptoProvider.kt:17:8 'interface KeyBindingSigner : JWSSigner' is deprecated. It will be removed from a future release.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/crypto/CryptoProvider.kt:38:61 'interface KeyBindingSigner : JWSSigner' is deprecated. It will be removed from a future release.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/crypto/CryptoProvider.kt:41:21 'interface KeyBindingSigner : JWSSigner' is deprecated. It will be removed from a future release.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/domain/documents/mdoc/DeviceResponse.kt:24:18 Class 'DataElementSerializer', which is serializer for type 'DataElement', is applied here to type 'StringElement'. This may lead to errors or incorrect behavior.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/domain/documents/mdoc/DeviceResponse.kt:25:17 Class 'DataElementSerializer', which is serializer for type 'DataElement', is applied here to type 'NumberElement'. This may lead to errors or incorrect behavior.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/domain/provider/wallet/Models.kt:22:9 Property will not be serialized into a 'Parcel'. Add '@IgnoredOnParcel' annotation to remove the warning.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/domain/provider/wallet/Models.kt:23:9 Property will not be serialized into a 'Parcel'. Add '@IgnoredOnParcel' annotation to remove the warning.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/domain/provider/wallet/Models.kt:24:9 Property will not be serialized into a 'Parcel'. Add '@IgnoredOnParcel' annotation to remove the warning.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/security/SecureAreaCOSECryptoProvider.kt:60:9 The corresponding parameter in the supertype 'COSECryptoProvider' is named 'headersProtected'. This may cause problems when calling this function with named arguments.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/security/SecureAreaCOSECryptoProvider.kt:61:9 The corresponding parameter in the supertype 'COSECryptoProvider' is named 'headersUnprotected'. This may cause problems when calling this function with named arguments.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/security/SecureAreaCOSECryptoProvider.kt:62:9 The corresponding parameter in the supertype 'COSECryptoProvider' is named 'keyID'. This may cause problems when calling this function with named arguments.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/security/SecureAreaCOSECryptoProvider.kt:94:48 The corresponding parameter in the supertype 'COSECryptoProvider' is named 'keyID'. This may cause problems when calling this function with named arguments.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/security/SecureAreaCOSECryptoProvider.kt:120:54 The corresponding parameter in the supertype 'COSECryptoProvider' is named 'keyID'. This may cause problems when calling this function with named arguments.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/ui/components/BarcodeScanner.kt:113:26 'val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>' is deprecated. Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/ui/screens/activity/ActivityLogScreen.kt:41:8 'typealias Clock = Clock' is deprecated. This type is deprecated in favor of `kotlin.time.Clock`.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/ui/screens/activity/LogEntryScreen.kt:44:8 'typealias Clock = Clock' is deprecated. This type is deprecated in favor of `kotlin.time.Clock`.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/ui/screens/documents/MyDocumentsViewModel.kt:53:21 'when' is exhaustive so 'else' is redundant here.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/main/kotlin/ee/cyber/wallet/ui/theme/Theme.kt:59:20 'var statusBarColor: Int' is deprecated. Deprecated in Java.\n\n> Task :app:compileLocal_mocksJavaWithJavac\n/home/notroot/Documents/eudi-wallet-poc/app/build/generated/source/proto/local_mocks/java/ee/cyber/wallet/UserPreferencesProto.java:78: warning: [dep-ann] deprecated item is not annotated with @Deprecated\n  private void setBlePeripheralMode(boolean value) {\n               ^\n/home/notroot/Documents/eudi-wallet-poc/app/build/generated/source/proto/local_mocks/java/ee/cyber/wallet/UserPreferencesProto.java:87: warning: [dep-ann] deprecated item is not annotated with @Deprecated\n  private void clearBlePeripheralMode() {\n               ^\n2 warnings\n\n> Task :app:hiltAggregateDepsLocal_mocks\n> Task :app:hiltJavaCompileLocal_mocks\n> Task :app:processLocal_mocksJavaRes\n> Task :app:bundleLocal_mocksClassesToCompileJar\n> Task :app:extractIncludeLocal_mocksUnitTestProto\n> Task :app:transformLocal_mocksClassesWithAsm\n> Task :app:generateLocal_mocksUnitTestProto NO-SOURCE\n> Task :app:bundleLocal_mocksClassesToRuntimeJar\n> Task :app:kspLocal_mocksUnitTestKotlin\n\n> Task :app:compileLocal_mocksUnitTestKotlin\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/test/kotlin/ee/cyber/wallet/sdjwt/EudiSdJwtTest.kt:17:8 'interface KeyBindingSigner : JWSSigner' is deprecated. It will be removed from a future release.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/test/kotlin/ee/cyber/wallet/sdjwt/EudiSdJwtTest.kt:66:67 'fun SdJwtIssuer.Companion.nimbus(sdJwtFactory: SdJwtFactory = ..., signer: JWSSigner, signAlgorithm: JWSAlgorithm, jwsHeaderCustomization: JWSHeader.Builder.() -> Unit = ...): SdJwtIssuer<SignedJWT>' is deprecated. Deprecated. Use NimbusSdJwtOps.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/test/kotlin/ee/cyber/wallet/sdjwt/EudiSdJwtTest.kt:103:35 'interface KeyBindingSigner : JWSSigner' is deprecated. It will be removed from a future release.\nw: file:///home/notroot/Documents/eudi-wallet-poc/app/src/test/kotlin/ee/cyber/wallet/sdjwt/EudiSdJwtTest.kt:105:26 'interface KeyBindingSigner : JWSSigner' is deprecated. It will be removed from a future release.\n\n> Task :app:compileLocal_mocksUnitTestJavaWithJavac NO-SOURCE\n> Task :app:hiltAggregateDepsLocal_mocksUnitTest\n> Task :app:hiltJavaCompileLocal_mocksUnitTest NO-SOURCE\n> Task :app:processLocal_mocksUnitTestJavaRes\n> Task :app:transformLocal_mocksUnitTestClassesWithAsm\n> Task :app:testLocal_mocksUnitTest\n[Incubating] Problems report is available at: file:///home/notroot/Documents/eudi-wallet-poc/build/reports/problems/problems-report.html\n\nBUILD SUCCESSFUL in 3m 52s\n40 actionable tasks: 40 executed\n",
+      "returncode": 0,
+      "status": "PASS"
+    }
+  ],
+  "exit_code": 1,
+  "generated_at": "2026-11-13T05:57:47.847626+00:00",
+  "inputs": {
+    "app/src/main/kotlin/ee/cyber/wallet/domain/presentation/SignedCircuitList.kt": {
+      "exists": true,
+      "modified_ns": 1794549441864049638,
+      "sha256": "170da45cb96706ffc2a08fddf0ff7f893432a269b52d8e053322b7aa103ca3a0",
+      "size_bytes": 11899
+    },
+    "app/src/main/kotlin/ee/cyber/wallet/domain/presentation/WalletRequestDispatch.kt": {
+      "exists": true,
+      "modified_ns": 1794548741618108927,
+      "sha256": "018dc2286d7d9b50be6fc498ddca72e796ba4799bdae082df3bfbb80d787ff97",
+      "size_bytes": 4105
+    },
+    "app/src/main/kotlin/ee/cyber/wallet/domain/presentation/ZkCapability.kt": {
+      "exists": true,
+      "modified_ns": 1794548806689737877,
+      "sha256": "415352377353c9f5b5e4cd74ad02aa71af4624932f1baa3a117568b9101fc2b8",
+      "size_bytes": 1268
+    },
+    "app/src/main/kotlin/ee/cyber/wallet/ui/screens/presentation/RequestRefusalDispatch.kt": {
+      "exists": true,
+      "modified_ns": 1794549106182979148,
+      "sha256": "20e06b46a247eb5991d175b5abe93a4f90540ac911a558a1d27eb5cafc07e365",
+      "size_bytes": 1327
+    },
+    "app/src/test/kotlin/ee/cyber/wallet/domain/presentation/EstonianAcceptanceDispatchTest.kt": {
+      "exists": true,
+      "modified_ns": 1794549147054440029,
+      "sha256": "1b7e6957a8f9a98337452007b8252829262c559886efd55658c3468b347b1734",
+      "size_bytes": 10265
+    },
+    "app/src/test/kotlin/ee/cyber/wallet/domain/presentation/SignedCircuitFallbackTest.kt": {
+      "exists": true,
+      "modified_ns": 1794549406509715497,
+      "sha256": "908324ce8cb6dd1f9ab43d9bc3b2331229c965c095429de785d7ee4010107eb9",
+      "size_bytes": 7316
+    },
+    "rp-kit/register/synthetic-v1.json": {
+      "exists": true,
+      "modified_ns": 1794438636929111771,
+      "sha256": "4a2bbbc3ffd841d602ede5dc014f0b90ae0c68083c6e3a1069f4c8e04a4180f6",
+      "size_bytes": 3176
+    },
+    "tests/estonian_local_acceptance.py": {
+      "exists": true,
+      "modified_ns": 1794548928723582529,
+      "sha256": "bf567dd2e1a4f3df7ea62f880a87666df8d361864b101ea917c2b47cb440d753",
+      "size_bytes": 8558
+    },
+    "tests/run_estonian_acceptance.py": {
+      "exists": true,
+      "modified_ns": 1794549745662810180,
+      "sha256": "3c5067d4f47276fb427beaa502834b1ea2263012389c1961be756d6231afee01",
+      "size_bytes": 28234
+    },
+    "verifier/circuits.json": {
+      "exists": true,
+      "modified_ns": 1794548695342621976,
+      "sha256": "b34a8261cfd1aac39009a13143c9075efb3ef90db121ff5fee8f04e7c8dbc665",
+      "size_bytes": 1116
+    },
+    "verifier/go/circuits/document.go": {
+      "exists": true,
+      "modified_ns": 1794549123632116433,
+      "sha256": "9ece69565a4f6a949ddd165749f49d8d5896b4d50191b683314437e661ec397b",
+      "size_bytes": 9166
+    },
+    "verifier/go/circuits/pinned-key.json": {
+      "exists": true,
+      "modified_ns": 1794548695342703163,
+      "sha256": "893ff90f60cde81254e2aa35c2cc29ed6ac95f0dbc89e0bc53a721dcaa694b48",
+      "size_bytes": 114
+    },
+    "verifier/go/circuits/registry.go": {
+      "exists": true,
+      "modified_ns": 1794549337058048985,
+      "sha256": "1a59d2253052e4997e9e101bddcd595a46cef32be68ac03e2f5c2fb28e8f4ca3",
+      "size_bytes": 5603
+    },
+    "verifier/zkverify-ffi/longfellow-rev.txt": {
+      "exists": true,
+      "modified_ns": 1790340388759663057,
+      "sha256": "08744c58ff3041ccc9f5eba2efa8721e384e978206c3da52613b6e5edd2a623d",
+      "size_bytes": 41
+    }
+  },
+  "limits": {
+    "child_output_bytes": 4194304,
+    "child_timeout_seconds": 900
+  },
+  "operator_actions": [
+    "Execute a fresh genuine foreign PID wallet session with authorized issuer trust/access, and supply its external adapter evidence.",
+    "Execute a fresh genuine foreign AV wallet session with authorized issuer trust/access, and supply its external adapter evidence."
+  ],
+  "paths": [
+    "dc-api (AV Profile mandated)",
+    "openid4vp (profiled, unofficial)",
+    "proximity"
+  ],
+  "repository": {
+    "changes": [
+      " M .github/workflows/app.yml",
+      " M .github/workflows/ci.yml",
+      " M Makefile",
+      " M app/build.gradle.kts",
+      " M app/src/main/kotlin/ee/cyber/wallet/domain/presentation/ZkCapability.kt",
+      " M app/src/main/kotlin/ee/cyber/wallet/ui/screens/dcapi/DigitalCredentialsViewModel.kt",
+      " M app/src/main/kotlin/ee/cyber/wallet/ui/screens/proximity/ProximityViewModel.kt",
+      " M docs/README.md",
+      " M rp-kit/README.md",
+      " M tests/README.md",
+      " M verifier/circuits.json",
+      " M verifier/go/circuits/registry.go",
+      " M verifier/go/main.go",
+      "?? _bmad-output/implementation-artifacts/spec-3-5-four-estonian-acceptance-cases.md",
+      "?? app/src/main/kotlin/ee/cyber/wallet/domain/presentation/SignedCircuitList.kt",
+      "?? app/src/main/kotlin/ee/cyber/wallet/domain/presentation/WalletRequestDispatch.kt",
+      "?? app/src/main/kotlin/ee/cyber/wallet/ui/screens/presentation/RequestRefusalDispatch.kt",
+      "?? app/src/test/kotlin/ee/cyber/wallet/domain/presentation/AcceptanceReaderAuthFixture.kt",
+      "?? app/src/test/kotlin/ee/cyber/wallet/domain/presentation/EstonianAcceptanceDispatchTest.kt",
+      "?? app/src/test/kotlin/ee/cyber/wallet/domain/presentation/SignedCircuitFallbackTest.kt",
+      "?? rp-kit/ACCEPTANCE.md",
+      "?? tests/estonian_local_acceptance.py",
+      "?? tests/run_estonian_acceptance.py",
+      "?? tests/test_estonian_acceptance.py",
+      "?? verifier/go/circuits/README.md",
+      "?? verifier/go/circuits/document.go",
+      "?? verifier/go/circuits/document_test.go",
+      "?? verifier/go/circuits/pinned-key.json",
+      "?? verifier/go/cmd/circuit-list/main.go",
+      "?? verifier/go/estonian_acceptance_test.go"
+    ],
+    "dirty": true,
+    "revision": "f1c7e1263844109edb39184bc1d5b7bd213b5e48",
+    "state": "OK"
+  },
+  "result": "INCOMPLETE",
+  "run_id": "e333ee01-dc98-416f-a483-5c90dba72663",
+  "schema": "ee-estonian-acceptance/1",
+  "scope": "Local controls are separate from independent foreign wallet sessions; no certification or legal conclusion.",
+  "status": "awaiting-operator",
+  "supplementary": [
+    {
+      "credential_kind": "AV",
+      "issuing_country": "EE",
+      "outcome": "proof-verified",
+      "path": "openid4vp (profiled, unofficial)",
+      "response_mode": "direct_post.jwt",
+      "scope": "supplementary-local-control",
+      "session_id": "dk0wxSNBaBN9kHO2",
+      "verifier_result": {
+        "answered": true,
+        "detail": "age_over_18 = 0xf5, issued by EE-EUDIW demo issuer",
+        "id": "dk0wxSNBaBN9kHO2",
+        "valid": true
+      }
+    }
+  ]
+}

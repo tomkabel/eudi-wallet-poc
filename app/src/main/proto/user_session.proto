@@ -4,5 +4,13 @@ option java_package = "ee.cyber.wallet";
 option java_multiple_files = true;
 
 message UserSessionProto {
+  // Legacy plaintext PIN. Never written any more; a value left by an older build is hashed into
+  // pin_hash on the first verification and then cleared.
   string pin = 1;
+  // Argon2id hash of the PIN and its salt (PinVerifier); the PIN itself is not stored.
+  bytes pin_hash = 2;
+  bytes pin_salt = 3;
+  // Failed-attempt lockout, persisted so a process restart cannot reset it.
+  int32 failed_attempts = 4;
+  int64 locked_until = 5;
 }

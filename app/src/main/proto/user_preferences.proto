@@ -26,7 +26,9 @@ message UserPreferencesProto {
   DarkThemeConfigProto dark_theme_config = 1;
   bool ble_peripheral_mode = 2 [deprecated = true];
   IssuerKeyTypeProto issuer_key_type = 3;
-  bool trust_all_validator = 4;
+  // Was trust_all_validator: a debug switch that skipped chain validation (PKI plan C0). Removed.
+  reserved 4;
+  reserved "trust_all_validator";
   BlePeripheralModeProto ble_mode = 5;
   // ARF OIA_08f: global switch for disclosing stored attestations to the DC API framework.
   // Stored as "disabled" so the unset proto3 default (false) is OIA_08e's default-on.

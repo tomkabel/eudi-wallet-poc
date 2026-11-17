@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-04T17:20:00+03:00",
+  "title": "Design System: ZK age-proof sandbox",
+  "extensions": {
+    "colorMeta": {
+      "state-blue": { "role": "primary", "displayName": "State Blue", "canonical": "#005aa3", "tonalRamp": ["#001a33", "#002a52", "#003662", "#004277", "#005aa3", "#337bb5", "#99bdda", "#e7f0f6"] },
+      "state-navy": { "role": "primary", "displayName": "State Navy", "canonical": "#003662", "tonalRamp": ["#001224", "#001d38", "#00284d", "#003662", "#1f4f7d", "#4f7699", "#9db4cb", "#e3ebf2"] },
+      "blue-mist": { "role": "secondary", "displayName": "Blue Mist", "canonical": "#d0e1ee" },
+      "blue-haze": { "role": "secondary", "displayName": "Blue Haze", "canonical": "#e7f0f6" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#151926", "tonalRamp": ["#151926", "#262b3b", "#34394c", "#4b4e62", "#5d6071", "#9293a4", "#e1e2e5", "#f9f9f9"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#e1e2e5" },
+      "pass-green": { "role": "status", "displayName": "Pass", "canonical": "#266b42" },
+      "refuse-red": { "role": "status", "displayName": "Refuse", "canonical": "#ac3232" },
+      "caution-border": { "role": "status", "displayName": "Caution", "canonical": "#ba830d" },
+      "cellar-plaster": { "role": "neutral", "displayName": "Cellar Plaster", "canonical": "#f6efe9" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The page H1 and large measured numbers (proof clock, figures)." },
+      "headline": { "displayName": "Headline", "purpose": "Section and step headings." },
+      "title": { "displayName": "Title", "purpose": "Card, attack and credential titles." },
+      "data": { "displayName": "Data", "purpose": "Machine values only: doctypes, claim paths, hashes, nonces, the log." }
+    },
+    "shadows": [
+      { "name": "step-lift", "value": "0 1px 2px rgb(21 25 38 / 6%), 0 4px 16px rgb(21 25 38 / 8%)", "purpose": "The active step card, and nothing else." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(.16, 1, .3, 1)", "purpose": "Step reveal (8px rise, 0.5s), rail dot fill, timeline spine fill (scaleY, 0.6s)." },
+      { "name": "phase-spin", "value": "0.9s linear infinite", "purpose": "The active phase mark; replaced by a static mist fill under prefers-reduced-motion." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "1000px" },
+      { "name": "phone", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one acting colour: every forward action in the journey.",
+      "html": "<button class=\"ds-btn-primary\">Share the proof <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14m-6-6 6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 24px; border: 1px solid transparent; border-radius: 360px; background: #005aa3; color: #fff; font: 400 1rem/1.25 Roboto, 'Segoe UI', Arial, sans-serif; cursor: pointer; transition: background-color .15s; } .ds-btn-primary:hover { background: #004277; } .ds-btn-primary:active { background: #003662; } .ds-btn-primary:focus-visible { outline: 2px solid #005aa3; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Decline, start over, and run an attack.",
+      "html": "<button class=\"ds-btn-secondary\">Decline</button>",
+      "css": ".ds-btn-secondary { min-height: 40px; padding: 8px 24px; border: 1px solid #9293a4; border-radius: 360px; background: #fff; color: #005aa3; font: 400 1rem/1.25 Roboto, 'Segoe UI', Arial, sans-serif; cursor: pointer; transition: background-color .15s, border-color .15s; } .ds-btn-secondary:hover { background: #e7f0f6; border-color: #005aa3; } .ds-btn-secondary:active { background: #d0e1ee; border-color: #004277; } .ds-btn-secondary:focus-visible { outline: 2px solid #005aa3; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "TEDI field: label above, 40px input, hint below.",
+      "html": "<label class=\"ds-field\"><span>Date of birth</span><input type=\"date\"></label>",
+      "css": ".ds-field { display: grid; gap: 4px; font: 400 .875rem/1.4 Roboto, Arial, sans-serif; color: #151926; } .ds-field input { min-height: 40px; padding: 8px 12px; border: 1px solid #838494; border-radius: 4px; background: #fff; font: inherit; font-size: 1rem; caret-color: #005aa3; } .ds-field input:hover { border-color: #005aa3; } .ds-field input:focus { outline: none; border-color: #4b4e62; box-shadow: 0 0 0 2px #d0e1ee; }"
+    },
+    {
+      "name": "Persona Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Fills the form with a synthetic test person.",
+      "html": "<button class=\"ds-chip\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"8\" r=\"4\" fill=\"none\" stroke=\"#005aa3\" stroke-width=\"2\"/><path d=\"M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6\" fill=\"none\" stroke=\"#005aa3\" stroke-width=\"2\"/></svg>Mari Maasikas, 34</button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 4px 16px 4px 12px; border: 1px solid #9293a4; border-radius: 360px; background: #fff; color: #151926; font: 400 .9375rem Roboto, Arial, sans-serif; cursor: pointer; } .ds-chip:hover { border-color: #005aa3; background: #e7f0f6; } .ds-chip:focus-visible { outline: 2px solid #005aa3; outline-offset: 2px; }"
+    },
+    {
+      "name": "Utility Bar",
+      "kind": "nav",
+      "refersTo": "utility-bar",
+      "description": "ria.ee-style navy strip carrying the independence notice and the ET/EN switch.",
+      "html": "<div class=\"ds-utility\"><span>Independent development project · not an RIA service</span><span class=\"ds-lang\"><b aria-pressed=\"true\">ET</b><b>EN</b></span></div>",
+      "css": ".ds-utility { display: flex; justify-content: space-between; align-items: center; padding: 8px 24px; background: #003662; color: #fff; font: 400 .8125rem Roboto, Arial, sans-serif; } .ds-lang { display: flex; gap: 2px; } .ds-lang b { padding: 4px 8px; letter-spacing: .04em; color: rgb(255 255 255 / 80%); } .ds-lang b[aria-pressed=true] { color: #fff; box-shadow: inset 0 -2px 0 #fff; }"
+    },
+    {
+      "name": "Info Alert",
+      "kind": "card",
+      "description": "TEDI alert: wash, 1px status border, dark ink. The pattern for every status surface.",
+      "html": "<div class=\"ds-alert\">This is a <strong>sandbox</strong>. The people are made up.</div>",
+      "css": ".ds-alert { padding: 16px 24px; border: 1px solid #337bb5; border-radius: 4px; background: #d0e1ee; color: #151926; font: 400 .875rem/1.5 Roboto, Arial, sans-serif; }"
+    },
+    {
+      "name": "Proof Phase",
+      "kind": "custom",
+      "description": "One row of the live proof timeline, shown done.",
+      "html": "<div class=\"ds-phase\"><span class=\"ds-mark\"></span><div><strong>Zero-knowledge proof computed</strong><code>361 kB, 5.7 s</code></div></div>",
+      "css": ".ds-phase { display: flex; gap: 16px; font: 400 1rem/1.5 Roboto, Arial, sans-serif; color: #151926; } .ds-mark { width: 24px; height: 24px; flex: none; border-radius: 50%; background: #005aa3; box-shadow: inset 0 0 0 6px #005aa3, inset 0 0 0 9px #fff; } .ds-phase strong { display: block; font-weight: 400; } .ds-phase code { font: .875rem ui-monospace, Menlo, monospace; color: #4b4e62; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Service Counter",
+    "overview": "The page behaves like an Estonian state e-service: one citizen, one transaction, one step at a time, at a counter that tells you exactly what it is doing with your data. It is built on TEDI (TEHIK's design system), and its chrome is inferred from ria.ee: a navy utility bar, a white masthead, a calm white ground, and the state blue as the only accent that acts. Nothing glows and nothing pretends to be a terminal. The cryptography is shown as a public-service procedure the visitor can follow, not as spectacle.\n\nDensity is moderate and forms are generous. The guide voice sits in grey secondary text; the actions sit in blue pills. The one moment the page raises its voice is the live proof: a vertical timeline that fills as the real prover reports, beside a large light-weight clock. The bilingual toggle (ET first, EN second) is part of the identity, not a utility.",
+    "keyCharacteristics": [
+      "White ground, navy chrome, one acting blue.",
+      "Roboto, with light-weight (300) display headings as TEDI sets them.",
+      "Pill buttons, 4px cards, 8px \"sheets\" for anything that represents another party's screen.",
+      "Status is TEDI's alert triad (green / red / amber), each one a wash plus a border plus dark ink.",
+      "Every number shown comes from the run that just happened."
+    ],
+    "rules": [
+      { "name": "The One Acting Blue Rule", "body": "Only State Blue is clickable at rest. Navy, mist and haze are surfaces, never controls.", "section": "colors" },
+      { "name": "The Tinted Status Rule", "body": "Status never colours a whole region. It is always a light wash, a 1px border in the status hue, and text in the dark status ink, as TEDI's alerts are.", "section": "colors" },
+      { "name": "The Mono-Is-Data Rule", "body": "Monospace marks machine values (`ee.riik.poa.1`, `age_over_18`, hashes, the log) and nothing else. It is never decoration.", "section": "typography" },
+      { "name": "The One Lift Rule", "body": "Only the active step is elevated. Nothing else casts a shadow at rest.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep every claim on screen tied to this run: sizes, timings and verdicts come from the server's output, never from copy.",
+      "Do name the sandbox's shortcuts where they occur, in Slate narration, not in a footnote.",
+      "Do carry the independence notice in the utility bar, the info alert and the footer.",
+      "Do ship Estonian and English for every string, Estonian first."
+    ],
+    "donts": [
+      "Don't use RIA's logo, the state coat of arms, or \"RIA\" as a brand. This is not RIA's product.",
+      "Don't put an uppercase tracked label (an eyebrow) above a heading.",
+      "Don't add a thick coloured stripe on one side of a card. Status is a wash plus a 1px border.",
+      "Don't render cryptography as spectacle: no dark terminal grounds, no glowing nodes, no matrix rain.",
+      "Don't use monospace for anything that isn't a machine value."
+    ]
+  }
+}

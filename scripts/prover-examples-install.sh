@@ -3,6 +3,10 @@
 # `cargo build --examples` has targets. CI's e2e job runs this script, so dev and
 # CI install the examples identically.
 #
+# Longfellow gitignores its Cargo.lock, so a fresh clone resolves crates.io at build time and the
+# prover's dependencies drift. zk-age-poc/prover.Cargo.lock is the lock the prover was verified
+# with; it is copied over the workspace's and the builds run with --locked.
+#
 # A fresh longfellow-zk clone has no examples/ directory. Without the mkdir the
 # cp fails, and `cargo build --examples` then matches no targets, prints a
 # warning and exits 0 — a green build with no binary.
@@ -19,4 +23,5 @@ fi
 
 mkdir -p "$examples"
 cp "$repo"/zk-age-poc/*.rs "$examples/"
+cp "$repo/zk-age-poc/prover.Cargo.lock" "$sibling/rust/Cargo.lock"
 echo "installed $(cd "$examples" && ls *.rs | wc -l) prover example(s) into $examples"

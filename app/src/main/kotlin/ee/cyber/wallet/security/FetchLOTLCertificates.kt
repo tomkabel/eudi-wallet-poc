@@ -27,6 +27,19 @@ import kotlin.time.measureTimedValue
 private val logger = LoggerFactory.getLogger("FetchLOTLCertificates")
 
 /**
+ * ETSI TS 119 612 positive service statuses [UNVERIFIED revision]. The EUDI pilot trusted lists
+ * (trustedlist.serviceproviders.eudiw.dev, read 2026-11-04) use exactly these two.
+ */
+internal val POSITIVE_TL_STATUSES = setOf(
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/granted",
+    "http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/recognisedatnationallevel"
+)
+
+/** A trust service vouches only when its current type is the configured one and its status is positive. */
+internal fun isTrustedNow(type: String?, status: String?, wantedType: String): Boolean =
+    type == wantedType && status in POSITIVE_TL_STATUSES
+
+/**
  * Interface for fetching certificates from a List of Trusted Lists (LOTL).
  */
 fun interface FetchLOTLCertificates {
@@ -110,9 +123,17 @@ class FetchLOTLCertificatesDSS(
                 validationJob.onlineRefresh()
             }
 
-            trustedListsCertificateSource.certificates.map {
-                it.certificate
-            }
+            // PKI plan NEW-S2-2: keep a certificate only while one of its trust services is,
+            // right now, of the configured type and in a positive status. A withdrawn or
+            // deprecated service stays listed in the TL but must stop vouching.
+            val now = java.util.Date()
+            trustedListsCertificateSource.certificates.filter { token ->
+                trustedListsCertificateSource.getTrustServices(token).any { props ->
+                    props.trustService.getCurrent(now)?.let {
+                        isTrustedNow(it.type, it.status, trustedListConfig.serviceTypeIdentifier)
+                    } == true
+                }
+            }.map { it.certificate }
         }
         logger.info("Finished LOTL validation job in $duration. Found ${certs.size} certificates")
         certs.forEachIndexed { index, cert ->

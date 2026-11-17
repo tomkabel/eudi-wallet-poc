@@ -9,14 +9,19 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.data.repository.DocumentRepository
 import ee.cyber.wallet.data.repository.TransactionLogRepository
+import ee.cyber.wallet.di.ApplicationScope
 import ee.cyber.wallet.domain.AppError
 import ee.cyber.wallet.domain.credentials.CredentialType
+import ee.cyber.wallet.domain.credentials.DocType
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.documents.DocumentField
+import ee.cyber.wallet.domain.presentation.AgePredicatePolicy
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
 import ee.cyber.wallet.domain.presentation.EePoaConsumption
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.domain.presentation.PresentationTier
+import ee.cyber.wallet.domain.presentation.ResponseRefused
+import ee.cyber.wallet.domain.presentation.ZkCapability
 import ee.cyber.wallet.domain.provider.Attestation
 import ee.cyber.wallet.ui.mvi.MviViewModel
 import ee.cyber.wallet.ui.mvi.ViewEvent
@@ -28,7 +33,10 @@ import eu.europa.ec.eudi.openid4vp.Consensus
 import eu.europa.ec.eudi.openid4vp.DispatchOutcome
 import eu.europa.ec.eudi.openid4vp.Resolution
 import eu.europa.ec.eudi.openid4vp.ResolvedRequestObject
+import eu.europa.ec.eudi.openid4vp.dcql.metaMsoMdoc
+import eu.europa.ec.eudi.openid4vp.dcql.metaSdJwtVc
 import eu.europa.ec.eudi.openid4vp.legalName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -55,9 +63,14 @@ data class Success(val redirectUri: URI? = null) : Parcelable
 data class UiState(
     val isLoading: Boolean = false,
     val verifier: String = "",
+    // EE-PRO-010/010a: true when the request came from the wallet's own QR scanner, i.e. a
+    // redirect-flow cross-device request that nothing proves was started near this phone.
+    val scanned: Boolean = false,
     val success: Success? = null,
     val shareDisabled: Boolean = false,
-    val credentials: List<Credential> = listOf()
+    val credentials: List<Credential> = listOf(),
+    // EE-POA-013: an age attestation in this request is the last of its batch.
+    val lastAgeAttestation: Boolean = false
 ) : ViewState, Parcelable
 
 @Parcelize
@@ -84,7 +97,11 @@ sealed class Error(
     data object VerificationError : Error(AppError.PRESENTATION_FETCH_REQUEST_ERROR)
     data object VerifierError : Error(AppError.PRESENTATION_VERIFIER_REJECTED_ERROR)
     data object UnsupportedRequestType : Error(AppError.PRESENTATION_UNSUPPORTED_REQUEST_ERROR)
+    data object UnencryptedRequest : Error(AppError.PRESENTATION_UNENCRYPTED_REQUEST)
     data object MatchError : Error(AppError.PRESENTATION_MATCH_ERROR)
+    data object MultipleAgePredicates : Error(AppError.PRESENTATION_MULTIPLE_AGE_PREDICATES)
+    data object AgePredicateFalse : Error(AppError.PRESENTATION_AGE_PREDICATE_FALSE)
+    data object LastAgeAttestation : Error(AppError.PRESENTATION_LAST_AGE_ATTESTATION)
 }
 
 sealed class Effect : ViewSideEffect {
@@ -108,6 +125,15 @@ sealed class Event : ViewEvent {
 }
 
 private const val STATE_KEY = "state"
+
+/**
+ * EE-PRO-010: whether the request came from the wallet's own QR scanner. Only the scanner passes
+ * the request as [MainRoute.ARG_URI]; deep links fill `clientId`/`requestUri` instead. Not
+ * `intent == null`: Navigation attaches a deep-link intent to route navigation too, so that test
+ * never fires.
+ */
+internal fun cameFromScanner(savedStateHandle: SavedStateHandle): Boolean =
+    savedStateHandle.get<String>(MainRoute.ARG_URI) != null
 private const val REQUEST_KEY = "request"
 
 @HiltViewModel
@@ -118,7 +144,8 @@ class PresentationRequestViewModel @Inject constructor(
     private val transactionLogRepository: TransactionLogRepository,
     private val dcqlRequestProcessor: DcqlRequestProcessor,
     private val credentialToDocumentMapper: CredentialToDocumentMapper,
-    private val eePoaConsumption: EePoaConsumption
+    private val eePoaConsumption: EePoaConsumption,
+    @ApplicationScope private val applicationScope: CoroutineScope
 ) : MviViewModel<Event, UiState, Effect>() {
 
     private val log = LoggerFactory.getLogger("PresentationRequestViewModel")
@@ -283,8 +310,14 @@ class PresentationRequestViewModel @Inject constructor(
                                 }
                             }.onFailure {
                                 log.error("Error sending Auth Response", it)
-                                logTransaction(error = AppError.CONNECTION_ERROR)
-                                sendEffect { Effect.ShowError(Error.ConnectionError(true)) }
+                                if (it is ResponseRefused) {
+                                    // Not a network problem, and retrying cannot change the answer.
+                                    logTransaction(error = AppError.PRESENTATION_UNENCRYPTED_REQUEST)
+                                    showError(Error.UnencryptedRequest)
+                                } else {
+                                    logTransaction(error = AppError.CONNECTION_ERROR)
+                                    sendEffect { Effect.ShowError(Error.ConnectionError(true)) }
+                                }
                             }
                     }
 
@@ -306,6 +339,14 @@ class PresentationRequestViewModel @Inject constructor(
     private suspend fun handleRequestObject(requestObject: ResolvedRequestObject) {
         when (requestObject) {
             is ResolvedRequestObject.OpenId4VPAuthorization -> {
+                // EE-PRO-001: refuse before matching, so a verifier asking for a cleartext
+                // response never gets a consent screen, let alone documents.
+                openId4VPManager.haipRefusal(requestObject)?.let { reason ->
+                    log.error("Refusing request: $reason")
+                    showError(Error.UnencryptedRequest)
+                    refuseRequest(requestObject, AppError.PRESENTATION_UNENCRYPTED_REQUEST)
+                    return
+                }
                 resolvedRequest.value = requestObject
 
                 val dcqlQuery = requestObject.query
@@ -327,10 +368,48 @@ class PresentationRequestViewModel @Inject constructor(
                     return
                 }
 
+                // EE-POA-030: more than one age predicate is refused outright. EE-POA-031: a
+                // predicate held false is answered like a request with no matching credential —
+                // the same log row and screen as the no-match path, and nothing sent.
+                when (AgePredicatePolicy.decideAll(credentials.map { it.credentialType to it.fields + it.optionalFields })) {
+                    AgePredicatePolicy.Decision.ALLOW -> Unit
+                    AgePredicatePolicy.Decision.REFUSE_MORE_THAN_ONE_PREDICATE -> {
+                        showError(Error.MultipleAgePredicates)
+                        refuseRequest(requestObject, AppError.PRESENTATION_MULTIPLE_AGE_PREDICATES)
+                        return
+                    }
+                    AgePredicatePolicy.Decision.PREDICATE_HELD_FALSE -> {
+                        setState { copy(verifier = requestObject.verifierName().toString()) }
+                        requestObject.requestedDocTypes().forEach { docType ->
+                            transactionLogRepository.addTransactionLog(
+                                party = requestObject.verifierName().toString(),
+                                docType = docType,
+                                error = AppError.PRESENTATION_AGE_PREDICATE_FALSE
+                            )
+                        }
+                        showError(Error.AgePredicateFalse)
+                        return
+                    }
+                }
+
+                // EE-POA-013: the last attestation of a batch goes over Tier 2 on a ZK-capable
+                // device. This redirect path carries no ZK request, so such a device refuses;
+                // one that cannot prove presents plain behind the last-attestation notice.
+                val lastAgeAttestation = credentials.any {
+                    AgePredicatePolicy.isAgeAttestation(it.credentialType) && eePoaConsumption.remaining(it.credentialType) <= 1
+                }
+                if (lastAgeAttestation && ZkCapability.capable) {
+                    showError(Error.LastAgeAttestation)
+                    refuseRequest(requestObject, AppError.PRESENTATION_LAST_AGE_ATTESTATION)
+                    return
+                }
+
                 setState {
                     copy(
                         verifier = requestObject.verifierName().toString(),
-                        credentials = credentials
+                        scanned = cameFromScanner(savedStateHandle),
+                        credentials = credentials,
+                        lastAgeAttestation = lastAgeAttestation
                     )
                 }
             }
@@ -344,6 +423,32 @@ class PresentationRequestViewModel @Inject constructor(
     }
 
     private fun ResolvedRequestObject.verifierName() = client.legalName() ?: client.id
+
+    /**
+     * A request refused before consent still leaves a trace: one activity-log row per requested
+     * document type the wallet recognises, under the verifier's name. A request naming only
+     * document types the wallet does not know is not logged: the log's doc-type column has no
+     * value for "unknown", and filing it under a real type would misname what was asked for.
+     *
+     * The verifier is then sent a negative answer in the background, so a slow or dead
+     * `response_uri` — likely, for a misconfigured verifier — cannot hold the spinner. It runs in
+     * the application scope: the error closes this screen, which would cancel the view model's.
+     */
+    private suspend fun refuseRequest(requestObject: ResolvedRequestObject.OpenId4VPAuthorization, error: AppError) {
+        val verifier = requestObject.verifierName().toString()
+        setState { copy(verifier = verifier) }
+        requestObject.requestedDocTypes().forEach { docType ->
+            transactionLogRepository.addTransactionLog(party = verifier, docType = docType, error = error)
+        }
+        applicationScope.launch { openId4VPManager.refuse(requestObject) }
+    }
+
+    private fun ResolvedRequestObject.OpenId4VPAuthorization.requestedDocTypes(): List<DocType> =
+        query.credentials.value.mapNotNull { credentialQuery ->
+            val typeIds = credentialQuery.metaMsoMdoc?.doctypeValue?.value?.let(::listOf)
+                ?: credentialQuery.metaSdJwtVc?.vctValues.orEmpty()
+            typeIds.firstNotNullOfOrNull { id -> DocType.entries.find { it.uri == id } }
+        }.distinct()
 
     private fun updateState(reducer: UiState.() -> UiState) {
         setState {
@@ -362,8 +467,8 @@ class PresentationRequestViewModel @Inject constructor(
     }
 
     /**
-     * EE-POA-013 / WIAM_21 (plan §4 item 6): a completed plain presentation of `ee.riik.poa.1`
-     * consumes the attestation and its SecureArea key — never the last in the batch. The tier
+     * EE-POA-013 / WIAM_21 (plan §4 item 6): a completed plain presentation of `ee.riik.poa.1` or
+     * `eu.europa.ec.av.1` consumes the attestation and its SecureArea key — never the last in the batch. The tier
      * on this path is PLAIN_NOT_REQUESTED (the redirect path cannot carry a ZK request), so
      * consumption is unconditional for EE-PoA rows that were actually disclosed. Runs inside the
      * send coroutine, before the success state navigates away; a failure is logged and never
@@ -371,7 +476,7 @@ class PresentationRequestViewModel @Inject constructor(
      */
     private suspend fun consumePresentedEePoa() {
         state.value.credentials.forEach { credential ->
-            if (credential.credentialType == CredentialType.EE_POA) {
+            if (AgePredicatePolicy.isAgeAttestation(credential.credentialType)) {
                 runCatching {
                     eePoaConsumption.consumeAfterPresentation(
                         attestation = credential.attestation,

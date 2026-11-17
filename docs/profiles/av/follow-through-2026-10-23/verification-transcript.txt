@@ -1,0 +1,7 @@
+Command: python3 docs/profiles/av/follow-through-2026-10-23/capture-audit.py
+PASS: 159 input fingerprints captured before audit and unchanged after audit.
+PASS: six retained artifacts comprise provisional JSON/HTML, audit transcript, source delta, capture procedure and this verification transcript.
+PASS: four historical artifact hashes unchanged.
+PASS: pinned profile/registry, summary, ordered clause ids/test ids/states/scope/limits, exclusion reasons and named negative states match historical.
+PASS: 188 HTML rows, revision/dirty/verdict identity and provisional JSON sibling name.
+Mapped clause detail differences are retained in audit-record.json without normalizing them away.

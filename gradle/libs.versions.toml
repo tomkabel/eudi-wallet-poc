@@ -42,6 +42,7 @@ multipaz = "0.99.0"
 dependencyCheck = "1.32.0"
 spotless = "7.0.3"
 ktlint = "0.50.0"
+detekt = "1.23.8"
 zxing-core = "3.5.3"
 appcompat = "1.7.0"
 arrow = "2.0.1"
@@ -154,4 +155,5 @@ android-navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin", vers
 protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependencyCheck" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

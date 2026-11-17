@@ -373,7 +373,7 @@ func postStep87(t *testing.T, deviceResponse []byte) *httptest.ResponseRecorder 
 	if err != nil {
 		t.Fatalf("session: %v", err)
 	}
-	p := &presenter{store: st, trust: trust, registry: reg, sem: make(limiter, 1)}
+	p := &presenter{register: testRegister(t), registerService: "age-verification", clientID: s.ClientID, store: st, trust: trust, registry: reg, sem: make(limiter, 1)}
 	body, err := json.Marshal(map[string]oid4vp.VPToken{"vp_token": {
 		"age_credential": {base64.RawURLEncoding.EncodeToString(deviceResponse)},
 	}})

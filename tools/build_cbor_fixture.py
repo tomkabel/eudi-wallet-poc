@@ -24,11 +24,25 @@ disagree. Run from the repository root:
     python3 tools/build_cbor_fixture.py
 """
 import base64
-import cbor2
 import hashlib
+import importlib.util
 import json
 import os
 import sys
+from pathlib import Path
+
+import cbor2
+
+# Load the concrete local file: an installed regular tests package can shadow
+# this repository's namespace package even when the repository is first on PATH.
+_validator_spec = importlib.util.spec_from_file_location(
+    "_carrier_version_validator",
+    Path(__file__).resolve().parents[1] / "tests/check_carrier_versions.py",
+)
+if _validator_spec is None or _validator_spec.loader is None:
+    raise ImportError("could not load local carrier version validator")
+_validator = importlib.util.module_from_spec(_validator_spec)
+_validator_spec.loader.exec_module(_validator)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIXTURE = os.path.join(ROOT, "verifier/go/zk/testdata/step8-7-openid4vp-zk")
@@ -105,6 +119,19 @@ def session_transcript(request: dict) -> bytes:
     return cbor2.dumps([None, None, ["OpenID4VPHandover", digest]], canonical=True)
 
 
+def fixture_provenance(root: Path, files: set[str]) -> dict:
+    """Carry reviewed metadata forward, refusing gaps before writing output bytes."""
+    problems = _validator.validate_carrier_versions(root)
+    if problems:
+        sys.exit("review carrier fixture provenance:\n" + "\n".join(problems))
+    provenance = _validator.read_object(
+        root / _validator.VECTORS / "manifest.json"
+    )["provenance"]
+    if set(provenance) != files:
+        sys.exit("review carrier fixture provenance: generated file inventory differs")
+    return provenance
+
+
 def main():
     with open(os.path.join(FIXTURE, "device_response.cbor"), "rb") as f:
         source = f.read()
@@ -112,7 +139,6 @@ def main():
     proof = cbor2.loads(entry)["proof"]
     with open(os.path.join(FIXTURE, "request.json")) as f:
         request = json.load(f)
-    os.makedirs(OUT, exist_ok=True)
 
     files = {}
     files["device_response.json.b64"] = base64.urlsafe_b64encode(
@@ -122,6 +148,9 @@ def main():
     files["device_response.cbor"] = cbor_bytes
     files["device_response_transcript.bin"] = session_transcript(request)
     files["request.json"] = json.dumps(request, indent=2).encode() + b"\n"
+
+    # Preserve reviewed evidence; refuse gaps rather than guessing provenance.
+    provenance = fixture_provenance(Path(ROOT), set(files))
 
     manifest = {
         "generated_by": "tools/build_cbor_fixture.py",
@@ -134,7 +163,9 @@ def main():
                  "(verifier/go/oid4vp/carrier_test.go); the CBOR wrap reuses "
                  "the source zkDocument bytes verbatim"),
         "sha256": {},
+        "provenance": provenance,
     }
+    os.makedirs(OUT, exist_ok=True)
     for name, content in files.items():
         with open(os.path.join(OUT, name), "wb") as f:
             f.write(content)

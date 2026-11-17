@@ -1,0 +1,233 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 10-23-2026 04:42
+last_updated: 11-11-2026 22:20
+project: eudi-wallet-poc
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts/stories
+development_status:
+  epic-1: in-progress
+  1-1-av-profile-clause-registry: done
+  1-2-av-profile-fixtures: done
+  1-3-av-conformance-runner: in-progress
+  1-4-av-vci-invocation: done
+  1-5-avsua-equivalent-issuance-path: done
+  1-6-published-av-report-and-external-reproduction: in-progress
+  epic-1-retrospective: done
+
+  epic-2: in-progress
+  2-1-carrier-runner-over-existing-cases: done
+  2-2-binding-property-failure-naming: done
+  2-3-version-labelled-carrier-fixtures: done
+  2-4-external-carrier-run-and-published-result: in-progress
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-deployable-rp-service-profile: done
+  3-2-tara-facing-adapter-contract: awaiting-operator
+  3-3-fail-closed-rp-register-interface-and-mock: done
+  3-4-rp-register-interface-proposal: awaiting-operator
+  3-5-four-estonian-acceptance-cases: backlog
+  3-6-refusal-distinguishable-from-cancellation: backlog
+  3-7-integrator-readme-and-timed-onboarding: backlog
+  3-8-parallel-path-integration-note: backlog
+  3-9-gateway-adapter-for-the-rp-kit: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-intendedusesource-interface: backlog
+  4-2-registration-certificate-parsing: backlog
+  4-3-certificate-driven-two-predicate-decision: backlog
+  4-4-topic-19-log-fields-from-the-certificate: backlog
+  4-5-fail-closed-defaults-and-certificate-property-tests: backlog
+  4-6-certificate-fixture-generator: backlog
+  4-7-plain-fallback-visibility-guard: backlog
+  4-8-evidence-class-typing-of-policy-inputs: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-signed-circuit-list-document-and-generator: backlog
+  5-2-verifier-fetch-with-pinned-key-validation: backlog
+  5-3-wallet-scheme-resolution-from-the-registry: backlog
+  5-4-tamper-and-two-instance-agreement-tests: backlog
+  5-5-circuit-provenance-audit-query: backlog
+  5-6-registry-hosting-and-succession-path: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-on-device-proving-measurements: backlog
+  6-2-verification-capacity-on-target-hardware: backlog
+  6-3-proximity-ble-transfer-measurement: backlog
+  6-4-verification-budget-and-refusal-cost-regression: backlog
+  6-5-register-latency-and-availability-profile: backlog
+  6-6-honest-measurement-reporting: backlog
+  6-7-proximity-relay-separability: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-fix-the-stale-issuerauth-conformity-row: backlog
+  7-2-audit-remaining-hand-maintained-conformity-rows: backlog
+  7-3-test-derived-conformity-statuses: backlog
+  7-4-evidence-scoped-compliance-and-estimate-vocabulary: backlog
+  7-5-haip-1-0-clause-statement: backlog
+  7-6-ts13-clause-map: backlog
+  7-7-eccg-clause-map-and-algorithm-inventory: backlog
+  7-8-narrow-scope-statement-for-the-zkp-work: backlog
+  7-9-attestation-ordering-statement: backlog
+  7-10-national-wallet-production-comparison: backlog
+  7-11-estimate-method-discipline: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-zkp_08-and-eccg-tension-report: backlog
+  8-2-iso-18013-5-second-edition-watch: backlog
+  8-3-zk-jwt-path-feasibility: backlog
+  8-4-per-path-unlinkability-statement: backlog
+  8-5-loa-high-authentication-with-a-zkp-presentation: backlog
+  8-6-dchp-17-filing-and-issue-tracking: backlog
+  8-7-missing-zkp_03-zkp_04-acp_03-design-notes: backlog
+  8-8-second-zk-family-readiness: backlog
+  8-9-upstream-dormancy-maintenance-position: backlog
+  8-10-octagon-assessment-of-the-fork: backlog
+  epic-8-retrospective: optional
+
+  epic-9: backlog
+  9-1-statutory-threshold-to-circuit-map: backlog
+  9-2-accepted-circuit-set-per-threshold: backlog
+  9-3-nearest-true-above-negotiation-library: backlog
+  9-4-threshold-boundary-tests: backlog
+  9-5-refusal-with-a-user-visible-reason: backlog
+  9-6-legal-review-of-the-threshold-list: backlog
+  epic-9-retrospective: optional
+
+  epic-10: backlog
+  10-1-real-issuer-integration: backlog
+  10-2-batch-issuance: backlog
+  10-3-real-wallet-unit-attestation-issuance: backlog
+  10-4-revocation-end-to-end-with-a-revoked-fixture: backlog
+  10-5-mobile-device-security-test-matrix: backlog
+  10-6-pid-authenticated-issuance-of-a-representation-attestation: backlog
+  epic-10-retrospective: optional
+
+  epic-11: backlog
+  11-1-operations-runbook: backlog
+  11-2-monitoring-availability-and-incident-process: backlog
+  11-3-accessibility-conformance-audit: backlog
+  11-4-external-security-review: backlog
+  11-5-runbook-game-day: backlog
+  11-6-certificate-transparency-for-access-certificates: backlog
+  11-7-cross-border-onboarding-without-a-national-identifier: backlog
+  11-8-dependency-and-vendored-artefact-hygiene: backlog
+  epic-11-retrospective: optional
+
+  epic-12: backlog
+  12-1-requester-name-authenticated-at-consent: backlog
+  12-2-credential-keys-require-user-presence: backlog
+  12-3-consent-gate-resists-guessing: backlog
+  12-4-proximity-share-carries-consent: backlog
+  epic-12-retrospective: optional
+
+  epic-13: backlog
+  13-1-trust-path-verdict-for-the-wallet-ecosystem: backlog
+  13-2-threshold-signed-circuit-list: backlog
+  13-3-qualified-timestamped-evidence-reports: backlog
+  epic-13-retrospective: optional
+
+  epic-14: backlog
+  14-1-mock-drift-contract-tests: backlog
+  14-2-mutation-guard-for-fail-closed-paths: backlog
+  epic-14-retrospective: optional
+
+# Action items committed during retrospectives (section created by the retrospective workflow)
+action_items:
+  - id: "epic-1-retro-independent-candidate"
+    epic: 1
+    action: "Execute an independent wallet or verifier through the documented adapter
+      at a recorded revision and retain every mapped clause outcome; close Story 1.3
+      only after evidence review."
+    owner: "Maintainer / interoperability operator"
+    status: open
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-independent-reproduction"
+    epic: 1
+    action: "Publish the reviewed implementation and evidence through fork, arrange
+      an independent clean-checkout reproduction, retain host/commands/timings/transcript/artifacts
+      and publish the attributed discrepancies before closing Story 1.6."
+    owner: "Maintainer / independent reproduction operator"
+    status: open
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-text"
+    epic: 1
+    action: "Convert invalid adapter stdout/stderr encoding into per-clause ERROR
+      diagnostics and preserve JSON/HTML reports; cover malformed bytes at the subprocess
+      boundary."
+    owner: "Conformance-runner maintainer"
+    status: done
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-duplicate-keys"
+    epic: 1
+    action: "Reject duplicate JSON object keys in external adapter evidence and add
+      raw conflicting-state controls proving no FAIL can be overwritten by PASS."
+    owner: "Conformance-runner maintainer"
+    status: done
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-timeout-cleanup"
+    epic: 1
+    action: "Terminate and reap adapter descendant processes on timeout and add a
+      child-process cleanup regression with an observable marker."
+    owner: "Conformance-runner maintainer"
+    status: done
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-adapter-startup-state"
+    epic: 1
+    action: "Distinguish candidate startup failure as NOT_EXECUTED from executed-candidate
+      ERROR, reconcile the shell adapter contract and add a nonexistent-executable
+      control."
+    owner: "Conformance-runner maintainer"
+    status: done
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-success-verdict-test"
+    epic: 1
+    action: "Add an all-passing synthetic local/external audit regression asserting
+      exit0, matching JSON verdict, sufficient thresholds, zero failed results and
+      both artifacts."
+    owner: "Conformance-runner maintainer"
+    status: done
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"
+  - id: "epic-1-retro-external-dependency-wording"
+    epic: 1
+    action: "Reconcile Epic 1 overview wording that says no external party is needed
+      with Stories 1.3 and 1.6 external acceptance prerequisites; keep local implementation
+      and external evidence gates explicit."
+    owner: "Product owner / backlog maintainer"
+    status: done
+    ref: "archive/bmad-output-2026-11-04:_bmad-output/implementation-artifacts/epic-1-retro-2026-10-23.md"

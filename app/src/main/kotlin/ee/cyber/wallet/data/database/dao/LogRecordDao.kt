@@ -16,7 +16,7 @@ interface LogRecordDao {
     fun getAll(): Flow<List<LogEntryEntity>>
 
     @Query("SELECT * FROM $TABLE_ACTIVITY_LOGS WHERE ${ActivityLogFields.ID} = :id")
-    fun getById(id: Long): Flow<LogEntryEntity>
+    fun getById(id: Long): Flow<LogEntryEntity?>
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(entity: LogEntryEntity)

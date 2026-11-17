@@ -34,6 +34,7 @@ import eu.europa.ec.eudi.sdjwt.SdJwt
 import eu.europa.ec.eudi.sdjwt.vc.ClaimPathElement
 import id.walt.mdoc.docrequest.MDocRequestBuilder
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.buildJsonObject
@@ -96,11 +97,43 @@ class OpenId4VPManager(
     }
 
     suspend fun sendResponse(requestObject: ResolvedRequestObject, consensus: Consensus) = withContext(dispatcher) {
+        // EE-PRO-001: checked here as well as before consent, so no caller can send documents
+        // to a verifier that asked for them unencrypted.
+        if (consensus is Consensus.PositiveConsensus) {
+            haipRefusal(requestObject)?.let { reason -> throw ResponseRefused("Refusing to send a response: $reason") }
+        }
+        dispatch(requestObject, consensus)
+    }
+
+    /** Why [requestObject] must not be answered with documents, or null when it may be. */
+    fun haipRefusal(requestObject: ResolvedRequestObject): String? = when (requestObject) {
+        is ResolvedRequestObject.OpenId4VPAuthorization ->
+            HaipResponsePolicy.refusal(requestObject.responseMode, requestObject.responseEncryptionSpecification)
+        else -> "not an OpenID4VP authorization request"
+    }
+
+    /**
+     * Tells the verifier the request was refused, so its session ends instead of timing out. A
+     * negative consensus carries no claims, so it is safe on the cleartext modes the HAIP policy
+     * refuses for documents. Only the `direct_post` modes are POSTed by the library; for fragment
+     * and query modes it builds a redirect, which is not followed — the wallet does not open a
+     * URL chosen by a verifier it just refused. Best effort: a failure is only logged.
+     */
+    suspend fun refuse(requestObject: ResolvedRequestObject) {
+        try {
+            withContext(dispatcher) { dispatch(requestObject, Consensus.NegativeConsensus) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn("Could not deliver the refusal to the verifier", e)
+        }
+    }
+
+    private suspend fun dispatch(requestObject: ResolvedRequestObject, consensus: Consensus) =
         EncryptionParameters.DiffieHellman(Base64URL.encode("mdoc_generated_nonce"))
             .let { encryptionParameters -> // TODO: EUDI ref. impl verifier fails if this is not set. Remove encryptionParameters as mdoc generated nonce is no longer required by ISO 18013:7 to be set in apu header.
                 openId4Vp.dispatch(requestObject, consensus, encryptionParameters)
             }
-    }
 
     /**
      * Matches credentials against a presentation definition.
@@ -326,3 +359,6 @@ class OpenId4VPManager(
         return presentationSdJwt.serializeWithKeyBinding(buildKbJwt).getOrThrow()
     }
 }
+
+/** A response the wallet refuses to send on policy grounds; retrying cannot change the outcome. */
+class ResponseRefused(message: String) : IllegalStateException(message)

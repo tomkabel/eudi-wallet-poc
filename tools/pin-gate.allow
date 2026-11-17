@@ -1,0 +1,3 @@
+# One exception per line: `path:text that appears on the offending line`, then `# reason`.
+# Every line is a reviewed exception to tools/pin_gate.py.
+sandbox/deploy/Dockerfile:FROM debian:trixie-slim  # base image digest is hardening Phase 6 (C13), which pins it and the compose image together

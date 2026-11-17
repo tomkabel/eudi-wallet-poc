@@ -1,0 +1,279 @@
+Agent-local provisional workspace audit; independent reproduction UNPERFORMED.
+CWD: /home/notroot/Documents/eudi-wallet-poc
+Environment override: JAVA_HOME=/usr/lib/jvm/java-17-openjdk; PATH prepends $JAVA_HOME/bin; RUSTFLAGS=-C target-cpu=x86-64-v3
+Command: python3 tests/run_av_conformance.py --json docs/profiles/av/follow-through-2026-10-23/provisional-agent-local-report.json --html docs/profiles/av/follow-through-2026-10-23/provisional-agent-local-report.html
+Start UTC: 2026-10-23T19:04:22.937804+00:00
+AV conformance audit: 20 unique local clauses; 10 negative controls
+repository verifier @ 6cf84df5806ecd22792eade3b8ced8d14f148202: {'PASS': 17, 'FAIL': 3, 'ERROR': 0, 'NOT_EXECUTED': 0, 'EXCLUDED': 74}
+  PASS AV-A.4-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileLocalContainers :: TestAVProfileLocalContainers (=== RUN   TestAVProfileLocalContainers
+--- PASS: TestAVProfileLocalContainers (0.00s)
+)
+  PASS AV-A.6-005 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceRequestParts :: TestAVConformanceRequestParts (=== RUN   TestAVConformanceRequestParts
+--- PASS: TestAVConformanceRequestParts (0.00s)
+)
+  PASS AV-A.6-006 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEncryptionEncoding :: TestAVConformanceEncryptionEncoding (=== RUN   TestAVConformanceEncryptionEncoding
+--- PASS: TestAVConformanceEncryptionEncoding (0.00s)
+)
+  PASS AV-A.6-007 verifier/go/oid4vp/isodcapi_test.go::TestEncryptionInfoShape :: TestEncryptionInfoShape (=== RUN   TestEncryptionInfoShape
+--- PASS: TestEncryptionInfoShape (0.00s)
+)
+  PASS AV-A.6-008 verifier/go/oid4vp/isodcapi_test.go::TestDeviceRequestBuild :: TestDeviceRequestBuild (=== RUN   TestDeviceRequestBuild
+--- PASS: TestDeviceRequestBuild (0.00s)
+)
+  PASS AV-A.6-009 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceResponseEncoding :: TestAVConformanceResponseEncoding (=== RUN   TestAVConformanceResponseEncoding
+--- PASS: TestAVConformanceResponseEncoding (0.00s)
+)
+  PASS AV-A.6-010 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEnvelope :: TestAVConformanceEnvelope (=== RUN   TestAVConformanceEnvelope
+=== RUN   TestAVConformanceEnvelope/negative_enc_type
+--- PASS: TestAVConformanceEnvelope/negative_enc_type (0.00s)
+=== RUN   TestAVConformanceEnvelope/negative_truncated
+--- PASS: TestAVConformanceEnvelope/negative_truncated (0.00s)
+=== RUN   TestAVConformanceEnvelope/negative_missing_fields
+--- PASS: TestAVConformanceEnvelope/negative_missing_fields (0.00s)
+=== RUN   TestAVConformanceEnvelope/negative_discriminator
+--- PASS: TestAVConformanceEnvelope/negative_discriminator (0.00s)
+--- PASS: TestAVConformanceEnvelope (0.00s)
+)
+  PASS AV-A.6-011 verifier/go/oid4vp/isodcapi_test.go::TestHPKERoundTrip :: TestHPKERoundTrip (=== RUN   TestHPKERoundTrip
+--- PASS: TestHPKERoundTrip (0.00s)
+)
+  PASS AV-A.6-015 verifier/go/av_conformance_test.go::TestAVConformanceResponseType :: TestAVConformanceResponseType (=== RUN   TestAVConformanceResponseType
+--- PASS: TestAVConformanceResponseType (0.00s)
+)
+  FAIL AV-A.6-016 verifier/go/av_conformance_test.go::TestAVConformanceResponseMode :: TestAVConformanceResponseMode (=== RUN   TestAVConformanceResponseMode
+    av_conformance_test.go:45: AV fallback requires direct_post; candidate emits direct_post.jwt
+--- FAIL: TestAVConformanceResponseMode (0.00s)
+)
+  FAIL AV-A.6-017 verifier/go/av_conformance_test.go::TestAVConformanceQueryTransport :: TestAVConformanceQueryTransport (=== RUN   TestAVConformanceQueryTransport
+    av_conformance_test.go:57: AV fallback prohibits request_uri; candidate emits request object transport
+--- FAIL: TestAVConformanceQueryTransport (0.00s)
+)
+  FAIL AV-A.6-018 verifier/go/av_conformance_test.go::TestAVConformanceClientID :: TestAVConformanceClientID (=== RUN   TestAVConformanceClientID
+    av_conformance_test.go:64: AV fallback requires redirect_uri client identification matching response_uri; got x509_san_dns:verifier.example.ee
+--- FAIL: TestAVConformanceClientID (0.00s)
+)
+  PASS AV-A.6-019 verifier/go/av_conformance_test.go::TestAVConformanceNonce :: TestAVConformanceNonce (=== RUN   TestAVConformanceNonce
+--- PASS: TestAVConformanceNonce (0.00s)
+)
+  PASS AV-A.6-020 verifier/go/av_conformance_test.go::TestAVConformanceDCQL :: TestAVConformanceDCQL (=== RUN   TestAVConformanceDCQL
+--- PASS: TestAVConformanceDCQL (0.00s)
+)
+  PASS AV-A.6-021 verifier/go/av_conformance_test.go::TestAVConformanceState :: TestAVConformanceState (=== RUN   TestAVConformanceState
+--- PASS: TestAVConformanceState (0.00s)
+)
+  PASS AV-A.7-001.1.1 verifier/go/internal/jose/jwk_test.go::TestGenerateKeyProducesUsableP256 :: TestGenerateKeyProducesUsableP256 (=== RUN   TestGenerateKeyProducesUsableP256
+--- PASS: TestGenerateKeyProducesUsableP256 (0.00s)
+)
+  PASS AV-A.7-001.1.2 verifier/go/internal/jose/jws_test.go::TestJWSSignVerifyRoundTrip :: TestJWSSignVerifyRoundTrip (=== RUN   TestJWSSignVerifyRoundTrip
+--- PASS: TestJWSSignVerifyRoundTrip (0.00s)
+)
+  PASS AV-A.8-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileRequiredParameters :: TestAVProfileRequiredParameters (=== RUN   TestAVProfileRequiredParameters
+=== RUN   TestAVProfileRequiredParameters/legacy-system-compatibility
+--- PASS: TestAVProfileRequiredParameters/legacy-system-compatibility (0.00s)
+=== RUN   TestAVProfileRequiredParameters/accepted-set/nil
+--- PASS: TestAVProfileRequiredParameters/accepted-set/nil (0.00s)
+=== RUN   TestAVProfileRequiredParameters/accepted-set/empty
+--- PASS: TestAVProfileRequiredParameters/accepted-set/empty (0.00s)
+=== RUN   TestAVProfileRequiredParameters/accepted-set/different-circuit
+--- PASS: TestAVProfileRequiredParameters/accepted-set/different-circuit (0.00s)
+=== RUN   TestAVProfileRequiredParameters/missing-offer/nil-meta
+--- PASS: TestAVProfileRequiredParameters/missing-offer/nil-meta (0.00s)
+=== RUN   TestAVProfileRequiredParameters/missing-offer/absent-list
+--- PASS: TestAVProfileRequiredParameters/missing-offer/absent-list (0.00s)
+=== RUN   TestAVProfileRequiredParameters/missing-offer/empty-list
+--- PASS: TestAVProfileRequiredParameters/missing-offer/empty-list (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/null
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/true
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/null
+--- PASS: TestAVProfileRequiredParameters/version/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/true
+--- PASS: TestAVProfileRequiredParameters/version/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/version/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/version/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/version/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/null
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/true
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/null
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/true
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/null
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/true
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing/alone
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/missing
+=== RUN   TestAVProfileRequiredParameters/version/missing/alone
+--- PASS: TestAVProfileRequiredParameters/version/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/version/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/version/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/version/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/tampered
+=== RUN   TestAVProfileRequiredParameters/version/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/version/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/version/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/version/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/version/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing/alone
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/missing
+=== RUN   TestAVProfileRequiredParameters/system/missing/alone
+--- PASS: TestAVProfileRequiredParameters/system/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/system/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/system/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/system/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/tampered
+=== RUN   TestAVProfileRequiredParameters/system/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/system/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/system/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/system/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/system/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/missing
+=== RUN   TestAVProfileRequiredParameters/id/missing/alone
+--- PASS: TestAVProfileRequiredParameters/id/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/id/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/id/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/id/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/tampered
+=== RUN   TestAVProfileRequiredParameters/id/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/id/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/id/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/id/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/id/tampered (0.00s)
+--- PASS: TestAVProfileRequiredParameters (0.00s)
+)
+  PASS AV-A.8-003 verifier/go/oid4vp/av_profile_test.go::TestAVProfileExternalContainers :: TestAVProfileExternalContainers (=== RUN   TestAVProfileExternalContainers
+--- PASS: TestAVProfileExternalContainers (0.07s)
+)
+  PASS AV-A.8-011 verifier/go/zk/zk_test.go::TestRegistryRejectsUnlisted :: TestRegistryRejectsUnlisted (=== RUN   TestRegistryRejectsUnlisted
+--- PASS: TestRegistryRejectsUnlisted (0.00s)
+)
+unconfigured external candidate @ unavailable: {'PASS': 0, 'FAIL': 0, 'ERROR': 0, 'NOT_EXECUTED': 20, 'EXCLUDED': 74}
+  NOT_EXECUTED AV-A.4-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileLocalContainers :: TestAVProfileLocalContainers (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-005 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceRequestParts :: TestAVConformanceRequestParts (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-006 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEncryptionEncoding :: TestAVConformanceEncryptionEncoding (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-007 verifier/go/oid4vp/isodcapi_test.go::TestEncryptionInfoShape :: TestEncryptionInfoShape (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-008 verifier/go/oid4vp/isodcapi_test.go::TestDeviceRequestBuild :: TestDeviceRequestBuild (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-009 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceResponseEncoding :: TestAVConformanceResponseEncoding (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-010 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEnvelope :: TestAVConformanceEnvelope (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-011 verifier/go/oid4vp/isodcapi_test.go::TestHPKERoundTrip :: TestHPKERoundTrip (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-015 verifier/go/av_conformance_test.go::TestAVConformanceResponseType :: TestAVConformanceResponseType (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-016 verifier/go/av_conformance_test.go::TestAVConformanceResponseMode :: TestAVConformanceResponseMode (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-017 verifier/go/av_conformance_test.go::TestAVConformanceQueryTransport :: TestAVConformanceQueryTransport (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-018 verifier/go/av_conformance_test.go::TestAVConformanceClientID :: TestAVConformanceClientID (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-019 verifier/go/av_conformance_test.go::TestAVConformanceNonce :: TestAVConformanceNonce (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-020 verifier/go/av_conformance_test.go::TestAVConformanceDCQL :: TestAVConformanceDCQL (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-021 verifier/go/av_conformance_test.go::TestAVConformanceState :: TestAVConformanceState (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.7-001.1.1 verifier/go/internal/jose/jwk_test.go::TestGenerateKeyProducesUsableP256 :: TestGenerateKeyProducesUsableP256 (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.7-001.1.2 verifier/go/internal/jose/jws_test.go::TestJWSSignVerifyRoundTrip :: TestJWSSignVerifyRoundTrip (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.8-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileRequiredParameters :: TestAVProfileRequiredParameters (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.8-003 verifier/go/oid4vp/av_profile_test.go::TestAVProfileExternalContainers :: TestAVProfileExternalContainers (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.8-011 verifier/go/zk/zk_test.go::TestRegistryRejectsUnlisted :: TestRegistryRejectsUnlisted (external candidate unavailable; configure --candidate-command)
+
+Return code: 1
+End UTC: 2026-10-23T19:04:24.918754+00:00
+Elapsed seconds: 1.981

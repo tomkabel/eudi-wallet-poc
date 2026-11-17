@@ -1,6 +1,9 @@
 package oid4vp
 
 import (
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -30,19 +33,76 @@ type Issuer struct {
 	// rule forbids deleting it.
 	NotBefore string `json:"not_before,omitempty"`
 	NotAfter  string `json:"not_after,omitempty"`
+	// IACA is the base64 DER of the issuer's IACA root (PKI plan NEW-S2-1).
+	// When set, the presentation's document signer certificate must chain to
+	// it under the ISO 18013-5 DS profile, on top of the key pin above. Signed
+	// (production) stores require it; the unsigned dev store may omit it and
+	// then pins the key alone.
+	IACA string `json:"iaca,omitempty"`
+}
+
+// IACACert parses the issuer's IACA root; nil when the store carries none.
+func (is Issuer) IACACert() (*x509.Certificate, error) {
+	if is.IACA == "" {
+		return nil, nil
+	}
+	der, err := base64.StdEncoding.DecodeString(is.IACA)
+	if err != nil {
+		return nil, fmt.Errorf("issuer %q: iaca is not base64: %w", is.Name, err)
+	}
+	c, err := x509.ParseCertificate(der)
+	if err != nil {
+		return nil, fmt.Errorf("issuer %q: iaca does not parse: %w", is.Name, err)
+	}
+	if !c.BasicConstraintsValid || !c.IsCA {
+		return nil, fmt.Errorf("issuer %q: iaca %q is not a CA certificate", is.Name, c.Subject)
+	}
+	return c, nil
 }
 
 // TrustStore maps a doctype to the issuers accepted for it.
 type TrustStore struct {
 	byDocType map[string][]Issuer
+	// byKey indexes the same issuers by docType+"/"+KeyID, so Select is a map
+	// lookup however many keys a doctype carries. A slice because an
+	// append-only signed store may list one key twice (a retired line and its
+	// renewal); the first live entry wins, as the old linear scan did.
+	byKey map[string][]Issuer
+	// now, when set, enforces each issuer's not_before/not_after on every
+	// lookup — so a long-running verifier stops trusting an issuer the moment
+	// it expires, and a retired issuer stays listed but unusable.
+	now func() time.Time
 }
 
-// maxIssuersPerDocType caps how many issuer keys one doctype may carry. Each
-// key runs a ~2.5s ZK verification before Select rejects it, so a bloated
-// doctype stretches every presentation toward the 60s WriteTimeout: 4 keys ≈
-// 10s worst case, with headroom. A national trust list for one doctype will
-// not plausibly exceed it.
-const maxIssuersPerDocType = 4
+// p256SPKIPrefix is the DER SubjectPublicKeyInfo header for an uncompressed
+// P-256 key (id-ecPublicKey, prime256v1, BIT STRING of 66 bytes); the 65-byte
+// 0x04||X||Y point follows it. Built by hand rather than through
+// x509.MarshalPKIXPublicKey so a key id exists for any well-formed coordinate
+// pair, on-curve or not — the trust store has never checked curve membership.
+var p256SPKIPrefix = []byte{
+	0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01,
+	0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03, 0x42, 0x00,
+}
+
+// KeyIDOf returns the key id of a P-256 key given as 0x-prefixed 64-hex-char
+// coordinates: lowercase hex SHA-256 of its DER SubjectPublicKeyInfo.
+func KeyIDOf(pkx, pky string) (string, error) {
+	if !validP256Hex(pkx) || !validP256Hex(pky) {
+		return "", fmt.Errorf("key %s/%s is not a pair of 0x-prefixed 64-hex-char P-256 coordinates", pkx, pky)
+	}
+	x, _ := hex.DecodeString(pkx[2:])
+	y, _ := hex.DecodeString(pky[2:])
+	der := append(append(append(append([]byte{}, p256SPKIPrefix...), 0x04), x...), y...)
+	sum := sha256.Sum256(der)
+	return hex.EncodeToString(sum[:]), nil
+}
+
+// KeyID is the issuer key's id (KeyIDOf its coordinates). Issuers in a loaded
+// store always have one; a malformed hand-built Issuer yields "".
+func (is Issuer) KeyID() string {
+	kid, _ := KeyIDOf(is.PKx, is.PKy)
+	return kid
+}
 
 // validP256Hex checks a 0x-prefixed coordinate: exactly 64 hex chars (32
 // bytes, a padded P-256 coordinate), decoding cleanly. Select compares the
@@ -76,7 +136,7 @@ func LoadTrustStore(path string) (*TrustStore, error) {
 
 // buildTrustStore validates and indexes an issuer list (A8 rules).
 func buildTrustStore(issuers []Issuer) (*TrustStore, error) {
-	ts := &TrustStore{byDocType: map[string][]Issuer{}}
+	ts := &TrustStore{byDocType: map[string][]Issuer{}, byKey: map[string][]Issuer{}}
 	for _, is := range issuers {
 		if is.DocType == "" {
 			return nil, fmt.Errorf("trust store: issuer %q has no doc_type", is.Name)
@@ -85,13 +145,14 @@ func buildTrustStore(issuers []Issuer) (*TrustStore, error) {
 			return nil, fmt.Errorf("trust store: issuer %q (%s) needs 0x-prefixed 64-hex-char pkx/pky (a P-256 coordinate), got pkx %q pky %q",
 				is.Name, is.DocType, is.PKx, is.PKy)
 		}
+		if _, err := is.IACACert(); err != nil {
+			return nil, fmt.Errorf("trust store: %w", err)
+		}
 		// Select compares hex strings, so both sides are held in one case.
 		is.PKx, is.PKy = strings.ToLower(is.PKx), strings.ToLower(is.PKy)
 		ts.byDocType[is.DocType] = append(ts.byDocType[is.DocType], is)
-		if n := len(ts.byDocType[is.DocType]); n > maxIssuersPerDocType {
-			return nil, fmt.Errorf("trust store: doctype %s lists %d issuers, more than the %d-key cap (each key runs a ~2.5s ZK verify before Select rejects it, and %d keys would stretch every presentation toward the 60s write timeout)",
-				is.DocType, n, maxIssuersPerDocType, n)
-		}
+		k := is.DocType + "/" + is.KeyID()
+		ts.byKey[k] = append(ts.byKey[k], is)
 	}
 	if len(ts.byDocType) == 0 {
 		return nil, fmt.Errorf("trust store lists no issuers")
@@ -101,11 +162,54 @@ func buildTrustStore(issuers []Issuer) (*TrustStore, error) {
 
 // For returns the issuers accepted for a doctype.
 func (ts *TrustStore) For(docType string) ([]Issuer, error) {
-	is, ok := ts.byDocType[docType]
-	if !ok || len(is) == 0 {
+	is := ts.byDocType[docType]
+	if ts.now != nil {
+		now := ts.now()
+		var live []Issuer
+		for _, cand := range is {
+			if cand.validAt(now) {
+				live = append(live, cand)
+			}
+		}
+		is = live
+	}
+	if len(is) == 0 {
 		return nil, fmt.Errorf("no trusted issuer for doctype %q", docType)
 	}
 	return is, nil
+}
+
+// validAt reports whether now falls inside the issuer's window. The bounds
+// were parsed once at load (checkWindow), so a parse failure here cannot
+// happen; it is treated as outside the window regardless.
+func (is Issuer) validAt(now time.Time) bool {
+	if is.NotBefore != "" {
+		nb, err := time.Parse(time.RFC3339, is.NotBefore)
+		if err != nil || now.Before(nb) {
+			return false
+		}
+	}
+	if is.NotAfter != "" {
+		na, err := time.Parse(time.RFC3339, is.NotAfter)
+		if err != nil || now.After(na) {
+			return false
+		}
+	}
+	return true
+}
+
+func (is Issuer) checkWindow() error {
+	if is.NotBefore != "" {
+		if _, err := time.Parse(time.RFC3339, is.NotBefore); err != nil {
+			return fmt.Errorf("issuer %q has unparsable not_before %q", is.Name, is.NotBefore)
+		}
+	}
+	if is.NotAfter != "" {
+		if _, err := time.Parse(time.RFC3339, is.NotAfter); err != nil {
+			return fmt.Errorf("issuer %q has unparsable not_after %q", is.Name, is.NotAfter)
+		}
+	}
+	return nil
 }
 
 // Select chooses the trusted issuer key matching an mso_mdoc presentation. The
@@ -115,17 +219,41 @@ func (ts *TrustStore) For(docType string) ([]Issuer, error) {
 // could supply the issuer key it wants checked could mint its own attestation
 // and prove anything about it (see Issuer).
 func (ts *TrustStore) Select(docType, pkx, pky string) (Issuer, error) {
-	is, err := ts.For(docType)
-	if err != nil {
-		return Issuer{}, err
-	}
-	for _, cand := range is {
-		if cand.PKx == strings.ToLower(pkx) && cand.PKy == strings.ToLower(pky) {
-			return cand, nil
+	kid, err := KeyIDOf(strings.ToLower(pkx), strings.ToLower(pky))
+	if err == nil {
+		if is, ok := ts.lookup(docType, kid); ok {
+			return is, nil
 		}
+	}
+	if _, err := ts.For(docType); err != nil {
+		return Issuer{}, err
 	}
 	return Issuer{}, fmt.Errorf(
 		"issuer key %s/%s is not in the trust store for doctype %q; msoX5chain may select among trusted keys, never supply them", pkx, pky, docType)
+}
+
+// SelectByKeyID chooses the trusted issuer for a doctype whose KeyID is kid
+// (a holder's hint on the interim envelope). Like Select, the hint only picks
+// among trusted keys: an unknown id is refused, never added.
+func (ts *TrustStore) SelectByKeyID(docType, kid string) (Issuer, error) {
+	if is, ok := ts.lookup(docType, strings.ToLower(kid)); ok {
+		return is, nil
+	}
+	if _, err := ts.For(docType); err != nil {
+		return Issuer{}, err
+	}
+	return Issuer{}, fmt.Errorf(
+		"issuer key id %q is not in the trust store for doctype %q; the hint may select among trusted keys, never supply them", kid, docType)
+}
+
+// lookup returns the first live issuer indexed under (docType, kid).
+func (ts *TrustStore) lookup(docType, kid string) (Issuer, bool) {
+	for _, cand := range ts.byKey[docType+"/"+kid] {
+		if ts.now == nil || cand.validAt(ts.now()) {
+			return cand, true
+		}
+	}
+	return Issuer{}, false
 }
 
 // All lists every trusted issuer.
@@ -159,13 +287,16 @@ type signedTrustDoc struct {
 //     in prior must appear in the new array (removed entry = load error —
 //     the circuit-registry deprecation doctrine; retire an issuer by adding
 //     not_after, never by deleting the line);
-//   - per-entry not_before/not_after, when present, must bracket now, unless
-//     ignoreFreshness (the -ignore-trust-freshness dev escape) is set.
+//   - per-entry not_before/not_after, when present, must parse; they are
+//     enforced on every lookup against now (not once at load), unless
+//     ignoreFreshness (the -ignore-trust-freshness escape, devflags builds only) is set. An
+//     entry outside its window is skipped, never a load error — retiring an
+//     issuer with not_after must not stop the verifier from starting.
 //
 // The verified issuers are returned as a plain TrustStore; nothing downstream
 // changes. Issuer keys still come only from this store; x5chain selects,
 // never adds.
-func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, now time.Time, ignoreFreshness bool) (*TrustStore, error) {
+func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, now func() time.Time, ignoreFreshness bool) (*TrustStore, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read trust store: %w", err)
@@ -177,7 +308,7 @@ func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, n
 	if doc.Sig == "" {
 		return nil, fmt.Errorf("trust store %s carries no signature; a bare issuers.json must be loaded with LoadTrustStore", path)
 	}
-	payload, err := jose.VerifyJWSWithKey(doc.Sig, *trustRoot)
+	payload, err := jose.VerifyJWSWithKey(doc.Sig, *trustRoot, jose.JWSTypTrustStore)
 	if err != nil {
 		return nil, fmt.Errorf("trust store %s: signature does not verify under the trust root: %w", path, err)
 	}
@@ -198,11 +329,12 @@ func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, n
 			return nil, fmt.Errorf("trust store %s: issuer %d differs from the signed payload", path, i)
 		}
 	}
-	// Append-only: everything in prior must still be here.
+	// Append-only: everything in prior must still be here. prior's keys are
+	// lowercased by buildTrustStore, so compare lowercased.
 	if prior != nil {
 		kept := map[string]bool{}
 		for _, is := range doc.Issuers {
-			kept[is.DocType+"\x00"+is.PKx+"\x00"+is.PKy] = true
+			kept[is.DocType+"\x00"+strings.ToLower(is.PKx)+"\x00"+strings.ToLower(is.PKy)] = true
 		}
 		for _, was := range prior.All() {
 			if !kept[was.DocType+"\x00"+was.PKx+"\x00"+was.PKy] {
@@ -210,29 +342,22 @@ func LoadSignedTrustStore(path string, trustRoot *jose.JWK, prior *TrustStore, n
 			}
 		}
 	}
-	// Freshness windows.
 	for _, is := range doc.Issuers {
-		if ignoreFreshness {
-			break
+		if err := is.checkWindow(); err != nil {
+			return nil, fmt.Errorf("trust store %s: %w", path, err)
 		}
-		if is.NotBefore != "" {
-			nb, err := time.Parse(time.RFC3339, is.NotBefore)
-			if err != nil {
-				return nil, fmt.Errorf("trust store %s: issuer %q has unparsable not_before %q", path, is.Name, is.NotBefore)
-			}
-			if now.Before(nb) {
-				return nil, fmt.Errorf("trust store %s: issuer %q is not valid before %s", path, is.Name, is.NotBefore)
-			}
-		}
-		if is.NotAfter != "" {
-			na, err := time.Parse(time.RFC3339, is.NotAfter)
-			if err != nil {
-				return nil, fmt.Errorf("trust store %s: issuer %q has unparsable not_after %q", path, is.Name, is.NotAfter)
-			}
-			if now.After(na) {
-				return nil, fmt.Errorf("trust store %s: issuer %q expired %s", path, is.Name, is.NotAfter)
-			}
+		// NEW-S2-1: a production store pins the IACA as well as the key, so a
+		// document signer certificate is chain-validated, not only matched.
+		if is.IACA == "" {
+			return nil, fmt.Errorf("trust store %s: issuer %q (%s) has no iaca; a signed store must name each issuer's IACA root", path, is.Name, is.DocType)
 		}
 	}
-	return buildTrustStore(doc.Issuers)
+	ts, err := buildTrustStore(doc.Issuers)
+	if err != nil {
+		return nil, err
+	}
+	if !ignoreFreshness {
+		ts.now = now
+	}
+	return ts, nil
 }

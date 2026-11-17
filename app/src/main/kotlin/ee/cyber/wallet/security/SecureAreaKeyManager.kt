@@ -52,7 +52,7 @@ class SecureAreaKeyManager(
     private val selection: SecureAreaSelection,
     private val attestationChallengeSource: AttestationChallengeSource,
     private val dispatcher: CoroutineDispatcher
-) : SecureAreaKeyDeleter {
+) : SecureAreaBatchKeyManager {
 
     private val logger = LoggerFactory.getLogger("SecureAreaKeyManager")
 
@@ -109,7 +109,7 @@ class SecureAreaKeyManager(
      * so no caller could roll them back. The loop lives here instead, and a failure deletes every
      * key this call created before rethrowing.
      */
-    suspend fun batchCreateKey(count: Int): SecureAreaKeyBatch = withContext(dispatcher) {
+    override suspend fun batchCreateKey(count: Int): SecureAreaKeyBatch = withContext(dispatcher) {
         require(count >= 1) { "a batch has at least one key" }
         val challenge = attestationChallengeSource.challenge()
         val settings = AndroidKeystoreCreateKeySettings
@@ -289,6 +289,11 @@ fun SecureAreaDeviceKey.jwk(): com.nimbusds.jose.jwk.ECKey {
         com.nimbusds.jose.util.Base64URL.encode(coordinate.x),
         com.nimbusds.jose.util.Base64URL.encode(coordinate.y)
     ).x509CertChain(x5c).build()
+}
+
+/** Public-key-only seam for the real age batch transaction; Android storage can be faked on JVM. */
+interface SecureAreaBatchKeyManager : SecureAreaKeyDeleter {
+    suspend fun batchCreateKey(count: Int): SecureAreaKeyBatch
 }
 
 /**

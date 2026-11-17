@@ -1,17 +1,32 @@
 {
-  "_comment": "Accepted proving circuits (EE-EUDIW-TS-1.0 EE-ZKP-030). A relying party checks a proof's circuit against this set BEFORE verifying it, and caches it rather than fetching per presentation (EE-ZKP-032). In production this file is signed, append-only and CT-logged; this is a local stand-in. The block_enc_hash/block_enc_sig pair is the Longfellow block sizes the multipaz zkSystemSpec label carries (multipaz-circuits.txt); it takes part in the spec id only.",
+  "schema": "ee-circuits/1",
+  "list_version": "1",
+  "issued_at": "2026-11-13T00:00:00Z",
+  "expires_at": "2027-05-13T00:00:00Z",
+  "min_library_version": "61a8a735964d1b22bccf79bf14ef6767249cdf92",
+  "maintainer": "eudi-wallet-poc community-maintained local acceptance list; no scheme-owner authority",
+  "systems": [
+    "longfellow-libzk-v1",
+    "org.iso.mdoc.zk"
+  ],
   "circuits": [
     {
       "circuit_hash": "8d079211715200ff06c5109639245502bfe94aa869908d31176aae4016182121",
       "version": 7,
       "num_attributes": 1,
+      "block_enc_hash": 4151,
+      "block_enc_sig": 4096,
       "upstream_tag": "google/longfellow-zk v0.9 @ 61a8a735964d1b22bccf79bf14ef6767249cdf92 (verifier/zkverify-ffi/longfellow-rev.txt)",
       "accepted_on": "2026-09-05",
       "audits": [
         "UNVERIFIED — two independent security reviews in progress; do not ship to production (zk-age-poc/REPRODUCE.md)"
-      ],
-      "block_enc_hash": 4151,
-      "block_enc_sig": 4096
+      ]
+    }
+  ],
+  "signatures": [
+    {
+      "key_id": "eudi-wallet-poc-local-2026-11-13",
+      "sig": "m2YEJp_3uUQ0RevU4FyvQs45yYDfbi67WjZPjarkydi9REfXu8ZsbowQJpjhXooeaNxmDEDBvqTO7W2N_EjOBg"
     }
   ]
 }

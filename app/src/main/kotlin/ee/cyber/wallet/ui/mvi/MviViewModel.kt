@@ -5,10 +5,12 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import org.slf4j.LoggerFactory
 
 interface ViewState
 
@@ -54,7 +56,16 @@ abstract class MviViewModel<Event : ViewEvent, UiState : ViewState, Effect : Vie
     private fun subscribeToEvents() {
         viewModelScope.launch {
             _event.collect {
-                handleEvents(it)
+                // One failing event must not kill the collector: an escaped exception would end
+                // this coroutine and every later event (Cancel, Retry) would go unhandled.
+                // Screens still own their error UX; this is the last-resort boundary.
+                try {
+                    handleEvents(it)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    LoggerFactory.getLogger(this@MviViewModel::class.java).error("Unhandled error in event {}", it, e)
+                }
             }
         }
     }

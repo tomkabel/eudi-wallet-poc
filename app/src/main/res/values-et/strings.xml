@@ -82,6 +82,8 @@
     <string name="presentation_close_and_try_again">Sulge ja proovi uuesti.</string>
     <string name="presentation_verified_party">Autenditud osapool</string>
     <string name="presentation_requests_following_data_to">Küsib järgnevaid andmeid:</string>
+    <string name="presentation_channel_scanned_notice">Teise seadme päring: skannisid koodi teiselt ekraanilt ja miski ei kontrolli, et see ekraan on sinu lähedal. Jaga andmeid ainult siis, kui alustasid seda ise ja just praegu teenuses %1$s.</string>
+    <string name="presentation_channel_link_notice">Avatud lingilt, mitte selle rakenduse skannerist. Kui kaamera skannis lingi teiselt ekraanilt, jaga andmeid ainult siis, kui alustasid seda ise teenuses %1$s.</string>
     <string name="presentation_footer_note">Kontrolli tähelepanelikult üle andmed, mida esitad %1$s!</string>
     <string name="presentation_image_stub">[Image]</string>
     <string name="presentation_zk_notice_proof_requested">See osapool küsis nullteadmise tõendit, kuid see esitus ei saa seda kasutada. Seetõttu saab dokumendi väljaandja selle esituse sinuga siduda.</string>
@@ -89,6 +91,11 @@
     <string name="presentation_issuer_disclosure_notice">Selle tõendi väljaandja on nähtav andmeid küsivale osapoolele.</string>
     <string name="error_presentation_no_matching_circuit">Jagamine peatati. See osapool nõuab nullteadmise tõendit, mida see digikukkur ei suuda esitada, ja ilma selleta võiks dokumendi väljaandja seda esitust sinuga siduda.</string>
     <string name="error_presentation_proof_failed">Jagamine peatati. Nullteadmise tõendit, mida see osapool küsis, ei õnnestunud koostada, ja ilma selleta võiks dokumendi väljaandja seda esitust sinuga siduda.</string>
+    <string name="error_presentation_unauthenticated_request">Jagamine peatati. See osapool ei tõendanud, kes ta on, seega vastab see digikukkur talle sinu vanuse kohta ainult nullteadmise tõendiga, aga see päring seda ei võimalda.</string>
+    <string name="error_presentation_last_age_attestation">Jagamine peatati. See on sinu viimane ühekordne vanusetõend ja see digikukkur jagab seda ainult nullteadmise tõendina, mida see päring ei võimalda. Uuenda vanusetõendeid jaotises Minu dokumendid.</string>
+    <string name="error_presentation_multiple_age_predicates">Jagamine peatati. See osapool küsis rohkem kui ühe vanusepiiri kohta. Koos paljastaksid vastused sinu vanusevahemiku.</string>
+    <string name="error_presentation_age_predicate_false">Sinu vanusetõend ei vasta vanusepiirile, mille kohta see osapool küsis, seega ei jagatud midagi. Osapoolele öeldakse ainult, et sobivat dokumenti ei leitud.</string>
+    <string name="presentation_last_age_attestation_notice">See on sinu viimane ühekordne vanusetõend. Kõik osapooled, kellele sa seda nüüdsest näitad, saavad need esitused omavahel siduda. Uuenda vanusetõendeid jaotises Minu dokumendid.</string>
     <string name="error_presentation_unsupported_protocol">Jagamine peatati. See osapool küsis andmeid protokolliga, mida see digikukkur ei toeta.</string>
 
     <!-- Errors -->
@@ -103,6 +110,9 @@
     <string name="error_presentation_unsupported_request_type">Päringu tüüp ei ole toetatud!</string>
     <string name="error_issuance_authorization_error">Autoriseerimine ebaõnnestus.</string>
     <string name="error_issuance_common_error">Dokumendi väljastamine ebaõnnestus.</string>
+    <string name="error_presentation_unencrypted_request">See teenus küsis sinu andmeid krüpteerimata kujul. Andmeid ei jagatud.</string>
+    <string name="error_issuance_unbound_credential">Väljastaja pakkus dokumenti, mis ei ole selle telefoniga seotud ja mida saaks kasutada igaüks, kellel on selle koopia. Dokumenti ei salvestatud.</string>
+    <string name="error_issuance_deferred_unsupported">Väljastaja saab selle dokumendi väljastada alles hiljem, mida see rakendus veel ei toeta.</string>
 
     <!-- Attributes -->
     <string name="attr_identification_nr">Isikukood</string>
@@ -167,8 +177,6 @@
     <string name="settings_bluetooth_mode_title">Bluetooth režiim</string>
     <string name="settings_bluetooth_peripheral_mode">Perifeeria server</string>
     <string name="settings_bluetooth_central_mode">Keskne klient</string>
-    <string name="settings_trust_all_validator_title">Usalda kõiki</string>
-    <string name="settings_trust_all_validator_description">Jäta sertifikaadi ahela valideerimine vahele (ainult testimiseks)</string>
     <string name="settings_dc_api_disclosure_title">Jaga dokumente andmeid küsivate veebilehtedega</string>
     <string name="settings_dc_api_disclosure_description">Luba seadmel pakkuda sinu dokumente veebilehtedele, mis neid küsivad. Lülita välja, et dokumente enam seadme päringusüsteemi kaudu pakkuda.</string>
     <string name="settings_lotl_status_title">Usaldusloendi olek</string>
@@ -256,4 +264,19 @@
     <string name="mock_auth_mobile_id_pin1">Sisesta Mobiil-ID PIN1</string>
     <string name="mock_auth_mobile_id_sucess">Mobiil-ID abil tuvastamine õnnestus</string>
 
+    <!-- External AV issuance entry -->
+    <string name="av_invocation_title">Vanuse tõendamise väljastamine</string>
+    <string name="av_invocation_document">Pakutud dokument: %1$s</string>
+    <string name="av_invocation_issuer">Pakutud väljastaja: %1$s</string>
+    <string name="av_invocation_unverified_issuer">See väljastaja on antud lingis. Tema usaldusväärsust ei ole kontrollitud.</string>
+    <string name="av_invocation_provider_unavailable">Teenusepakkuja integratsioon pole saadaval. Väline vanusetõendi väljastamine ei ole integreeritud; tõendit ei ole saadud.</string>
+    <string name="av_invocation_continue">Jätka</string>
+    <string name="av_invocation_cancel">Loobu</string>
+    <string name="av_invocation_close">Sulge</string>
+    <string name="invocation_refused_title">Käivitusest keelduti</string>
+    <string name="invocation_missing">Puuduv parameeter: %1$s</string>
+    <string name="invocation_malformed">Vigane parameeter: %1$s</string>
+    <string name="invocation_unsupported">Toetamata parameeter või käivitus: %1$s</string>
+    <string name="invocation_navigation_failed">Käivitust %1$s ei saa avada: ükski toetatud sihtkoht ei võtnud seda linki vastu.</string>
+    <string name="invocation_capacity">Käivituste järjekord on täis: %1$d saabunud käivitusest keelduti. Enne uuesti proovimist sulge see teade.</string>
 </resources>

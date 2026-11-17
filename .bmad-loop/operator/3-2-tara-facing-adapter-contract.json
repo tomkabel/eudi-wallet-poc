@@ -1,0 +1,12 @@
+{
+  "actions": [
+    "Obtain institutional approval and the current RIA agreement or SLA for TARA demo access.",
+    "Register the test application and exact HTTPS callback with RIA and receive client credentials through the approved channel.",
+    "Configure the HTTPS proxy, protected client environment and a PEM bundle containing only current TARA-approved root certificates.",
+    "Set runtime prerequisite confirmations only after approval, run make test-tara-integration, complete a real browser authentication and retain the resulting report and exit status."
+  ],
+  "parked_at": "2026-11-12",
+  "run_id": "20261111-234921-6e79",
+  "spec_file": "_bmad-output/implementation-artifacts/spec-3-2-tara-facing-adapter-contract.md",
+  "story_key": "3-2-tara-facing-adapter-contract"
+}

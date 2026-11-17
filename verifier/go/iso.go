@@ -22,6 +22,7 @@ package main
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/x509"
 	"embed"
 	"encoding/hex"
 	"encoding/json"
@@ -34,6 +35,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tomkabel/eudi-wallet-poc/verifier/go/circuits"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/internal/cborsub"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/oid4vp"
 	"github.com/tomkabel/eudi-wallet-poc/verifier/go/zk"
@@ -46,6 +48,25 @@ var isoPages embed.FS
 // only reachable from a secure context, so this page is what the holder's
 // browser loads; the verifier itself never talks to the wallet.
 var dcapiPage = template.Must(template.ParseFS(isoPages, "iso.html"))
+
+// Offers are constrained by the runtime-checked startup set AND the current
+// signed registry. A cached session or startup slice cannot extend list expiry.
+func (p *presenter) currentOffered() ([]circuits.Circuit, error) {
+	if err := p.registry.CurrentError(); err != nil {
+		return nil, err
+	}
+	var offered []circuits.Circuit
+	for _, c := range p.offered {
+		current, ok := p.registry.Lookup(c.Version, c.NumAttributes)
+		if ok && current.SpecID() == c.SpecID() {
+			offered = append(offered, current)
+		}
+	}
+	if len(offered) == 0 {
+		return nil, fmt.Errorf("missing-acceptable-circuit")
+	}
+	return offered, nil
+}
 
 // dcapiNewRequest is the body of POST /present/dcapi/new.
 type dcapiNewRequest struct {
@@ -77,7 +98,15 @@ func (p *presenter) handleDCAPINew(w http.ResponseWriter, r *http.Request) {
 		body.Element = "age_over_18"
 	}
 	q := oid4vp.AgeQuery("proof_of_age", p.docType, p.nsID, body.Element)
-	s, err := p.store.NewISO(p.clientID, p.baseURL+"/present/dcapi/response", q, p.dcapiOrigin, p.offered)
+	if !p.registerGate(w, p.clientID, q) {
+		return
+	}
+	offered, err := p.currentOffered()
+	if err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": err.Error()})
+		return
+	}
+	s, err := p.store.NewISO(p.clientID, p.baseURL+"/present/dcapi/response", q, p.dcapiOrigin, offered)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -101,6 +130,14 @@ func (p *presenter) handleDCAPIPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s, err := p.store.Get(id)
+	if err != nil {
+		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		return
+	}
+	if !p.registerGate(w, s.ClientID, s.Query) {
+		return
+	}
+	s, err = p.store.Get(id)
 	if err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
 		return
@@ -152,13 +189,37 @@ func (p *presenter) handleDCAPIRequest(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "session has no dcapi extension"})
 		return
 	}
+	if !p.registerGate(w, s.ClientID, s.Query) {
+		return
+	}
+	s, err = p.store.Get(id)
+	if err != nil {
+		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		return
+	}
 	cq, err := s.SingleQuery()
 	if err != nil {
 		log.Printf("/present/dcapi/request/%s: query: %v", s.ID, err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "session query is unusable"})
 		return
 	}
-	req, err := oid4vp.DeviceRequest(cq.Meta.DoctypeValue, cq.Namespace(), cq.Element(), p.offered)
+	current, err := p.currentOffered()
+	if err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": err.Error()})
+		return
+	}
+	// Deliver only the circuit set this session originally committed to.
+	var offered []circuits.Circuit
+	for _, c := range current {
+		if _, ok := ext.BySpecID[c.SpecID()]; ok {
+			offered = append(offered, c)
+		}
+	}
+	if len(offered) == 0 {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "missing-acceptable-circuit"})
+		return
+	}
+	req, err := oid4vp.DeviceRequest(cq.Meta.DoctypeValue, cq.Namespace(), cq.Element(), offered)
 	if err != nil {
 		log.Printf("/present/dcapi/request/%s: build: %v", s.ID, err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "device request build failed"})
@@ -208,6 +269,14 @@ func (p *presenter) handleDCAPIResponse(w http.ResponseWriter, r *http.Request) 
 	}
 	defer p.sem.release()
 
+	peek, err := p.store.Get(id)
+	if err != nil {
+		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		return
+	}
+	if !p.registerGate(w, peek.ClientID, peek.Query) {
+		return
+	}
 	s, err := p.store.Claim(id)
 	if err != nil {
 		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
@@ -227,7 +296,7 @@ func (p *presenter) handleDCAPIResult(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/present/dcapi/result/")
 	s, err := p.store.Get(id)
 	if err != nil {
-		writeJSON(w, statusFor(err), map[string]string{"error": err.Error()})
+		writeJSON(w, statusFor(err), map[string]string{"id": id, "error": err.Error()})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -325,6 +394,14 @@ func (p *presenter) verifyZkDocument(s *oid4vp.Session, ext *oid4vp.ISOExtension
 		log.Printf("/present/dcapi/response/%s: refused unsolicited zkSystemSpecId %q", s.ID, d.ZkSystemSpecID)
 		return false, "the zk system spec was not offered in this session", http.StatusForbidden
 	}
+	if err := p.registry.CurrentError(); err != nil {
+		return false, err.Error(), http.StatusForbidden
+	}
+	current, ok := p.registry.Lookup(circuit.Version, circuit.NumAttributes)
+	if !ok || current.SpecID() != d.ZkSystemSpecID {
+		return false, "circuit is not in the accepted set", http.StatusForbidden
+	}
+	circuit = current
 
 	// Rule (a): the timestamp the proof binds, inside a window anchored in the
 	// verifier's own clock.
@@ -354,7 +431,7 @@ func (p *presenter) verifyZkDocument(s *oid4vp.Session, ext *oid4vp.ISOExtension
 	// so Now must be that value — d.Timestamp, already window-checked above —
 	// and never this session's ExpectedNow, which would fail every real
 	// device response.
-	err = zk.Verify(zk.Request{
+	err = zkVerify(zk.Request{
 		Version:       circuit.Version,
 		NumAttributes: circuit.NumAttributes,
 		PKx:           issuer.PKx,
@@ -400,5 +477,20 @@ func (p *presenter) selectIssuer(chains [][]byte, docType string) (oid4vp.Issuer
 	}
 	pkx := "0x" + hex.EncodeToString(marshalled.Bytes()[1:33])
 	pky := "0x" + hex.EncodeToString(marshalled.Bytes()[33:65])
-	return p.trust.Select(docType, pkx, pky)
+	issuer, err := p.trust.Select(docType, pkx, pky)
+	if err != nil {
+		return oid4vp.Issuer{}, err
+	}
+	// NEW-S2-1: the key pin says which issuer; the chain says the certificate
+	// carrying that key is a live document signer under the issuer's IACA.
+	iaca, err := issuer.IACACert()
+	if err != nil {
+		return oid4vp.Issuer{}, err
+	}
+	if iaca != nil {
+		if _, err := oid4vp.VerifyChain(chains[:1], []*x509.Certificate{iaca}, time.Now(), oid4vp.ProfileMdocDS); err != nil {
+			return oid4vp.Issuer{}, fmt.Errorf("document signer of %q: %w", issuer.Name, err)
+		}
+	}
+	return issuer, nil
 }

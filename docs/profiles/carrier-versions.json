@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "profile": "docs/profiles/MSO-MDOC-ZK-OPENID4VP-PROFILE.md",
+  "scope": "Published carrier-v1 files and numbered carrier rules only; carrier-profile, circuit, release and external-document versions are distinct.",
+  "sources": {
+    "repository-policy": {
+      "kind": "repository-policy",
+      "version": "9066b7d65ef6d9d3942fd8f3291727f25d7a3ee7",
+      "evidence": [
+        "spec/EE-EUDIW-TS-1.0.md",
+        "verifier/go/oid4vp/dcql.go",
+        "verifier/go/present.go",
+        "docs/decisions/ADR-003-MINIMAL-JWE.md"
+      ],
+      "disposition": "local-evidence",
+      "scope": "Repository policy, not ISO requirements. The canonical Git revision is historical attribution. Evidence paths provide navigation and existence checks; validation does not attest current file bytes to that revision."
+    },
+    "multipaz-0.99.0": {
+      "kind": "implementation-release",
+      "version": "0.99.0",
+      "primary_url": "https://github.com/openwallet-foundation/multipaz/releases/tag/0.99.0",
+      "evidence": [
+        "verifier/go/zk/testdata/step8-7-openid4vp-zk/GENERATED-BY",
+        "verifier/go/zk/testdata/step0-multipaz/multipaz-circuits.txt"
+      ],
+      "disposition": "local-evidence",
+      "scope": "Release identifier checked against the primary GitHub release API on 2026-11-11. Wire shape is recorded by the committed host fixture, not independent-device or ISO draft evidence."
+    },
+    "openid4vp-1.0-final": {
+      "kind": "external-document",
+      "version": "1.0 Final (9 July 2025)",
+      "primary_url": "https://openid.net/specs/openid-4-verifiable-presentations-1_0-final.html",
+      "evidence": [
+        "verifier/go/oid4vp/transcript.go",
+        "verifier/go/zk/testdata/step8-7-openid4vp-zk/GENERATED-BY"
+      ],
+      "disposition": "primary-checked",
+      "scope": "Primary OpenID4VP 1.0 Final identifier, publication date and Appendix B.2.6.1 OpenID4VPHandover checked against the versioned primary HTML on 2026-11-11. This is transcript evidence, not standardisation of the ZK carrier."
+    },
+    "iso-second-edition": {
+      "kind": "external-document",
+      "version": null,
+      "evidence": [
+        "docs/analysis/OPENID4VP-MSO-MDOC-ZK-CARRIER.md"
+      ],
+      "disposition": "[UNVERIFIED]",
+      "spec_issue": "spec/EE-EUDIW-TS-1.0.md#23:38",
+      "scope": "Exact ISO/IEC 18013-5 second-edition draft revision unavailable; observed wire shape is attributed to Multipaz 0.99.0, not to a guessed ISO revision."
+    }
+  },
+  "rules": {
+    "1": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "repository-policy"
+      ],
+      "derivation": "Observed format spelling; exact case and unknown-format refusal are repository policy."
+    },
+    "2": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "repository-policy"
+      ],
+      "derivation": "Observed query fields plus local required doctype and nonempty proving-system validation."
+    },
+    "3": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "iso-second-edition"
+      ],
+      "derivation": "Release fixture and circuit inventory establish the field tuple; circuit version is distinct from carrier-profile version."
+    },
+    "4": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "repository-policy",
+        "iso-second-edition"
+      ],
+      "derivation": "Observed system labels; local trust policy matches the complete circuit tuple rather than the label."
+    },
+    "5": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy"
+      ],
+      "derivation": "EE-ZKP-023 and local registry matching require every advertised circuit to be allowlisted before verification."
+    },
+    "6": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy"
+      ],
+      "derivation": "Reserved verifier-message handling and audit semantics are local profile policy."
+    },
+    "7": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy"
+      ],
+      "derivation": "The 60-second CheckTimestampWindow tolerance is repository policy, not an ISO-mandated freshness window."
+    },
+    "8": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "multipaz-0.99.0",
+        "repository-policy"
+      ],
+      "derivation": "Committed proof takes the fixture timestamp as Now; freshness enforcement is local verifier policy."
+    },
+    "9": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy",
+        "openid4vp-1.0-final"
+      ],
+      "derivation": "Local single-use and expiry controls preserve session inputs bound by the OpenID4VP handover."
+    },
+    "10": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "openid4vp-1.0-final",
+        "repository-policy"
+      ],
+      "derivation": "B.2.6.1 handover inputs are constructed from stored verifier state under local security policy."
+    },
+    "11": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy",
+        "openid4vp-1.0-final"
+      ],
+      "derivation": "Measured size and ADR-003 establish the encrypted default and explicit downgrade; no new HAIP or ISO claim."
+    },
+    "12": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy"
+      ],
+      "derivation": "Scheme separation is local coexistence design policy; historical TS14 commentary is not newly verified external evidence."
+    },
+    "13": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy",
+        "multipaz-0.99.0"
+      ],
+      "derivation": "EE-ZKP-004 crypto-agility policy uses observed query and response identity slots."
+    },
+    "14": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy"
+      ],
+      "derivation": "The shared refusal and presenter seam follows repository architecture and EE-ZKP-051."
+    },
+    "15": {
+      "carrier_profile_version": "1.0",
+      "sources": [
+        "repository-policy",
+        "multipaz-0.99.0"
+      ],
+      "derivation": "Observed issuer-certificate disclosure motivates local EE-ZKP-042 consent policy across carriers."
+    }
+  }
+}

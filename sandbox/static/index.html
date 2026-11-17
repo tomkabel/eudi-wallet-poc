@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZK vanusetõend · liivakast</title>
+<meta name="description" content="Tõesta, et oled üle 18, ilma sünnikuupäeva näitamata. Päris nullteadmustõestus, algusest lõpuni.">
+<link rel="preload" href="/fonts/roboto-v30-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/roboto-v30-latin-300.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23005aa3'/%3E%3Cpath d='M9 22.5 15 10h2l6 12.5M11.6 18h8.8' fill='none' stroke='%23fff' stroke-width='2.4'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main" data-t="skip">Liigu sisu juurde</a>
+
+<div class="utility">
+  <div class="wrap utility__row">
+    <span data-t="utility">Iseseisev arendusprojekt · ei ole RIA teenus</span>
+    <div class="lang" role="group" aria-label="Keel / Language">
+      <button type="button" data-lang="et" aria-pressed="true">ET</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap masthead__row">
+    <a class="brand" href="#top" aria-label="ZK vanusetõend">
+      <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="4" fill="#005aa3"/><path d="M9 22.5 15 10h2l6 12.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M11.6 18h8.8" stroke="#fff" stroke-width="2.4"/></svg>
+      <span class="brand__text"><strong data-t="brand">ZK vanusetõend</strong><span data-t="brand_sub">Liivakast · EUDI rahakott</span></span>
+    </a>
+    <nav class="masthead__nav" aria-label="Lehe osad" data-t-aria="nav_label">
+      <a href="#journey" data-t="nav_journey">Teekond</a>
+      <a href="#cheat" data-t="nav_cheat">Proovi petta</a>
+      <a href="#limits" data-t="nav_limits">Piirangud</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap">
+    <div class="alert alert--info" role="note">
+      <span class="ms" aria-hidden="true">info</span>
+      <p data-t="notice_html">See on <strong>liivakast</strong> iseseisvale arendusprojektile <a href="https://github.com/tomkabel/eudi-wallet-poc">tomkabel/eudi-wallet-poc</a>. Projekt ei ole Riigi Infosüsteemi Ameti (RIA) ega konsortsiumi Potential rakendus ning nemad ei ole seda heaks kiitnud. Isikud on väljamõeldud ja andmed kustuvad koos serveriga.</p>
+    </div>
+  </div>
+
+  <section class="intro" id="top" aria-labelledby="intro-h">
+    <div class="wrap intro__grid">
+      <div class="intro__copy">
+        <h1 id="intro-h" data-t="h1">Tõesta, et oled üle 18. Kõik muu jääb sinu teada.</h1>
+        <p class="lead" data-t="lead">See liivakast juhatab sind samm-sammult läbi päris nullteadmustõestuse. Registreerid testisiku, rahakott saab vanusetõendi ja veebipood küsib, kas oled täisealine. Pood saab vastuseks „jah“, mida kinnitab matemaatiline tõend, kuid sinu nime ega sünnikuupäeva ei näe ta kunagi.</p>
+        <p class="intro__real"><span class="ms" aria-hidden="true">verified</span><span data-t="real">Kõik siin töötab päriselt: tunnistus allkirjastatakse, tõend arvutatakse ja kontrollija kontrollib seda. Ette salvestatud vastuseid pole.</span></p>
+        <a class="btn btn--primary btn--lg" href="#step-1"><span data-t="start">Alusta</span><span class="ms" aria-hidden="true">arrow_downward</span></a>
+      </div>
+      <aside class="cast" aria-labelledby="cast-h">
+        <h2 id="cast-h" class="cast__h" data-t="cast_h">Osalised</h2>
+        <ol class="cast__list">
+          <li><span class="cast__icon ms" aria-hidden="true">person</span><div><strong data-t="cast_you">Sina</strong><span data-t="cast_you_d">Tunnistuse omanik. Otsustad, mida jagad.</span></div></li>
+          <li><span class="cast__icon ms" aria-hidden="true">account_balance</span><div><strong data-t="cast_reg">Rahvastikuregister (liivakast)</strong><span data-t="cast_reg_d">Väljastaja. Allkirjastab vanusetõendi.</span></div></li>
+          <li><span class="cast__icon ms" aria-hidden="true">wallet</span><div><strong data-t="cast_wallet">Sinu rahakott</strong><span data-t="cast_wallet_d">Hoiab tunnistust ja arvutab tõendi.</span></div></li>
+          <li><span class="cast__icon ms" aria-hidden="true">storefront</span><div><strong data-t="cast_shop">Veinikelder (testpood)</strong><span data-t="cast_shop_d">Usaldav osapool. Peab vanust kontrollima.</span></div></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <div class="wrap journey" id="journey">
+    <nav class="rail" aria-label="Sammud" data-t-aria="rail_label">
+      <p class="rail__mobile" aria-hidden="true"><span id="rail-count"></span></p>
+      <ol class="rail__list">
+        <li data-for="1"><a href="#step-1"><span class="rail__dot">1</span><span data-t="s1_short">Registreeru</span></a></li>
+        <li data-for="2"><a href="#step-2"><span class="rail__dot">2</span><span data-t="s2_short">Saa tunnistus</span></a></li>
+        <li data-for="3"><a href="#step-3"><span class="rail__dot">3</span><span data-t="s3_short">Mine poodi</span></a></li>
+        <li data-for="4"><a href="#step-4"><span class="rail__dot">4</span><span data-t="s4_short">Anna nõusolek</span></a></li>
+        <li data-for="5"><a href="#step-5"><span class="rail__dot">5</span><span data-t="s5_short">Tõend arvutatakse</span></a></li>
+        <li data-for="6"><a href="#step-6"><span class="rail__dot">6</span><span data-t="s6_short">Mida pood teada sai</span></a></li>
+      </ol>
+    </nav>
+
+    <div class="steps">
+      <!-- 1 -->
+      <section class="step" id="step-1" data-step="1" data-state="active" aria-labelledby="s1-h" tabindex="-1">
+        <header class="step__head">
+          <span class="step__num" aria-hidden="true">1</span>
+          <h2 id="s1-h" data-t="s1_h">Ütle rahvastikuregistrile, kes sa oled</h2>
+        </header>
+        <div class="step__body">
+          <p data-t="s1_p">Päriselt loeb väljastaja sinu vanuse rahvastikuregistrist üle X-tee. Liivakastis usub ta kuupäeva, mille sisestad. See on teadlik lihtsustus ja seepärast on see siin kirjas.</p>
+          <div class="personas" role="group" aria-labelledby="personas-l">
+            <p id="personas-l" class="label" data-t="personas">Võta valmis testisik</p>
+            <button type="button" class="chip" data-persona="mari"><span class="ms" aria-hidden="true">person</span><span data-t="p_mari">Mari Maasikas, 34</span></button>
+            <button type="button" class="chip" data-persona="karl"><span class="ms" aria-hidden="true">person</span><span data-t="p_karl">Karl Kask, 16</span></button>
+          </div>
+          <form id="enrol" class="form" novalidate>
+            <div class="form__row">
+              <div class="field">
+                <label for="given" data-t="given">Eesnimi</label>
+                <input id="given" name="given" autocomplete="off" required maxlength="60">
+              </div>
+              <div class="field">
+                <label for="family" data-t="family">Perekonnanimi</label>
+                <input id="family" name="family" autocomplete="off" required maxlength="60">
+              </div>
+            </div>
+            <div class="field field--date">
+              <label for="birth_date" data-t="birth">Sünnikuupäev</label>
+              <input id="birth_date" name="birth_date" type="date" required min="1900-01-01">
+              <p class="hint" data-t="birth_hint">Sünnikuupäev jõuab ainult väljastajani. Tunnistusse see ei lähe.</p>
+            </div>
+            <p class="form__error" id="enrol-error" role="alert" hidden></p>
+            <button class="btn btn--primary" type="submit"><span data-t="enrol_btn">Registreeri ja väljasta tunnistus</span><span class="ms" aria-hidden="true">arrow_forward</span></button>
+          </form>
+        </div>
+        <p class="step__summary" hidden></p>
+      </section>
+
+      <!-- 2 -->
+      <section class="step" id="step-2" data-step="2" data-state="locked" aria-labelledby="s2-h" tabindex="-1">
+        <header class="step__head">
+          <span class="step__num" aria-hidden="true">2</span>
+          <h2 id="s2-h" data-t="s2_h">Rahakott saab vanusetõendi</h2>
+        </header>
+        <div class="step__body">
+          <p data-t="s2_p">Väljastaja arvutas sinu sünnikuupäevast mõned jah/ei-vastused ja allkirjastas need. Tunnistus on ISO 18013-5 mdoc ning iga väärtus on soolatud ja räsitud. Rahakott hoiab seda nagu dokumenti taskus.</p>
+          <article class="credential" aria-labelledby="cred-title">
+            <header class="credential__head">
+              <span class="ms" aria-hidden="true">badge</span>
+              <div>
+                <h3 id="cred-title" data-t="cred_title">Vanusetõend</h3>
+                <p><code id="cred-doctype">ee.riik.poa.1</code></p>
+              </div>
+              <span class="tag tag--success" data-t="cred_signed">Allkirjastatud</span>
+            </header>
+            <dl class="credential__claims" id="cred-claims"></dl>
+            <dl class="credential__meta">
+              <div><dt data-t="cred_valid">Kehtib</dt><dd id="cred-valid"></dd></div>
+              <div><dt data-t="cred_issuer">Väljastaja võti</dt><dd><code id="cred-issuer"></code></dd></div>
+              <div><dt data-t="cred_size">Suurus</dt><dd id="cred-size"></dd></div>
+            </dl>
+          </article>
+          <div class="absent">
+            <h3 data-t="absent_h">Mida tunnistuses ei ole</h3>
+            <ul>
+              <li><span class="ms" aria-hidden="true">block</span><span data-t="absent_name">Sinu nimi</span></li>
+              <li><span class="ms" aria-hidden="true">block</span><span data-t="absent_birth">Sinu sünnikuupäev</span></li>
+              <li><span class="ms" aria-hidden="true">block</span><span data-t="absent_id">Isikukood</span></li>
+              <li><span class="ms" aria-hidden="true">block</span><span data-t="absent_photo">Foto</span></li>
+            </ul>
+          </div>
+          <button class="btn btn--primary" type="button" data-next="3"><span data-t="to_shop">Mine poodi</span><span class="ms" aria-hidden="true">arrow_forward</span></button>
+        </div>
+        <p class="step__summary" hidden></p>
+      </section>
+
+      <!-- 3 -->
+      <section class="step" id="step-3" data-step="3" data-state="locked" aria-labelledby="s3-h" tabindex="-1">
+        <header class="step__head">
+          <span class="step__num" aria-hidden="true">3</span>
+          <h2 id="s3-h" data-t="s3_h">Veinikelder peab su vanust kontrollima</h2>
+        </header>
+        <div class="step__body">
+          <p data-t="s3_p">Alkoholi tohib müüa ainult täisealisele. Tavaliselt tähendab see ID-kaardi näitamist, mis paljastab palju rohkem kui ühe vastuse. Siin küsib pood ainult üht: kas oled üle 18?</p>
+          <div class="shop" aria-label="Veinikelder (testpood)" data-t-aria="shop_label" role="group">
+            <div class="shop__bar"><span class="ms" aria-hidden="true">lock</span><span>veinikelder.test</span><span class="shop__badge" data-t="shop_badge">testpood</span></div>
+            <div class="shop__body">
+              <div class="shop__product">
+                <svg class="shop__bottle" viewBox="0 0 60 160" aria-hidden="true"><path d="M24 4h12v34c0 8 14 14 14 30v80a8 8 0 0 1-8 8H18a8 8 0 0 1-8-8V68c0-16 14-22 14-30z" fill="#4a1d2f"/><rect x="22" y="2" width="16" height="12" rx="2" fill="#151926"/><rect x="14" y="86" width="32" height="40" rx="2" fill="#f9f9f9"/><path d="M20 98h20M20 106h14M20 114h18" stroke="#005aa3" stroke-width="2"/></svg>
+                <div>
+                  <h3 data-t="product">Saaremaa õunavein, kuiv</h3>
+                  <p class="shop__meta" data-t="product_meta">0,75 l · 11,5% · alkohoolne jook</p>
+                  <p class="shop__price">12,90 €</p>
+                </div>
+              </div>
+              <div class="shop__checkout">
+                <p class="shop__gate"><span class="ms" aria-hidden="true">no_drinks</span><span data-t="gate">Enne tellimist kinnita, et oled vähemalt 18-aastane.</span></p>
+                <button class="btn btn--primary" type="button" id="shop-start"><span class="ms" aria-hidden="true">wallet</span><span data-t="shop_btn">Kinnita vanus EUDI rahakotiga</span></button>
+                <p class="form__error" id="shop-error" role="alert" hidden></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="step__summary" hidden></p>
+      </section>
+
+      <!-- 4 -->
+      <section class="step" id="step-4" data-step="4" data-state="locked" aria-labelledby="s4-h" tabindex="-1">
+        <header class="step__head">
+          <span class="step__num" aria-hidden="true">4</span>
+          <h2 id="s4-h" data-t="s4_h">Rahakott küsib sinult luba</h2>
+        </header>
+        <div class="step__body">
+          <p data-t="s4_p">Pood saatis OpenID4VP päringu. Rahakott näitab sulle täpselt, kes küsib ja mida. Midagi ei liigu enne, kui oled nõus.</p>
+          <div class="consent">
+            <div class="consent__who">
+              <span class="ms" aria-hidden="true">storefront</span>
+              <div><p class="label" data-t="consent_who">Küsija</p><p><code id="c-client"></code></p></div>
+            </div>
+            <div class="consent__ask">
+              <p class="label" data-t="consent_asks">Küsib</p>
+              <p class="consent__question" data-t="consent_q">Kas oled üle 18-aastane?</p>
+              <p class="consent__path"><code id="c-path"></code></p>
+            </div>
+            <dl class="consent__terms">
+              <div><dt><span class="ms" aria-hidden="true">visibility</span><span data-t="consent_share">Pood näeb</span></dt><dd data-t="consent_share_d">Ühte vastust: jah. Lisaks tõendit, et vastuse allkirjastas usaldusväärne väljastaja.</dd></div>
+              <div><dt><span class="ms" aria-hidden="true">visibility_off</span><span data-t="consent_hide">Pood ei näe</span></dt><dd data-t="consent_hide_d">Nime, sünnikuupäeva, teisi vanusega seotud vastuseid, väljastaja allkirja ega sinu seadmevõtit.</dd></div>
+              <div><dt><span class="ms" aria-hidden="true">lock</span><span data-t="consent_enc">Krüpteerimine</span></dt><dd id="c-enc"></dd></div>
+              <div><dt><span class="ms" aria-hidden="true">tag</span><span data-t="consent_nonce">Ühekordne kood (nonce)</span></dt><dd><code id="c-nonce"></code></dd></div>
+            </dl>
+            <div class="consent__actions">
+              <button class="btn btn--primary" type="button" id="consent-yes"><span class="ms" aria-hidden="true">check</span><span data-t="consent_yes">Jaga tõendit</span></button>
+              <button class="btn btn--secondary" type="button" id="consent-no" data-t="consent_no">Keeldu</button>
+            </div>
+            <p class="hint" id="consent-declined" hidden data-t="declined">Keeldusid. Pood ei saanud midagi. Kui soovid, võid uuesti proovida.</p>
+          </div>
+        </div>
+        <p class="step__summary" hidden></p>
+      </section>
+
+      <!-- 5 -->
+      <section class="step" id="step-5" data-step="5" data-state="locked" aria-labelledby="s5-h" tabindex="-1">
+        <header class="step__head">
+          <span class="step__num" aria-hidden="true">5</span>
+          <h2 id="s5-h" data-t="s5_h">Rahakott arvutab nullteadmustõestuse</h2>
+        </header>
+        <div class="step__body">
+          <p data-t="s5_p">Rahakott tõestab, et tema tunnistuses on väli <code>age_over_18 = true</code>, mille on allkirjastanud usaldusväärne väljastaja, ilma tunnistust ennast näitamata. Tõend seotakse just selle päringuga, nii et seda ei saa mujal uuesti kasutada.</p>
+          <div class="proof" id="proof">
+            <div class="proof__clock" aria-hidden="true"><span id="proof-time">0,0</span><small> s</small></div>
+            <ol class="phases" id="phases">
+              <li data-phase="request"><span class="phase__mark"></span><div><strong data-t="ph_request">Päring loetud</strong><span class="phase__detail" id="d-request"></span></div></li>
+              <li data-phase="bind"><span class="phase__mark"></span><div><strong data-t="ph_bind">Seotud selle seansiga</strong><span class="phase__detail" id="d-bind"></span></div></li>
+              <li data-phase="prove"><span class="phase__mark"></span><div><strong data-t="ph_prove">Nullteadmustõestus arvutatud</strong><span class="phase__detail" id="d-prove"></span><span class="phase__note" data-t="ph_prove_note">See on pikim samm: Longfellow ringskeem kontrollib allkirju ja räsisid tõendi sees.</span></div></li>
+              <li data-phase="send"><span class="phase__mark"></span><div><strong data-t="ph_send">Krüpteeritud ja saadetud</strong><span class="phase__detail" id="d-send"></span></div></li>
+              <li data-phase="verify"><span class="phase__mark"></span><div><strong data-t="ph_verify">Pood kontrollis tõendi</strong><span class="phase__detail" id="d-verify"></span></div></li>
+            </ol>
+            <p class="visually-hidden" id="proof-live" aria-live="polite"></p>
+            <details class="log">
+              <summary data-t="log">Näita tehnilist logi</summary>
+              <pre id="log"></pre>
+            </details>
+          </div>
+        </div>
+        <p class="step__summary" hidden></p>
+      </section>
+
+      <!-- 6 -->
+      <section class="step" id="step-6" data-step="6" data-state="locked" aria-labelledby="s6-h" tabindex="-1">
+        <header class="step__head">
+          <span class="step__num" aria-hidden="true">6</span>
+          <h2 id="s6-h" data-t="s6_h">Mida pood teada sai</h2>
+        </header>
+        <div class="step__body">
+          <div class="verdict" id="verdict" role="status"></div>
+          <div class="ledger">
+            <div class="ledger__col ledger__col--learned">
+              <h3><span class="ms" aria-hidden="true">visibility</span><span data-t="learned_h">Pood sai teada</span></h3>
+              <ul id="learned"></ul>
+            </div>
+            <div class="ledger__col ledger__col--kept">
+              <h3><span class="ms" aria-hidden="true">visibility_off</span><span data-t="kept_h">Jäi sinu teada</span></h3>
+              <ul id="kept"></ul>
+            </div>
+          </div>
+          <dl class="figures" id="figures"></dl>
+          <p class="figures__note" data-t="figures_note">Need arvud on mõõdetud just praegu, sinu enda läbimise käigus.</p>
+          <div class="step__cta">
+            <a class="btn btn--primary" href="#cheat"><span data-t="to_cheat">Proovi nüüd petta</span><span class="ms" aria-hidden="true">arrow_downward</span></a>
+            <button class="btn btn--secondary" type="button" id="restart" data-t="restart">Alusta uue isikuga</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="cheat" id="cheat" aria-labelledby="cheat-h">
+    <div class="wrap">
+      <h2 id="cheat-h" data-t="cheat_h">Proovi petta</h2>
+      <p class="lead" data-t="cheat_p">Kaitsemehhanism on väärt nii palju, kui palju ta rünnakule vastu peab. Iga allolev katse käib päriselt: tõend arvutatakse ja kontrollija otsustab. Iga katse võtab umbes sama kaua aega kui sinu enda tõend.</p>
+      <p class="hint" id="cheat-locked" data-t="cheat_locked">Katsed avanevad, kui oled teekonna läbinud.</p>
+      <div class="attacks">
+        <article class="attack" data-mode="replay">
+          <span class="ms attack__icon" aria-hidden="true">replay</span>
+          <h3 data-t="a_replay_h">Saada sama tõend teist korda</h3>
+          <p data-t="a_replay_p">Ründaja nuusib välja kehtiva vastuse ja saadab selle uuesti. Päringu kood (nonce) on ühekordne, nii et teine postitus peab tagasi lükatama.</p>
+          <button class="btn btn--secondary" type="button" disabled data-t="a_run">Käivita katse</button>
+          <div class="attack__out" aria-live="polite"></div>
+        </article>
+        <article class="attack" data-mode="tamper">
+          <span class="ms attack__icon" aria-hidden="true">swap_horiz</span>
+          <h3 data-t="a_tamper_h">Tõend teise seansi jaoks</h3>
+          <p data-t="a_tamper_p">Rahakott arvutab tõendi vale ühekordse koodi vastu, nagu oleks tõend tehtud mõnele teisele poele. Tõestajale sobib see hästi, aga kontrollija arvutab seansi ise uuesti.</p>
+          <button class="btn btn--secondary" type="button" disabled data-t="a_run">Käivita katse</button>
+          <div class="attack__out" aria-live="polite"></div>
+        </article>
+        <article class="attack" data-mode="lie">
+          <span class="ms attack__icon" aria-hidden="true">child_care</span>
+          <h3 data-t="a_lie_h">Alaealine valetab</h3>
+          <p data-t="a_lie_p">Registreerime 16-aastase Karli ja sunnime tõestajat tõestama väärtust, mis tema tunnistuses on <code>false</code>. Tõend ise on korrektne, kuid see tõestab vale asja.</p>
+          <button class="btn btn--secondary" type="button" disabled data-t="a_run">Käivita katse</button>
+          <div class="attack__out" aria-live="polite"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="limits" id="limits" aria-labelledby="limits-h">
+    <div class="wrap limits__grid">
+      <div>
+        <h2 id="limits-h" data-t="limits_h">Mida liivakast lihtsustab</h2>
+        <p data-t="limits_p">Krüptograafia on päris. Ümbritsev keskkond on teadlikult lihtne. Päris süsteemis peab iga punkt olema lahendatud.</p>
+      </div>
+      <ul class="limits__list">
+        <li><strong data-t="l1_h">Register usub sind.</strong> <span data-t="l1_p">Vanus tuleb sisestatud kuupäevast, mitte rahvastikuregistrist (EE-POA-006/007).</span></li>
+        <li><strong data-t="l2_h">Võtmed on serveris.</strong> <span data-t="l2_p">Seadmevõti on fail selles masinas, mitte telefoni turvakiibis (EE-SEC-001). Androidi rahakott hoiab seda StrongBoxis.</span></li>
+        <li><strong data-t="l3_h">Tõend arvutatakse serveris.</strong> <span data-t="l3_p">Päriselt arvutab tõendi telefon. Siin teeb seda sama tõestusprogramm serveris.</span></li>
+        <li><strong data-t="l4_h">Päring on allkirjastamata.</strong> <span data-t="l4_p">Pood ei tõenda oma identiteeti juurdepääsusertifikaadiga (EE-RP-002/003).</span></li>
+        <li><strong data-t="l5_h">Üks tõend korraga.</strong> <span data-t="l5_p">Kui keegi teine arvutab parasjagu tõendit, ootad järjekorras.</span></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__row">
+    <p data-t="footer_html">Iseseisev fork projektist <a href="https://github.com/open-eid/eudi-wallet-poc">open-eid/eudi-wallet-poc</a>. Ei ole seotud RIA, Justiits- ja Digiministeeriumi ega ühegi Eesti avaliku asutusega. Kujundus järgib <a href="https://github.com/TEHIK-EE/tedi-design-system">TEDI disainisüsteemi</a>.</p>
+    <p><a href="https://github.com/tomkabel/eudi-wallet-poc/blob/master/spec/EE-EUDIW-TS-1.0.md" data-t="footer_spec">Tehniline spetsifikatsioon EE-EUDIW-TS-1.0</a></p>
+  </div>
+</footer>
+</body>
+</html>

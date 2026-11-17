@@ -1,8 +1,6 @@
 package ee.cyber.wallet.di
 
 import android.content.Context
-import com.nimbusds.jose.EncryptionMethod
-import com.nimbusds.jose.JWEAlgorithm
 import com.nimbusds.jose.JWSAlgorithm
 import dagger.Module
 import dagger.Provides
@@ -13,11 +11,14 @@ import ee.cyber.wallet.AppConfig
 import ee.cyber.wallet.R
 import ee.cyber.wallet.crypto.CryptoProvider
 import ee.cyber.wallet.data.datastore.AuthorizationStateDataSource
+import ee.cyber.wallet.data.database.dao.AttestationDao
 import ee.cyber.wallet.domain.credentials.OpenId4VCIManager
 import ee.cyber.wallet.domain.documents.CredentialToDocumentMapper
 import ee.cyber.wallet.domain.presentation.DcqlRequestProcessor
+import ee.cyber.wallet.domain.presentation.HaipResponsePolicy
 import ee.cyber.wallet.domain.presentation.OpenId4VPManager
 import ee.cyber.wallet.security.CertificateChainValidator
+import ee.cyber.wallet.security.TrustDomain
 import ee.cyber.wallet.security.FetchLOTLCertificatesDSS
 import ee.cyber.wallet.security.SecureAreaKeyManager
 import ee.cyber.wallet.util.JsonSupport
@@ -68,17 +69,17 @@ object OpenId4VPAndVCModule {
             supportedClientIdPrefixes = verifiableClientIdPrefixes(
                 simpleCertificateChainValidator(context.getCertificates(R.raw.trusted))
             ),
+            // EE-PRO-001 (HAIP 1.0): access certificates are EC, so request objects are
+            // ES-signed; RSA and RSA-PSS have no Estonian access certificate to verify against.
             jarConfiguration = JarConfiguration(
-                supportedAlgorithms = listOf(
-                    JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512,
-                    JWSAlgorithm.RS256, JWSAlgorithm.RS384, JWSAlgorithm.RS512,
-                    JWSAlgorithm.PS256, JWSAlgorithm.PS384, JWSAlgorithm.PS512
-                ),
+                supportedAlgorithms = listOf(JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512),
                 supportedRequestUriMethods = SupportedRequestUriMethods.Default
             ),
+            // Advertised and enforced from the same lists: HaipResponsePolicy refuses any request
+            // the library would otherwise answer unencrypted.
             responseEncryptionConfiguration = ResponseEncryptionConfiguration.Supported(
-                supportedAlgorithms = listOf(JWEAlgorithm.ECDH_ES),
-                supportedMethods = listOf(EncryptionMethod.A128CBC_HS256, EncryptionMethod.A256GCM, EncryptionMethod.A128GCM)
+                supportedAlgorithms = HaipResponsePolicy.encryptionAlgorithms,
+                supportedMethods = HaipResponsePolicy.encryptionMethods
             ),
             vpConfiguration = VPConfiguration(
                 vpFormatsSupported = VpFormatsSupported(
@@ -105,14 +106,16 @@ object OpenId4VPAndVCModule {
     fun provideOpenId4VCIManager(
         authorizationStateDataSource: AuthorizationStateDataSource,
         credentialToDocumentMapper: CredentialToDocumentMapper,
-        cryptoProviderFactory: CryptoProvider.Factory
+        cryptoProviderFactory: CryptoProvider.Factory,
+        attestationDao: AttestationDao
     ): OpenId4VCIManager {
         return OpenId4VCIManager(
             httpClientFactory = { createHttpClient() },
             issuerUrl = AppConfig.issuerUrl,
             credentialToDocumentMapper = credentialToDocumentMapper,
             authorizationStateDataSource = authorizationStateDataSource,
-            cryptoProviderFactory = cryptoProviderFactory
+            cryptoProviderFactory = cryptoProviderFactory,
+            keyInUse = attestationDao::isKeyInUse
         )
     }
 
@@ -139,12 +142,9 @@ object OpenId4VPAndVCModule {
 //    )
 
     private fun simpleCertificateChainValidator(trustAnchors: List<X509Certificate>) = X509CertificateTrust {
-        // B4: both production call sites route through the centralized overload with
-        // the revocation policy logged at a single place. Revocation stays OFF until
-        // E4 lands a CRL source (both call sites then flip together, never one).
-        // Policy log (CS-M5 step 1): revocation=disabled — no CRL distribution source
-        // wired yet; see CertificateChainValidator.validateCertificateChain javadoc.
-        CertificateChainValidator.validateCertificateChain(it, trustAnchors)
+        // Verifier (RP) authentication: the one place, with reader auth, where LOTL-derived
+        // RP-access anchors apply (PKI plan NEW-S2-2).
+        CertificateChainValidator.validateCertificateChain(it, trustAnchors, domain = TrustDomain.STATIC_AND_LOTL)
     }
 
     private val httpLogger = LoggerFactory.getLogger("HTTP")

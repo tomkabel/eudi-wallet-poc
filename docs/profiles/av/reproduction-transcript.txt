@@ -1,0 +1,562 @@
+
+COMMAND: ['git', 'clone', '--no-hardlinks', '/home/notroot/Documents/eudi-wallet-poc', '/tmp/av-story-1-6-reproduction/eudi-wallet-poc']
+CWD: /tmp/av-story-1-6-reproduction
+Cloning into '/tmp/av-story-1-6-reproduction/eudi-wallet-poc'...
+done.
+RETURN CODE: 0
+
+COMMAND: ['git', 'checkout', '--detach', '3cce11df6ec4e9148ebd4859cde95aabf7e650fc']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+HEAD is now at 3cce11d feat(av): publish reproducible conformance report tooling
+RETURN CODE: 0
+
+COMMAND: ['git', 'rev-parse', 'HEAD']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+3cce11df6ec4e9148ebd4859cde95aabf7e650fc
+RETURN CODE: 0
+
+COMMAND: ['python3', '-m', 'venv', '/tmp/av-story-1-6-reproduction/venv']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+RETURN CODE: 0
+
+COMMAND: ['python3', '-m', 'pip', 'install', '-r', 'tests/requirements-ci.txt']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+Collecting cbor2==6.1.4 (from -r tests/requirements-ci.txt (line 9))
+  Using cached cbor2-6.1.4-cp312-cp312-manylinux_2_28_x86_64.whl.metadata (5.5 kB)
+Collecting cryptography==50.0.1 (from -r tests/requirements-ci.txt (line 10))
+  Using cached cryptography-50.0.1-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (4.3 kB)
+Collecting jwcrypto==1.6.1 (from -r tests/requirements-ci.txt (line 11))
+  Using cached jwcrypto-1.6.1-py3-none-any.whl.metadata (3.4 kB)
+Collecting cffi>=2.0.0 (from cryptography==50.0.1->-r tests/requirements-ci.txt (line 10))
+  Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+Collecting typing_extensions>=4.5.0 (from jwcrypto==1.6.1->-r tests/requirements-ci.txt (line 11))
+  Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography==50.0.1->-r tests/requirements-ci.txt (line 10))
+  Using cached pycparser-3.12-py3-none-any.whl.metadata (9.7 kB)
+Using cached cbor2-6.1.4-cp312-cp312-manylinux_2_28_x86_64.whl (461 kB)
+Using cached cryptography-50.0.1-cp311-abi3-manylinux_2_34_x86_64.whl (4.7 MB)
+Using cached jwcrypto-1.6.1-py3-none-any.whl (121 kB)
+Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Using cached pycparser-3.12-py3-none-any.whl (62 kB)
+Installing collected packages: typing_extensions, pycparser, cbor2, cffi, cryptography, jwcrypto
+Successfully installed cbor2-6.1.4 cffi-2.1.1 cryptography-50.0.1 jwcrypto-1.6.1 pycparser-3.12 typing_extensions-4.16.0
+
+[notice] A new release of pip is available: 25.0.1 -> 26.2.2
+[notice] To update, run: pip install --upgrade pip
+RETURN CODE: 0
+
+COMMAND: ['make', 'deps']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+./scripts/bootstrap-longfellow.sh
+longfellow-zk checked out at 61a8a735964d1b22bccf79bf14ef6767249cdf92
+./scripts/prover-examples-install.sh
+installed 2 prover example(s) into /tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/runtime/examples
+RUSTFLAGS='-C target-cpu=x86-64-v3' cargo build --release --examples --features testonly \
+	--manifest-path ../longfellow-zk/rust/applications/mdoc_zk/runtime/Cargo.toml
+    Updating crates.io index
+     Locking 98 packages to latest compatible versions
+      Adding aes v0.8.4 (available: v0.9.3)
+      Adding criterion v0.5.1 (available: v0.8.2)
+      Adding generic-array v0.14.7 (available: v0.14.9)
+      Adding getrandom v0.3.4 (available: v0.4.3)
+      Adding num-bigint v0.4.8 (available: v0.5.1)
+      Adding sha2 v0.10.9 (available: v0.11.1)
+      Adding zstd v0.13.3 (available: v0.14.3)
+ Downloading crates ...
+  Downloaded either v1.19.0
+  Downloaded find-msvc-tools v0.1.15
+  Downloaded unicode-ident v1.0.27
+  Downloaded serde_json v1.0.154
+  Downloaded zerocopy-derive v0.8.63
+  Downloaded cc v1.10.0
+  Downloaded syn v3.0.9
+  Downloaded zerocopy v0.8.63
+  Downloaded libc v0.2.191
+  Downloaded zstd-sys v2.1.2+zstd.1.5.7
+   Compiling libc v0.2.191
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling version_check v0.9.5
+   Compiling autocfg v1.5.1
+   Compiling typenum v1.20.1
+   Compiling cfg-if v1.0.5
+   Compiling core-algebra v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/core/algebra)
+   Compiling rustc-hash v2.1.3
+   Compiling util v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/util)
+   Compiling runtime-algebra v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/algebra)
+   Compiling cpufeatures v0.2.17
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.27
+   Compiling generic-array v0.14.7
+   Compiling quote v1.0.47
+   Compiling num-traits v0.2.19
+   Compiling getrandom v0.3.4
+   Compiling pkg-config v0.3.34
+   Compiling serde_core v1.0.229
+   Compiling crossbeam-utils v0.8.23
+   Compiling crossbeam-epoch v0.9.21
+   Compiling zerocopy v0.8.63
+   Compiling serde v1.0.229
+   Compiling crossbeam-deque v0.8.8
+   Compiling syn v2.0.119
+   Compiling syn v3.0.9
+   Compiling num-integer v0.1.47
+   Compiling zmij v1.0.23
+   Compiling zstd-safe v7.3.0
+   Compiling jobserver v0.1.35
+   Compiling num-bigint v0.4.8
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling cc v1.10.0
+   Compiling inout v0.1.4
+   Compiling cipher v0.4.4
+   Compiling bumpalo v3.20.3
+   Compiling either v1.19.0
+   Compiling aes v0.8.4
+   Compiling rayon-core v1.13.0
+   Compiling serde_json v1.0.154
+   Compiling itoa v1.0.18
+   Compiling plotters-backend v0.3.7
+   Compiling mdoc-zk-testcases v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/testcases)
+   Compiling clap_lex v1.1.1
+   Compiling ciborium-io v0.2.2
+   Compiling mdoc-zk-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/proto)
+   Compiling regex-syntax v0.8.11
+   Compiling memchr v2.8.3
+   Compiling anstyle v1.0.14
+   Compiling clap_builder v4.6.7
+   Compiling sha2-asm v0.6.4
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling serde_derive v1.0.229
+   Compiling sha2 v0.10.9
+   Compiling runtime-random v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/random)
+   Compiling plotters-svg v0.3.7
+   Compiling compile-algebra v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/algebra)
+   Compiling core-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/core/proto)
+   Compiling compile-logic v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/logic)
+   Compiling zerocopy-derive v0.8.63
+   Compiling circuits-polynomial v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/polynomial)
+   Compiling circuits-lookup v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/lookup)
+   Compiling itertools v0.10.5
+   Compiling cast v0.3.0
+   Compiling same-file v1.0.6
+   Compiling walkdir v2.5.0
+   Compiling compile-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/proto)
+   Compiling compile-eval v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/eval)
+   Compiling circuits-boolean v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/boolean)
+   Compiling runtime-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/proto)
+   Compiling circuits-arithmetic v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/arithmetic)
+   Compiling circuits-analog-decoder v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/analog_decoder)
+   Compiling circuits-bignum v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/bignum)
+   Compiling circuits-bitvec v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/bitvec)
+   Compiling runtime-merkle v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/merkle)
+   Compiling circuits-bit-plucker v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/bit_plucker)
+   Compiling circuits-analog-adder v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/analog_adder)
+   Compiling circuits-gf2-128 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/gf2_128)
+   Compiling circuits-sha256 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/sha256)
+   Compiling circuits-big-bitvec v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/big_bitvec)
+   Compiling circuits-ec v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/ec)
+   Compiling circuits-sha256msg v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/sha256msg)
+   Compiling circuits-ecdsa2 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/ecdsa2)
+   Compiling circuits-mac v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/mac)
+   Compiling runtime-ligero v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/ligero)
+   Compiling circuits-mac-gf128 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/mac_gf128)
+   Compiling circuits-routing v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/routing)
+   Compiling circuits-memcmp v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/memcmp)
+   Compiling compile-compiler v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/compiler)
+   Compiling runtime-sumcheck v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/sumcheck)
+   Compiling criterion-plot v0.5.0
+   Compiling tinytemplate v1.2.1
+   Compiling runtime-zk v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/zk)
+   Compiling rayon v1.12.0
+   Compiling mdoc-zk-circuits v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/circuits)
+   Compiling plotters v0.3.7
+   Compiling is-terminal v0.4.17
+   Compiling anes v0.1.6
+   Compiling oorandom v11.1.5
+   Compiling once_cell v1.21.4
+   Compiling mdoc-zk-artifacts v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/artifacts)
+   Compiling regex-automata v0.4.18
+   Compiling clap v4.6.7
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling regex v1.13.1
+   Compiling criterion v0.5.1
+   Compiling zstd v0.13.3
+   Compiling mdoc-zk-compile v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/compile)
+   Compiling mdoc-zk-runtime v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/runtime)
+    Finished `release` profile [optimized] target(s) in 3m 10s
+# cd rather than --manifest-path: cargo discovers .cargo/config.toml from the
+# working directory, and zkverify-ffi's is what pins its target-cpu.
+(cd verifier/zkverify-ffi && cargo build --release)
+   Compiling libc v0.2.189
+   Compiling find-msvc-tools v0.1.12
+   Compiling shlex v2.0.1
+   Compiling version_check v0.9.5
+   Compiling typenum v1.20.1
+   Compiling autocfg v1.5.1
+   Compiling core-algebra v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/core/algebra)
+   Compiling cfg-if v1.0.4
+   Compiling rustc-hash v2.1.3
+   Compiling util v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/util)
+   Compiling cpufeatures v0.2.17
+   Compiling runtime-algebra v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/algebra)
+   Compiling getrandom v0.3.4
+   Compiling generic-array v0.14.7
+   Compiling num-traits v0.2.19
+   Compiling pkg-config v0.3.34
+   Compiling zstd-safe v7.3.0
+   Compiling bumpalo v3.20.3
+   Compiling mdoc-zk-testcases v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/testcases)
+   Compiling mdoc-zk-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/proto)
+   Compiling mdoc-zk-artifacts v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/artifacts)
+   Compiling jobserver v0.1.35
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling inout v0.1.4
+   Compiling num-integer v0.1.47
+   Compiling cc v1.4.5
+   Compiling cipher v0.4.4
+   Compiling digest v0.10.7
+   Compiling aes v0.8.4
+   Compiling num-bigint v0.4.8
+   Compiling sha2-asm v0.6.4
+   Compiling zstd-sys v2.1.0+zstd.1.5.7
+   Compiling sha2 v0.10.9
+   Compiling runtime-random v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/random)
+   Compiling compile-algebra v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/algebra)
+   Compiling core-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/core/proto)
+   Compiling compile-logic v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/logic)
+   Compiling runtime-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/proto)
+   Compiling runtime-merkle v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/merkle)
+   Compiling compile-proto v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/proto)
+   Compiling compile-eval v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/eval)
+   Compiling circuits-polynomial v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/polynomial)
+   Compiling circuits-boolean v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/boolean)
+   Compiling circuits-lookup v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/lookup)
+   Compiling circuits-ec v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/ec)
+   Compiling circuits-arithmetic v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/arithmetic)
+   Compiling circuits-analog-decoder v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/analog_decoder)
+   Compiling circuits-bignum v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/bignum)
+   Compiling circuits-bitvec v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/bitvec)
+   Compiling runtime-ligero v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/ligero)
+   Compiling circuits-bit-plucker v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/bit_plucker)
+   Compiling circuits-analog-adder v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/analog_adder)
+   Compiling circuits-sha256 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/sha256)
+   Compiling circuits-big-bitvec v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/big_bitvec)
+   Compiling circuits-gf2-128 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/gf2_128)
+   Compiling circuits-sha256msg v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/sha256msg)
+   Compiling circuits-mac v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/mac)
+   Compiling circuits-ecdsa2 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/ecdsa2)
+   Compiling circuits-mac-gf128 v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/mac_gf128)
+   Compiling circuits-memcmp v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/memcmp)
+   Compiling circuits-routing v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/circuits/routing)
+   Compiling compile-compiler v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/compile/compiler)
+   Compiling runtime-sumcheck v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/sumcheck)
+   Compiling runtime-zk v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/runtime/zk)
+   Compiling mdoc-zk-circuits v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/circuits)
+   Compiling zstd v0.13.3
+   Compiling mdoc-zk-compile v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/compile)
+   Compiling mdoc-zk-runtime v0.1.0 (/tmp/av-story-1-6-reproduction/longfellow-zk/rust/applications/mdoc_zk/runtime)
+   Compiling zkverify-ffi v0.1.0 (/tmp/av-story-1-6-reproduction/eudi-wallet-poc/verifier/zkverify-ffi)
+    Finished `release` profile [optimized] target(s) in 1m 44s
+# The staticlib can exist without being linkable; make the failure loud here
+# rather than in a linker error (cgo links it before any Go code can run).
+test -f verifier/zkverify-ffi/target/release/libzkverify.a
+rev="$(tr -d '[:space:]' < verifier/zkverify-ffi/longfellow-rev.txt)" && \
+	cd verifier/go && go build -ldflags "-X main.longfellowRev=$rev" -o ../zkverify .
+RETURN CODE: 0
+
+COMMAND: ['test', '-x', '../longfellow-zk/rust/target/release/examples/ee_poa_demo']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+RETURN CODE: 0
+
+COMMAND: ['test', '-f', 'verifier/zkverify-ffi/target/release/libzkverify.a']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+RETURN CODE: 0
+
+COMMAND: ['git', '-C', '../longfellow-zk', 'rev-parse', 'HEAD']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+61a8a735964d1b22bccf79bf14ef6767249cdf92
+RETURN CODE: 0
+
+COMMAND: ['git', 'status', '--porcelain', '--untracked-files=all']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+RETURN CODE: 0
+
+COMMAND: ['python3', 'tests/run_av_conformance.py', '--json', '/tmp/av-story-1-6-reproduction/report.json', '--html', '/tmp/av-story-1-6-reproduction/report.html']
+CWD: /tmp/av-story-1-6-reproduction/eudi-wallet-poc
+AV conformance audit: 20 unique local clauses; 10 negative controls
+repository verifier @ 3cce11df6ec4e9148ebd4859cde95aabf7e650fc: {'PASS': 17, 'FAIL': 3, 'ERROR': 0, 'NOT_EXECUTED': 0, 'EXCLUDED': 74}
+  PASS AV-A.4-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileLocalContainers :: TestAVProfileLocalContainers (=== RUN   TestAVProfileLocalContainers
+--- PASS: TestAVProfileLocalContainers (0.00s)
+)
+  PASS AV-A.6-005 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceRequestParts :: TestAVConformanceRequestParts (=== RUN   TestAVConformanceRequestParts
+--- PASS: TestAVConformanceRequestParts (0.00s)
+)
+  PASS AV-A.6-006 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEncryptionEncoding :: TestAVConformanceEncryptionEncoding (=== RUN   TestAVConformanceEncryptionEncoding
+--- PASS: TestAVConformanceEncryptionEncoding (0.00s)
+)
+  PASS AV-A.6-007 verifier/go/oid4vp/isodcapi_test.go::TestEncryptionInfoShape :: TestEncryptionInfoShape (=== RUN   TestEncryptionInfoShape
+--- PASS: TestEncryptionInfoShape (0.00s)
+)
+  PASS AV-A.6-008 verifier/go/oid4vp/isodcapi_test.go::TestDeviceRequestBuild :: TestDeviceRequestBuild (=== RUN   TestDeviceRequestBuild
+--- PASS: TestDeviceRequestBuild (0.00s)
+)
+  PASS AV-A.6-009 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceResponseEncoding :: TestAVConformanceResponseEncoding (=== RUN   TestAVConformanceResponseEncoding
+--- PASS: TestAVConformanceResponseEncoding (0.00s)
+)
+  PASS AV-A.6-010 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEnvelope :: TestAVConformanceEnvelope (=== RUN   TestAVConformanceEnvelope
+=== RUN   TestAVConformanceEnvelope/negative_discriminator
+--- PASS: TestAVConformanceEnvelope/negative_discriminator (0.00s)
+=== RUN   TestAVConformanceEnvelope/negative_enc_type
+--- PASS: TestAVConformanceEnvelope/negative_enc_type (0.00s)
+=== RUN   TestAVConformanceEnvelope/negative_truncated
+--- PASS: TestAVConformanceEnvelope/negative_truncated (0.00s)
+=== RUN   TestAVConformanceEnvelope/negative_missing_fields
+--- PASS: TestAVConformanceEnvelope/negative_missing_fields (0.00s)
+--- PASS: TestAVConformanceEnvelope (0.00s)
+)
+  PASS AV-A.6-011 verifier/go/oid4vp/isodcapi_test.go::TestHPKERoundTrip :: TestHPKERoundTrip (=== RUN   TestHPKERoundTrip
+--- PASS: TestHPKERoundTrip (0.00s)
+)
+  PASS AV-A.6-015 verifier/go/av_conformance_test.go::TestAVConformanceResponseType :: TestAVConformanceResponseType (=== RUN   TestAVConformanceResponseType
+--- PASS: TestAVConformanceResponseType (0.00s)
+)
+  FAIL AV-A.6-016 verifier/go/av_conformance_test.go::TestAVConformanceResponseMode :: TestAVConformanceResponseMode (=== RUN   TestAVConformanceResponseMode
+    av_conformance_test.go:45: AV fallback requires direct_post; candidate emits direct_post.jwt
+--- FAIL: TestAVConformanceResponseMode (0.00s)
+)
+  FAIL AV-A.6-017 verifier/go/av_conformance_test.go::TestAVConformanceQueryTransport :: TestAVConformanceQueryTransport (=== RUN   TestAVConformanceQueryTransport
+    av_conformance_test.go:57: AV fallback prohibits request_uri; candidate emits request object transport
+--- FAIL: TestAVConformanceQueryTransport (0.00s)
+)
+  FAIL AV-A.6-018 verifier/go/av_conformance_test.go::TestAVConformanceClientID :: TestAVConformanceClientID (=== RUN   TestAVConformanceClientID
+    av_conformance_test.go:64: AV fallback requires redirect_uri client identification matching response_uri; got x509_san_dns:verifier.example.ee
+--- FAIL: TestAVConformanceClientID (0.00s)
+)
+  PASS AV-A.6-019 verifier/go/av_conformance_test.go::TestAVConformanceNonce :: TestAVConformanceNonce (=== RUN   TestAVConformanceNonce
+--- PASS: TestAVConformanceNonce (0.00s)
+)
+  PASS AV-A.6-020 verifier/go/av_conformance_test.go::TestAVConformanceDCQL :: TestAVConformanceDCQL (=== RUN   TestAVConformanceDCQL
+--- PASS: TestAVConformanceDCQL (0.00s)
+)
+  PASS AV-A.6-021 verifier/go/av_conformance_test.go::TestAVConformanceState :: TestAVConformanceState (=== RUN   TestAVConformanceState
+--- PASS: TestAVConformanceState (0.00s)
+)
+  PASS AV-A.7-001.1.1 verifier/go/internal/jose/jwk_test.go::TestGenerateKeyProducesUsableP256 :: TestGenerateKeyProducesUsableP256 (=== RUN   TestGenerateKeyProducesUsableP256
+--- PASS: TestGenerateKeyProducesUsableP256 (0.00s)
+)
+  PASS AV-A.7-001.1.2 verifier/go/internal/jose/jws_test.go::TestJWSSignVerifyRoundTrip :: TestJWSSignVerifyRoundTrip (=== RUN   TestJWSSignVerifyRoundTrip
+--- PASS: TestJWSSignVerifyRoundTrip (0.00s)
+)
+  PASS AV-A.8-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileRequiredParameters :: TestAVProfileRequiredParameters (=== RUN   TestAVProfileRequiredParameters
+=== RUN   TestAVProfileRequiredParameters/legacy-system-compatibility
+--- PASS: TestAVProfileRequiredParameters/legacy-system-compatibility (0.00s)
+=== RUN   TestAVProfileRequiredParameters/accepted-set/nil
+--- PASS: TestAVProfileRequiredParameters/accepted-set/nil (0.00s)
+=== RUN   TestAVProfileRequiredParameters/accepted-set/empty
+--- PASS: TestAVProfileRequiredParameters/accepted-set/empty (0.00s)
+=== RUN   TestAVProfileRequiredParameters/accepted-set/different-circuit
+--- PASS: TestAVProfileRequiredParameters/accepted-set/different-circuit (0.00s)
+=== RUN   TestAVProfileRequiredParameters/missing-offer/nil-meta
+--- PASS: TestAVProfileRequiredParameters/missing-offer/nil-meta (0.00s)
+=== RUN   TestAVProfileRequiredParameters/missing-offer/absent-list
+--- PASS: TestAVProfileRequiredParameters/missing-offer/absent-list (0.00s)
+=== RUN   TestAVProfileRequiredParameters/missing-offer/empty-list
+--- PASS: TestAVProfileRequiredParameters/missing-offer/empty-list (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/null
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/true
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/null
+--- PASS: TestAVProfileRequiredParameters/version/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/true
+--- PASS: TestAVProfileRequiredParameters/version/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/version/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/version/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/version/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/null
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/true
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/num_attributes/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/null
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/true
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/null
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/null (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/true
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/true (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/-1
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/-1 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/1.5
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/1.5 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/malformed/4294967296
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/malformed/4294967296 (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing/alone
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/circuit_hash/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/circuit_hash/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/missing
+=== RUN   TestAVProfileRequiredParameters/version/missing/alone
+--- PASS: TestAVProfileRequiredParameters/version/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/version/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/version/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/version/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/tampered
+=== RUN   TestAVProfileRequiredParameters/version/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/version/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/version/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/version/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/version/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/version/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing/alone
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/num_attributes/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/num_attributes/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/num_attributes/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_hash/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/block_enc_sig/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/missing
+=== RUN   TestAVProfileRequiredParameters/system/missing/alone
+--- PASS: TestAVProfileRequiredParameters/system/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/system/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/system/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/system/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/tampered
+=== RUN   TestAVProfileRequiredParameters/system/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/system/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/system/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/system/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/system/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/system/tampered (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/missing
+=== RUN   TestAVProfileRequiredParameters/id/missing/alone
+--- PASS: TestAVProfileRequiredParameters/id/missing/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/missing/valid-first
+--- PASS: TestAVProfileRequiredParameters/id/missing/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/missing/valid-last
+--- PASS: TestAVProfileRequiredParameters/id/missing/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/id/missing (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/tampered
+=== RUN   TestAVProfileRequiredParameters/id/tampered/alone
+--- PASS: TestAVProfileRequiredParameters/id/tampered/alone (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/tampered/valid-first
+--- PASS: TestAVProfileRequiredParameters/id/tampered/valid-first (0.00s)
+=== RUN   TestAVProfileRequiredParameters/id/tampered/valid-last
+--- PASS: TestAVProfileRequiredParameters/id/tampered/valid-last (0.00s)
+--- PASS: TestAVProfileRequiredParameters/id/tampered (0.00s)
+--- PASS: TestAVProfileRequiredParameters (0.00s)
+)
+  PASS AV-A.8-003 verifier/go/oid4vp/av_profile_test.go::TestAVProfileExternalContainers :: TestAVProfileExternalContainers (=== RUN   TestAVProfileExternalContainers
+--- PASS: TestAVProfileExternalContainers (0.11s)
+)
+  PASS AV-A.8-011 verifier/go/zk/zk_test.go::TestRegistryRejectsUnlisted :: TestRegistryRejectsUnlisted (=== RUN   TestRegistryRejectsUnlisted
+--- PASS: TestRegistryRejectsUnlisted (0.01s)
+)
+unconfigured external candidate @ unavailable: {'PASS': 0, 'FAIL': 0, 'ERROR': 0, 'NOT_EXECUTED': 20, 'EXCLUDED': 74}
+  NOT_EXECUTED AV-A.4-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileLocalContainers :: TestAVProfileLocalContainers (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-005 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceRequestParts :: TestAVConformanceRequestParts (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-006 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEncryptionEncoding :: TestAVConformanceEncryptionEncoding (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-007 verifier/go/oid4vp/isodcapi_test.go::TestEncryptionInfoShape :: TestEncryptionInfoShape (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-008 verifier/go/oid4vp/isodcapi_test.go::TestDeviceRequestBuild :: TestDeviceRequestBuild (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-009 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceResponseEncoding :: TestAVConformanceResponseEncoding (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-010 verifier/go/oid4vp/av_conformance_test.go::TestAVConformanceEnvelope :: TestAVConformanceEnvelope (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-011 verifier/go/oid4vp/isodcapi_test.go::TestHPKERoundTrip :: TestHPKERoundTrip (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-015 verifier/go/av_conformance_test.go::TestAVConformanceResponseType :: TestAVConformanceResponseType (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-016 verifier/go/av_conformance_test.go::TestAVConformanceResponseMode :: TestAVConformanceResponseMode (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-017 verifier/go/av_conformance_test.go::TestAVConformanceQueryTransport :: TestAVConformanceQueryTransport (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-018 verifier/go/av_conformance_test.go::TestAVConformanceClientID :: TestAVConformanceClientID (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-019 verifier/go/av_conformance_test.go::TestAVConformanceNonce :: TestAVConformanceNonce (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-020 verifier/go/av_conformance_test.go::TestAVConformanceDCQL :: TestAVConformanceDCQL (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.6-021 verifier/go/av_conformance_test.go::TestAVConformanceState :: TestAVConformanceState (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.7-001.1.1 verifier/go/internal/jose/jwk_test.go::TestGenerateKeyProducesUsableP256 :: TestGenerateKeyProducesUsableP256 (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.7-001.1.2 verifier/go/internal/jose/jws_test.go::TestJWSSignVerifyRoundTrip :: TestJWSSignVerifyRoundTrip (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.8-002 verifier/go/oid4vp/av_profile_test.go::TestAVProfileRequiredParameters :: TestAVProfileRequiredParameters (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.8-003 verifier/go/oid4vp/av_profile_test.go::TestAVProfileExternalContainers :: TestAVProfileExternalContainers (external candidate unavailable; configure --candidate-command)
+  NOT_EXECUTED AV-A.8-011 verifier/go/zk/zk_test.go::TestRegistryRejectsUnlisted :: TestRegistryRejectsUnlisted (external candidate unavailable; configure --candidate-command)
+RETURN CODE: 1

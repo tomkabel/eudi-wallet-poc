@@ -4,37 +4,31 @@ import org.bouncycastle.crypto.generators.Argon2BytesGenerator
 import org.bouncycastle.crypto.params.Argon2Parameters
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.util.Base64
-import java.util.concurrent.ConcurrentHashMap
 
 /**
- * The wallet's PIN verifier, kept away from everything a data breach exposes
- * (JVM-H3):
+ * The persisted PIN state: the Argon2id hash of the PIN captured at activation, its salt, and
+ * the failed-attempt lockout counters. Stored in the encrypted user-session DataStore, so the
+ * lockout survives process death — a force-stop no longer resets the attempt budget.
+ */
+class PinRecord(
+    val hash: ByteArray,
+    val salt: ByteArray,
+    val failedAttempts: Int = 0,
+    val lockedUntil: Long = 0L
+)
+
+/**
+ * The wallet's PIN verifier (JVM-H3), pure and stateless so the caller can persist the
+ * [PinRecord] it returns atomically with the attempt:
  *
- *  - the PIN is never stored, even hashed: verification runs Argon2id over the
- *    presented PIN against a per-session random salt, and the result is compared
- *    against the Argon2 hash of the PIN captured at wallet activation. Both
- *    hashes are recomputed per attempt; neither is persisted anywhere.
- *  - the reference side of the comparison is kept as raw hash bytes, never as a
- *    String, and is wiped when [reset] clears the session (the hash itself is
- *    not a secret, but hygiene demands the raw bytes not linger in retyped
- *    String form).
- *  - comparison is constant-time (MessageDigest.isEqual).
- *  - failed-attempt lockout (5 attempts, then a 30-minute lock) lives on a
- *    process-wide singleton, so it survives ViewModel/Activity recreation —
- *    unlike the old in-ViewModel counter. Process-death persistence would need
- *    a DataStore-backed counter and is a conscious follow-up.
+ *  - the PIN itself is never stored: [create] keeps only its Argon2id hash over a random salt.
+ *  - comparison is constant-time (MessageDigest.isEqual) and the presented-side hash is wiped
+ *    right after it.
+ *  - failed-attempt lockout (5 attempts, then a 30-minute lock) is carried in the record.
  *
- * Salt freshness per verification: because no PIN material is stored, "old
- * hash" attacks do not exist here; the Argon2 parameters are calibrated for a
- * phone (64 MiB, 1 pass, parallelism 1, ~250-400 ms) and pinning them into the
- * parameter block keeps the KDF cost paid on every attempt, including the
- * attacker's offline ones (they would first need the activation-time hash,
- * which this module never persists).
- *
- * Threading: attempts are tracked per (process-wide) singleton; the map is
- * concurrent. This module is pure JVM and unit-testable; Android wires the
- * singleton in Hilt.
+ * The Argon2 parameters are calibrated for a phone (64 MiB, 1 pass, parallelism 1,
+ * ~250-400 ms), so every attempt — including an attacker's offline ones against a stolen
+ * record — pays the KDF cost.
  */
 class PinVerifier(
     private val clock: () -> Long = System::currentTimeMillis,
@@ -42,67 +36,31 @@ class PinVerifier(
     private val maxAttempts: Int = MAX_ATTEMPTS
 ) {
 
-    /** Failed attempts since the last success, keyed per process. */
-    private val failedAttempts = ConcurrentHashMap<String, Int>()
-    private val lockedUntil = ConcurrentHashMap<String, Long>()
-
-    /**
-     * The activation reference: Argon2 hash of the PIN over [referenceSalt].
-     * The salt is not secret and MUST be reused for presented-PIN hashing —
-     * two random salts would never produce comparable hashes.
-     */
-    private var referenceHash: ByteArray? = null
-    private var referenceSalt: ByteArray? = null
-
-    /**
-     * Capture the activation PIN's Argon2 hash (with a fresh random salt) as
-     * the verification reference. Called by PIN-creation flows; the plain PIN
-     * is not retained.
-     */
-    fun setPin(pin: CharArray) {
+    /** The activation record for [pin], with a fresh random salt and no failed attempts. */
+    fun create(pin: CharArray): PinRecord {
         val salt = ByteArray(SALT_BYTES).also(SecureRandom()::nextBytes)
-        referenceHash = hashWithSalt(pin, salt)
-        referenceSalt = salt
+        return PinRecord(hash = hashWithSalt(pin, salt), salt = salt)
     }
+
+    fun isLocked(record: PinRecord): Boolean = record.lockedUntil > clock()
 
     /**
-     * Verify a presented PIN under the hardening policy. Returns true when the
-     * PIN matches the activation reference; enforces the lockout window. The
-     * presented-side hash is wiped immediately after comparison.
+     * Verify [pin] against [record] under the lockout policy. Returns whether it matched and the
+     * record to persist; while locked even the correct PIN is refused and the record is unchanged.
      */
-    fun verify(pin: CharArray, sessionId: String = "global"): Boolean {
+    fun verify(pin: CharArray, record: PinRecord): Pair<Boolean, PinRecord> {
         val now = clock()
-        lockedUntil[sessionId]?.let { until ->
-            if (now < until) return false
-            lockedUntil.remove(sessionId, until)
-        }
-        val salt = referenceSalt ?: return false
-        val expected = referenceHash ?: return false
-        val presented = hashWithSalt(pin, salt)
-        val match = MessageDigest.isEqual(presented, expected)
+        if (record.lockedUntil > now) return false to record
+        val presented = hashWithSalt(pin, record.salt)
+        val match = MessageDigest.isEqual(presented, record.hash)
         presented.fill(0)
-        if (match) {
-            failedAttempts.remove(sessionId)
-            return true
+        if (match) return true to PinRecord(record.hash, record.salt)
+        val attempts = record.failedAttempts + 1
+        return false to if (attempts >= maxAttempts) {
+            PinRecord(record.hash, record.salt, failedAttempts = 0, lockedUntil = now + lockDurationMs)
+        } else {
+            PinRecord(record.hash, record.salt, failedAttempts = attempts)
         }
-        val attempts = failedAttempts.merge(sessionId, 1, Int::plus) ?: 1
-        if (attempts >= maxAttempts) {
-            lockedUntil[sessionId] = now + lockDurationMs
-            failedAttempts.remove(sessionId)
-        }
-        return false
-    }
-
-    fun isLocked(sessionId: String = "global"): Boolean =
-        (lockedUntil[sessionId] ?: 0L) > clock()
-
-    fun reset(sessionId: String = "global") {
-        failedAttempts.remove(sessionId)
-        lockedUntil.remove(sessionId)
-        referenceHash?.fill(0)
-        referenceHash = null
-        referenceSalt?.fill(0)
-        referenceSalt = null
     }
 
     private fun hashWithSalt(pin: CharArray, salt: ByteArray): ByteArray {

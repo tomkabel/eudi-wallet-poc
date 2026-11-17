@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 adb reverse --remove-all
 adb reverse tcp:12443 tcp:12443 #as-mock

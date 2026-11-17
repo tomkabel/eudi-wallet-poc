@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-11T21:16:57.197504+00:00",
+  "scope": "Repository vector feed only; zero of 19 carrier flow cases exercised.",
+  "target": {
+    "name": "Multipaz 0.99.0",
+    "expected_revision": "7486ddbca490038c3580513d8273b9bbf18c6b70",
+    "checkout": "/tmp/eudi-carrier-multipaz-0.99.0"
+  },
+  "host": {
+    "platform": "Linux-7.3.3-1-cachyos-x86_64-with-glibc2.44",
+    "machine": "x86_64",
+    "python": "3.14.9",
+    "JAVA_HOME": "/usr/lib/jvm/java-17-openjdk",
+    "ANDROID_HOME": "/opt/android-sdk"
+  },
+  "timeout_seconds": 120,
+  "output_limit_bytes": 4194304,
+  "executions": [
+    {
+      "name": "revision-before",
+      "status": "PASS",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "returncode": 0,
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "cleanliness-before",
+      "status": "PASS",
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "returncode": 0,
+      "output": "",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "java-version",
+      "status": "PASS",
+      "command": [
+        "/usr/lib/jvm/java-17-openjdk/bin/java",
+        "-version"
+      ],
+      "returncode": 0,
+      "output": "openjdk version \"17.0.20.1\" 2026-08-18\nOpenJDK Runtime Environment (build 17.0.20.1+1)\nOpenJDK 64-Bit Server VM (build 17.0.20.1+1, mixed mode, sharing)\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "host-target-test",
+      "status": "ERROR",
+      "command": [
+        "./gradlew",
+        "--offline",
+        "--init-script",
+        "/home/notroot/Documents/eudi-wallet-poc/docs/profiles/carrier/external-host-2026-11-11/vector-harness/init.gradle",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=2",
+        ":multipaz-longfellow:jvmTest",
+        "--tests",
+        "org.eudi.externalcarrier.RepositoryCarrierVectorTest.feedBothVectors"
+      ],
+      "returncode": 1,
+      "output": "To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\nDaemon will be stopped at the end of the build \n\nFAILURE: Build failed with an exception.\n\n* Where:\nSettings file '/tmp/eudi-carrier-multipaz-0.99.0/settings.gradle.kts' line: 63\n\n* What went wrong:\nError resolving plugin [id: 'org.gradle.toolchains.foojay-resolver-convention', version: '0.9.0']\n> Project with path ':multipaz-longfellow' could not be found in project ':build-logic'.\n\n* Try:\n> Run with --stacktrace option to get the stack trace.\n> Run with --info or --debug option to get more log output.\n> Run with --scan to get full insights.\n> Get more help at https://help.gradle.org.\n\nBUILD FAILED in 43s\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "revision-after",
+      "status": "PASS",
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "returncode": 0,
+      "output": "7486ddbca490038c3580513d8273b9bbf18c6b70\n",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    },
+    {
+      "name": "cleanliness-after",
+      "status": "PASS",
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=all"
+      ],
+      "returncode": 0,
+      "output": "",
+      "detail": "",
+      "cwd": "/tmp/eudi-carrier-multipaz-0.99.0"
+    }
+  ],
+  "finished_at": "2026-11-11T21:17:41.661660+00:00",
+  "assertions": {
+    "carrier_cases_executed": 0,
+    "repository_vectors_executed": 0
+  },
+  "result": "ERROR"
+}

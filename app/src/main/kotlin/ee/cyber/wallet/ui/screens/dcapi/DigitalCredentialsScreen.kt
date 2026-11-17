@@ -195,6 +195,18 @@ private fun DcPresentationContent(
                 text = stringResource(tier.zkNoticeRes()),
                 textAlign = TextAlign.Center
             )
+            // EE-POA-013: the last attestation of a batch goes out plain only with this notice
+            // in front of the user; tapping share is the explicit approval.
+            if (state.lastAgeAttestation) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    text = stringResource(R.string.presentation_last_age_attestation_notice),
+                    textAlign = TextAlign.Center
+                )
+            }
         }
         // EE-ZKP-042 (plan §8.7): the mso_mdoc_zk carrier puts the issuer's certificate chain
         // (msoX5chain) into the response, so the requesting party learns which issuer stands

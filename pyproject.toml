@@ -1,0 +1,50 @@
+# Python inputs of the ZK spine's helpers and tests. Not an installable package: this file
+# exists so uv can lock the groups below into uv.lock (sha256 of every wheel and sdist).
+#
+# The transcript vectors (wallet/test_transcript.py, issuer/test_mint_device_key.py,
+# tests/e2e.sh) are golden: a cbor2 encoder change can shift the canonical bytes they pin.
+# Bump a version here deliberately, run `uv lock`, and re-run `make test-py`; CI installs
+# with `uv sync --locked`, which fails when this file and uv.lock disagree.
+[project]
+name = "eudi-wallet-poc"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.uv]
+package = false
+default-groups = []
+
+[dependency-groups]
+ci = [
+    "cbor2==6.1.4",
+    "cryptography==50.0.1",
+    "jwcrypto==1.6.1",
+]
+# The linters, pinned so a CI run and a laptop count the same violations (tools/lint-baseline.json).
+lint = [
+    "ruff==0.16.6",
+    "pyright==1.1.412",
+    "pre-commit==4.6.0",
+]
+
+# Blocking set: pyflakes (undefined names, unused imports) and E9 (syntax errors). `ruff check .`
+# fails on any of these. The wider families are held to a baseline by tools/lint_ratchet.py
+# (rule counts may fall, never rise); see `make lint`.
+[tool.ruff]
+target-version = "py312"
+# eudi-arf is a submodule with its own lint setup; the rest is vendored agent tooling that a
+# developer tree carries but CI never checks out.
+extend-exclude = ["eudi-arf", "_bmad", ".agents", ".claude"]
+
+[tool.ruff.lint]
+select = ["F", "E9"]
+
+# Basic mode; the per-file error counts of what still fails are in tools/lint-baseline.json and
+# may only fall. venv: the locked environment (`make py-deps`) so cbor2/cryptography resolve.
+[tool.pyright]
+include = ["issuer", "wallet", "tools", "tests", "sandbox", "demo", "verifier"]
+exclude = ["**/__pycache__", "**/node_modules", "verifier/go", "verifier/zkverify-ffi"]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"

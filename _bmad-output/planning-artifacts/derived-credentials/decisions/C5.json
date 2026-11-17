@@ -1,0 +1,4 @@
+{"question":"step 5: change scope classification","choices":[
+ {"label":"Moderate: backlog addition, PO/DEV","evidence":90,"scores":{"fit_to_constraints":90,"reversibility":90,"precedent":90}},
+ {"label":"Minor: direct implementation by the Developer agent","evidence":90,"scores":{"fit_to_constraints":60,"reversibility":90,"precedent":60}},
+ {"label":"Major: fundamental replan, PM/Architect","evidence":90,"scores":{"fit_to_constraints":20,"reversibility":90,"precedent":20}}]}

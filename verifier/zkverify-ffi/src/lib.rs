@@ -41,7 +41,11 @@ unsafe fn as_bytes<'a>(p: *const u8, len: usize) -> Option<&'a [u8]> {
     if p.is_null() && len != 0 {
         return None;
     }
-    Some(if len == 0 { &[] } else { slice::from_raw_parts(p, len) })
+    Some(if len == 0 {
+        &[]
+    } else {
+        slice::from_raw_parts(p, len)
+    })
 }
 
 /// Byte length of a CBOR text-string header for a string of `n` bytes.
@@ -58,7 +62,12 @@ fn cbor_str_header_len(n: usize) -> usize {
 /// (longfellow `legacy/public.rs`). Upstream pads with `(slot - len) * 8`, which
 /// wraps on oversize input and aborts the process on the resulting allocation —
 /// an abort `catch_unwind` cannot stop. `now` is a holder-supplied timestamp.
-fn check_input_sizes(version: u32, now: &str, attr_id: &str, attr_cbor: &[u8]) -> Result<(), &'static str> {
+fn check_input_sizes(
+    version: u32,
+    now: &str,
+    attr_id: &str,
+    attr_cbor: &[u8],
+) -> Result<(), &'static str> {
     if now.len() > 20 {
         return Err("timestamp longer than 20 bytes");
     }
@@ -110,7 +119,10 @@ pub unsafe extern "C" fn zkv_verify(
             as_str(attr_id),
             as_str(now),
         ) else {
-            return (ZKV_ERR_ARGS, "null or non-UTF-8 string argument".to_string());
+            return (
+                ZKV_ERR_ARGS,
+                "null or non-UTF-8 string argument".to_string(),
+            );
         };
         let (Some(transcript), Some(attr_cbor), Some(proof)) = (
             as_bytes(transcript, transcript_len),
@@ -203,13 +215,49 @@ mod tests {
         let mut err = [0 as c_char; 128];
         let call = |now: &str, id: &str, val: &[u8], err: &mut [c_char; 128]| unsafe {
             let c = |s: &str| std::ffi::CString::new(s).unwrap();
-            let (pk, dt, ns, id, now) = (c("0x1"), c("org.iso.18013.5.1.mDL"), c("org.iso.18013.5.1"), c(id), c(now));
-            zkv_verify(7, 1, pk.as_ptr(), pk.as_ptr(), [0u8].as_ptr(), 1, dt.as_ptr(), ns.as_ptr(),
-                id.as_ptr(), val.as_ptr(), val.len(), now.as_ptr(), [0u8].as_ptr(), 1, err.as_mut_ptr(), 128)
+            let (pk, dt, ns, id, now) = (
+                c("0x1"),
+                c("org.iso.18013.5.1.mDL"),
+                c("org.iso.18013.5.1"),
+                c(id),
+                c(now),
+            );
+            zkv_verify(
+                7,
+                1,
+                pk.as_ptr(),
+                pk.as_ptr(),
+                [0u8].as_ptr(),
+                1,
+                dt.as_ptr(),
+                ns.as_ptr(),
+                id.as_ptr(),
+                val.as_ptr(),
+                val.len(),
+                now.as_ptr(),
+                [0u8].as_ptr(),
+                1,
+                err.as_mut_ptr(),
+                128,
+            )
         };
-        assert_eq!(call("2026-09-25T09:00:00+03:00", "age_over_18", &[0xf5], &mut err), ZKV_ERR_ARGS);
-        assert_eq!(call("2026-09-25T09:00:00Z", &"a".repeat(31), &[0xf5], &mut err), ZKV_ERR_ARGS);
-        assert_eq!(call("2026-09-25T09:00:00Z", "age_over_18", &[0u8; 65], &mut err), ZKV_ERR_ARGS);
+        assert_eq!(
+            call(
+                "2026-09-25T09:00:00+03:00",
+                "age_over_18",
+                &[0xf5],
+                &mut err
+            ),
+            ZKV_ERR_ARGS
+        );
+        assert_eq!(
+            call("2026-09-25T09:00:00Z", &"a".repeat(31), &[0xf5], &mut err),
+            ZKV_ERR_ARGS
+        );
+        assert_eq!(
+            call("2026-09-25T09:00:00Z", "age_over_18", &[0u8; 65], &mut err),
+            ZKV_ERR_ARGS
+        );
         assert!(check_input_sizes(7, "2026-09-25T09:00:00Z", &"a".repeat(30), &[0u8; 64]).is_ok());
     }
 }

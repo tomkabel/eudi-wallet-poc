@@ -6,7 +6,8 @@ package ee.cyber.wallet
  * it required a locally running test-rp (the `@Ignore`d shape), exercised nothing in CI, and
  * only duplicated what e2e.sh covers against the live stack. The end-to-end walk (RP session
  * create → authorization request → credential presentation → verification) is the integration
- * battery's job, not a unit test's; the two `@Ignore`d integration tests in this module stay
+ * battery's job, not a unit test's. The last `@Ignore`d placeholder (IssuanceTest, whose body
+ * was commented out against APIs that no longer exist) was pruned the same way; this file is
  * the pointer until the test-rp make target exists (Deferred, testing L3).
  *
  * This file intentionally holds no code: it survives as the anchor for the deferred
